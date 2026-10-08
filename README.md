@@ -130,7 +130,7 @@ La Pythonerie est parfaitement compatible avec le **RGPD** européen et avec ses
 
 - **Aucune donnée n'est envoyée** : les programmes, le nom de l'élève et l'historique de la console restent dans le navigateur de l'ordinateur. Aucun serveur ne les reçoit, aucun compte n'est créé.
 - **Aucun pistage** : ni cookie, ni mesure d'audience, ni publicité, ni service tiers. L'éditeur et les polices de caractères sont fournis par le site lui-même, sans appel à un autre site (pas de Google Fonts, pas de CDN).
-- **Le nom de l'élève** n'est qu'une étiquette : il sert à nommer les archives. Il est oublié à la fermeture de l'onglet, et la déconnexion efface tout l'espace de l'élève.
+- **Le nom de l'élève** n'est qu'une étiquette : il sert à nommer les archives. Il est oublié à la fermeture de l'onglet, et la déconnexion efface tout l'espace de l'élève. Chaque établissement peut d'ailleurs donner à ses élèves un identifiant propre, plutôt que leur vrai nom : c'est plus discret, et cela évite de confondre deux élèves qui portent le même nom.
 - **Les archives** sont des fichiers enregistrés sur l'ordinateur, dans le dossier Téléchargements. En ligne, elles ne sont envoyées nulle part : c'est l'élève ou l'enseignant qui décide de les transmettre.
 
 Deux remarques pour les établissements :

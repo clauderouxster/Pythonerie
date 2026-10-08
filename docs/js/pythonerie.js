@@ -811,18 +811,24 @@ const Pythonerie = (function () {
         await videEspace();
     }
 
-    async function videEspace() {
-        const ancien = élève;
+    // Efface du navigateur tout ce qu'a laissé l'élève ; renvoie Faux en cas d'échec
+    async function effaceDonnées() {
         try {
             await remplaceTout({ programmes: {}, dossiers: [] });
         } catch (e) {
             écritConsole('Impossible d\'effacer les programmes : ' + e.message, 'erreur');
-            return;
+            return false;
         }
         ['pythonerie.sauvegarde', CLÉ_ARCHIVÉ, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
             try { localStorage.removeItem(clé); } catch (e) { /* rien */ }
         });
         window.dispatchEvent(new Event('pythonerie-vide'));
+        return true;
+    }
+
+    async function videEspace() {
+        const ancien = élève;
+        if (!(await effaceDonnées())) return;
         // l'interpréteur garde les variables du dernier programme : on l'oublie aussi
         if (idxExécution !== null) {
             try { callCleanLispE(idxExécution); } catch (e) { /* rien */ }
@@ -1766,6 +1772,16 @@ const Pythonerie = (function () {
         stockage = StockageNavigateur;
         serveurArchives = await détecteServeurArchives();
         await chargeConfig();
+        // Mode plusieurs élèves imposé par config.json : chaque nouvelle session (nouvel
+        // onglet, navigateur relancé) commence avec un espace vide, même si l'élève
+        // précédent est parti sans se déconnecter. Un simple rechargement de la page
+        // (même onglet) garde le travail en cours.
+        let nouvelleSession = true;
+        try {
+            nouvelleSession = !sessionStorage.getItem('pythonerie.session');
+            sessionStorage.setItem('pythonerie.session', 'oui');
+        } catch (e) { /* rien */ }
+        if (multiImposé && nouvelleSession) await effaceDonnées();
         afficheÉlève();
         metAJourAnnulation();
         await rafraichitListe();

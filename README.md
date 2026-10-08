@@ -118,7 +118,7 @@ Le fichier `docs/config.json` contient les réglages de l'installation :
 }
 ```
 
-Avec `"multi_utilisateur": true`, la Pythonerie démarre en mode plusieurs élèves pour tout le monde : chaque élève doit taper son nom, et la case **Utilisateur unique** du menu ☰ est désactivée, si bien qu'on ne peut pas revenir au mode Utilisateur unique.
+Avec `"multi_utilisateur": true`, la Pythonerie démarre en mode plusieurs élèves pour tout le monde : chaque élève doit taper son nom, et la case **Utilisateur unique** du menu ☰ est désactivée, si bien qu'on ne peut pas revenir au mode Utilisateur unique. De plus, chaque nouvelle session (nouvel onglet, navigateur relancé) commence avec un espace vide, même si l'élève précédent est parti sans se déconnecter ; un simple rechargement de la page garde le travail en cours. Les élèves doivent donc créer une archive avant de partir.
 
 ## Comment ça marche
 

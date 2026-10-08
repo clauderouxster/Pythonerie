@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.08.19.32">
+    <link rel="stylesheet" href="style.css?v=2026.10.08.19.45">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.19.32</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.19.45</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -184,6 +184,7 @@
                     puis efface tout son espace.
                     Dans le menu <b>☰</b>, <b>Créer une archive</b> enregistre tous les programmes dans un fichier
                     <code>nom_aaaa_mm_jj_hh_MM.json</code> (dossier Téléchargements), que l'on peut donner à un autre élève.
+                    Avec <code>serveur.py</code>, une copie est aussi conservée sur le serveur, pour l'enseignant.
                     <b>Charger une archive</b> remplace tous les programmes par ceux de l'archive ; s'il y en avait déjà, l'élève est déconnecté (en mode plusieurs élèves) ;
                     <b>Annuler le chargement</b> fait revenir les programmes d'avant.</p>
                 <p>🔒 <b>Protection des données</b> : la Pythonerie est parfaitement compatible avec le RGPD et avec ses équivalents
@@ -372,7 +373,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.08.19.32';
+                return répertoire + fichier + '?v=2026.10.08.19.45';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -380,12 +381,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.08.19.32"></script>
-    <script src="js/canevas.js?v=2026.10.08.19.32"></script>
-    <script src="js/pythonerie.js?v=2026.10.08.19.32"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.08.19.45"></script>
+    <script src="js/canevas.js?v=2026.10.08.19.45"></script>
+    <script src="js/pythonerie.js?v=2026.10.08.19.45"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.08.19.32"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.08.19.32"></script>
+    <script src="lispe/lispe.js?v=2026.10.08.19.45"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.08.19.45"></script>
 </body>
 
 </html>

@@ -1,6 +1,6 @@
-# Programmes des élèves conservés par serveur.py (données locales)
-programmes/*
-!programmes/.gitkeep
+# Archives des élèves conservées par serveur.py (données locales, jamais publiées)
+archives/*
+!archives/.gitkeep
 
 __pycache__/
 *.pyc

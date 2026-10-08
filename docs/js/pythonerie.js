@@ -450,65 +450,14 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Stockage des programmes
+    // Stockage des programmes : toujours dans le navigateur (localStorage)
     // Un programme est désigné par son chemin : "Jeux/Balle" (répertoire Jeux).
     // ------------------------------------------------------------------
-    const url = (genre, chemin) => 'api/' + genre + '/' + chemin.split('/').map(encodeURIComponent).join('/');
     const parentDe = (chemin) => chemin.includes('/') ? chemin.slice(0, chemin.lastIndexOf('/')) : '';
     const nomDe = (chemin) => chemin.slice(chemin.lastIndexOf('/') + 1);
     const joint = (dossier, nom) => dossier ? dossier + '/' + nom : nom;
     // chemin est-il dans le répertoire dossier (ou est-il ce répertoire) ?
     const estDans = (chemin, dossier) => chemin === dossier || chemin.startsWith(dossier + '/');
-
-    async function vérifie(r) {
-        if (!r.ok) throw new Error(await r.text());
-        return r;
-    }
-
-    const StockageServeur = {
-        genre: 'serveur',
-        async liste() {
-            const contenu = await (await vérifie(await fetch('api/programmes', { cache: 'no-cache' }))).json();
-            // Noms de fichiers macOS : souvent décomposés (NFD)
-            contenu.programmes.forEach(p => { p.chemin = nfc(p.chemin); });
-            contenu.dossiers = contenu.dossiers.map(nfc);
-            return contenu;
-        },
-        async lit(chemin) {
-            const r = await fetch(url('programmes', chemin), { cache: 'no-cache' });
-            if (!r.ok) throw new Error('Programme introuvable : ' + chemin);
-            return nfc(await r.text());
-        },
-        async écrit(chemin, code) {
-            await vérifie(await fetch(url('programmes', chemin), {
-                method: 'PUT', headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: code
-            }));
-        },
-        async supprime(chemin) {
-            await vérifie(await fetch(url('programmes', chemin), { method: 'DELETE' }));
-        },
-        async renomme(ancien, nouveau) {
-            await vérifie(await fetch(url('programmes', ancien), {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ renomme: nouveau })
-            }));
-        },
-        async créeDossier(chemin) {
-            await vérifie(await fetch(url('dossiers', chemin), {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
-            }));
-        },
-        async renommeDossier(ancien, nouveau) {
-            await vérifie(await fetch(url('dossiers', ancien), {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ renomme: nouveau })
-            }));
-        },
-        // Le contenu du répertoire remonte dans le répertoire parent
-        async supprimeDossier(chemin) {
-            await vérifie(await fetch(url('dossiers', chemin), { method: 'DELETE' }));
-        }
-    };
 
     const CLÉ_PROGRAMMES = 'pythonerie.programmes';
     const CLÉ_DOSSIERS = 'pythonerie.dossiers';
@@ -711,21 +660,11 @@ const Pythonerie = (function () {
     async function remplaceTout(instant) {
         clearTimeout(minuterieSauvegarde);
         modifie = false;
-        if (stockage.genre === 'navigateur') {
-            const tout = {};
-            const maintenant = Date.now() / 1000;
-            Object.entries(instant.programmes).forEach(([c, code]) => { tout[c] = { code, modifie: maintenant }; });
-            StockageNavigateur._écrit(CLÉ_PROGRAMMES, tout);
-            StockageNavigateur._écrit(CLÉ_DOSSIERS, instant.dossiers);
-        } else {
-            const actuel = await stockage.liste();
-            for (const p of actuel.programmes) await stockage.supprime(p.chemin);
-            // les répertoires les plus profonds d'abord
-            const àSupprimer = [...actuel.dossiers].sort((a, b) => b.split('/').length - a.split('/').length);
-            for (const d of àSupprimer) { try { await stockage.supprimeDossier(d); } catch (e) { /* déjà parti */ } }
-            for (const d of instant.dossiers) await stockage.créeDossier(d);
-            for (const [c, code] of Object.entries(instant.programmes)) await stockage.écrit(c, code);
-        }
+        const tout = {};
+        const maintenant = Date.now() / 1000;
+        Object.entries(instant.programmes).forEach(([c, code]) => { tout[c] = { code, modifie: maintenant }; });
+        StockageNavigateur._écrit(CLÉ_PROGRAMMES, tout);
+        StockageNavigateur._écrit(CLÉ_DOSSIERS, instant.dossiers);
         courant = null;
         sélection = new Set();
         dossierCourant = '';
@@ -757,7 +696,8 @@ const Pythonerie = (function () {
             format: FORMAT_ARCHIVE, version: 1, élève: nomCourant(), créée: new Date().toISOString(),
             programmes: instant.programmes, dossiers: instant.dossiers
         };
-        const blob = new Blob([JSON.stringify(archive, null, 1)], { type: 'application/json' });
+        const texte = JSON.stringify(archive, null, 1);
+        const blob = new Blob([texte], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = nom + '.json';
@@ -765,6 +705,7 @@ const Pythonerie = (function () {
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         écritConsole('— Archive « ' + nom + '.json » créée (' + Object.keys(instant.programmes).length
             + ' programmes) : elle est dans le dossier Téléchargements.', 'info');
+        if (serveurArchives) await envoieArchive(nom, texte);
         mémoriseArchivé(instant);
         return nom + '.json';
     }
@@ -973,15 +914,32 @@ const Pythonerie = (function () {
         $('btnAnnuleArchive').disabled = !sauvegardeTemporaire();
     }
 
-    async function choisitStockage() {
+    // serveur.py garde une copie des archives des élèves (pour l'enseignant).
+    // On ne lui envoie rien tant qu'il n'a pas répondu à cette question : en ligne,
+    // aucune archive ne part donc sur le réseau.
+    let serveurArchives = false;
+
+    async function détecteServeurArchives() {
         // GitHub Pages ne sert que des fichiers : inutile de chercher serveur.py
-        if (location.hostname.endsWith('.github.io')) return StockageNavigateur;
+        if (location.hostname.endsWith('.github.io')) return false;
         try {
-            const r = await fetch('api/programmes', { cache: 'no-cache' });
-            const contenu = r.ok ? await r.json() : null;
-            if (contenu && Array.isArray(contenu.programmes)) return StockageServeur;
-        } catch (e) { /* pas de serveur */ }
-        return StockageNavigateur;
+            const r = await fetch('api/archives', { cache: 'no-cache' });
+            const réponse = r.ok ? await r.json() : null;
+            return !!(réponse && réponse.archives === true);
+        } catch (e) { return false; }
+    }
+
+    // Envoie la copie de l'archive au serveur ; il ne remplace jamais une archive existante
+    async function envoieArchive(nom, texte) {
+        try {
+            const r = await fetch('api/archives/' + encodeURIComponent(nom), {
+                method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' }, body: texte
+            });
+            if (!r.ok) throw new Error(await r.text());
+            écritConsole('— Une copie est aussi conservée sur le serveur de la classe.', 'info');
+        } catch (e) {
+            écritConsole('La copie pour l\'enseignant n\'a pas pu être enregistrée sur le serveur : ' + e.message, 'erreur');
+        }
     }
 
     function nomValide(nom) {
@@ -1247,9 +1205,8 @@ const Pythonerie = (function () {
         const ici = dossierCourant ? '« ' + dossierCourant + ' »' : 'la racine';
         $('btnNouveau').title = 'Nouveau programme dans ' + ici;
         $('btnNouveauDossier').title = 'Nouveau répertoire dans ' + ici;
-        $('genreStockage').textContent = (stockage.genre === 'serveur'
-            ? 'Enregistrés dans le dossier programmes/'
-            : 'Enregistrés dans ce navigateur') + (dossierCourant ? ' — nouveaux programmes dans « ' + dossierCourant + ' »' : '');
+        $('genreStockage').textContent = 'Enregistrés dans ce navigateur'
+            + (serveurArchives ? ' — archives aussi conservées sur le serveur de la classe' : '') + (dossierCourant ? ' — nouveaux programmes dans « ' + dossierCourant + ' »' : '');
     }
 
     async function rafraichitListe() {
@@ -1804,7 +1761,8 @@ const Pythonerie = (function () {
         Pyt.installe($('canevas'), $('coucheTortue'), rappel);
         metAJourBoutons();
 
-        stockage = await choisitStockage();
+        stockage = StockageNavigateur;
+        serveurArchives = await détecteServeurArchives();
         await chargeConfig();
         afficheÉlève();
         metAJourAnnulation();

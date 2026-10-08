@@ -16,14 +16,6 @@ Le langage est un pseudo-Python francisé (`si`, `sinon`, `pour … dans`, `tant
 
 L'application est entièrement dans le répertoire [docs/](docs/) : c'est un site statique (HTML, JavaScript, LispE en WebAssembly) qui fonctionne sans serveur particulier. Il faut seulement le servir en HTTP, car le WebAssembly ne se charge pas depuis `file://`.
 
-### Depuis GitHub (GitHub Pages)
-
-1. Pousser le dépôt sur GitHub.
-2. Dans *Settings → Pages*, choisir *Deploy from a branch*, la branche `main` et le répertoire `/docs`.
-3. Le site est publié à l'adresse `https://<compte>.github.io/<dépôt>/`.
-
-Les programmes sont alors gardés dans le navigateur de chaque élève (`localStorage`) : GitHub Pages ne sert que des fichiers. Le fichier `docs/.nojekyll` indique à GitHub de publier les fichiers tels quels, sans passer par Jekyll.
-
 ### Sur sa machine, avec les programmes conservés sur le disque
 
 ```bash
@@ -188,3 +180,7 @@ lispe compiler.lisp      # réécrit basic.lisp
 - `Rien` (nil) s'affiche `[]`, car LispE ne distingue pas `nil` de la liste vide.
 - Les numéros de ligne des erreurs d'exécution renvoient au code LispE (bouton λ LispE), pas au programme d'origine.
 - Une ligne qui commence par `[` ou `(` juste après une expression peut être lue comme la suite de cette expression. Pour une affectation multiple, il faut écrire `a, b = b, a + b` plutôt que `[a, b] = …`.
+
+## Licence
+
+La Pythonerie est distribuée sous licence BSD 3 clauses : voir [LICENSE](LICENSE).

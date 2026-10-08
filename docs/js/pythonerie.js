@@ -453,6 +453,8 @@ const Pythonerie = (function () {
     // Stockage des programmes : toujours dans le navigateur (localStorage)
     // Un programme est désigné par son chemin : "Jeux/Balle" (répertoire Jeux).
     // ------------------------------------------------------------------
+    // Tri naturel à la française : « 7. Tortue » avant « 14. Piano », « École » entre « Dessin » et « Fusée »
+    const compareNoms = new Intl.Collator('fr', { numeric: true }).compare;
     const parentDe = (chemin) => chemin.includes('/') ? chemin.slice(0, chemin.lastIndexOf('/')) : '';
     const nomDe = (chemin) => chemin.slice(chemin.lastIndexOf('/') + 1);
     const joint = (dossier, nom) => dossier ? dossier + '/' + nom : nom;
@@ -1039,9 +1041,9 @@ const Pythonerie = (function () {
     }
 
     function afficheDossier(ul, dossier, profondeur) {
-        const enfants = dossiers.filter(d => parentDe(d) === dossier).sort((a, b) => a.localeCompare(b, 'fr'));
+        const enfants = dossiers.filter(d => parentDe(d) === dossier).sort(compareNoms);
         const progs = programmes.filter(p => parentDe(p.chemin) === dossier)
-            .sort((a, b) => a.chemin.localeCompare(b.chemin, 'fr'));
+            .sort((a, b) => compareNoms(a.chemin, b.chemin));
 
         enfants.forEach(d => {
             const plié = pliés.has(d);

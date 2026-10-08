@@ -10,7 +10,7 @@ La Pythonerie s'adresse aux enfants à partir de 7 ans, à leurs parents et à l
 
 L'écran est découpé en trois zones :
 
-1. **Mes programmes**, à gauche : les programmes de l'élève, que l'on peut ranger dans des répertoires, et une série d'exemples à essayer.
+1. **Mes programmes**, à gauche : les programmes de l'élève, que l'on peut ranger dans des répertoires, et un répertoire **Exemples** qui contient des programmes à essayer.
 2. **L'éditeur**, au milieu : on y écrit son programme, avec la coloration des mots, l'indentation automatique et des propositions pendant la frappe. En dessous, la **console** affiche les messages du programme, et la ligne **`>>>`** exécute tout de suite ce que l'on y tape.
 3. **Le canevas**, à droite : une feuille de dessin où le programme peut dessiner, écrire, faire avancer une tortue, animer des formes, afficher des images, jouer des sons et réagir à la souris et au clavier.
 
@@ -75,12 +75,12 @@ Quelques règles à connaître :
 - **Images et sons** : `img = charge_image(adresse)`, `place_image(img, x, y)`, `snd = charge_son(adresse)`, `joue_son(snd)`.
 - **Pour aller plus loin** : environ 180 instructions supplémentaires portant des noms français (`mélange`, `pgcd`, `commence_par`, `loi_normale`…), décrites dans le glossaire du mode d'emploi.
 
-Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, en passant par la tortue, une balle qui rebondit, une courbe mathématique et un petit logiciel de dessin, sont proposés dans la liste des exemples. Un clic en crée une copie que l'on peut modifier.
+Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, en passant par la tortue, une balle qui rebondit, une courbe mathématique et un petit logiciel de dessin, se trouvent dans le répertoire **Exemples**. Un clic sur un exemple en crée une copie que l'on peut modifier.
 
 ## Les programmes de l'élève
 
 - En ligne, les programmes sont conservés dans le navigateur de l'élève.
-- On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
+- On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Pour en supprimer plusieurs à la fois, on les choisit avec Cmd+clic ou Ctrl+clic (un par un) ou Maj+clic (une suite), puis on clique sur **Supprimer** dans le bandeau, ou on appuie sur la touche Suppr. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
 
 ## Utiliser la Pythonerie sur sa machine
 

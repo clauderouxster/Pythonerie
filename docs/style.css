@@ -205,6 +205,25 @@ a.btn { text-decoration: none; display: inline-block; }
     border-radius: var(--radius-sm);
 }
 .liste li.arbre-ligne.sélection { background: var(--bg-hover); color: var(--text-primary); }
+/* Programmes choisis pour une suppression groupée */
+.liste li.arbre-ligne.choisi { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
+.bandeau-sélection {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 6px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.bandeau-sélection[hidden] { display: none; }
+.bandeau-sélection span { flex: 1; min-width: 100px; }
+.btn.danger { background: var(--danger); border-color: var(--danger); }
+.btn.danger:hover:not(:disabled) { filter: brightness(0.92); background: var(--danger); border-color: var(--danger); }
 .liste li.arbre-ligne.cible { outline: 1px solid var(--accent); outline-offset: -1px; background: var(--accent-subtle); }
 .liste li.arbre-ligne.glisse { opacity: 0.4; }
 .arbre-guide { width: 14px; align-self: stretch; position: relative; flex-shrink: 0; }
@@ -296,7 +315,7 @@ a.btn { text-decoration: none; display: inline-block; }
 
 .liste li.liste-vide { cursor: default; color: var(--text-muted); font-style: italic; }
 .liste li.liste-vide:hover { background: none; }
-.liste.exemples li::before { content: '▸ '; color: var(--text-muted); }
+.nombre-exemples { font-size: 11px; color: var(--text-muted); background: var(--bg-hover); border-radius: 8px; padding: 0 6px; margin-left: 4px; }
 
 /* 2. Édition */
 .zone-édition {

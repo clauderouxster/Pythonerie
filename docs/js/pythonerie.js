@@ -737,7 +737,9 @@ const Pythonerie = (function () {
 
         progs.forEach(p => {
             const li = ligneArbre(profondeur, 'programme');
+            li.dataset.chemin = p.chemin;
             if (p.chemin === courant) li.classList.add('actif');
+            if (sélection.size > 1 && sélection.has(p.chemin)) li.classList.add('choisi');
             li.title = p.chemin;
             const espace = document.createElement('span');
             espace.className = 'arbre-chevron';
@@ -750,12 +752,13 @@ const Pythonerie = (function () {
             li.append(espace, icône, nom, boutonsActions([
                 [SVG_RENOMMER, 'Renommer « ' + nomDe(p.chemin) + ' »', () => renomme(p.chemin)],
                 [SVG_EXPORTER, 'Exporter « ' + nomDe(p.chemin) + ' » (télécharger le fichier .py)', () => exporte(p.chemin)],
-                [SVG_SUPPRIMER, 'Supprimer « ' + nomDe(p.chemin) + ' »', () => supprime(p.chemin)]
+                [SVG_SUPPRIMER, 'Supprimer « ' + nomDe(p.chemin) + ' »', () => {
+                    // la corbeille d'un programme choisi supprime toute la sélection
+                    if (sélection.size > 1 && sélection.has(p.chemin)) supprimeSélection();
+                    else supprime(p.chemin);
+                }]
             ]));
-            li.addEventListener('click', () => {
-                dossierCourant = parentDe(p.chemin);
-                ouvre(p.chemin);
-            });
+            li.addEventListener('click', (ev) => choisitProgramme(p.chemin, ev));
             rendGlissable(li, 'programme', p.chemin);
             // Déposer sur un programme : on le range dans le même répertoire que lui
             rendCible(li, parentDe(p.chemin));
@@ -763,7 +766,97 @@ const Pythonerie = (function () {
         });
     }
 
+    // ------------------------------------------------------------------
+    // Sélection de plusieurs programmes, comme dans un explorateur de fichiers :
+    // Cmd+clic (ou Ctrl+clic) ajoute ou retire un programme, Maj+clic choisit
+    // tous les programmes affichés entre le précédent et celui-ci.
+    // ------------------------------------------------------------------
+    let sélection = new Set();
+    let ancre = null;           // le dernier programme choisi, point de départ de Maj+clic
+
+    function programmesAffichés() {
+        return [...document.querySelectorAll('#listeProgrammes li.arbre-ligne.programme')].map(li => li.dataset.chemin);
+    }
+
+    function choisitProgramme(chemin, ev) {
+        if (ev.metaKey || ev.ctrlKey) {
+            // discontinu : on ajoute ou on retire (le programme ouvert fait partie de la sélection)
+            if (sélection.size === 0 && courant) sélection.add(courant);
+            if (sélection.has(chemin)) sélection.delete(chemin); else sélection.add(chemin);
+            ancre = chemin;
+            afficheArbre();
+            return;
+        }
+        if (ev.shiftKey) {
+            // continu : tous les programmes affichés entre l'ancre et celui-ci
+            const liste = programmesAffichés();
+            const départ = liste.indexOf(ancre || courant);
+            const arrivée = liste.indexOf(chemin);
+            if (départ < 0) { sélection = new Set([chemin]); ancre = chemin; afficheArbre(); return; }
+            const [a, b] = départ < arrivée ? [départ, arrivée] : [arrivée, départ];
+            sélection = new Set(liste.slice(a, b + 1));
+            afficheArbre();
+            return;
+        }
+        // clic simple : on ouvre le programme et la sélection repart de lui
+        sélection = new Set();
+        ancre = chemin;
+        dossierCourant = parentDe(chemin);
+        ouvre(chemin);
+    }
+
+    function annuleSélection() {
+        if (sélection.size === 0) return;
+        sélection = new Set();
+        afficheArbre();
+    }
+
+    function afficheBandeau() {
+        const bandeau = $('bandeauSélection');
+        const n = sélection.size;
+        bandeau.hidden = n < 2;
+        if (n < 2) return;
+        bandeau.innerHTML = '';
+        const texte = document.createElement('span');
+        texte.textContent = n + ' programmes choisis';
+        const supprimer = document.createElement('button');
+        supprimer.className = 'btn btn-petit danger';
+        supprimer.textContent = '🗑️ Supprimer';
+        supprimer.title = 'Supprimer les ' + n + ' programmes choisis (touche Suppr)';
+        supprimer.addEventListener('click', supprimeSélection);
+        const annuler = document.createElement('button');
+        annuler.className = 'btn btn-secondaire btn-petit';
+        annuler.textContent = 'Annuler';
+        annuler.title = 'Ne plus choisir ces programmes (touche Échap)';
+        annuler.addEventListener('click', annuleSélection);
+        bandeau.append(texte, supprimer, annuler);
+    }
+
+    async function supprimeSélection() {
+        const chemins = [...sélection].filter(c => programmes.some(p => p.chemin === c));
+        if (!chemins.length) return;
+        const liste = chemins.slice(0, 12).map(c => '  • ' + c).join('\n') + (chemins.length > 12 ? '\n  …' : '');
+        if (!confirm('Supprimer définitivement ces ' + chemins.length + ' programmes ?\n\n' + liste)) return;
+        const ouvertSupprimé = chemins.includes(courant);
+        if (ouvertSupprimé) clearTimeout(minuterieSauvegarde);
+        const échecs = [];
+        for (const c of chemins) {
+            try { await stockage.supprime(c); } catch (e) { échecs.push(c + ' (' + e.message + ')'); }
+        }
+        if (échecs.length) écritConsole('Impossible de supprimer : ' + échecs.join(', '), 'erreur');
+        sélection = new Set();
+        ancre = null;
+        if (ouvertSupprimé) { courant = null; modifie = false; }
+        await rafraichitListe();
+        if (!ouvertSupprimé) return;
+        if (programmes.length) await ouvre(programmes[0].chemin);
+        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+    }
+
     function afficheArbre() {
+        // la sélection ne garde que les programmes qui existent encore
+        sélection = new Set([...sélection].filter(c => programmes.some(p => p.chemin === c)));
+        afficheBandeau();
         const ul = $('listeProgrammes');
         ul.innerHTML = '';
         if (!programmes.length && !dossiers.length) {
@@ -1056,16 +1149,60 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // Exemples (répertoire exemples/)
     // ------------------------------------------------------------------
+    // Les exemples sont rangés dans un répertoire « Exemples », replié par défaut
+    // pour ne pas encombrer la colonne ; un clic sur un exemple en crée une copie.
+    let exemplesOuverts = false;
+    try { exemplesOuverts = localStorage.getItem('pythonerie.exemplesOuverts') === 'oui'; } catch (e) { /* rien */ }
+
     async function chargeExemples() {
         const ul = $('listeExemples');
+        let liste;
         try {
             const r = await fetch('exemples/index.json', { cache: 'no-cache' });
-            const liste = await r.json();
+            liste = await r.json();
+        } catch (e) {
+            ul.innerHTML = '<li class="liste-vide">Exemples indisponibles</li>';
+            return;
+        }
+        const affiche = () => {
             ul.innerHTML = '';
+            // la ligne du répertoire
+            const dossier = ligneArbre(0, 'dossier');
+            dossier.id = 'dossierExemples';
+            dossier.title = exemplesOuverts ? 'Replier les exemples' : 'Voir les exemples';
+            const chevron = document.createElement('span');
+            chevron.className = 'arbre-chevron' + (exemplesOuverts ? ' ouvert' : '');
+            chevron.innerHTML = SVG_CHEVRON;
+            const icône = document.createElement('span');
+            icône.className = 'arbre-icône';
+            icône.innerHTML = exemplesOuverts ? SVG_DOSSIER_OUVERT : SVG_DOSSIER_FERME;
+            const nom = document.createElement('span');
+            nom.className = 'programme-nom';
+            nom.textContent = 'Exemples';
+            const nombre = document.createElement('span');
+            nombre.className = 'nombre-exemples';
+            nombre.textContent = liste.length;
+            dossier.append(chevron, icône, nom, nombre);
+            dossier.addEventListener('click', () => {
+                exemplesOuverts = !exemplesOuverts;
+                try { localStorage.setItem('pythonerie.exemplesOuverts', exemplesOuverts ? 'oui' : 'non'); } catch (e) { /* rien */ }
+                affiche();
+            });
+            ul.appendChild(dossier);
+            if (!exemplesOuverts) return;
+            // les exemples, un cran plus loin, comme les programmes d'un répertoire
             liste.forEach(ex => {
-                const li = document.createElement('li');
-                li.textContent = ex.titre;
-                li.title = ex.description || ex.titre;
+                const li = ligneArbre(1, 'programme');
+                li.title = (ex.description || ex.titre) + ' — un clic crée une copie que tu peux modifier';
+                const espace = document.createElement('span');
+                espace.className = 'arbre-chevron';
+                const icôneEx = document.createElement('span');
+                icôneEx.className = 'arbre-icône';
+                icôneEx.innerHTML = SVG_PROGRAMME;
+                const titre = document.createElement('span');
+                titre.className = 'programme-nom';
+                titre.textContent = ex.titre;
+                li.append(espace, icôneEx, titre);
                 li.addEventListener('click', async () => {
                     try {
                         const rc = await fetch('exemples/' + ex.fichier, { cache: 'no-cache' });
@@ -1077,9 +1214,8 @@ const Pythonerie = (function () {
                 });
                 ul.appendChild(li);
             });
-        } catch (e) {
-            ul.innerHTML = '<li class="liste-vide">Exemples indisponibles</li>';
-        }
+        };
+        affiche();
     }
 
     // ------------------------------------------------------------------
@@ -1255,6 +1391,11 @@ const Pythonerie = (function () {
         $('aide').addEventListener('click', (ev) => { if (ev.target.id === 'aide') $('aide').classList.remove('visible'); });
         window.addEventListener('keydown', (ev) => {
             if (ev.key === 'Escape') $('aide').classList.remove('visible');
+            // Suppr / Échap sur une sélection de programmes, sauf pendant la frappe
+            const cible = ev.target;
+            if (cible && cible.closest && cible.closest('.CodeMirror, input, textarea, select')) return;
+            if (sélection.size > 1 && (ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); supprimeSélection(); }
+            else if (sélection.size > 1 && ev.key === 'Escape') annuleSélection();
         });
         window.addEventListener('beforeunload', () => { if (modifie) sauvegarde(); });
     }

@@ -246,6 +246,7 @@
                 <div class="groupe">Apprendre</div>
                 <a href="#afficher">💬 Écrire des messages</a>
                 <a href="#boites">📦 Les boîtes (variables)</a>
+                <a href="#regarder">🔎 Regarder dans une boîte</a>
                 <a href="#calculer">🧮 Calculer</a>
                 <a href="#demander">❓ Poser une question</a>
                 <a href="#choisir">🔀 Choisir</a>
@@ -291,7 +292,8 @@
                             En dessous, il y a des exemples à essayer.</p></div>
                     <div class="zone"><div class="icone">✏️</div><h4>Au milieu : l'éditeur</h4>
                         <p>C'est ici que tu écris ton programme. En dessous, la <b>console</b>
-                            affiche les messages de ton programme.</p></div>
+                            affiche les messages de ton programme, et la ligne <code>&gt;&gt;&gt;</code>
+                            exécute tout de suite ce que tu tapes.</p></div>
                     <div class="zone"><div class="icone">🎨</div><h4>À droite : le canevas</h4>
                         <p>C'est une feuille de dessin. Ton programme peut y dessiner des formes,
                             écrire et faire avancer une tortue.</p></div>
@@ -378,6 +380,26 @@ affiche(f"Bonjour {prénom} !")</pre></div>
                 <div class="encadre astuce">
                     <p class="titre-encadre">💡 Bon à savoir</p>
                     <p><code>Vrai</code> et <code>Faux</code> veulent dire oui et non. <code>Rien</code> veut dire&nbsp;: il n'y a rien dans la boîte.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="regarder">
+                <h2>🔎 Regarder dans une boîte</h2>
+                <p>Sous la console, il y a une ligne qui commence par <code>&gt;&gt;&gt;</code>.
+                    C'est la <b>ligne de commande</b>&nbsp;: ce que tu y tapes est exécuté tout de suite, quand tu appuies sur Entrée.</p>
+                <p>Après avoir exécuté ton programme, tape le nom d'une boîte pour voir ce qu'il y a dedans&nbsp;:</p>
+                <div class="exemple"><pre>&gt;&gt;&gt; prénom
+"Léa"
+&gt;&gt;&gt; âge + 1
+9</pre></div>
+                <p>Tu peux aussi y essayer une idée sans changer ton programme&nbsp;: <code>x = 5</code>, puis <code>x * 10</code>,
+                    ou même <code>disque(400, 300, 50)</code> pour dessiner.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Astuces</p>
+                    <p>Les flèches <b>↑</b> et <b>↓</b> font revenir les commandes que tu as déjà tapées.</p>
+                    <p><b>Maj + Entrée</b> passe à la ligne sans exécuter, pour écrire un <code>pour</code> ou un <code>si</code> sur plusieurs lignes.</p>
+                    <p>Quand tu cliques sur <b>▶ Exécuter</b>, tout repart de zéro&nbsp;: ce que tu avais tapé dans la ligne de commande est oublié.</p>
                 </div>
             </section>
 
@@ -615,8 +637,9 @@ animer(image, 30)    # toutes les 30 millisecondes</pre></div>
                 <div class="encadre astuce">
                     <p class="titre-encadre">💡 Pour les plus grands</p>
                     <p>Dans une fonction, <code>x = …</code> crée une nouvelle boîte qui n'existe que dans la fonction.
-                        Pour changer la boîte <code>x</code> du programme, écris <code>globale x</code> au début de la fonction,
-                        ou bien utilise <code>x += …</code>.</p>
+                        Pour changer la boîte <code>x</code> du programme, écris <code>x =: …</code> (avec deux-points après le signe égal).</p>
+                    <p><code>x += …</code> change aussi la boîte <code>x</code> du programme, sauf si la fonction a déjà
+                        sa propre boîte <code>x</code>.</p>
                 </div>
             </section>
 
@@ -686,7 +709,7 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <tr><td><code>est</code></td><td>est exactement la même chose</td><td class="ex"><code>si x est Rien:</code></td></tr>
                     <tr><td><code>Vrai</code>, <code>Faux</code></td><td>oui et non</td><td class="ex"><code>gagné = Faux</code></td></tr>
                     <tr><td><code>Rien</code></td><td>il n'y a rien</td><td class="ex"><code>trésor = Rien</code></td></tr>
-                    <tr><td><code>globale</code></td><td>dans une fonction, utilise la boîte du programme</td><td class="ex"><code>globale score</code></td></tr>
+                    <tr><td><code>=:</code></td><td>dans une fonction, change la boîte du programme (et non une boîte de la fonction)</td><td class="ex"><code>score =: 0</code></td></tr>
                     <tr><td><code>classe</code> … <code>:</code></td><td>crée un nouveau genre d'objet (pour les grands)</td><td class="ex"><code>classe Chien:</code></td></tr>
                     <tr><td><code>soi</code></td><td>dans une classe, l'objet lui-même</td><td class="ex"><code>soi.nom = nom</code></td></tr>
                     <tr><td><code>essaie:</code> … <code>sauf(e):</code></td><td>essaie quelque chose, et rattrape l'erreur si ça rate</td><td class="ex"><code>essaie:</code></td></tr>
@@ -696,6 +719,7 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <tr><td><code>lambda</code> (ou <code>λ</code>)</td><td>une petite fonction sans nom (pour les grands)</td><td class="ex"><code>[lambda(x) x * 2]</code></td></tr>
                     <tr><td><code>f"…{x}…"</code></td><td>un texte qui contient la valeur d'une boîte</td><td class="ex"><code>f"J'ai {âge} ans"</code></td></tr>
                     <tr><td><code>#</code></td><td>commence un commentaire, une note pour toi</td><td class="ex"><code># mon jeu</code></td></tr>
+                    <tr><td><code>&gt;&gt;&gt;</code></td><td>la ligne de commande sous la console&nbsp;: tape un nom de boîte ou du code, puis Entrée</td><td class="ex"><code>&gt;&gt;&gt; notes</code></td></tr>
                     <tr><td><code>importe</code>, <code>comme</code>, <code>règle</code>, <code>motif</code>, <code>prolog</code></td><td>mots avancés de LispE, pour les experts</td><td class="ex"></td></tr>
                 </table>
 
@@ -836,7 +860,7 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
 
         // ---------- Coloration simple des exemples et bouton « Copier » ----------
         const MOTS = new Set(['si', 'sinonsi', 'sinon', 'tantque', 'pour', 'dans', 'fonction', 'def', 'retourne',
-            'renvoie', 'sortir', 'continuer', 'et', 'ou', 'non', 'globale', 'classe', 'soi', 'essaie', 'sauf',
+            'renvoie', 'sortir', 'continuer', 'et', 'ou', 'non', 'classe', 'soi', 'essaie', 'sauf',
             'lever', 'selon', 'cas', 'Vrai', 'Faux', 'Rien']);
         const echappe = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         function colore(code) {

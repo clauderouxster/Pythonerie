@@ -1,7 +1,7 @@
 // =====================================================================
 // Pythonerie — API de dessin
 // ---------------------------------------------------------------------
-// L'objet global Pyt est appelé depuis LispE via evaljs
+// L'objet Pyt (window.Pyt) est appelé depuis LispE via evaljs
 // (voir basic/bibliothèque.lisp) : (evaljs (list "Pyt.cercle" x y r false))
 // exécute en JavaScript : Pyt.cercle(x, y, r, false);
 //

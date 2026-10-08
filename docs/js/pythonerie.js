@@ -120,7 +120,7 @@ const Pythonerie = (function () {
     ];
 
     // Une ligne de la pile d'appels de LispE : "[12] (expression...)" ou "[-] (...)"
-    const LIGNE_PILE = /^\[(\d+|-)\] /;
+    const LIGNE_PILE = /^\[(\d+|-)\] \(/;
 
     function nettoieErreur(message) {
         let m = String(message && message.message ? message.message : message);
@@ -258,13 +258,123 @@ const Pythonerie = (function () {
         }
     }
 
+    // Ligne de commande de la console : comme compile, mais la valeur d'une expression
+    // est affichée (compileconsole). Une comparaison seule (3 > 2) n'est acceptée par la
+    // grammaire qu'en argument : on réessaie alors avec _console_valeur(...).
+    function compileConsole(code) {
+        const essaie = (texte) => {
+            const r = callEvalLispE(idxCompilateur, '(compileconsole (atob «' + base64(nfc(texte) + '\n') + '»))');
+            return (typeof r === 'string' && /^\s*(Erreur|Error)/.test(r))
+                ? { erreur: r.replace(/ :\n>> /g, '\n  ').replace(/ <<\s*$/, '').replace(/ ' /g, "'") }
+                : { lispe: r };
+        };
+        try {
+            let c = essaie(code);
+            if (c.erreur && /^Erreur de syntaxe/.test(c.erreur) && !code.includes('\n')) {
+                const autre = essaie('_console_valeur(' + code + ')');
+                if (!autre.erreur) c = autre;
+            }
+            return c;
+        } catch (e) {
+            try { callCleanLispE(idxCompilateur); } catch (e2) { /* rien */ }
+            prépareCompilateur();
+            return { erreur: nettoieErreur(e) };
+        }
+    }
+
+    // Exécute une ligne de la console dans l'interpréteur du dernier programme :
+    // ses variables et ses fonctions sont disponibles.
+    function exécuteConsole(code) {
+        if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
+        const lignes = code.split('\n');
+        écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
+        const c = compileConsole(code);
+        if (c.erreur) { écritConsole(c.erreur, 'erreur'); return; }
+        try {
+            if (idxExécution === null) nouvelInterpréteur();
+            évalue(idxExécution, c.lispe);
+        } catch (e) {
+            écritConsole(nettoieErreur(e), 'erreur');
+        }
+        metAJourBoutons();
+    }
+
+    function installeLigneDeCommande() {
+        const zone = $('saisieConsole');
+        let historique = [];
+        try { historique = JSON.parse(localStorage.getItem('pythonerie.historique') || '[]'); } catch (e) { /* rien */ }
+        let position = historique.length;
+        let brouillon = '';
+        // hauteur : une ligne quand la zone est vide, puis elle grandit avec le texte
+        const ajuste = () => {
+            zone.style.height = '';
+            if (zone.value.includes('\n')) zone.style.height = zone.scrollHeight + 'px';
+        };
+        // La console rétrécit quand la saisie grandit : si elle montrait ses dernières lignes,
+        // elle continue de les montrer (comme un terminal)
+        const console_ = $('console');
+        let collée = true;
+        console_.addEventListener('scroll', () => {
+            collée = console_.scrollHeight - console_.scrollTop - console_.clientHeight < 4;
+        });
+        new ResizeObserver(() => {
+            if (collée) console_.scrollTop = console_.scrollHeight;
+        }).observe(console_);
+        const remplace = (texte) => { zone.value = texte; ajuste(); zone.selectionStart = zone.selectionEnd = texte.length; };
+        zone.addEventListener('input', ajuste);
+        // un clic dans la console (sans sélectionner de texte) place le curseur dans la ligne de commande
+        $('console').addEventListener('click', () => {
+            if (!String(window.getSelection())) zone.focus();
+        });
+        zone.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' && !ev.shiftKey) {
+                // Entrée exécute ; Maj+Entrée passe à la ligne (pour un bloc : pour, si, fonction...)
+                ev.preventDefault();
+                const code = nfc(zone.value).replace(/\s+$/, '');
+                if (!code.trim()) return;
+                if (historique[historique.length - 1] !== code) historique.push(code);
+                historique = historique.slice(-100);
+                try { localStorage.setItem('pythonerie.historique', JSON.stringify(historique)); } catch (e) { /* rien */ }
+                position = historique.length;
+                brouillon = '';
+                remplace('');
+                exécuteConsole(code);
+                $('console').scrollTop = $('console').scrollHeight;
+            } else if (ev.key === 'Enter' && ev.shiftKey) {
+                // décalage automatique après une ligne qui se termine par « : »
+                ev.preventDefault();
+                const avant = zone.value.slice(0, zone.selectionStart);
+                const ligne = avant.slice(avant.lastIndexOf('\n') + 1);
+                let retrait = ligne.match(/^\s*/)[0];
+                if (/:\s*$/.test(ligne)) retrait += '    ';
+                zone.setRangeText('\n' + retrait, zone.selectionStart, zone.selectionEnd, 'end');
+                ajuste();
+            } else if (ev.key === 'Tab') {
+                ev.preventDefault();
+                zone.setRangeText('    ', zone.selectionStart, zone.selectionEnd, 'end');
+            } else if (ev.key === 'ArrowUp' && !zone.value.slice(0, zone.selectionStart).includes('\n')) {
+                // les flèches parcourent les commandes déjà tapées
+                if (position === 0) return;
+                ev.preventDefault();
+                if (position === historique.length) brouillon = zone.value;
+                position--;
+                remplace(historique[position]);
+            } else if (ev.key === 'ArrowDown' && !zone.value.slice(zone.selectionEnd).includes('\n')) {
+                if (position >= historique.length) return;
+                ev.preventDefault();
+                position++;
+                remplace(position === historique.length ? brouillon : historique[position]);
+            }
+        });
+    }
+
     function évalue(idx, code) {
         const r = callEvalLispE(idx, nfc(code));
         if (typeof r === 'string' && /^Error:/.test(r)) throw new Error(r);
         return r;
     }
 
-    function nouvelInterpreteur() {
+    function nouvelInterpréteur() {
         if (idxExécution !== null) {
             try { callCleanLispE(idxExécution); } catch (e) { /* rien */ }
         }
@@ -303,7 +413,7 @@ const Pythonerie = (function () {
 
         const début = performance.now();
         try {
-            nouvelInterpreteur();
+            nouvelInterpréteur();
             évalue(idxExécution, c.lispe);
             const durée = Math.round(performance.now() - début);
             if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
@@ -1149,6 +1259,7 @@ const Pythonerie = (function () {
         } catch (e) { /* rien */ }
         installeÉditeur();
         installeBoutons();
+        installeLigneDeCommande();
         installeSéparateur();
         effaceConsole();
         Pyt.installe($('canevas'), $('coucheTortue'), rappel);

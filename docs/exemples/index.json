@@ -1,12 +1,57 @@
 [
-  {"fichier": "01_bonjour.py", "titre": "1. Bonjour", "description": "Afficher, variables, calculs"},
-  {"fichier": "02_conditions.py", "titre": "2. Conditions", "description": "si, sinonsi, sinon, et, ou, non"},
-  {"fichier": "03_boucles.py", "titre": "3. Boucles", "description": "pour, tantque, sortir, continuer"},
-  {"fichier": "04_fonctions.py", "titre": "4. Fonctions", "description": "fonction, retourne, récursivité"},
-  {"fichier": "05_listes.py", "titre": "5. Listes et dictionnaires", "description": "listes, compréhensions, dictionnaires, chaînes"},
-  {"fichier": "06_dessin.py", "titre": "6. Dessin", "description": "formes et couleurs dans le canevas"},
-  {"fichier": "07_tortue.py", "titre": "7. Tortue", "description": "dessiner avec la tortue"},
-  {"fichier": "08_animation.py", "titre": "8. Animation", "description": "une balle qui rebondit"},
-  {"fichier": "09_interaction.py", "titre": "9. Souris et clavier", "description": "quand_clic, quand_touche"},
-  {"fichier": "10_classes.py", "titre": "10. Classes", "description": "classe, soi, essaie, sauf"}
+  {
+    "fichier": "01_bonjour.py",
+    "titre": "1. Bonjour",
+    "description": "Afficher, variables, calculs"
+  },
+  {
+    "fichier": "02_conditions.py",
+    "titre": "2. Conditions",
+    "description": "si, sinonsi, sinon, et, ou, non"
+  },
+  {
+    "fichier": "03_boucles.py",
+    "titre": "3. Boucles",
+    "description": "pour, tantque, sortir, continuer"
+  },
+  {
+    "fichier": "04_fonctions.py",
+    "titre": "4. Fonctions",
+    "description": "fonction, retourne, récursivité"
+  },
+  {
+    "fichier": "05_listes.py",
+    "titre": "5. Listes et dictionnaires",
+    "description": "listes, compréhensions, dictionnaires, chaînes"
+  },
+  {
+    "fichier": "06_dessin.py",
+    "titre": "6. Dessin",
+    "description": "formes et couleurs dans le canevas"
+  },
+  {
+    "fichier": "07_tortue.py",
+    "titre": "7. Tortue",
+    "description": "dessiner avec la tortue"
+  },
+  {
+    "fichier": "08_animation.py",
+    "titre": "8. Animation",
+    "description": "une balle qui rebondit"
+  },
+  {
+    "fichier": "09_interaction.py",
+    "titre": "9. Souris et clavier",
+    "description": "quand_clic, quand_touche"
+  },
+  {
+    "fichier": "10_classes.py",
+    "titre": "10. Classes",
+    "description": "classe, soi, essaie, sauf"
+  },
+  {
+    "fichier": "11_courbe.py",
+    "titre": "11. Courbe mathématique",
+    "description": "les axes x et y, et la courbe de la fonction courbe(x) sur un intervalle"
+  }
 ]

@@ -375,58 +375,45 @@
 )
 
 
-; globale x, y
-(defpat parsing ( ['globaldecl ['variables $ v]] )
-   (list '__globale__ (mapcar 'atom v))
-)
-
 ; Portée des variables, comme en Python : dans une fonction, une variable est locale
 ; si c'est un paramètre ou si elle reçoit une valeur (x = ...) dans la fonction.
-; On collecte ici les variables locales et celles déclarées avec "globale".
-(defun collecte_locaux (code locaux globaux)
+; Pour modifier une variable du programme, on écrit x =: valeur (setg).
+(defun collecte_locaux (code locaux)
    (check (consp code)
-      (cond
-         ((eq (car code) '__globale__)
-            (loop g (cadr code) (push globaux g)))
-         ((and (in '(setq loop) (car code)) (atomp (cadr code)))
-            (push locaux (cadr code))))
+      (if (and (in '(setq loop) (car code)) (atomp (cadr code)))
+         (push locaux (cadr code)))
       (loop e code
          (if (consp e)
-            (collecte_locaux e locaux globaux)))))
+            (collecte_locaux e locaux)))))
 
-; (_maj x valeur) devient (setq x valeur) pour une variable locale ou au niveau principal,
-; et (setg x valeur) pour une variable globale modifiée dans une fonction.
-; Un (setq x ...) sur une variable déclarée "globale" devient (setg x ...).
-(defun résout_portée (code dans_fonction locaux globaux)
+; (_maj x valeur), produit par x += valeur, devient (setq x valeur) pour une variable
+; locale ou au niveau principal, et (setg x valeur) dans une fonction qui n'a pas
+; de variable locale x : on modifie alors la variable du programme.
+(defun résout_portée (code dans_fonction locaux)
    (ncheck (consp code)
       code
       (setq tête (car code))
-      (cond
-         ((eq tête '_maj)
+      (ife (eq tête '_maj)
+         (block
             (setq x (cadr code))
             (list
-               (if (and dans_fonction (or (in globaux x) (not (in locaux x)))) 'setg 'setq)
+               (if (and dans_fonction (not (in locaux x))) 'setg 'setq)
                x
-               (résout_portée (caddr code) dans_fonction locaux globaux)))
-         ((and (eq tête 'setq) (atomp (cadr code)) (in globaux (cadr code)))
-            (list 'setg (cadr code) (résout_portée (caddr code) dans_fonction locaux globaux)))
-         (true
-            (setq r ())
-            (loop e code
-               ; attention : on ne renvoie jamais un atome comme 'return depuis une fonction,
-               ; LispE l'interpréterait comme une instruction
-               (ife (consp e)
-                  (if (neq (car e) '__globale__)
-                     (push r (résout_portée e dans_fonction locaux globaux)))
-                  (push r e)))
-            r))))
+               (résout_portée (caddr code) dans_fonction locaux)))
+         (setq r ())
+         (loop e code
+            ; attention : on ne renvoie jamais un atome comme 'return depuis une fonction,
+            ; LispE l'interpréterait comme une instruction
+            (ife (consp e)
+               (push r (résout_portée e dans_fonction locaux))
+               (push r e)))
+         r)))
 
 (defun corps_fonction (paramètres code)
    (setq locaux ())
    (loop p paramètres (push locaux p))
-   (setq globaux ())
-   (collecte_locaux code locaux globaux)
-   (résout_portée code true locaux globaux))
+   (collecte_locaux code locaux)
+   (résout_portée code true locaux))
 
 ; a function definition
 (defpat parsing ( ['function nm parameters $ code] )
@@ -949,19 +936,28 @@
       (+= position 1))
    r)
 
+; Les renommages faits lors d'une compilation sont mémorisés : la ligne de commande
+; de la console (compileconsole) doit retrouver somme_v si le programme a défini somme.
+; compilepython repart d'une mémoire vide.
+(setq mémoire_fonctions {})
+(setq mémoire_variables {})
+
 (defun renomme_réservés (code)
-   (setq table {})
+   (setq table (clone mémoire_fonctions))
    (loop c code
       (check (and (consp c) (in '("defun" "defpat" "defmacro") (string (car c))) (atomp (cadr c)))
          (setq n (string (cadr c)))
          (if (nom_réservé (cadr c))
             (set@ table n (nom_lisible (cadr c) "_perso")))))
+   (loop k table (set@ mémoire_fonctions k (@ table k)))
    (if table
       (setq code (renomme_atomes code table)))
-   (setq table {})
+   (setq table (clone mémoire_variables))
    (collecte_variables code table)
-   (if table
-      (setq code (cons '__root__ (maplist (λ (c) (if (consp c) (renomme_variables c table) c)) (cdr code) false))))
+   (loop k table (set@ mémoire_variables k (@ table k)))
+   ; (code n'est pas un programme quand transpile a produit un message d'erreur)
+   (if (and table (eq (car code) '__root__))
+      (setq code (cons '__root__ (maplist (λ (c) (if (consp c) (renomme_variables c table) (remplace_atome c table))) (cdr code) false))))
    code)
 
 (defun transpile (code)
@@ -975,7 +971,7 @@
       (setq code (list 'println (join tree " ")))
       (loop line (cdr tree)
          (setq c (parsing line))
-         (if (consp c) (setq c (résout_portée c false () ())))
+         (if (consp c) (setq c (résout_portée c false ())))
          ; c peut être un simple atome (une ligne réduite à un nom) : on teste consp avant car
          (if (and (consp c) (consp (car c)) (eq (caar c) 'class@))
             (nconc code c)
@@ -1154,7 +1150,41 @@
 
 ; We call this specific function to inject closing tags
 ; We then transform our Python into Lisp
+; Le texte LispE d'une liste de formes
+(defun texte_lispe (formes)
+   (setq r (@@ (trim . prettify formes 100) 1 -1))
+   (if (= (@ r 0) "\n")
+      (join (maplist (\(x) (if (and (>= (size x) 3) (eq (@ x 0) " ") (eq (@ x 1) " ") (eq (@ x 2) " ")) (@@ x 3) x)) (split r "\n")) "\n")
+      r))
+
 (defun compilepython(code)
+   (setg pythonmode true)
+   ; un nouveau programme : on oublie les renommages précédents
+   (setg mémoire_fonctions {})
+   (setg mémoire_variables {})
+   (setq code (remplace_fchaînes code))
+   (setq code (injecte_labels code))
+   (if erreur_injection
+      (return erreur_injection))
+   (setq lsp (transpile code))
+   (ncheck (= (@ lsp 0) '__root__)
+      (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
+      (texte_lispe (cdr lsp))))
+
+; Ligne de commande de la console (>>>), comme l'invite de Python :
+; si la dernière forme est une expression, sa valeur est affichée par _console_valeur
+; (bibliothèque.lisp). Les instructions (affectation, boucle, si, définition, ajoute...)
+; n'affichent rien.
+(setq formes_instructions '("setq" "setg" "setqi" "setqv" "defun" "defpat" "defmacro" "class@"
+      "loop" "while" "if" "ife" "check" "ncheck" "switch" "maybe" "block" "println" "print"
+      "push" "pushfirst" "pushlast" "insert" "set@" "set@@" "return" "break" "continue" "throw"
+      "_console_valeur"))
+
+(defun expression_console (forme)
+   (or (not (consp forme))
+      (not (in formes_instructions (string (car forme))))))
+
+(defun compileconsole(code)
    (setg pythonmode true)
    (setq code (remplace_fchaînes code))
    (setq code (injecte_labels code))
@@ -1163,8 +1193,10 @@
    (setq lsp (transpile code))
    (ncheck (= (@ lsp 0) '__root__)
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
-      (setq r (@@ (trim . prettify (cdr lsp) 100) 1 -1))
-      (if (= (@ r 0) "\n")
-         (join (maplist (\(x) (if (and (>= (size x) 3) (eq (@ x 0) " ") (eq (@ x 1) " ") (eq (@ x 2) " ")) (@@ x 3) x)) (split r "\n")) "\n")
-         r)))
+      (setq formes (cdr lsp))
+      (check formes
+         (setq dernière (last@ formes))
+         (if (expression_console dernière)
+            (set@ formes (- (size formes) 1) (list '_console_valeur dernière))))
+      (texte_lispe formes)))
 

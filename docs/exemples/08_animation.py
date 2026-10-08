@@ -9,7 +9,7 @@ dy = 4.5
 rayon = 25
 
 fonction image():
-    # Une variable modifiée avec += dans une fonction est la variable globale
+    # += dans une fonction modifie la variable du programme (sinon, on écrit x =: valeur)
     x += dx
     y += dy
     # On rebondit sur les bords

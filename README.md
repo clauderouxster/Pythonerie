@@ -73,7 +73,7 @@ texte(330, 420, "Bonjour !")
 | `True / False / None` | `Vrai / Faux / Rien` |
 | `class / self` | `classe / soi` |
 | `try / except` | `essaie / sauf` (ou `attrape`) |
-| `global` | `globale` |
+| affecter une variable du programme dans une fonction | `x =: …` |
 | `match / case` | `selon (x): / cas "a": …` |
 | `print` | `affiche` (avec retour à la ligne), `écris` (sans) |
 | `", ".join(l)` | `", ".joindre(l)` |
@@ -82,7 +82,7 @@ Pythonerie suit les règles de Python là où LispE en diffère :
 
 - `1 + 0.5` vaut `1.5`, `1 < 1.5` est vrai et `[1, 2] + [3]` vaut `[1, 2, 3]`. En LispE, c'est le type du premier argument qui l'emporte.
 - `affiche` montre `[1, 2]`, `Vrai` et `{"a": 1}`.
-- Dans une fonction, `x = …` crée une variable locale. `globale x` permet de modifier la variable du programme. `x += …` modifie directement la variable du programme si la fonction n'a pas de variable locale `x`, ce qui simplifie les animations.
+- Dans une fonction, `x = …` crée une variable locale. `x =: …` modifie la variable du programme. `x += …` modifie directement la variable du programme si la fonction n'a pas de variable locale `x`, ce qui simplifie les animations.
 - Une fonction de l'élève peut porter le nom d'une fonction de la bibliothèque (`somme`, `carré`…) ou d'une instruction LispE (`max`, `sum`…). Une variable peut aussi s'appeler `somme`, `max` ou `largeur`. Le transpileur renomme ces noms (`somme_perso`, `max_v`), car LispE interdit les redéfinitions.
 
 Les noms du langage et de la bibliothèque suivent l'orthographe française : `épaisseur`, `carré`, `aléatoire`, `va_à`, `lève_crayon`, `règle`, et les couleurs `"gris foncé"`, `"bleu clair"`. Les noms choisis par l'élève sont libres : `élève` et `eleve` sont deux variables différentes, comme en Python.
@@ -98,6 +98,8 @@ Les noms du langage et de la bibliothèque suivent l'orthographe française : `�
 On peut donc écrire `mélange(l)`, `dernier@(l)`, `clés@(d)`, `insère(l, x, i)`, `commence_par(s, "bon")`, `pgcd(12, 18)` ou `loi_normale(10, 0, 1)`. Les noms suivent l'orthographe française. Le fichier est chargé dans l'interpréteur qui transpile, après `transpiler.lisp`, si bien que le code produit garde les noms LispE (`(shuffle l)`). Le commentaire de chaque ligne sert de description dans la complétion et dans l'aide (section « Les instructions de LispE en français »).
 
 Certains noms ne sont pas traduits, pour éviter les conflits : ceux que la bibliothèque définit déjà (`somme`, `longueur`, `trie`…), les mots-clefs, les instructions que le transpileur produit lui-même (`list`, `setq`, `size`, `push`…), les opérateurs et les instructions internes. Une variable de l'élève qui porte un nom traduit est renommée avec ce nom français : `produit = 1` devient `(setq produit_v 1)`.
+
+Sous la console, la **ligne de commande** `>>>` fonctionne comme l'invite de Python : on y tape une expression (`notes`, `longueur(notes)`, `3 > x`) pour voir sa valeur, ou une instruction (`x = 5`, `disque(400, 300, 50)`, un `pour` sur plusieurs lignes avec Maj+Entrée). Elle s'exécute dans l'interpréteur du dernier programme lancé, dont les variables et les fonctions restent disponibles. Le transpileur mémorise les renommages de ce programme (`somme` devenu `somme_v`), pour que la console les retrouve (`compileconsole` dans `transpiler.lisp`). Les flèches ↑ ↓ parcourent l'historique. Comme en Python, les fonctions qui agissent sans calculer de valeur (dessin, tortue, `affiche`) renvoient `Rien`, et la console n'affiche rien pour elles.
 
 Le bouton **λ LispE** montre le code LispE produit. Le bouton **❓ Aide** présente toutes les fonctions.
 

@@ -1,4 +1,4 @@
-;Date: 2026/10/08 13:49:47
+;Date: 2026/10/08 15:50:15
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1776,26 +1776,6 @@
    )
    true)
 
-;!globaldecl := [$globale^$global] variables
-(defun C_globaldecl (tokens i0 v)
-   (check (and do_not_stop (< (car i0) (size tokens)))
-      (setq v0 ())
-      (if (and
-            (setq i1 (clone i0))
-            (setq v1 ())
-            (or
-               (compare tokens "globale" i1 v1 nil)
-               (compare tokens "global" i1 v1 nil)
-            )
-            (C_variables tokens i1 v1)
-            (set@ i0 0 (car i1))
-            (setq v0 v1)
-         )
-         (push v (cons 'globaldecl v0))
-      )
-   )
-)
-
 ;returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
 (defun C_returning (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
@@ -1826,13 +1806,12 @@
    )
    true)
 
-;^expressions := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+;^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
 (defun C_expressions (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
             (C_lispe tokens i0 v0)
-            (C_globaldecl tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)
@@ -1852,13 +1831,12 @@
    )
 )
 
-;^predicates := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 (defun C_predicates (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
             (C_lispe tokens i0 v0)
-            (C_globaldecl tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)
@@ -1878,13 +1856,12 @@
    )
 )
 
-;^body := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 (defun C_body (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
             (C_lispe tokens i0 v0)
-            (C_globaldecl tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)
@@ -2824,7 +2801,7 @@
 
 
 (defun nokeywords(w)
-      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "globale" "global" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "selon" "finselon") (lower w)))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "selon" "finselon") (lower w)))
 )
    (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
 (setq parser_tok (tokenizer_rules))

@@ -105,6 +105,13 @@
                     <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
                 </div>
                 <div id="console" class="console"></div>
+                <!-- Ligne de commande, comme l'invite >>> de Python -->
+                <div class="saisie-console">
+                    <span class="invite" aria-hidden="true">&gt;&gt;&gt;</span>
+                    <textarea id="saisieConsole" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off"
+                        aria-label="Ligne de commande : tape un nom de variable ou une ligne de code, puis Entrée"
+                        placeholder="Tape un nom de variable ou du code, puis Entrée"></textarea>
+                </div>
             </div>
         </section>
 
@@ -139,6 +146,10 @@
                 <p>Pythonerie est un Python en français. Les blocs se reconnaissent à
                     l'<b>indentation</b> (4 espaces) et la ligne qui ouvre un bloc se termine par <code>:</code>.
                     <b>Ctrl+Entrée</b> exécute, <b>Ctrl+Espace</b> propose des mots, <b>Ctrl+/</b> met une ligne en commentaire.
+                    Sous la console, la ligne <code>&gt;&gt;&gt;</code> exécute du code tout de suite, comme l'invite de Python :
+                    tape <code>notes</code> pour voir le contenu de la variable, <code>longueur(notes)</code>, <code>x = 5</code>…
+                    Elle utilise les variables et les fonctions du dernier programme exécuté. <b>Maj+Entrée</b> passe à la ligne
+                    (pour un <code>pour</code> ou un <code>si</code>), les flèches <b>↑ ↓</b> rappellent les commandes déjà tapées.
                     Les noms du langage s'écrivent avec leur orthographe : <code>épaisseur</code>,
                     <code>carré</code>, <code>va_à</code>, <code>règle</code>.</p>
 
@@ -271,7 +282,7 @@ selon (nom):
 couleur_balle = "rouge"
 
 fonction bouge():
-    x += 5              # += modifie la variable globale x
+    x += 5              # += modifie la variable x du programme
     efface()
     couleur(couleur_balle)
     disque(x % 800, 300, 30)
@@ -279,11 +290,10 @@ fonction bouge():
 animer(bouge, 30)       # toutes les 30 millisecondes
 
 fonction clic(cx, cy):
-    globale couleur_balle   # pour remplacer une variable globale avec =
-    couleur_balle = choisis(["rouge", "vert", "bleu"])
+    couleur_balle =: choisis(["rouge", "vert", "bleu"])   # =: modifie la variable du programme
 quand_clic(clic)        # aussi : quand_souris(f), quand_touche(f)</pre>
                 <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
-                    écris <code>globale x</code> pour modifier la variable du programme. <code>x += …</code> modifie
+                    écris <code>x =: …</code> pour modifier la variable du programme. <code>x += …</code> modifie
                     directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>
                 <p class="note">Le bouton « Arrêter » (ou <code>arrête()</code>) stoppe l'animation.
                     Attention : une boucle <code>tantque Vrai:</code> sans fin bloque la page — utilise plutôt <code>animer</code>.

@@ -14,14 +14,14 @@
 ;------------------------------------------------------------------
 ; Console
 ;------------------------------------------------------------------
-(defun efface_console () (evaljs "Pyt.effaceConsole()") true)
+(defun efface_console () (evaljs "Pyt.effaceConsole()") nil)
 
 ; écris(a, b, ...) écrit sans passer à la ligne. Dans le WebAssembly, chaque print de
 ; LispE arrive comme une ligne complète : on passe donc par la console JavaScript.
 ; defpat permet d'accepter de 1 à 8 arguments sous le même nom.
 (defun _écris_liste (valeurs)
    (evaljs (list "Pyt.écris" (join (maplist '_texte valeurs false) " ")))
-   true)
+   nil)
 (defpat écris (a) (_écris_liste (list a)))
 (defpat écris (a b) (_écris_liste (list a b)))
 (defpat écris (a b c) (_écris_liste (list a b c)))
@@ -111,35 +111,37 @@
 
 ;------------------------------------------------------------------
 ; Dessin dans le canevas
+; Comme en Python, les fonctions qui agissent sans calculer de valeur renvoient Rien
+; (la console n'affiche donc rien après cercle(...) ou avance(...)).
 ;------------------------------------------------------------------
-(defun efface () (evaljs "Pyt.efface()") true)
-(defun fond (c) (evaljs (list "Pyt.fond" c)) true)
-(defun couleur (c) (evaljs (list "Pyt.couleur" c)) true)
-(defun couleur_trait (c) (evaljs (list "Pyt.couleurTrait" c)) true)
-(defun couleur_remplissage (c) (evaljs (list "Pyt.couleurRemplissage" c)) true)
-(defun épaisseur (e) (evaljs (list "Pyt.épaisseur" e)) true)
+(defun efface () (evaljs "Pyt.efface()") nil)
+(defun fond (c) (evaljs (list "Pyt.fond" c)) nil)
+(defun couleur (c) (evaljs (list "Pyt.couleur" c)) nil)
+(defun couleur_trait (c) (evaljs (list "Pyt.couleurTrait" c)) nil)
+(defun couleur_remplissage (c) (evaljs (list "Pyt.couleurRemplissage" c)) nil)
+(defun épaisseur (e) (evaljs (list "Pyt.épaisseur" e)) nil)
 
-(defun point (x y) (evaljs (list "Pyt.point" x y)) true)
-(defun ligne (x1 y1 x2 y2) (evaljs (list "Pyt.ligne" x1 y1 x2 y2)) true)
-(defun rectangle (x y l h) (evaljs (list "Pyt.rectangle" x y l h false)) true)
-(defun rectangle_plein (x y l h) (evaljs (list "Pyt.rectangle" x y l h true)) true)
-(defun carré (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté false)) true)
-(defun carré_plein (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté true)) true)
-(defun cercle (x y r) (evaljs (list "Pyt.cercle" x y r false)) true)
-(defun disque (x y r) (evaljs (list "Pyt.cercle" x y r true)) true)
-(defun ellipse (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry false)) true)
-(defun ellipse_pleine (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry true)) true)
-(defun triangle (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) true)
-(defun triangle_plein (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) true)
+(defun point (x y) (evaljs (list "Pyt.point" x y)) nil)
+(defun ligne (x1 y1 x2 y2) (evaljs (list "Pyt.ligne" x1 y1 x2 y2)) nil)
+(defun rectangle (x y l h) (evaljs (list "Pyt.rectangle" x y l h false)) nil)
+(defun rectangle_plein (x y l h) (evaljs (list "Pyt.rectangle" x y l h true)) nil)
+(defun carré (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté false)) nil)
+(defun carré_plein (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté true)) nil)
+(defun cercle (x y r) (evaljs (list "Pyt.cercle" x y r false)) nil)
+(defun disque (x y r) (evaljs (list "Pyt.cercle" x y r true)) nil)
+(defun ellipse (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry false)) nil)
+(defun ellipse_pleine (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry true)) nil)
+(defun triangle (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) nil)
+(defun triangle_plein (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) nil)
 ; points est une liste de couples : [[0,0], [100,0], [50,80]]
 ; Les listes imbriquées sont passées en JSON : evaljs réévaluerait chaque sous-liste
-(defun polygone (points) (evaljs (list "Pyt.polygone" (json points) false)) true)
-(defun polygone_plein (points) (evaljs (list "Pyt.polygone" (json points) true)) true)
+(defun polygone (points) (evaljs (list "Pyt.polygone" (json points) false)) nil)
+(defun polygone_plein (points) (evaljs (list "Pyt.polygone" (json points) true)) nil)
 
 ; Texte
-(defun texte (x y message) (evaljs (list "Pyt.texte" x y (string message))) true)
-(defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) true)
-(defun police (nom) (evaljs (list "Pyt.police" nom)) true)
+(defun texte (x y message) (evaljs (list "Pyt.texte" x y (string message))) nil)
+(defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) nil)
+(defun police (nom) (evaljs (list "Pyt.police" nom)) nil)
 
 ; Dimensions du canevas
 (defun largeur () (float (evaljs "Pyt.largeur()")))
@@ -148,17 +150,17 @@
 ;------------------------------------------------------------------
 ; La tortue
 ;------------------------------------------------------------------
-(defun avance (d) (evaljs (list "Pyt.avance" d)) true)
-(defun recule (d) (evaljs (list "Pyt.avance" (* -1 d))) true)
-(defun gauche (a) (evaljs (list "Pyt.tourne" (* -1 a))) true)
-(defun droite (a) (evaljs (list "Pyt.tourne" a)) true)
-(defun lève_crayon () (evaljs (list "Pyt.crayon" false)) true)
-(defun baisse_crayon () (evaljs (list "Pyt.crayon" true)) true)
-(defun va_à (x y) (evaljs (list "Pyt.vaÀ" x y)) true)
-(defun oriente (angle) (evaljs (list "Pyt.oriente" angle)) true)
-(defun origine () (evaljs "Pyt.origine()") true)
-(defun montre_tortue () (evaljs (list "Pyt.montreTortue" true)) true)
-(defun cache_tortue () (evaljs (list "Pyt.montreTortue" false)) true)
+(defun avance (d) (evaljs (list "Pyt.avance" d)) nil)
+(defun recule (d) (evaljs (list "Pyt.avance" (* -1 d))) nil)
+(defun gauche (a) (evaljs (list "Pyt.tourne" (* -1 a))) nil)
+(defun droite (a) (evaljs (list "Pyt.tourne" a)) nil)
+(defun lève_crayon () (evaljs (list "Pyt.crayon" false)) nil)
+(defun baisse_crayon () (evaljs (list "Pyt.crayon" true)) nil)
+(defun va_à (x y) (evaljs (list "Pyt.vaÀ" x y)) nil)
+(defun oriente (angle) (evaljs (list "Pyt.oriente" angle)) nil)
+(defun origine () (evaljs "Pyt.origine()") nil)
+(defun montre_tortue () (evaljs (list "Pyt.montreTortue" true)) nil)
+(defun cache_tortue () (evaljs (list "Pyt.montreTortue" false)) nil)
 (defun position_x () (float (evaljs "Pyt.tortueX()")))
 (defun position_y () (float (evaljs "Pyt.tortueY()")))
 (defun cap () (float (evaljs "Pyt.tortueCap()")))
@@ -167,11 +169,11 @@
 ; Animation et événements
 ; La fonction peut être donnée par son nom : animer(bouge, 30) ou animer("bouge", 30)
 ;------------------------------------------------------------------
-(defmacro animer (fonction délai) (evaljs (list "Pyt.animer" (string (quote fonction)) délai)))
-(defmacro quand_clic (fonction) (evaljs (list "Pyt.quandClic" (string (quote fonction)))))
-(defmacro quand_souris (fonction) (evaljs (list "Pyt.quandSouris" (string (quote fonction)))))
-(defmacro quand_touche (fonction) (evaljs (list "Pyt.quandTouche" (string (quote fonction)))))
-(defun arrête () (evaljs "Pyt.arrête()") true)
+(defmacro animer (fonction délai) (block (evaljs (list "Pyt.animer" (string (quote fonction)) délai)) nil))
+(defmacro quand_clic (fonction) (block (evaljs (list "Pyt.quandClic" (string (quote fonction)))) nil))
+(defmacro quand_souris (fonction) (block (evaljs (list "Pyt.quandSouris" (string (quote fonction)))) nil))
+(defmacro quand_touche (fonction) (block (evaljs (list "Pyt.quandTouche" (string (quote fonction)))) nil))
+(defun arrête () (evaljs "Pyt.arrête()") nil)
 
 ;------------------------------------------------------------------
 ; Opérateurs « à la Python »
@@ -240,3 +242,15 @@
       ((eq x false) "Faux")
       ((eq x nil) "Rien")
       (true (string x))))
+
+;------------------------------------------------------------------
+; La ligne de commande sous la console (>>>), comme l'invite de Python :
+; la valeur d'une expression est affichée, sauf Rien et l'atome vide
+; que renvoient affiche() et les fonctions qui ne retournent rien.
+;------------------------------------------------------------------
+(defun _console_valeur (v)
+   ; on teste le type d'abord : sur une liste, eq et not agiraient élément par élément
+   (setq rien (and (eq (string (type v)) "atom_") (or (eq v nil) (eq (string v) ""))))
+   (if (not rien)
+      (println (_repr v)))
+   nil)

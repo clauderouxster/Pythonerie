@@ -17,7 +17,6 @@ fonction dessine():
     carré_plein(px - taille / 2, py - taille / 2, taille)
 
 fonction touche(t):
-    globale couleur_carré
     si t == "ArrowLeft":
         px -= 20
     sinonsi t == "ArrowRight":
@@ -27,7 +26,8 @@ fonction touche(t):
     sinonsi t == "ArrowDown":
         py += 20
     sinonsi t == " ":
-        couleur_carré = choisis(["rouge", "vert", "bleu", "violet", "orange"])
+        # =: modifie la variable du programme (et non une variable de la fonction)
+        couleur_carré =: choisis(["rouge", "vert", "bleu", "violet", "orange"])
     dessine()
 
 fonction clic(x, y):

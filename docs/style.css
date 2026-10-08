@@ -23,6 +23,7 @@
     --console-fg: #e5e7eb;
     --console-erreur: #f87171;
     --console-info: #9ca3af;
+    --console-commande: #fbbf24;
     --overlay-bg: rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.18);
     --radius-sm: 6px;
@@ -370,6 +371,38 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     line-height: 1.5;
 }
 .console-ligne { white-space: pre-wrap; word-break: break-word; }
+.console-ligne.commande { color: var(--console-commande); }
+.console { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+/* Ligne de commande sous la console */
+.saisie-console {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 12px 8px;
+    background: var(--console-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+.saisie-console .invite { color: var(--console-commande); line-height: 1.5; padding-top: 1px; user-select: none; }
+.saisie-console textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--console-fg);
+    font: inherit;
+    line-height: 1.5;
+    padding: 1px 0;
+    height: 1.5em;
+    max-height: 9em;
+    overflow-y: auto;
+    font-variant-ligatures: none;
+}
+.saisie-console textarea::placeholder { color: var(--console-info); }
+.saisie-console:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 .console-ligne.erreur { color: var(--console-erreur); }
 .console-ligne.info { color: var(--console-info); font-style: italic; }
 .console-vide { color: var(--console-info); font-style: italic; }

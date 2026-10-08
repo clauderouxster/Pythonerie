@@ -32,7 +32,6 @@
 #   selon / cas / finselon
 #   et / ou / oux / non / est
 #   importe / comme
-#   globale (ou global)
 #   règle / finrègle, motif / finmotif, prolog / finprolog
 # Les mots-clefs s'écrivent avec leurs accents : règle, finrègle
 #   lambda / λ
@@ -155,14 +154,12 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 
 !multiop := Word computing [%, computing]*
 
-# globale x, y : dans une fonction, x et y désignent les variables globales
-!globaldecl := [$globale^$global] variables
 
 returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
 
-^expressions := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
-^predicates := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
-^body := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 
 !classedef := $classe Word ;16 classfunc+ $finclasse
 !methparams := %( $soi ;4 [%, variables]? %)

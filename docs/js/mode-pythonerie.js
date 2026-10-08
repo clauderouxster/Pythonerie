@@ -109,7 +109,9 @@ const PYTHONERIE_FONCTIONS = {
     'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',
     'place_image': 'place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) — dessine l\'image',
     'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
-    'joue_son': 'joue_son(numéro) — joue le son'
+    'joue_son': 'joue_son(numéro) — joue le son',
+    'lit_fichier': 'lit_fichier(nom) — contenu d\'un fichier du site, en texte',
+    'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements'
 };
 
 // Pour la complétion seulement : taper « mel » propose « mélange »

@@ -73,6 +73,7 @@ Quelques règles à connaître :
 - **La tortue** : `avance`, `recule`, `gauche`, `droite`, `lève_crayon`, `baisse_crayon`, `va_à`, `oriente`, `origine`.
 - **Animer et réagir** : `animer(fonction, délai)`, `quand_clic(f)`, `quand_souris(f)`, `quand_glisse(f)` (souris déplacée bouton appuyé, ou doigt sur une tablette), `quand_touche(f)`, `arrête()`.
 - **Images et sons** : `img = charge_image(adresse)`, `place_image(img, x, y)`, `snd = charge_son(adresse)`, `joue_son(snd)`.
+- **Fichiers** : `texte = lit_fichier(nom)` lit un fichier de la Pythonerie (le nom part de son répertoire, par exemple `exemples/médias/fable.txt`) ; `écrit_fichier(nom, texte)` enregistre le texte dans le dossier Téléchargements, ce qui fonctionne sur tous les ordinateurs et toutes les tablettes.
 - **Pour aller plus loin** : environ 180 instructions supplémentaires portant des noms français (`mélange`, `pgcd`, `commence_par`, `loi_normale`…), décrites dans le glossaire du mode d'emploi.
 
 Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, en passant par la tortue, une balle qui rebondit, une courbe mathématique et un petit logiciel de dessin, se trouvent dans le répertoire **Exemples**. Un clic sur un exemple en crée une copie que l'on peut modifier.
@@ -136,7 +137,7 @@ La Pythonerie est parfaitement compatible avec le **RGPD** européen et avec ses
 Deux remarques pour les établissements :
 
 - Comme pour toute page web, l'hébergeur du site (GitHub Pages) voit passer l'adresse de l'ordinateur au moment où la page est téléchargée. Pour l'éviter, on peut lancer la Pythonerie sur une machine de l'établissement (voir [Utiliser la Pythonerie sur sa machine](#utiliser-la-pythonerie-sur-sa-machine)) : la seule donnée qui passe alors par le réseau, celui de l'établissement, est la copie des archives que reçoit cette machine, pour l'enseignant.
-- Un programme qui charge une image ou un son depuis une adresse `https://…` d'un autre site contacte ce site. Les exemples fournis n'utilisent que des fichiers de la Pythonerie.
+- Un programme qui charge une image, un son ou un fichier depuis une adresse `https://…` d'un autre site contacte ce site. Les exemples fournis n'utilisent que des fichiers de la Pythonerie.
 
 ## Limites connues
 

@@ -155,6 +155,8 @@ const Pyt = (function () {
         }
     }
 
+    let erreurFichier = '';
+
     function signaleErreur(message) {
         if (window.Pythonerie && window.Pythonerie.erreur) window.Pythonerie.erreur(message);
         else console.error(message);
@@ -389,6 +391,48 @@ const Pyt = (function () {
             this.arrête();
             this.arrêteSons();
             gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+        },
+
+        // ---------- Fichiers ----------
+        // lit_fichier(nom) : lecture synchrone (le programme attend le contenu),
+        // relative au répertoire de la page
+        litFichier(nom) {
+            erreurFichier = '';
+            nom = String(nom).normalize('NFC');
+            const requête = new XMLHttpRequest();
+            try {
+                requête.open('GET', new URL(nom, document.baseURI).href, false);
+                requête.overrideMimeType('text/plain; charset=utf-8');
+                requête.send();
+            } catch (e) {
+                erreurFichier = 'impossible de lire le fichier « ' + nom + ' »';
+                return '';
+            }
+            if (requête.status !== 200 && requête.status !== 0) {
+                erreurFichier = 'fichier introuvable : « ' + nom + ' »';
+                return '';
+            }
+            return requête.responseText.normalize('NFC');
+        },
+        // écrit_fichier(nom, texte) : téléchargé dans le dossier Téléchargements,
+        // ce qui fonctionne partout (en ligne, avec serveur.py, sur une tablette)
+        écritFichier(nom, texte) {
+            erreurFichier = '';
+            nom = String(nom).normalize('NFC').trim();
+            if (!nom || /[\\/:*?"<>|]/.test(nom) || nom.startsWith('.')) {
+                erreurFichier = 'nom de fichier invalide : « ' + nom + ' » (un simple nom, sans répertoire)';
+                return;
+            }
+            if (!nom.includes('.')) nom += '.txt';
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([String(texte)], { type: 'text/plain;charset=utf-8' }));
+            a.download = nom;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        },
+        // le message de la dernière erreur de lit_fichier / écrit_fichier ('' si tout va bien)
+        erreurFichier() {
+            return erreurFichier;
         },
 
         // ---------- Images ----------

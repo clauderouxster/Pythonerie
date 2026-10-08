@@ -148,8 +148,6 @@
 ;------------------------------------------------------------------
 (link "ouvre_fichier" 'fopen)            ; ouvre_fichier(chemin, mode) : ouvre un fichier
 (link "ferme_fichier" 'fclose)           ; ferme_fichier(f) : ferme un fichier
-(link "lit_fichier" 'fread)              ; lit_fichier(chemin) : contenu d'un fichier
-(link "écrit_fichier" 'fwrite)           ; écrit_fichier(chemin, texte) : écrit un fichier
 (link "ajoute_fichier" 'fappend)         ; ajoute_fichier(chemin, texte) : ajoute à la fin d'un fichier
 (link "taille_fichier" 'fsize)           ; taille_fichier(f) : taille d'un fichier
 

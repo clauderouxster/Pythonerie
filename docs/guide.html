@@ -691,6 +691,21 @@ joue_son(ding)</pre></div>
                     <p>Ouvre l'exemple <b>12. Images et sons</b>&nbsp;: chaque clic allume une étoile avec un petit bruit.
                         Et l'exemple <b>14. Piano</b> te donne un vrai piano de trois octaves&nbsp;! 🎹</p>
                 </div>
+
+                <h3>📄 Lire et écrire un fichier</h3>
+                <p><code>lit_fichier(nom)</code> te donne tout le texte d'un fichier de la Pythonerie, sous forme de chaîne.
+                    Le nom part du répertoire de la Pythonerie, comme pour les images.</p>
+                <p><code>écrit_fichier(nom, texte)</code> enregistre ton texte dans un fichier, qui arrive dans ton dossier
+                    <b>Téléchargements</b>. Donne-lui un simple nom, sans répertoire&nbsp;: <code>"scores"</code> devient
+                    <code>scores.txt</code>.</p>
+                <div class="exemple"><pre data-essai>fable = lit_fichier("exemples/médias/fable.txt")
+lignes = fable.découpe("\n")
+affiche("La fable a", longueur(lignes), "lignes.")
+affiche(lignes[0])
+
+écrit_fichier("ma_fable", fable.majuscules())</pre></div>
+                <p>Si le fichier n'existe pas, le programme s'arrête avec une erreur. Pour l'éviter, utilise
+                    <code>essaie:</code> … <code>sauf(e):</code>.</p>
             </section>
 
             <!-- ================================================================ -->
@@ -752,7 +767,7 @@ joue_son(ding)</pre></div>
                     à la fermeture de l'onglet. Comme pour toute page web, l'hébergeur du site voit l'adresse de l'ordinateur au
                     moment du téléchargement de la page&nbsp;; pour l'éviter, on peut installer la Pythonerie sur une machine de
                     l'établissement (voir le fichier README du projet)&nbsp;: ce petit serveur fournit seulement les fichiers de la Pythonerie
-                    et garde une copie des archives des élèves pour l'enseignant&nbsp;; il n'exécute rien, tout se passe toujours dans le navigateur. Enfin, un programme qui charge une image ou un son depuis
+                    et garde une copie des archives des élèves pour l'enseignant&nbsp;; il n'exécute rien, tout se passe toujours dans le navigateur. Enfin, un programme qui charge une image, un son ou un fichier depuis
                     l'adresse d'un autre site contacte ce site.</p>
                 </div>
             </section>
@@ -924,6 +939,13 @@ joue_son(ding)</pre></div>
                     <tr><td><code>place_image(numéro, x, y, largeur, hauteur)</code></td><td>dessine l'image à la taille choisie</td><td class="ex"><code>place_image(img, 0, 0, 80, 80)</code></td></tr>
                     <tr><td><code>charge_son(adresse)</code></td><td>charge un son et donne son numéro</td><td class="ex"><code>snd = charge_son("exemples/médias/ding.wav")</code></td></tr>
                     <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
+                </table>
+
+                <h3 id="g-fichiers">Fichiers</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>lit_fichier(nom)</code></td><td>donne le texte d'un fichier de la Pythonerie</td><td class="ex"><code>t = lit_fichier("exemples/médias/fable.txt")</code></td></tr>
+                    <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
                 </table>
 
                 <h3 id="g-animation">Animation, souris et clavier</h3>

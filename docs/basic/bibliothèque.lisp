@@ -189,6 +189,28 @@
 (defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
 
 ;------------------------------------------------------------------
+; Fichiers (sans le système de fichiers du WASM)
+; lit_fichier(nom) : contenu d'un fichier du site, à partir du répertoire de la page
+; (données.txt, exemples/poème.txt) ou d'une adresse complète (https://...).
+; écrit_fichier(nom, texte) : le fichier est téléchargé (dossier Téléchargements).
+;------------------------------------------------------------------
+; Une erreur côté navigateur (fichier absent, nom invalide) devient une erreur du
+; programme, que l'élève peut attraper avec essaie / sauf.
+(defun _erreur_fichier ()
+   (setq e (evaljs "Pyt.erreurFichier()"))
+   (if (!= e "") (throw e)))
+
+(defun lit_fichier (nom)
+   (setq contenu (evaljs (list "Pyt.litFichier" (string nom))))
+   (_erreur_fichier)
+   contenu)
+
+(defun écrit_fichier (nom texte)
+   (evaljs (list "Pyt.écritFichier" (string nom) (_texte texte)))
+   (_erreur_fichier)
+   nil)
+
+;------------------------------------------------------------------
 ; Opérateurs « à la Python »
 ; En LispE, le type du premier argument l'emporte : (+ 1 0.5) vaut 1.
 ; Le transpileur utilise ces fonctions quand il ne peut pas garantir le type des valeurs.

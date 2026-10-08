@@ -125,7 +125,14 @@ const Pythonerie = (function () {
     function nettoieErreur(message) {
         let m = String(message && message.message ? message.message : message);
         // Dans le WebAssembly, le message est précédé de la pile d'appels : "[12] (expression...)"
+        // Pour une erreur levée exprès (lever, ou lit_fichier...), le haut de la pile est
+        // le « throw » lui-même, et parfois un « if » et les fonctions internes de la bibliothèque (_...) :
+        // inutile de les montrer, l'endroit utile est l'appel de l'élève qui suit.
         const pile = m.split('\n').filter(l => LIGNE_PILE.test(l));
+        const levée = pile.length > 0 && /^\[(\d+|-)\] \(throw\b/.test(pile[0]);
+        if (levée) {
+            while (pile.length && /^\[(\d+|-)\] \((throw\b|if\b|_)/.test(pile[0])) pile.shift();
+        }
         m = m.split('\n').filter(l => l.trim() && !LIGNE_PILE.test(l)).join('\n');
         m = m.replace(/^\s*(Error|Erreur)\s*:\s*/i, '');
         let ligne = null;
@@ -137,7 +144,7 @@ const Pythonerie = (function () {
         }
         let texte = /^Erreur/.test(m.trim()) ? m.trim() : 'Erreur : ' + m.trim();
         if (pile.length) texte += '\n   dans le code LispE : ' + pile[0].replace(LIGNE_PILE, '');
-        else if (ligne && !/ligne \d/.test(m)) texte += '\n   (ligne ' + ligne + ' du code LispE)';
+        else if (ligne && !levée && !/ligne \d/.test(m)) texte += '\n   (ligne ' + ligne + ' du code LispE)';
         return texte;
     }
 
@@ -1811,14 +1818,17 @@ const Pythonerie = (function () {
     }
 
     // Sortie standard de LispE. En cas d'erreur, le WebAssembly y écrit aussi la pile
-    // d'appels et le message brut : on ne les montre pas, l'erreur est affichée proprement.
+    // d'appels, une ligne vide et le message brut (« message, line: 3 in: main », précédé
+    // de « Error: » sauf pour lever) : on ne les montre pas, l'erreur est affichée proprement.
+    const MESSAGE_BRUT = /line: \d+ in: /;
     let aprèsPile = false;
     function sortie(texte) {
-        if (LIGNE_PILE.test(texte) || /^Error: .*line: \d+ in: /.test(texte)) {
+        if (LIGNE_PILE.test(texte) || /^Error: /.test(texte) && MESSAGE_BRUT.test(texte)) {
             aprèsPile = true;
             return;
         }
-        if (aprèsPile && texte === '') { aprèsPile = false; return; }
+        if (aprèsPile && texte === '') return;
+        if (aprèsPile && MESSAGE_BRUT.test(texte)) { aprèsPile = false; return; }
         aprèsPile = false;
         écritConsole(texte, 'sortie');
     }

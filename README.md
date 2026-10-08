@@ -1,8 +1,8 @@
 # Pythonerie
 
-[Testez-le ici](https://clauderouxster.github.io/Pythonerie/)
-
 Un espace d'apprentissage de la programmation **en français**, dans le navigateur.
+
+[Vous pouvez l'exécuter depuis ce lien](https://clauderouxster.github.io/Pythonerie/)
 
 L'écran est découpé en trois zones :
 

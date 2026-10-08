@@ -47,6 +47,11 @@ const Pythonerie = (function () {
 
     const $ = (id) => document.getElementById(id);
 
+    // Forme Unicode normalisée (NFC) : « é » peut aussi arriver décomposé en « e » + accent
+    // combinant (copier-coller, certains claviers, noms de fichiers macOS). LispE ne
+    // reconnaîtrait alors ni « épaisseur » ni « élève » : tout texte est normalisé.
+    const nfc = (texte) => String(texte).normalize('NFC');
+
     // ------------------------------------------------------------------
     // Console
     // ------------------------------------------------------------------
@@ -153,7 +158,7 @@ const Pythonerie = (function () {
         const lit = async (chemin) => {
             const r = await fetch(chemin, { cache: 'no-cache' });
             if (!r.ok) throw new Error('Impossible de charger ' + chemin);
-            return r.text();
+            return nfc(await r.text());
         };
         [sources.basic, sources.transpileur, sources.bibliothèque, sources.français] = await Promise.all([
             lit('basic/basic.lisp'), lit('basic/transpiler.lisp'), lit('basic/bibliothèque.lisp'),
@@ -240,7 +245,7 @@ const Pythonerie = (function () {
     // Renvoie {lispe} ou {erreur}
     function compile(code) {
         try {
-            const r = callEvalLispE(idxCompilateur, '(compilepython (atob «' + base64(code + '\n') + '»))');
+            const r = callEvalLispE(idxCompilateur, '(compilepython (atob «' + base64(nfc(code) + '\n') + '»))');
             if (typeof r === 'string' && /^\s*(Erreur|Error)/.test(r)) {
                 return { erreur: r.replace(/ :\n>> /g, '\n  ').replace(/ <<\s*$/, '').replace(/ ' /g, "'") };
             }
@@ -254,7 +259,7 @@ const Pythonerie = (function () {
     }
 
     function évalue(idx, code) {
-        const r = callEvalLispE(idx, code);
+        const r = callEvalLispE(idx, nfc(code));
         if (typeof r === 'string' && /^Error:/.test(r)) throw new Error(r);
         return r;
     }
@@ -343,12 +348,16 @@ const Pythonerie = (function () {
     const StockageServeur = {
         genre: 'serveur',
         async liste() {
-            return (await vérifie(await fetch('api/programmes', { cache: 'no-cache' }))).json();
+            const contenu = await (await vérifie(await fetch('api/programmes', { cache: 'no-cache' }))).json();
+            // Noms de fichiers macOS : souvent décomposés (NFD)
+            contenu.programmes.forEach(p => { p.chemin = nfc(p.chemin); });
+            contenu.dossiers = contenu.dossiers.map(nfc);
+            return contenu;
         },
         async lit(chemin) {
             const r = await fetch(url('programmes', chemin), { cache: 'no-cache' });
             if (!r.ok) throw new Error('Programme introuvable : ' + chemin);
-            return r.text();
+            return nfc(await r.text());
         },
         async écrit(chemin, code) {
             await vérifie(await fetch(url('programmes', chemin), {
@@ -407,8 +416,8 @@ const Pythonerie = (function () {
                 for (let d = parentDe(c); d; d = parentDe(d)) dossiers.add(d);
             });
             return {
-                programmes: Object.keys(tout).map(chemin => ({ chemin, modifie: tout[chemin].modifie || 0 })),
-                dossiers: [...dossiers]
+                programmes: Object.keys(tout).map(chemin => ({ chemin: nfc(chemin), modifie: tout[chemin].modifie || 0 })),
+                dossiers: [...dossiers].map(nfc)
             };
         },
         async lit(chemin) {
@@ -485,7 +494,7 @@ const Pythonerie = (function () {
     }
 
     function nomValide(nom) {
-        nom = (nom || '').trim();
+        nom = nfc(nom || '').trim();
         if (!nom) return null;
         if (nom.length > 60 || !/^[\p{L}\p{N} _\-.()]+$/u.test(nom) || nom.startsWith('.')) return null;
         return nom.replace(/\.py$/i, '');
@@ -928,7 +937,7 @@ const Pythonerie = (function () {
             const lecteur = new FileReader();
             lecteur.onload = async () => {
                 const nom = nomValide(f.name.replace(/\.[^.]+$/, '')) || 'Programme importé';
-                await crée(dossierCourant, nom, String(lecteur.result));
+                await crée(dossierCourant, nom, nfc(lecteur.result));
             };
             lecteur.readAsText(f, 'utf-8');
         });
@@ -951,7 +960,7 @@ const Pythonerie = (function () {
                     try {
                         const rc = await fetch('exemples/' + ex.fichier, { cache: 'no-cache' });
                         if (!rc.ok) throw new Error('Exemple introuvable');
-                        await crée(dossierCourant, ex.titre, await rc.text());
+                        await crée(dossierCourant, ex.titre, nfc(await rc.text()));
                     } catch (e) {
                         écritConsole(e.message, 'erreur');
                     }
@@ -1005,6 +1014,14 @@ const Pythonerie = (function () {
                 'Ctrl-Space': (cm) => cm.showHint({ hint: pythonerieComplétion, completeSingle: false }),
                 'Ctrl-/': 'toggleComment',
                 'Cmd-/': 'toggleComment'
+            }
+        });
+        // Tout ce qui entre dans l'éditeur (frappe, collage, programme ouvert) est mis en NFC
+        éditeur.on('beforeChange', (cm, changement) => {
+            if (!changement.update) return;
+            const texte = changement.text.map(nfc);
+            if (texte.some((ligne, i) => ligne !== changement.text[i])) {
+                changement.update(changement.from, changement.to, texte);
             }
         });
         éditeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); });

@@ -47,7 +47,7 @@ const Pyt = (function () {
 
     function couleurCSS(c) {
         if (c === null || c === undefined) return '#000000';
-        const nom = String(c).trim();
+        const nom = String(c).normalize('NFC').trim();
         return COULEURS[nom.toLowerCase()] || nom;
     }
 
@@ -149,7 +149,7 @@ const Pyt = (function () {
             const cible = ev.target;
             if (cible && (cible.closest && cible.closest('.CodeMirror, input, textarea, select'))) return;
             if (ev.key.startsWith('Arrow') || ev.key === ' ') ev.preventDefault();
-            appelle(gestionnaires.touche, [chaîneLispE(ev.key)]);
+            appelle(gestionnaires.touche, [chaîneLispE(ev.key.normalize('NFC'))]);
         });
     }
 
@@ -190,7 +190,7 @@ const Pyt = (function () {
         },
         demande(question) {
             const r = window.prompt(String(question || ''), '');
-            return r === null ? '' : r;
+            return r === null ? '' : r.normalize('NFC');
         },
         aléatoire(a, b) {
             a = Math.ceil(nombre(a)); b = Math.floor(nombre(b));

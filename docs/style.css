@@ -308,6 +308,10 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .menu-item:hover, .menu-item:focus-visible { background: var(--bg-hover); color: var(--text-primary); outline: none; }
 .menu-item.danger { color: var(--danger); }
+.menu-item:disabled { opacity: 0.45; cursor: default; background: none; }
+/* Le nom de l'élève, en haut à droite */
+.btn.élève { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.btn.élève.inconnu #nomÉlève { font-style: italic; color: var(--text-muted); }
 .menu-séparateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
 
 /* Écrans tactiles : pas de survol, les actions restent visibles */
@@ -480,6 +484,10 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     padding: 24px;
 }
 .fond-modal.visible { display: flex; }
+.modal.petit { width: min(520px, 100%); }
+#dialogueTexte { white-space: pre-line; line-height: 1.55; }
+.dialogue-boutons { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.dialogue-boutons .btn { padding: 9px 14px; font-size: 14px; text-align: center; }
 .modal {
     background: var(--bg-elevated);
     border-radius: var(--radius-lg);

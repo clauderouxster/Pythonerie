@@ -80,6 +80,8 @@ Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, 
 ## Les programmes de l'élève
 
 - En ligne, les programmes sont conservés dans le navigateur de l'élève.
+- Le bouton **👤** en haut de l'écran affiche le nom de l'élève (« inconnu » au départ). Il faut le taper pour exécuter du code. Il est oublié quand on ferme l'onglet, ce qui convient aux ordinateurs partagés. Un deuxième clic sur **👤** déconnecte l'élève : si ses programmes ont changé depuis sa dernière archive (ou s'il n'en a jamais créé), la Pythonerie lui propose d'en créer une. Ensuite, tout son espace est vidé : programmes, répertoires, sauvegarde temporaire et historique de la console.
+- Pour partager un environnement, le menu ☰ propose de **créer une archive** : un fichier `nom_aaaa_mm_jj_hh_MM.json` qui contient tous les programmes et les répertoires, enregistré dans le dossier Téléchargements. **Charger une archive** remplace tous les programmes en cours par ceux de l'archive et déconnecte l'élève. Les programmes précédents sont mis de côté : **Annuler le chargement** les fait revenir.
 - On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Pour en supprimer plusieurs à la fois, on les choisit avec Cmd+clic ou Ctrl+clic (un par un) ou Maj+clic (une suite), puis on clique sur **Supprimer** dans le bandeau, ou on appuie sur la touche Suppr. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
 
 ## Utiliser la Pythonerie sur sa machine

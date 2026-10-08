@@ -24,7 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.08.18.02">
+    <link rel="stylesheet" href="style.css?v=2026.10.08.18.41">
 </head>
 
 <body>
@@ -34,10 +34,11 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.18.02</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.18.41</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
+            <button id="btnÉlève" class="btn btn-secondaire élève inconnu" title="Se connecter : taper son nom">👤 <span id="nomÉlève">inconnu</span></button>
             <a id="lienGuide" class="btn btn-secondaire" href="guide.html" target="_blank" rel="noopener" title="Le mode d'emploi, pour apprendre pas à pas">📖 Mode d'emploi</a>
             <button id="btnAide" class="btn btn-secondaire">❓ Aide</button>
             <button id="btnThème" class="btn btn-secondaire" title="Thème clair / sombre">🌓</button>
@@ -66,12 +67,20 @@
                                 <div class="menu-séparateur"></div>
                                 <div class="menu-section">Importer</div>
                                 <button id="btnImporter" class="menu-item" role="menuitem">📂 Importer des fichiers .py…</button>
+                                <div class="menu-séparateur"></div>
+                                <div class="menu-section">Partager</div>
+                                <button id="btnCréeArchive" class="menu-item" role="menuitem">📦 Créer une archive de tous mes programmes</button>
+                                <button id="btnChargeArchive" class="menu-item" role="menuitem">📥 Charger une archive…</button>
+                                <button id="btnAnnuleArchive" class="menu-item" role="menuitem" disabled>↶ Annuler le chargement de l'archive</button>
                             </div>
                         </span>
                     <input type="file" id="fichierImport" accept=".py,.txt" multiple hidden>
+                    <input type="file" id="fichierArchive" accept=".json,application/json" hidden>
                 </div>
                 <!-- Sélection de plusieurs programmes (Cmd/Ctrl+clic, Maj+clic) -->
                 <div id="bandeauSélection" class="bandeau-sélection" hidden></div>
+                <!-- Après le chargement d'une archive : revenir aux programmes précédents -->
+                <div id="bandeauArchive" class="bandeau-sélection" hidden></div>
                 <ul id="listeProgrammes" class="liste"></ul>
                 <div id="genreStockage" class="note"></div>
             </div>
@@ -137,6 +146,17 @@
     </main>
 
     <!-- ===================== Aide ===================== -->
+    <!-- Fenêtre de dialogue à boutons (déconnexion) -->
+    <div id="dialogue" class="fond-modal" role="dialog" aria-modal="true" aria-labelledby="dialogueTitre">
+        <div class="modal petit">
+            <div class="modal-tête"><h2 id="dialogueTitre"></h2></div>
+            <div class="modal-corps">
+                <p id="dialogueTexte"></p>
+                <div id="dialogueBoutons" class="dialogue-boutons"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="aide" class="fond-modal">
         <div class="modal">
             <div class="modal-tête">
@@ -154,6 +174,13 @@
                     (pour un <code>pour</code> ou un <code>si</code>), les flèches <b>↑ ↓</b> rappellent les commandes déjà tapées.
                     Les noms du langage s'écrivent avec leur orthographe : <code>épaisseur</code>,
                     <code>carré</code>, <code>va_à</code>, <code>règle</code>.</p>
+                <p>Le bouton <b>👤</b>, en haut, montre le nom de l'élève (« inconnu » au départ) : il faut le taper pour exécuter du code.
+                    Un deuxième clic déconnecte l'élève : la Pythonerie vérifie d'abord que ses programmes sont dans une archive,
+                    puis efface tout son espace.
+                    Dans le menu <b>☰</b>, <b>Créer une archive</b> enregistre tous les programmes dans un fichier
+                    <code>nom_aaaa_mm_jj_hh_MM.json</code> (dossier Téléchargements), que l'on peut donner à un autre élève.
+                    <b>Charger une archive</b> remplace tous les programmes par ceux de l'archive et déconnecte l'élève ;
+                    <b>Annuler le chargement</b> fait revenir les programmes d'avant.</p>
 
                 <h3>Les mots du langage</h3>
                 <div class="grille-aide">
@@ -336,7 +363,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.08.18.02';
+                return répertoire + fichier + '?v=2026.10.08.18.41';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -344,12 +371,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.08.18.02"></script>
-    <script src="js/canevas.js?v=2026.10.08.18.02"></script>
-    <script src="js/pythonerie.js?v=2026.10.08.18.02"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.08.18.41"></script>
+    <script src="js/canevas.js?v=2026.10.08.18.41"></script>
+    <script src="js/pythonerie.js?v=2026.10.08.18.41"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.08.18.02"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.08.18.02"></script>
+    <script src="lispe/lispe.js?v=2026.10.08.18.41"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.08.18.41"></script>
 </body>
 
 </html>

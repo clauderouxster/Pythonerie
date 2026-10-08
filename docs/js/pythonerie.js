@@ -286,6 +286,10 @@ const Pythonerie = (function () {
     // ses variables et ses fonctions sont disponibles.
     function exécuteConsole(code) {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
+        if (!exigeÉlève('Pour exécuter du code, il faut d\'abord dire qui tu es.')) {
+            écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter du code.', 'info');
+            return;
+        }
         const lignes = code.split('\n');
         écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
         const c = compileConsole(code);
@@ -305,6 +309,8 @@ const Pythonerie = (function () {
         try { historique = JSON.parse(localStorage.getItem('pythonerie.historique') || '[]'); } catch (e) { /* rien */ }
         let position = historique.length;
         let brouillon = '';
+        // à la déconnexion, l'historique de l'élève est effacé
+        window.addEventListener('pythonerie-vide', () => { historique = []; position = 0; brouillon = ''; });
         // hauteur : une ligne quand la zone est vide, puis elle grandit avec le texte
         const ajuste = () => {
             zone.style.height = '';
@@ -396,6 +402,10 @@ const Pythonerie = (function () {
 
     function exécute() {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
+        if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
+            écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
+            return;
+        }
         const code = éditeur.getValue();
         Pyt.stoppeTout();
         Pyt.réinitialise();
@@ -591,6 +601,342 @@ const Pythonerie = (function () {
             });
         }
     };
+
+    // ------------------------------------------------------------------
+    // L'élève : son nom (le « login ») s'affiche en haut ; « inconnu » tant qu'il ne
+    // l'a pas tapé. Il est demandé pour exécuter du code et pour créer une archive.
+    // Il est gardé pour l'onglet (sessionStorage) : sur un ordinateur partagé,
+    // fermer l'onglet déconnecte l'élève.
+    // ------------------------------------------------------------------
+    let élève = null;
+    try { élève = sessionStorage.getItem('pythonerie.élève'); } catch (e) { /* rien */ }
+
+    function changeÉlève(nom) {
+        élève = nom || null;
+        try {
+            if (élève) sessionStorage.setItem('pythonerie.élève', élève);
+            else sessionStorage.removeItem('pythonerie.élève');
+        } catch (e) { /* rien */ }
+        afficheÉlève();
+    }
+
+    function afficheÉlève() {
+        $('nomÉlève').textContent = élève || 'inconnu';
+        $('btnÉlève').classList.toggle('inconnu', !élève);
+        $('btnÉlève').title = élève ? 'Connecté : ' + élève + ' (cliquer pour se déconnecter)' : 'Se connecter : taper son nom';
+    }
+
+    // Demande le nom de l'élève ; renvoie Vrai s'il est connecté à la fin
+    function demandeÉlève(raison) {
+        const texte = (raison ? raison + '\n\n' : '') + 'Ton nom (ou ton identifiant) :';
+        const réponse = prompt(texte, élève || '');
+        if (réponse === null) return !!élève;
+        const nom = nfc(réponse).trim().replace(/\s+/g, ' ');
+        if (!nom) { changeÉlève(null); return false; }
+        if (nom.length > 40 || !/^[\p{L}\p{N} _\-.]+$/u.test(nom)) {
+            alert('Ce nom ne convient pas : utilise des lettres, des chiffres, des espaces, - ou _ (40 caractères au plus).');
+            return demandeÉlève(raison);
+        }
+        changeÉlève(nom);
+        return true;
+    }
+
+    function exigeÉlève(raison) {
+        return !!élève || demandeÉlève(raison);
+    }
+
+    // ------------------------------------------------------------------
+    // Archives : tous les programmes (et les répertoires) dans un seul fichier,
+    // pour les partager ou les retrouver sur un autre ordinateur.
+    // ------------------------------------------------------------------
+    const FORMAT_ARCHIVE = 'archive-pythonerie';
+    const CLÉ_SAUVEGARDE = 'pythonerie.sauvegarde';
+
+    // Tous les programmes en cours : { programmes: {chemin: code}, dossiers: [...] }
+    async function instantané() {
+        await sauvegarde();
+        const contenu = await stockage.liste();
+        const progs = {};
+        for (const p of contenu.programmes) progs[p.chemin] = await stockage.lit(p.chemin);
+        return { programmes: progs, dossiers: contenu.dossiers };
+    }
+
+    // Remplace tous les programmes en cours par ceux de l'instantané
+    async function remplaceTout(instant) {
+        clearTimeout(minuterieSauvegarde);
+        modifie = false;
+        if (stockage.genre === 'navigateur') {
+            const tout = {};
+            const maintenant = Date.now() / 1000;
+            Object.entries(instant.programmes).forEach(([c, code]) => { tout[c] = { code, modifie: maintenant }; });
+            StockageNavigateur._écrit(CLÉ_PROGRAMMES, tout);
+            StockageNavigateur._écrit(CLÉ_DOSSIERS, instant.dossiers);
+        } else {
+            const actuel = await stockage.liste();
+            for (const p of actuel.programmes) await stockage.supprime(p.chemin);
+            // les répertoires les plus profonds d'abord
+            const àSupprimer = [...actuel.dossiers].sort((a, b) => b.split('/').length - a.split('/').length);
+            for (const d of àSupprimer) { try { await stockage.supprimeDossier(d); } catch (e) { /* déjà parti */ } }
+            for (const d of instant.dossiers) await stockage.créeDossier(d);
+            for (const [c, code] of Object.entries(instant.programmes)) await stockage.écrit(c, code);
+        }
+        courant = null;
+        sélection = new Set();
+        dossierCourant = '';
+        Pyt.stoppeTout();
+        await rafraichitListe();
+        if (programmes.length) await ouvre(programmes[0].chemin);
+        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+    }
+
+    // Un chemin d'archive est accepté seulement s'il est fait de noms valides
+    function cheminValide(chemin) {
+        const morceaux = nfc(String(chemin)).split('/');
+        return morceaux.length <= 8 && morceaux.every(m => nomValide(m) === m) ? morceaux.join('/') : null;
+    }
+
+    function nomArchive() {
+        const d = new Date();
+        const n = (x) => String(x).padStart(2, '0');
+        const identifiant = élève.replace(/[^\p{L}\p{N}\-]+/gu, '_');
+        return identifiant + '_' + d.getFullYear() + '_' + n(d.getMonth() + 1) + '_' + n(d.getDate()) + '_' + n(d.getHours()) + '_' + n(d.getMinutes());
+    }
+
+    async function créeArchive() {
+        if (!exigeÉlève('Pour créer une archive, il faut d\'abord dire qui tu es.')) return null;
+        let instant;
+        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return null; }
+        const nom = nomArchive();
+        const archive = {
+            format: FORMAT_ARCHIVE, version: 1, élève, créée: new Date().toISOString(),
+            programmes: instant.programmes, dossiers: instant.dossiers
+        };
+        const blob = new Blob([JSON.stringify(archive, null, 1)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nom + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        écritConsole('— Archive « ' + nom + '.json » créée (' + Object.keys(instant.programmes).length
+            + ' programmes) : elle est dans le dossier Téléchargements.', 'info');
+        mémoriseArchivé(instant);
+        return nom + '.json';
+    }
+
+    // ------------------------------------------------------------------
+    // Ce qui a été mis dans une archive : une empreinte des programmes au moment de
+    // l'archive. À la déconnexion, on compare avec les programmes actuels pour savoir
+    // si quelque chose a changé depuis.
+    // ------------------------------------------------------------------
+    const CLÉ_ARCHIVÉ = 'pythonerie.archivé';
+
+    function empreinte(instant) {
+        const chemins = Object.keys(instant.programmes).sort();
+        const texte = JSON.stringify([chemins.map(c => [c, instant.programmes[c]]), [...instant.dossiers].sort()]);
+        // empreinte FNV-1a sur 32 bits, plus la longueur du texte
+        let h = 0x811c9dc5;
+        for (let i = 0; i < texte.length; i++) { h ^= texte.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+        return h.toString(16) + '-' + texte.length;
+    }
+
+    function mémoriseArchivé(instant) {
+        try { localStorage.setItem(CLÉ_ARCHIVÉ, empreinte(instant)); } catch (e) { /* rien */ }
+    }
+
+    // Rien à sauvegarder : aucun programme, ou seulement le programme d'accueil intact
+    function espaceVide(instant) {
+        const codes = Object.values(instant.programmes);
+        return codes.length === 0 || (codes.length === 1 && codes[0].trim() === PROGRAMME_ACCUEIL.trim());
+    }
+
+    // Fenêtre de dialogue : renvoie la valeur du bouton choisi (null pour Échap)
+    function dialogue(titre, texte, boutons) {
+        return new Promise(résout => {
+            const fond = $('dialogue');
+            $('dialogueTitre').textContent = titre;
+            $('dialogueTexte').textContent = texte;
+            const zone = $('dialogueBoutons');
+            zone.innerHTML = '';
+            const ferme = (valeur) => {
+                fond.classList.remove('visible');
+                document.removeEventListener('keydown', clavier, true);
+                résout(valeur);
+            };
+            const clavier = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); ferme(null); } };
+            boutons.forEach(b => {
+                const bouton = document.createElement('button');
+                bouton.className = 'btn' + (b.genre === 'danger' ? ' danger' : b.genre === 'principal' ? '' : ' btn-secondaire');
+                bouton.textContent = b.texte;
+                bouton.addEventListener('click', () => ferme(b.valeur));
+                zone.appendChild(bouton);
+            });
+            document.addEventListener('keydown', clavier, true);
+            fond.classList.add('visible');
+            zone.querySelector('button').focus();
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Déconnexion : on vérifie que les programmes ont été mis dans une archive,
+    // puis tout l'espace de l'élève est vidé (programmes, répertoires, sauvegarde
+    // temporaire, historique de la console).
+    // ------------------------------------------------------------------
+    async function déconnecte() {
+        if (!élève) return;
+        let instant;
+        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return; }
+        let archivé = null;
+        try { archivé = localStorage.getItem(CLÉ_ARCHIVÉ); } catch (e) { /* rien */ }
+        const nb = Object.keys(instant.programmes).length;
+        let choix;
+        if (espaceVide(instant)) {
+            choix = await dialogue('Te déconnecter, ' + élève + ' ?', 'Il n\'y a pas de programme à garder.',
+                [{ texte: 'Me déconnecter', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }]);
+        } else if (empreinte(instant) === archivé) {
+            choix = await dialogue('Te déconnecter, ' + élève + ' ?',
+                'Tes ' + nb + ' programmes sont dans ton archive, avec leurs dernières modifications.\n'
+                + 'Une fois déconnecté, ils seront effacés de cet ordinateur.',
+                [{ texte: 'Me déconnecter et effacer mes programmes', valeur: 'oui', genre: 'danger' },
+                 { texte: '📦 Créer une nouvelle archive avant', valeur: 'archive' },
+                 { texte: 'Annuler', valeur: null }]);
+        } else {
+            choix = await dialogue('Attention, ' + élève + ' !',
+                (archivé ? 'Tu as modifié tes programmes depuis ta dernière archive.'
+                         : 'Tu n\'as pas encore créé d\'archive de tes programmes.')
+                + '\nUne fois déconnecté, tes ' + nb + ' programmes seront effacés de cet ordinateur.',
+                [{ texte: '📦 Créer une archive, puis me déconnecter', valeur: 'archive', genre: 'principal' },
+                 { texte: 'Me déconnecter sans archive (tout sera perdu)', valeur: 'oui', genre: 'danger' },
+                 { texte: 'Annuler', valeur: null }]);
+        }
+        if (!choix) return;
+        if (choix === 'archive') {
+            const nom = await créeArchive();
+            if (!nom) return;
+            // on ne peut pas savoir si le navigateur a bien enregistré le fichier : on demande
+            const suite = await dialogue('As-tu bien ton archive ?',
+                'L\'archive « ' + nom + ' » vient d\'être créée.\nVérifie qu\'elle est dans ton dossier Téléchargements avant de te déconnecter.',
+                [{ texte: 'Oui, me déconnecter et effacer mes programmes', valeur: 'oui', genre: 'danger' },
+                 { texte: 'Annuler', valeur: null }]);
+            if (!suite) return;
+        }
+        await videEspace();
+    }
+
+    async function videEspace() {
+        const ancien = élève;
+        try {
+            await remplaceTout({ programmes: {}, dossiers: [] });
+        } catch (e) {
+            écritConsole('Impossible d\'effacer les programmes : ' + e.message, 'erreur');
+            return;
+        }
+        ['pythonerie.sauvegarde', CLÉ_ARCHIVÉ, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
+            try { localStorage.removeItem(clé); } catch (e) { /* rien */ }
+        });
+        window.dispatchEvent(new Event('pythonerie-vide'));
+        // l'interpréteur garde les variables du dernier programme : on l'oublie aussi
+        if (idxExécution !== null) {
+            try { callCleanLispE(idxExécution); } catch (e) { /* rien */ }
+            idxExécution = null;
+        }
+        Pyt.stoppeTout();
+        Pyt.réinitialise();
+        changeÉlève(null);
+        cacheBandeauArchive();
+        metAJourAnnulation();
+        effaceConsole();
+        écritConsole('— Au revoir, ' + ancien + ' ! L\'espace a été vidé.', 'info');
+    }
+
+    async function chargeArchive(fichier) {
+        let archive;
+        try {
+            archive = JSON.parse(nfc(await fichier.text()));
+            if (!archive || archive.format !== FORMAT_ARCHIVE || typeof archive.programmes !== 'object') throw new Error();
+        } catch (e) {
+            alert('« ' + fichier.name + ' » n\'est pas une archive de la Pythonerie.');
+            return;
+        }
+        // on ne garde que des chemins valides
+        const instant = { programmes: {}, dossiers: [] };
+        Object.entries(archive.programmes).forEach(([c, code]) => {
+            const chemin = cheminValide(c);
+            if (chemin && typeof code === 'string') instant.programmes[chemin] = nfc(code);
+        });
+        (Array.isArray(archive.dossiers) ? archive.dossiers : []).forEach(d => {
+            const chemin = cheminValide(d);
+            if (chemin) instant.dossiers.push(chemin);
+        });
+        const nb = Object.keys(instant.programmes).length;
+        const auteur = archive.élève ? ' de ' + archive.élève : '';
+        if (!confirm('Charger l\'archive' + auteur + ' (' + nb + ' programmes) ?\n\n'
+            + 'Elle remplace TOUS les programmes en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return;
+        // sauvegarde temporaire des programmes en cours, pour pouvoir annuler
+        try {
+            const avant = await instantané();
+            localStorage.setItem(CLÉ_SAUVEGARDE, JSON.stringify({ élève, date: new Date().toISOString(), ...avant }));
+        } catch (e) {
+            écritConsole('Chargement abandonné : impossible de sauvegarder les programmes en cours (' + e.message + ').', 'erreur');
+            return;
+        }
+        try {
+            await remplaceTout(instant);
+            mémoriseArchivé(await instantané());
+        } catch (e) {
+            écritConsole('Erreur pendant le chargement de l\'archive : ' + e.message + '. Utilise « Annuler le chargement ».', 'erreur');
+        }
+        // l'archive appartient peut-être à un autre élève : on se déconnecte
+        changeÉlève(null);
+        afficheBandeauArchive('Archive' + auteur + ' chargée : ' + nb + ' programmes. Tape ton nom (👤 en haut) pour exécuter du code.');
+        metAJourAnnulation();
+    }
+
+    function sauvegardeTemporaire() {
+        try { return JSON.parse(localStorage.getItem(CLÉ_SAUVEGARDE) || 'null'); } catch (e) { return null; }
+    }
+
+    async function annuleArchive() {
+        const avant = sauvegardeTemporaire();
+        if (!avant) return;
+        if (!confirm('Revenir aux programmes d\'avant le chargement de l\'archive ?\n\nLes programmes actuels seront remplacés.')) return;
+        try {
+            await remplaceTout(avant);
+        } catch (e) {
+            écritConsole('Impossible de revenir en arrière : ' + e.message, 'erreur');
+            return;
+        }
+        try { localStorage.removeItem(CLÉ_SAUVEGARDE); } catch (e) { /* rien */ }
+        changeÉlève(avant.élève || null);
+        cacheBandeauArchive();
+        metAJourAnnulation();
+        écritConsole('— Les programmes d\'avant le chargement sont revenus.', 'info');
+    }
+
+    function metAJourAnnulation() {
+        $('btnAnnuleArchive').disabled = !sauvegardeTemporaire();
+    }
+
+    function afficheBandeauArchive(message) {
+        const bandeau = $('bandeauArchive');
+        bandeau.innerHTML = '';
+        const texte = document.createElement('span');
+        texte.textContent = message;
+        const annuler = document.createElement('button');
+        annuler.className = 'btn btn-secondaire btn-petit';
+        annuler.textContent = '↶ Annuler le chargement';
+        annuler.addEventListener('click', annuleArchive);
+        const fermer = document.createElement('button');
+        fermer.className = 'btn btn-secondaire btn-petit';
+        fermer.textContent = '✕';
+        fermer.title = 'Fermer ce message (l\'annulation reste possible dans le menu ☰)';
+        fermer.addEventListener('click', cacheBandeauArchive);
+        bandeau.append(texte, annuler, fermer);
+        bandeau.hidden = false;
+    }
+
+    function cacheBandeauArchive() {
+        $('bandeauArchive').hidden = true;
+    }
 
     async function choisitStockage() {
         // GitHub Pages ne sert que des fichiers : inutile de chercher serveur.py
@@ -1381,6 +1727,16 @@ const Pythonerie = (function () {
         $('btnSupprimer').addEventListener('click', () => supprime());
         $('btnExporter').addEventListener('click', () => exporte());
         $('btnImporter').addEventListener('click', () => $('fichierImport').click());
+        // une première fois pour se connecter, une deuxième fois pour se déconnecter
+        $('btnÉlève').addEventListener('click', () => { if (élève) déconnecte(); else demandeÉlève(); });
+        $('btnCréeArchive').addEventListener('click', créeArchive);
+        $('btnChargeArchive').addEventListener('click', () => $('fichierArchive').click());
+        $('fichierArchive').addEventListener('change', (ev) => {
+            const f = ev.target.files[0];
+            ev.target.value = '';
+            if (f) chargeArchive(f);
+        });
+        $('btnAnnuleArchive').addEventListener('click', annuleArchive);
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
@@ -1413,6 +1769,8 @@ const Pythonerie = (function () {
         metAJourBoutons();
 
         stockage = await choisitStockage();
+        afficheÉlève();
+        metAJourAnnulation();
         await rafraichitListe();
         chargeExemples();
 

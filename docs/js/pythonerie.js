@@ -10,7 +10,7 @@
 //    basic/bibliothèque.lisp, qui dessine dans le canevas via Pyt (canevas.js).
 // =====================================================================
 
-const PROGRAMME_ACCUEIL = `# Bienvenue dans Pythonerie !
+const PROGRAMME_ACCUEIL = `# Bienvenue dans la Pythonerie !
 # Écris ton programme ici, puis clique sur « Exécuter » (ou Ctrl+Entrée).
 
 nom = "Pythonerie"

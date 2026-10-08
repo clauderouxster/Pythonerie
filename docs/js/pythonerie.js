@@ -611,11 +611,27 @@ const Pythonerie = (function () {
     // login, l'utilisateur s'appelle « Unique » et il est connecté en permanence ;
     // le bouton 👤 est désactivé. Décoché dans le menu ☰, on passe en mode
     // « plusieurs élèves », où chacun doit taper son nom.
+    // Si config.json contient "multi_utilisateur": true, le mode plusieurs élèves
+    // est imposé à tout le monde : la case du menu est désactivée.
     // ------------------------------------------------------------------
     const NOM_UNIQUE = 'Unique';
     const CLÉ_UNIQUE = 'pythonerie.utilisateurUnique';
     let utilisateurUnique = true;
     try { utilisateurUnique = localStorage.getItem(CLÉ_UNIQUE) !== 'non'; } catch (e) { /* rien */ }
+    let multiImposé = false;
+
+    // Lit config.json (absent ou illisible : on garde les réglages par défaut)
+    async function chargeConfig() {
+        let config = {};
+        try {
+            const r = await fetch('config.json', { cache: 'no-cache' });
+            if (r.ok) config = await r.json();
+        } catch (e) { /* rien */ }
+        if (config && config.multi_utilisateur === true) {
+            multiImposé = true;
+            utilisateurUnique = false;
+        }
+    }
 
     let élève = null;
     try { élève = sessionStorage.getItem('pythonerie.élève'); } catch (e) { /* rien */ }
@@ -626,6 +642,7 @@ const Pythonerie = (function () {
     }
 
     function basculeUtilisateurUnique() {
+        if (multiImposé) return;
         utilisateurUnique = !utilisateurUnique;
         try { localStorage.setItem(CLÉ_UNIQUE, utilisateurUnique ? 'oui' : 'non'); } catch (e) { /* rien */ }
         // dans les deux sens, on repart sans élève connecté : en mode plusieurs
@@ -650,6 +667,8 @@ const Pythonerie = (function () {
         $('btnÉlève').title = utilisateurUnique ? 'Mode utilisateur unique : pas besoin de se connecter (voir le menu ☰)'
             : élève ? 'Connecté : ' + élève + ' (cliquer pour se déconnecter)' : 'Se connecter : taper son nom';
         $('btnUtilisateurUnique').setAttribute('aria-checked', String(utilisateurUnique));
+        $('btnUtilisateurUnique').disabled = multiImposé;
+        if (multiImposé) $('btnUtilisateurUnique').title = 'Le mode plusieurs élèves est imposé par config.json';
         $('btnUtilisateurUnique').textContent = (utilisateurUnique ? '☑' : '☐') + ' Utilisateur unique (sans connexion)';
     }
 
@@ -1786,6 +1805,7 @@ const Pythonerie = (function () {
         metAJourBoutons();
 
         stockage = await choisitStockage();
+        await chargeConfig();
         afficheÉlève();
         metAJourAnnulation();
         await rafraichitListe();

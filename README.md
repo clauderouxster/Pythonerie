@@ -80,7 +80,7 @@ Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, 
 ## Les programmes de l'élève
 
 - En ligne, les programmes sont conservés dans le navigateur de l'élève.
-- Par défaut, la Pythonerie est en mode **Utilisateur unique** : pas de connexion, l'utilisateur s'appelle « Unique » et le bouton **👤** est désactivé. Ce mode convient à un ordinateur personnel. Sur un ordinateur partagé, on décoche **Utilisateur unique** dans le menu ☰ : la Pythonerie passe en mode **plusieurs élèves**, et chacun doit taper son nom. Ce choix est gardé dans le navigateur.
+- Par défaut, la Pythonerie est en mode **Utilisateur unique** : pas de connexion, l'utilisateur s'appelle « Unique » et le bouton **👤** est désactivé. Ce mode convient à un ordinateur personnel. Sur un ordinateur partagé, on décoche **Utilisateur unique** dans le menu ☰ : la Pythonerie passe en mode **plusieurs élèves**, et chacun doit taper son nom. Ce choix est gardé dans le navigateur. Un établissement peut aussi imposer le mode plusieurs élèves à tout le monde, dans le fichier `config.json` (voir plus bas).
 - En mode plusieurs élèves, le bouton **👤** en haut de l'écran affiche le nom de l'élève (« inconnu » au départ). Il faut le taper pour exécuter du code. Il est oublié quand on ferme l'onglet, ce qui convient aux ordinateurs partagés. Un deuxième clic sur **👤** déconnecte l'élève : si ses programmes ont changé depuis sa dernière archive (ou s'il n'en a jamais créé), la Pythonerie lui propose d'en créer une. Ensuite, tout son espace est vidé : programmes, répertoires, sauvegarde temporaire et historique de la console.
 - Pour partager un environnement, le menu ☰ propose de **créer une archive** : un fichier `nom_aaaa_mm_jj_hh_MM.json` qui contient tous les programmes et les répertoires, enregistré dans le dossier Téléchargements. **Charger une archive** remplace tous les programmes en cours par ceux de l'archive. En mode plusieurs élèves, si l'espace contenait déjà des programmes, l'élève est déconnecté (son nom sera redemandé à la prochaine exécution) ; si l'espace était vide, il reste connecté. S'il y avait des programmes, ils sont mis de côté, après confirmation : **Annuler le chargement** les fait revenir. Si l'espace était vide (ou ne contenait que le programme d'accueil), l'archive est chargée directement.
 - On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Pour en supprimer plusieurs à la fois, on les choisit avec Cmd+clic ou Ctrl+clic (un par un) ou Maj+clic (une suite), puis on clique sur **Supprimer** dans le bandeau, ou on appuie sur la touche Suppr. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
@@ -101,6 +101,16 @@ Options :
 - `--port 8080` pour choisir un autre port ;
 - `--hôte 0.0.0.0` pour que les élèves d'une salle de classe se connectent depuis leur poste ;
 - `--sans-navigateur` pour ne pas ouvrir de navigateur au lancement.
+
+Le fichier `docs/config.json` contient les réglages de l'installation :
+
+```json
+{
+    "multi_utilisateur": false
+}
+```
+
+Avec `"multi_utilisateur": true`, la Pythonerie démarre en mode plusieurs élèves pour tout le monde : chaque élève doit taper son nom, et la case **Utilisateur unique** du menu ☰ est désactivée, si bien qu'on ne peut pas revenir au mode Utilisateur unique.
 
 ## Comment ça marche
 

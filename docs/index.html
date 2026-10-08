@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.08.21.24">
+    <link rel="stylesheet" href="style.css?v=2026.10.08.21.56">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.21.24</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.21.56</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -79,14 +79,17 @@
                         </span>
                     <input type="file" id="fichierImport" accept=".py,.txt" multiple hidden>
                     <input type="file" id="fichierArchive" accept=".json,application/json" hidden>
+                    <input type="file" id="fichierDonnées" hidden>
                 </div>
                 <!-- Sélection de plusieurs programmes (Cmd/Ctrl+clic, Maj+clic) -->
                 <div id="bandeauSélection" class="bandeau-sélection" hidden></div>
                 <ul id="listeProgrammes" class="liste"></ul>
                 <div id="genreStockage" class="note"></div>
             </div>
-            <!-- Le répertoire « Exemples », replié par défaut (voir chargeExemples) -->
+            <!-- Les répertoires « Matériels » (déposés par l'enseignant) et « Exemples »,
+                 repliés par défaut (voir chargeRépertoireSite) -->
             <div class="section">
+                <ul id="listeMatériels" class="liste exemples" hidden></ul>
                 <ul id="listeExemples" class="liste exemples"></ul>
             </div>
         </aside>
@@ -327,8 +330,10 @@ selon (nom):
                 </table>
                 <h3>Fichiers</h3>
                 <table class="table-aide">
-                    <tr><td><code>t = lit_fichier("exemples/médias/fable.txt")</code></td><td>le texte d'un fichier de la Pythonerie</td>
+                    <tr><td><code>t = lit_fichier("courses.txt")</code></td><td>le texte d'un fichier de l'ordinateur, choisi dans une fenêtre à chaque exécution</td>
                         <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements (scores.txt)</td></tr>
+                    <tr><td><code>t = charge_données("capitales.csv")</code></td><td>le texte d'un fichier du répertoire Matériels (préparé par l'enseignant)</td>
+                        <td></td><td></td></tr>
                 </table>
                 <p class="note">L'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
                     Une image d'un autre site s'affiche, mais le bouton « Image » ne peut plus enregistrer le dessin.</p>
@@ -378,7 +383,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.08.21.24';
+                return répertoire + fichier + '?v=2026.10.08.21.56';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -386,12 +391,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.08.21.24"></script>
-    <script src="js/canevas.js?v=2026.10.08.21.24"></script>
-    <script src="js/pythonerie.js?v=2026.10.08.21.24"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.08.21.56"></script>
+    <script src="js/canevas.js?v=2026.10.08.21.56"></script>
+    <script src="js/pythonerie.js?v=2026.10.08.21.56"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.08.21.24"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.08.21.24"></script>
+    <script src="lispe/lispe.js?v=2026.10.08.21.56"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.08.21.56"></script>
 </body>
 
 </html>

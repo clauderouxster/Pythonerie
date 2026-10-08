@@ -394,21 +394,26 @@ const Pyt = (function () {
         },
 
         // ---------- Fichiers ----------
-        // lit_fichier(nom) : lecture synchrone (le programme attend le contenu),
-        // relative au répertoire de la page
+        // lit_fichier(nom) : un fichier du disque, choisi par l'élève (voir pythonerie.js),
+        // ou une adresse complète https://... (lecture synchrone : le programme attend)
         litFichier(nom) {
             erreurFichier = '';
             nom = String(nom).normalize('NFC');
+            if (!/^https?:\/\//i.test(nom)) {
+                const r = window.Pythonerie.litFichierLocal(nom);
+                if (r.erreur) { erreurFichier = r.erreur; return ''; }
+                return r.contenu;
+            }
             const requête = new XMLHttpRequest();
             try {
-                requête.open('GET', new URL(nom, document.baseURI).href, false);
+                requête.open('GET', nom, false);
                 requête.overrideMimeType('text/plain; charset=utf-8');
                 requête.send();
             } catch (e) {
-                erreurFichier = 'impossible de lire le fichier « ' + nom + ' »';
+                erreurFichier = 'impossible de lire « ' + nom + ' »';
                 return '';
             }
-            if (requête.status !== 200 && requête.status !== 0) {
+            if (requête.status !== 200) {
                 erreurFichier = 'fichier introuvable : « ' + nom + ' »';
                 return '';
             }
@@ -424,6 +429,7 @@ const Pyt = (function () {
                 return;
             }
             if (!nom.includes('.')) nom += '.txt';
+            if (window.Pythonerie.déjàÉcrit(nom, String(texte))) return;
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([String(texte)], { type: 'text/plain;charset=utf-8' }));
             a.download = nom;
@@ -433,6 +439,14 @@ const Pyt = (function () {
         // le message de la dernière erreur de lit_fichier / écrit_fichier ('' si tout va bien)
         erreurFichier() {
             return erreurFichier;
+        },
+
+        // charge_données(nom) : un fichier du répertoire Matériels (voir pythonerie.js)
+        chargeDonnées(nom) {
+            erreurFichier = '';
+            const r = window.Pythonerie.chargeDonnées(nom);
+            if (r.erreur) { erreurFichier = r.erreur; return ''; }
+            return r.contenu;
         },
 
         // ---------- Images ----------

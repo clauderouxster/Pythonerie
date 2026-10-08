@@ -291,23 +291,91 @@ const Pythonerie = (function () {
 
     // Exécute une ligne de la console dans l'interpréteur du dernier programme :
     // ses variables et ses fonctions sont disponibles.
-    function exécuteConsole(code) {
+    function exécuteConsole(code, relancé) {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter du code, il faut d\'abord dire qui tu es.')) {
             écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter du code.', 'info');
             return;
         }
         const lignes = code.split('\n');
-        écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
+        if (relancé !== true) {
+            écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
+            fichiersÉcrits = new Set();
+        }
         const c = compileConsole(code);
         if (c.erreur) { écritConsole(c.erreur, 'erreur'); return; }
         try {
             if (idxExécution === null) nouvelInterpréteur();
             évalue(idxExécution, c.lispe);
         } catch (e) {
-            écritConsole(nettoieErreur(e), 'erreur');
+            if (!fichierDemandé) écritConsole(nettoieErreur(e), 'erreur');
         }
+        if (fichierDemandé) choisitFichier(() => exécuteConsole(code, true));
         metAJourBoutons();
+    }
+
+    // ------------------------------------------------------------------
+    // lit_fichier(nom) : un fichier du disque de l'élève. Le navigateur ne peut le lire
+    // que si l'élève le choisit lui-même, et le programme ne peut pas attendre ce choix :
+    // au premier lit_fichier d'un nom, le programme s'arrête, la fenêtre de sélection
+    // s'ouvre, puis le programme repart depuis le début avec le contenu du fichier.
+    // Les fichiers choisis ne servent que pour l'exécution en cours : une nouvelle
+    // exécution les redemande (ils ont pu changer sur le disque).
+    // ------------------------------------------------------------------
+    let fichiersLus = new Map();
+    let fichierDemandé = null;
+    // Les fichiers déjà téléchargés par écrit_fichier pendant cette exécution : quand le
+    // programme repart après le choix d'un fichier, on ne les télécharge pas une seconde fois
+    let fichiersÉcrits = new Set();
+
+    // Appelé par Pyt.écritFichier : Vrai si ce fichier, avec ce texte, est déjà parti
+    function déjàÉcrit(nom, texte) {
+        const clé = nom + '\u0000' + texte;
+        if (fichiersÉcrits.has(clé)) return true;
+        fichiersÉcrits.add(clé);
+        return false;
+    }
+
+    // Appelé par Pyt.litFichier : { contenu } ou { erreur }
+    function litFichierLocal(nom) {
+        nom = nfc(String(nom)).trim();
+        if (fichiersLus.has(nom)) return { contenu: fichiersLus.get(nom) };
+        fichierDemandé = nom;
+        return { erreur: 'il faut choisir le fichier « ' + nom + ' » sur ton ordinateur' };
+    }
+
+    // Ouvre la fenêtre de sélection du fichier demandé, puis relance
+    function choisitFichier(relancer) {
+        const nom = fichierDemandé;
+        fichierDemandé = null;
+        Pyt.stoppeTout();
+        écritConsole('— Le programme a besoin du fichier « ' + nom + ' » : choisis-le sur ton ordinateur.', 'info');
+        const entrée = $('fichierDonnées');
+        const ouvre = () => {
+            entrée.onchange = async () => {
+                const f = entrée.files[0];
+                entrée.value = '';
+                if (!f) return;
+                try {
+                    fichiersLus.set(nom, nfc(await f.text()));
+                } catch (e) {
+                    écritConsole('Impossible de lire le fichier « ' + f.name + ' » : ' + e.message, 'erreur');
+                    return;
+                }
+                relancer();
+            };
+            entrée.oncancel = () => écritConsole('— Aucun fichier choisi : le programme est arrêté.', 'info');
+            entrée.click();
+        };
+        // Le navigateur n'ouvre la fenêtre que juste après un clic ou une touche. Après une
+        // relance (un deuxième fichier), ce n'est plus le cas : on demande un clic.
+        if (!navigator.userActivation || navigator.userActivation.isActive) { ouvre(); return; }
+        dialogue('Choisir un fichier', 'Le programme a besoin du fichier « ' + nom + ' ».',
+            [{ texte: '📂 Choisir « ' + nom + ' »', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }])
+            .then(choix => {
+                if (choix) ouvre();
+                else écritConsole('— Aucun fichier choisi : le programme est arrêté.', 'info');
+            });
     }
 
     function installeLigneDeCommande() {
@@ -401,13 +469,31 @@ const Pythonerie = (function () {
         try {
             évalue(idxExécution, code);
         } catch (e) {
-            Pyt.stoppeTout();
-            écritConsole(nettoieErreur(e), 'erreur');
-            metAJourBoutons();
+            if (!fichierDemandé) {
+                Pyt.stoppeTout();
+                écritConsole(nettoieErreur(e), 'erreur');
+                metAJourBoutons();
+            }
         }
+        // lit_fichier dans une animation ou un clic : le fichier choisi servira la fois suivante
+        if (fichierDemandé) choisitFichierPendantAnimation();
     }
 
-    function exécute() {
+    function choisitFichierPendantAnimation() {
+        const nom = fichierDemandé;
+        fichierDemandé = null;
+        const entrée = $('fichierDonnées');
+        entrée.onchange = async () => {
+            const f = entrée.files[0];
+            entrée.value = '';
+            if (f) fichiersLus.set(nom, nfc(await f.text()));
+        };
+        entrée.oncancel = null;
+        entrée.click();
+    }
+
+    // relancé : après le choix d'un fichier pour lit_fichier (on garde les fichiers choisis)
+    function exécute(relancé) {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
             écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
@@ -417,6 +503,8 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         Pyt.réinitialise();
         effaceConsole();
+        if (relancé !== true) { fichiersLus = new Map(); fichiersÉcrits = new Set(); }
+        fichierDemandé = null;
 
         const c = compile(code);
         if (c.erreur) {
@@ -433,12 +521,14 @@ const Pythonerie = (function () {
             nouvelInterpréteur();
             évalue(idxExécution, c.lispe);
             const durée = Math.round(performance.now() - début);
-            if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
+            if (fichierDemandé) { /* rien : la fenêtre de sélection s'ouvre ci-dessous */ }
+            else if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
             else écritConsole('— Programme en cours (animation ou événements). Clique sur « Arrêter » pour le stopper.', 'info');
         } catch (e) {
-            écritConsole(nettoieErreur(e), 'erreur');
+            if (!fichierDemandé) écritConsole(nettoieErreur(e), 'erreur');
             Pyt.stoppeTout();
         }
+        if (fichierDemandé) choisitFichier(() => exécute(true));
         metAJourBoutons();
     }
 
@@ -991,6 +1081,7 @@ const Pythonerie = (function () {
     const SVG_CHEVRON = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.7 13.7L5 13l4.6-4.6L5 3.7l.7-.7 5.3 5.3-5.3 5.4z"/></svg>';
     const SVG_DOSSIER_OUVERT = '<svg viewBox="0 0 16 16" fill="none"><path d="M1.5 2h4.7l1 1H14.5v1.5H1.5V2z" fill="#C09553"/><path d="M1 5h14l-1.5 9H2.5L1 5z" fill="#DCB67A"/></svg>';
     const SVG_DOSSIER_FERME = '<svg viewBox="0 0 16 16" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#C09553"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#DCB67A"/></svg>';
+    const SVG_DONNÉES = '<svg viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5h6l3 3v10h-9z" stroke="currentColor" stroke-width="1.1"/><path d="M9.5 1.5v3h3" stroke="currentColor" stroke-width="1.1"/><path d="M5.5 8h5M5.5 10h5M5.5 12h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
     const SVG_PROGRAMME = '<svg viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5h6l3 3v10h-9z" stroke="currentColor" stroke-width="1.1"/><path d="M9.5 1.5v3h3" stroke="currentColor" stroke-width="1.1"/><path d="M5.5 8.5l-1.5 1.5 1.5 1.5M10.5 8.5l1.5 1.5-1.5 1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const SVG_RENOMMER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M13.23 1h-1.46L3.52 9.25l-.16.22L1 13.59 2.41 15l4.12-2.36.22-.16L15 4.23V2.77L13.23 1zM2.41 13.59l1.51-3 1.45 1.45-2.96 1.55zm3.83-2.06L4.47 9.76l8-8 1.77 1.77-8 8z"/></svg>';
     const SVG_SUPPRIMER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M10 3h3v1h-1v9a1 1 0 01-1 1H5a1 1 0 01-1-1V4H3V3h3V2a1 1 0 011-1h2a1 1 0 011 1v1zM5 4v9h6V4H5zm2-1V2H7v1h2V2H7v1zm-1 2h1v7H6V5zm3 0h1v7H9V5z"/></svg>';
@@ -1500,67 +1591,81 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Exemples (répertoire exemples/)
+    // Répertoires du site : « Matériels » (matériels/, le matériel de cours déposé par
+    // l'enseignant) et « Exemples » (exemples/). Chacun a son index.json :
+    // [{ "fichier", "titre", "description" }]. Ils sont repliés par défaut pour ne pas
+    // encombrer la colonne. Un clic sur un programme (.py) en crée une copie ; un clic
+    // sur un autre fichier (des données) explique comment le lire avec charge_données.
     // ------------------------------------------------------------------
-    // Les exemples sont rangés dans un répertoire « Exemples », replié par défaut
-    // pour ne pas encombrer la colonne ; un clic sur un exemple en crée une copie.
-    let exemplesOuverts = false;
-    try { exemplesOuverts = localStorage.getItem('pythonerie.exemplesOuverts') === 'oui'; } catch (e) { /* rien */ }
-
-    async function chargeExemples() {
-        const ul = $('listeExemples');
+    async function chargeRépertoireSite({ idListe, répertoire, nom, clé, masquéSiVide }) {
+        const ul = $(idListe);
+        let ouvert = false;
+        try { ouvert = localStorage.getItem(clé) === 'oui'; } catch (e) { /* rien */ }
         let liste;
         try {
-            const r = await fetch('exemples/index.json', { cache: 'no-cache' });
+            const r = await fetch(répertoire + '/index.json', { cache: 'no-cache' });
+            if (!r.ok) throw new Error();
             liste = await r.json();
+            if (!Array.isArray(liste)) throw new Error();
         } catch (e) {
-            ul.innerHTML = '<li class="liste-vide">Exemples indisponibles</li>';
+            if (masquéSiVide) ul.hidden = true;
+            else ul.innerHTML = '<li class="liste-vide">' + nom + ' indisponibles</li>';
             return;
         }
+        liste = liste.filter(x => x && typeof x.fichier === 'string').map(x => ({ ...x, fichier: nfc(x.fichier) }));
+        if (!liste.length && masquéSiVide) { ul.hidden = true; return; }
+        ul.hidden = false;
         const affiche = () => {
             ul.innerHTML = '';
             // la ligne du répertoire
             const dossier = ligneArbre(0, 'dossier');
-            dossier.id = 'dossierExemples';
-            dossier.title = exemplesOuverts ? 'Replier les exemples' : 'Voir les exemples';
+            dossier.title = ouvert ? 'Replier « ' + nom + ' »' : 'Voir « ' + nom + ' »';
             const chevron = document.createElement('span');
-            chevron.className = 'arbre-chevron' + (exemplesOuverts ? ' ouvert' : '');
+            chevron.className = 'arbre-chevron' + (ouvert ? ' ouvert' : '');
             chevron.innerHTML = SVG_CHEVRON;
             const icône = document.createElement('span');
             icône.className = 'arbre-icône';
-            icône.innerHTML = exemplesOuverts ? SVG_DOSSIER_OUVERT : SVG_DOSSIER_FERME;
-            const nom = document.createElement('span');
-            nom.className = 'programme-nom';
-            nom.textContent = 'Exemples';
+            icône.innerHTML = ouvert ? SVG_DOSSIER_OUVERT : SVG_DOSSIER_FERME;
+            const titreDossier = document.createElement('span');
+            titreDossier.className = 'programme-nom';
+            titreDossier.textContent = nom;
             const nombre = document.createElement('span');
             nombre.className = 'nombre-exemples';
             nombre.textContent = liste.length;
-            dossier.append(chevron, icône, nom, nombre);
+            dossier.append(chevron, icône, titreDossier, nombre);
             dossier.addEventListener('click', () => {
-                exemplesOuverts = !exemplesOuverts;
-                try { localStorage.setItem('pythonerie.exemplesOuverts', exemplesOuverts ? 'oui' : 'non'); } catch (e) { /* rien */ }
+                ouvert = !ouvert;
+                try { localStorage.setItem(clé, ouvert ? 'oui' : 'non'); } catch (e) { /* rien */ }
                 affiche();
             });
             ul.appendChild(dossier);
-            if (!exemplesOuverts) return;
-            // les exemples, un cran plus loin, comme les programmes d'un répertoire
-            liste.forEach(ex => {
+            if (!ouvert) return;
+            // le contenu, un cran plus loin, comme les programmes d'un répertoire
+            liste.forEach(élément => {
+                const programme = /\.py$/i.test(élément.fichier);
+                const titre = élément.titre || élément.fichier;
                 const li = ligneArbre(1, 'programme');
-                li.title = (ex.description || ex.titre) + ' — un clic crée une copie que tu peux modifier';
+                li.title = (élément.description ? élément.description + ' — ' : '')
+                    + (programme ? 'un clic crée une copie que tu peux modifier' : 'données : un clic montre comment les lire');
                 const espace = document.createElement('span');
                 espace.className = 'arbre-chevron';
-                const icôneEx = document.createElement('span');
-                icôneEx.className = 'arbre-icône';
-                icôneEx.innerHTML = SVG_PROGRAMME;
-                const titre = document.createElement('span');
-                titre.className = 'programme-nom';
-                titre.textContent = ex.titre;
-                li.append(espace, icôneEx, titre);
+                const icôneÉl = document.createElement('span');
+                icôneÉl.className = 'arbre-icône';
+                icôneÉl.innerHTML = programme ? SVG_PROGRAMME : SVG_DONNÉES;
+                const texte = document.createElement('span');
+                texte.className = 'programme-nom';
+                texte.textContent = titre;
+                li.append(espace, icôneÉl, texte);
                 li.addEventListener('click', async () => {
+                    if (!programme) {
+                        écritConsole('— « ' + élément.fichier + ' »' + (élément.description ? ' : ' + élément.description : '')
+                            + '\n   Pour le lire dans un programme : texte = charge_données("' + élément.fichier + '")', 'info');
+                        return;
+                    }
                     try {
-                        const rc = await fetch('exemples/' + ex.fichier, { cache: 'no-cache' });
-                        if (!rc.ok) throw new Error('Exemple introuvable');
-                        await crée(dossierCourant, ex.titre, nfc(await rc.text()));
+                        const rc = await fetch(répertoire + '/' + élément.fichier.split('/').map(encodeURIComponent).join('/'), { cache: 'no-cache' });
+                        if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
+                        await crée(dossierCourant, titre.replace(/\.py$/i, ''), nfc(await rc.text()));
                     } catch (e) {
                         écritConsole(e.message, 'erreur');
                     }
@@ -1569,6 +1674,33 @@ const Pythonerie = (function () {
             });
         };
         affiche();
+    }
+
+    function chargeRépertoiresSite() {
+        chargeRépertoireSite({ idListe: 'listeMatériels', répertoire: 'matériels', nom: 'Matériels',
+            clé: 'pythonerie.matérielsOuverts', masquéSiVide: true });
+        chargeRépertoireSite({ idListe: 'listeExemples', répertoire: 'exemples', nom: 'Exemples',
+            clé: 'pythonerie.exemplesOuverts', masquéSiVide: false });
+    }
+
+    // charge_données(nom) : un fichier du répertoire matériels/ du site (lecture synchrone :
+    // le programme attend le contenu). { contenu } ou { erreur }
+    function chargeDonnées(nom) {
+        nom = nfc(String(nom)).trim().replace(/^matériels\//, '');
+        const morceaux = nom.split('/');
+        if (!nom || /^[a-z]+:/i.test(nom) || morceaux.some(m => !m || m === '.' || m === '..')) {
+            return { erreur: 'nom de données invalide : « ' + nom + ' » (le nom d\'un fichier du répertoire Matériels)' };
+        }
+        const requête = new XMLHttpRequest();
+        try {
+            requête.open('GET', 'matériels/' + morceaux.map(encodeURIComponent).join('/'), false);
+            requête.overrideMimeType('text/plain; charset=utf-8');
+            requête.send();
+        } catch (e) {
+            return { erreur: 'impossible de lire les données « ' + nom + ' »' };
+        }
+        if (requête.status !== 200) return { erreur: 'les données « ' + nom + ' » ne sont pas dans le répertoire Matériels' };
+        return { contenu: nfc(requête.responseText) };
     }
 
     // ------------------------------------------------------------------
@@ -1792,7 +1924,7 @@ const Pythonerie = (function () {
         afficheÉlève();
         metAJourAnnulation();
         await rafraichitListe();
-        chargeExemples();
+        chargeRépertoiresSite();
 
         let dernier = null;
         try { dernier = localStorage.getItem('pythonerie.dernier'); } catch (e) { /* rien */ }
@@ -1834,7 +1966,7 @@ const Pythonerie = (function () {
     }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
         compile // utile pour les tests depuis la console du navigateur

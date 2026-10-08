@@ -190,8 +190,8 @@
 
 ;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
-; lit_fichier(nom) : contenu d'un fichier du site, à partir du répertoire de la page
-; (données.txt, exemples/poème.txt) ou d'une adresse complète (https://...).
+; lit_fichier(nom) : contenu d'un fichier du disque, que l'élève choisit dans une fenêtre
+; (le programme est relancé une fois le fichier choisi), ou d'une adresse https://...
 ; écrit_fichier(nom, texte) : le fichier est téléchargé (dossier Téléchargements).
 ;------------------------------------------------------------------
 ; Une erreur côté navigateur (fichier absent, nom invalide) devient une erreur du
@@ -202,6 +202,12 @@
 
 (defun lit_fichier (nom)
    (setq contenu (evaljs (list "Pyt.litFichier" (string nom))))
+   (_erreur_fichier)
+   contenu)
+
+; charge_données(nom) : un fichier du répertoire Matériels du site (matériel de cours)
+(defun charge_données (nom)
+   (setq contenu (evaljs (list "Pyt.chargeDonnées" (string nom))))
    (_erreur_fichier)
    contenu)
 

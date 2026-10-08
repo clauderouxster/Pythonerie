@@ -693,19 +693,35 @@ joue_son(ding)</pre></div>
                 </div>
 
                 <h3>📄 Lire et écrire un fichier</h3>
-                <p><code>lit_fichier(nom)</code> te donne tout le texte d'un fichier de la Pythonerie, sous forme de chaîne.
-                    Le nom part du répertoire de la Pythonerie, comme pour les images.</p>
                 <p><code>écrit_fichier(nom, texte)</code> enregistre ton texte dans un fichier, qui arrive dans ton dossier
                     <b>Téléchargements</b>. Donne-lui un simple nom, sans répertoire&nbsp;: <code>"scores"</code> devient
                     <code>scores.txt</code>.</p>
-                <div class="exemple"><pre data-essai>fable = lit_fichier("exemples/médias/fable.txt")
-lignes = fable.découpe("\n")
-affiche("La fable a", longueur(lignes), "lignes.")
-affiche(lignes[0])
+                <p><code>lit_fichier(nom)</code> te donne tout le texte d'un fichier de ton ordinateur. Pour protéger
+                    ton ordinateur, la Pythonerie n'a pas le droit d'y lire ce qu'elle veut&nbsp;: c'est <b>toi</b> qui choisis
+                    le fichier. Quand le programme arrive à <code>lit_fichier</code>, il s'arrête, une fenêtre s'ouvre pour
+                    que tu choisisses le fichier, puis le programme recommence tout seul depuis le début, avec le texte du fichier.
+                    La fenêtre revient à chaque fois que tu exécutes le programme&nbsp;: si tu as changé le fichier entre-temps,
+                    c'est la nouvelle version qui est lue.</p>
+                <div class="exemple"><pre data-essai># 1. On écrit un fichier : il arrive dans Téléchargements
+écrit_fichier("courses", "pommes\npain\nfromage")
 
-écrit_fichier("ma_fable", fable.majuscules())</pre></div>
-                <p>Si le fichier n'existe pas, le programme s'arrête avec une erreur. Pour l'éviter, utilise
-                    <code>essaie:</code> … <code>sauf(e):</code>.</p>
+# 2. On le relit : choisis courses.txt dans Téléchargements
+texte = lit_fichier("courses.txt")
+pour article dans texte.découpe("\n"):
+    affiche("Il faut acheter :", article)</pre></div>
+                <p>Si tu fermes la fenêtre sans choisir de fichier, le programme s'arrête.</p>
+
+                <h3>📚 Le matériel de ton enseignant</h3>
+                <p>Au-dessus des <b>Exemples</b>, le répertoire <b>Matériels</b> contient ce que ton enseignant a préparé
+                    pour la classe. Un clic sur un programme en crée une copie, comme pour un exemple. Les autres fichiers
+                    sont des <b>données</b>&nbsp;: une liste de mots, des nombres, des pays… Clique sur l'un d'eux pour savoir
+                    ce qu'il contient, puis lis-le dans ton programme avec <code>charge_données</code>, sans fenêtre à ouvrir&nbsp;:</p>
+                <div class="exemple"><pre data-essai>texte = charge_données("capitales.csv")
+lignes = texte.découpe("\n")
+pour ligne dans lignes[1:]:          # la première ligne donne les titres
+    si ligne:
+        pays, capitale = ligne.découpe(",")
+        affiche("La capitale du pays", pays, "est", capitale)</pre></div>
             </section>
 
             <!-- ================================================================ -->
@@ -779,6 +795,7 @@ affiche(lignes[0])
                     <li><b>Ctrl + Entrée</b> exécute le programme sans prendre la souris.</li>
                     <li>Quand tu commences à taper un mot, la Pythonerie te propose la suite. Appuie sur <b>Entrée</b> pour la choisir.</li>
                     <li>Après une ligne qui se termine par <code>:</code>, la touche Entrée décale tout seul la ligne suivante.</li>
+                    <li>Le répertoire <b>Matériels</b>, s'il y en a un, contient ce que ton enseignant a préparé pour toi.</li>
                     <li>Le répertoire <b>Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer.</li>
                     <li>Le bouton 🌓, en haut, passe la Pythonerie en couleurs sombres.</li>
                 </ul>
@@ -944,8 +961,9 @@ affiche(lignes[0])
                 <h3 id="g-fichiers">Fichiers</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
-                    <tr><td><code>lit_fichier(nom)</code></td><td>donne le texte d'un fichier de la Pythonerie</td><td class="ex"><code>t = lit_fichier("exemples/médias/fable.txt")</code></td></tr>
+                    <tr><td><code>lit_fichier(nom)</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier("courses.txt")</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
+                    <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire Matériels, préparé par ton enseignant</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>
                 </table>
 
                 <h3 id="g-animation">Animation, souris et clavier</h3>

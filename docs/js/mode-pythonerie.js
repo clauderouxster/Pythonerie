@@ -110,7 +110,8 @@ const PYTHONERIE_FONCTIONS = {
     'place_image': 'place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) — dessine l\'image',
     'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
     'joue_son': 'joue_son(numéro) — joue le son',
-    'lit_fichier': 'lit_fichier(nom) — contenu d\'un fichier du site, en texte',
+    'charge_données': 'charge_données(nom) — texte d\'un fichier du répertoire Matériels',
+    'lit_fichier': 'lit_fichier(nom) — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre',
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements'
 };
 

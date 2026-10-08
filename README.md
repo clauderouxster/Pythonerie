@@ -10,7 +10,7 @@ La Pythonerie s'adresse aux enfants à partir de 7 ans, à leurs parents et à l
 
 L'écran est découpé en trois zones :
 
-1. **Mes programmes**, à gauche : les programmes de l'élève, que l'on peut ranger dans des répertoires, et un répertoire **Exemples** qui contient des programmes à essayer.
+1. **Mes programmes**, à gauche : les programmes de l'élève, que l'on peut ranger dans des répertoires, un répertoire **Matériels**, où l'enseignant dépose le matériel de cours (voir plus bas), et un répertoire **Exemples** qui contient des programmes à essayer.
 2. **L'éditeur**, au milieu : on y écrit son programme, avec la coloration des mots, l'indentation automatique et des propositions pendant la frappe. En dessous, la **console** affiche les messages du programme, et la ligne **`>>>`** exécute tout de suite ce que l'on y tape.
 3. **Le canevas**, à droite : une feuille de dessin où le programme peut dessiner, écrire, faire avancer une tortue, animer des formes, afficher des images, jouer des sons et réagir à la souris et au clavier.
 
@@ -73,7 +73,7 @@ Quelques règles à connaître :
 - **La tortue** : `avance`, `recule`, `gauche`, `droite`, `lève_crayon`, `baisse_crayon`, `va_à`, `oriente`, `origine`.
 - **Animer et réagir** : `animer(fonction, délai)`, `quand_clic(f)`, `quand_souris(f)`, `quand_glisse(f)` (souris déplacée bouton appuyé, ou doigt sur une tablette), `quand_touche(f)`, `arrête()`.
 - **Images et sons** : `img = charge_image(adresse)`, `place_image(img, x, y)`, `snd = charge_son(adresse)`, `joue_son(snd)`.
-- **Fichiers** : `texte = lit_fichier(nom)` lit un fichier de la Pythonerie (le nom part de son répertoire, par exemple `exemples/médias/fable.txt`) ; `écrit_fichier(nom, texte)` enregistre le texte dans le dossier Téléchargements, ce qui fonctionne sur tous les ordinateurs et toutes les tablettes.
+- **Fichiers** : `texte = charge_données(nom)` lit un fichier du répertoire **Matériels**, déposé par l'enseignant (voir plus bas). `texte = lit_fichier(nom)` lit un fichier de l'ordinateur, y compris depuis la version en ligne. Un navigateur ne peut lire que les fichiers que l'utilisateur choisit lui-même : au premier `lit_fichier` d'un nom, une fenêtre de sélection s'ouvre, puis le programme repart depuis le début avec le contenu du fichier. Le fichier est redemandé à chaque exécution, pour toujours lire sa dernière version. Le contenu reste dans le navigateur, rien n'est envoyé. `écrit_fichier(nom, texte)` enregistre le texte dans le dossier Téléchargements, ce qui fonctionne sur tous les ordinateurs et toutes les tablettes.
 - **Pour aller plus loin** : environ 180 instructions supplémentaires portant des noms français (`mélange`, `pgcd`, `commence_par`, `loi_normale`…), décrites dans le glossaire du mode d'emploi.
 
 Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, en passant par la tortue, une balle qui rebondit, une courbe mathématique et un petit logiciel de dessin, se trouvent dans le répertoire **Exemples**. Un clic sur un exemple en crée une copie que l'on peut modifier.
@@ -85,6 +85,23 @@ Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, 
 - En mode plusieurs élèves, le bouton **👤** en haut de l'écran affiche le nom de l'élève (« inconnu » au départ). Il faut le taper pour exécuter du code. Il est oublié quand on ferme l'onglet, ce qui convient aux ordinateurs partagés. Un deuxième clic sur **👤** déconnecte l'élève : si ses programmes ont changé depuis sa dernière archive (ou s'il n'en a jamais créé), la Pythonerie lui propose d'en créer une. Ensuite, tout son espace est vidé : programmes, répertoires, sauvegarde temporaire et historique de la console.
 - Pour partager un environnement, le menu ☰ propose de **créer une archive** : un fichier `nom_aaaa_mm_jj_hh_MM.json` qui contient tous les programmes et les répertoires, enregistré dans le dossier Téléchargements. Avec `serveur.py`, une copie est aussi conservée sur le serveur, pour l'enseignant (voir plus bas). **Charger une archive** remplace tous les programmes en cours par ceux de l'archive. En mode plusieurs élèves, si l'espace contenait déjà des programmes, l'élève est déconnecté (son nom sera redemandé à la prochaine exécution) ; si l'espace était vide, il reste connecté. S'il y avait des programmes, ils sont mis de côté, après confirmation : **Annuler le chargement** les fait revenir. Si l'espace était vide (ou ne contenait que le programme d'accueil), l'archive est chargée directement.
 - On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Pour en supprimer plusieurs à la fois, on les choisit avec Cmd+clic ou Ctrl+clic (un par un) ou Maj+clic (une suite), puis on clique sur **Supprimer** dans le bandeau, ou on appuie sur la touche Suppr. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
+
+## Pour les enseignants : le répertoire Matériels
+
+Le répertoire `docs/matériels/` reçoit le matériel de cours destiné aux élèves. Il apparaît dans la colonne de gauche, sous le nom **Matériels**, au-dessus des **Exemples**, dès qu'il contient au moins un fichier décrit dans son `index.json`.
+
+- **Des programmes** (`.py`) : comme pour un exemple, un clic de l'élève en crée une copie qu'il peut modifier.
+- **Des données** (textes, listes, fichiers `.csv`…) : un programme les lit avec `charge_données("capitales.csv")`, qui renvoie tout le texte du fichier. Un clic de l'élève sur un fichier de données affiche son explication et la ligne à écrire pour le lire. Le répertoire contient un petit exemple, `capitales.csv`, que l'on peut supprimer.
+
+Après avoir ajouté, remplacé ou retiré des fichiers, l'enseignant lance le script `inventaire.py`, placé dans le répertoire :
+
+```bash
+cd docs/matériels
+python3 inventaire.py            # demande un titre et une explication pour chaque nouveau fichier
+python3 inventaire.py --revoir   # permet aussi de changer les explications existantes
+```
+
+Le script parcourt le répertoire et ses sous-répertoires, demande une explication pour chaque fichier qu'il ne connaît pas encore, retire de la liste les fichiers qui ont disparu, et écrit `index.json`. Le matériel est servi par le site lui-même, en ligne comme avec `serveur.py` : `charge_données` ne lit que ce répertoire, et jamais un autre site.
 
 ## Utiliser la Pythonerie sur sa machine
 

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mode d'emploi de la Pythonerie</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b35c2a'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3EP%3C/text%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --fond: #f5f0e8;
+            --surface: #ffffff;
+            --surface-2: #faf8f5;
+            --texte: #1a1a1a;
+            --texte-2: #5c5c5c;
+            --discret: #8c8c8c;
+            --bordure: #d9d2c7;
+            --accent: #b35c2a;
+            --accent-doux: rgba(179, 92, 42, 0.1);
+            --vert: #2e7d32;
+            --vert-doux: rgba(46, 125, 50, 0.1);
+            --bleu: #1d6fa5;
+            --bleu-doux: rgba(29, 111, 165, 0.1);
+            --code-fond: #1e1e2e;
+            --code-texte: #e5e7eb;
+            --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+        }
+        body.dark-mode {
+            --fond: #0a0a0a;
+            --surface: #171717;
+            --surface-2: #1e1e1e;
+            --texte: #e5e7eb;
+            --texte-2: #9ca3af;
+            --discret: #6b7280;
+            --bordure: #2d2d2d;
+            --accent: #a78bfa;
+            --accent-doux: rgba(139, 92, 246, 0.15);
+            --vert: #4ade80;
+            --vert-doux: rgba(74, 222, 128, 0.1);
+            --bleu: #60a5fa;
+            --bleu-doux: rgba(96, 165, 250, 0.1);
+            --code-fond: #0d0d12;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: 18px;
+            line-height: 1.65;
+            background: var(--fond);
+            color: var(--texte);
+        }
+        code, pre { font-family: var(--mono); font-variant-ligatures: none; }
+        code {
+            font-size: 0.88em;
+            background: var(--accent-doux);
+            padding: 1px 6px;
+            border-radius: 5px;
+        }
+        a { color: var(--accent); }
+
+        .haut {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--bordure);
+        }
+        .marque { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+        .logo {
+            width: 30px; height: 30px; display: grid; place-items: center;
+            background: #b35c2a; color: #fff; border-radius: 8px; font-size: 17px;
+        }
+        .haut a.bouton {
+            text-decoration: none;
+            background: #b35c2a;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .page { display: grid; grid-template-columns: 250px minmax(0, 1fr); max-width: 1200px; margin: 0 auto; }
+        nav.sommaire {
+            position: sticky;
+            top: 56px;
+            align-self: start;
+            max-height: calc(100vh - 56px);
+            overflow-y: auto;
+            padding: 24px 12px 24px 20px;
+            font-size: 15px;
+        }
+        nav.sommaire a { display: block; padding: 3px 8px; border-radius: 6px; color: var(--texte-2); text-decoration: none; }
+        nav.sommaire a:hover { background: var(--accent-doux); color: var(--accent); }
+        nav.sommaire .groupe { margin-top: 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--discret); padding-left: 8px; }
+
+        main { padding: 24px 28px 80px; min-width: 0; }
+        h1 { font-size: 34px; line-height: 1.2; margin: 8px 0 4px; }
+        .sous-titre { color: var(--texte-2); font-size: 19px; margin: 0 0 24px; }
+        section { scroll-margin-top: 70px; }
+        h2 {
+            font-size: 26px;
+            margin: 48px 0 12px;
+            padding-top: 8px;
+            border-top: 2px solid var(--bordure);
+            scroll-margin-top: 70px;
+        }
+        h3 { font-size: 20px; margin: 28px 0 8px; scroll-margin-top: 70px; }
+        p { margin: 10px 0; }
+        ul, ol { padding-left: 26px; }
+        li { margin: 4px 0; }
+
+        .encadre {
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin: 16px 0;
+            border-left: 5px solid;
+        }
+        .encadre p { margin: 6px 0; }
+        .astuce { background: var(--bleu-doux); border-color: var(--bleu); }
+        .defi { background: var(--vert-doux); border-color: var(--vert); }
+        .attention { background: var(--accent-doux); border-color: var(--accent); }
+        .encadre .titre-encadre { font-weight: 700; }
+
+        .exemple { position: relative; margin: 14px 0; }
+        .exemple pre {
+            margin: 0;
+            padding: 14px 16px;
+            background: var(--code-fond);
+            color: var(--code-texte);
+            border-radius: 10px;
+            font-size: 15px;
+            line-height: 1.55;
+            overflow-x: auto;
+        }
+        .exemple .copier {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #2d2d3d;
+            color: #e5e7eb;
+            cursor: pointer;
+        }
+        .exemple .copier:hover { background: #3d3d55; }
+        .resultat {
+            margin: -6px 0 16px;
+            padding: 8px 16px;
+            border: 1px dashed var(--bordure);
+            border-radius: 0 0 10px 10px;
+            font-family: var(--mono);
+            font-size: 14px;
+            color: var(--texte-2);
+            white-space: pre-wrap;
+        }
+        .resultat::before { content: "La console affiche :"; display: block; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--discret); }
+        .cm-mot { color: #f5a97f; font-weight: 600; }
+        .cm-fonction { color: #8bd5ca; }
+        .cm-chaine { color: #a6da95; }
+        .cm-nombre { color: #f5bde6; }
+        .cm-commentaire { color: #8087a2; font-style: italic; }
+
+        .zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+        .zone { background: var(--surface); border: 1px solid var(--bordure); border-radius: 12px; padding: 14px 16px; }
+        .zone .icone { font-size: 30px; }
+        .zone h4 { margin: 4px 0; font-size: 17px; }
+        .zone p { margin: 4px 0; font-size: 16px; color: var(--texte-2); }
+
+        .repere { display: block; margin: 12px auto; max-width: 420px; width: 100%; }
+
+        table.glossaire { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 16px; }
+        table.glossaire th {
+            text-align: left;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--discret);
+            border-bottom: 2px solid var(--bordure);
+            padding: 6px 8px;
+        }
+        table.glossaire td { padding: 7px 8px; border-bottom: 1px solid var(--bordure); vertical-align: top; }
+        table.glossaire td:first-child { width: 34%; }
+        table.glossaire td:first-child code { white-space: nowrap; background: none; padding: 0; font-weight: 600; color: var(--accent); }
+        table.glossaire td.ex code { white-space: normal; }
+        .lispe-nom { font-family: var(--mono); font-size: 13px; color: var(--discret); }
+        .recherche {
+            width: 100%;
+            font: inherit;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--bordure);
+            background: var(--surface);
+            color: var(--texte);
+            margin: 8px 0 4px;
+        }
+        .compte { font-size: 14px; color: var(--discret); }
+        details.avance summary { cursor: pointer; font-weight: 700; color: var(--accent); font-size: 18px; margin: 12px 0; }
+        .cache { display: none; }
+
+        @media (max-width: 860px) {
+            .page { grid-template-columns: 1fr; }
+            nav.sommaire { position: static; max-height: none; border-bottom: 1px solid var(--bordure); padding: 12px 20px; }
+            nav.sommaire .liens { columns: 2; }
+            main { padding: 16px 18px 60px; }
+            .exemple pre { padding-top: 44px; }
+            h1 { font-size: 28px; }
+            table.glossaire td:first-child { width: auto; }
+            table.glossaire td:first-child code { white-space: normal; }
+        }
+        @media print {
+            .haut, nav.sommaire, .copier, .recherche { display: none; }
+            .page { display: block; }
+            details.avance { display: block; }
+            body { font-size: 13px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="haut">
+        <div class="marque"><span class="logo">P</span> Mode d'emploi de la Pythonerie</div>
+        <a class="bouton" href="index.html">▶ Retour à la Pythonerie</a>
+    </header>
+
+    <div class="page">
+        <nav class="sommaire" aria-label="Sommaire">
+            <div class="liens">
+                <div class="groupe">Découvrir</div>
+                <a href="#bienvenue">👋 Bienvenue</a>
+                <a href="#ecran">🖥️ L'écran</a>
+                <a href="#premier">🚀 Ton premier programme</a>
+                <a href="#erreurs">🐞 Les erreurs</a>
+                <div class="groupe">Apprendre</div>
+                <a href="#afficher">💬 Écrire des messages</a>
+                <a href="#boites">📦 Les boîtes (variables)</a>
+                <a href="#calculer">🧮 Calculer</a>
+                <a href="#demander">❓ Poser une question</a>
+                <a href="#choisir">🔀 Choisir</a>
+                <a href="#repeter">🔁 Répéter</a>
+                <a href="#listes">📚 Les listes</a>
+                <a href="#fonctions">🍰 Les fonctions</a>
+                <a href="#dessiner">🎨 Dessiner</a>
+                <a href="#tortue">🐢 La tortue</a>
+                <a href="#animer">🎬 Animer</a>
+                <a href="#souris">🖱️ Souris et clavier</a>
+                <a href="#ranger">🗂️ Ranger tes programmes</a>
+                <a href="#astuces">💡 Astuces</a>
+                <div class="groupe">Glossaire</div>
+                <a href="#glossaire">📖 Tous les mots</a>
+            </div>
+        </nav>
+
+        <main>
+            <h1>Mode d'emploi de la Pythonerie</h1>
+            <p class="sous-titre">Apprendre à programmer en français, pas à pas.</p>
+
+            <!-- ================================================================ -->
+            <section id="bienvenue">
+                <h2>👋 Bienvenue&nbsp;!</h2>
+                <p>Un <b>programme</b>, c'est une liste d'ordres que tu donnes à l'ordinateur.
+                    L'ordinateur les suit, un par un, dans l'ordre.</p>
+                <p>Dans la Pythonerie, tu écris ces ordres en français. Tu peux faire des calculs,
+                    écrire des messages, dessiner, faire bouger une tortue et même créer de petits jeux.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Pour les grands qui t'accompagnent</p>
+                    <p>La Pythonerie ressemble au langage Python, avec des mots français.
+                        Ce que l'enfant apprend ici lui servira plus tard en Python.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="ecran">
+                <h2>🖥️ L'écran</h2>
+                <p>L'écran de la Pythonerie a trois parties.</p>
+                <div class="zones">
+                    <div class="zone"><div class="icone">🗂️</div><h4>À gauche : tes programmes</h4>
+                        <p>Tous tes programmes sont rangés ici. Clique sur un nom pour l'ouvrir.
+                            En dessous, il y a des exemples à essayer.</p></div>
+                    <div class="zone"><div class="icone">✏️</div><h4>Au milieu : l'éditeur</h4>
+                        <p>C'est ici que tu écris ton programme. En dessous, la <b>console</b>
+                            affiche les messages de ton programme.</p></div>
+                    <div class="zone"><div class="icone">🎨</div><h4>À droite : le canevas</h4>
+                        <p>C'est une feuille de dessin. Ton programme peut y dessiner des formes,
+                            écrire et faire avancer une tortue.</p></div>
+                </div>
+                <p>En haut, le bouton <b>▶ Exécuter</b> lance ton programme. Le bouton <b>■ Arrêter</b> arrête une animation.
+                    Le bouton <b>❓ Aide</b> montre un résumé de tous les mots.</p>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="premier">
+                <h2>🚀 Ton premier programme</h2>
+                <ol>
+                    <li>Clique sur <b>＋ Nouveau</b>, à gauche.</li>
+                    <li>Donne un nom à ton programme, par exemple <code>Bonjour</code>.</li>
+                    <li>Dans l'éditeur, écris&nbsp;:</li>
+                </ol>
+                <div class="exemple"><pre data-essai>affiche("Bonjour !")</pre></div>
+                <ol start="4">
+                    <li>Clique sur <b>▶ Exécuter</b>.</li>
+                </ol>
+                <div class="resultat">Bonjour !</div>
+                <p>Bravo&nbsp;! 🎉 Tu viens d'écrire ton premier programme.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Astuce</p>
+                    <p>Ton programme est enregistré tout seul. Tu le retrouveras la prochaine fois.</p>
+                </div>
+                <div class="encadre defi">
+                    <p class="titre-encadre">🏆 À toi&nbsp;!</p>
+                    <p>Change le message pour écrire ton prénom.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="erreurs">
+                <h2>🐞 Les erreurs</h2>
+                <p>Tout le monde fait des erreurs, même les grands programmeurs. Ce n'est pas grave&nbsp;!</p>
+                <p>Quand l'ordinateur ne comprend pas, il écrit un message rouge dans la console.
+                    Lis-le&nbsp;: il t'aide à trouver ce qui ne va pas.</p>
+                <ul>
+                    <li>As-tu bien fermé tous les guillemets <code>"</code> et toutes les parenthèses <code>)</code>&nbsp;?</li>
+                    <li>As-tu mis les deux-points <code>:</code> à la fin de la ligne d'un <code>si</code> ou d'un <code>pour</code>&nbsp;?</li>
+                    <li>As-tu écrit les mots avec leurs accents&nbsp;? On écrit <code>épaisseur</code>, pas <code>epaisseur</code>.</li>
+                    <li>Les lignes décalées vers la droite ont-elles toutes le même décalage&nbsp;?</li>
+                </ul>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="afficher">
+                <h2>💬 Écrire des messages</h2>
+                <p><code>affiche</code> écrit dans la console. Tu peux afficher plusieurs choses à la fois,
+                    en les séparant par des virgules.</p>
+                <div class="exemple"><pre data-essai>affiche("J'ai", 7, "ans")
+affiche("2 + 3 =", 2 + 3)</pre></div>
+                <div class="resultat">J'ai 7 ans
+2 + 3 = 5</div>
+                <p>Le texte s'écrit entre guillemets&nbsp;: <code>"comme ceci"</code>. Les nombres s'écrivent sans guillemets.</p>
+                <p>Une ligne qui commence par <code>#</code> est un <b>commentaire</b>. L'ordinateur ne la lit pas&nbsp;:
+                    c'est une petite note pour toi.</p>
+                <div class="exemple"><pre data-essai># Ceci est une note pour moi
+affiche("Coucou")</pre></div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="boites">
+                <h2>📦 Les boîtes (variables)</h2>
+                <p>Une <b>variable</b>, c'est comme une boîte avec une étiquette. Tu ranges quelque chose dedans,
+                    et tu le retrouves grâce à l'étiquette.</p>
+                <div class="exemple"><pre data-essai>prénom = "Léa"
+âge = 8
+affiche(prénom, "a", âge, "ans")</pre></div>
+                <div class="resultat">Léa a 8 ans</div>
+                <p>Le signe <code>=</code> veut dire&nbsp;: «&nbsp;range ceci dans la boîte&nbsp;».
+                    Tu peux changer le contenu de la boîte quand tu veux&nbsp;:</p>
+                <div class="exemple"><pre data-essai>points = 0
+points = points + 10
+points += 5        # c'est la même chose que : points = points + 5
+affiche(points)</pre></div>
+                <div class="resultat">15</div>
+                <p>Pour mettre une boîte dans un texte, écris un <code>f</code> devant les guillemets
+                    et le nom de la boîte entre accolades <code>{ }</code>&nbsp;:</p>
+                <div class="exemple"><pre data-essai>prénom = "Tom"
+affiche(f"Bonjour {prénom} !")</pre></div>
+                <div class="resultat">Bonjour Tom !</div>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Bon à savoir</p>
+                    <p><code>Vrai</code> et <code>Faux</code> veulent dire oui et non. <code>Rien</code> veut dire&nbsp;: il n'y a rien dans la boîte.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="calculer">
+                <h2>🧮 Calculer</h2>
+                <p>L'ordinateur est très fort en calcul&nbsp;!</p>
+                <table class="glossaire">
+                    <tr><th>Signe</th><th>Ce qu'il fait</th><th>Exemple</th></tr>
+                    <tr><td><code>+</code></td><td>additionne</td><td><code>3 + 2</code> donne 5</td></tr>
+                    <tr><td><code>-</code></td><td>soustrait</td><td><code>3 - 2</code> donne 1</td></tr>
+                    <tr><td><code>*</code></td><td>multiplie (c'est le «&nbsp;fois&nbsp;»)</td><td><code>3 * 2</code> donne 6</td></tr>
+                    <tr><td><code>/</code></td><td>divise</td><td><code>7 / 2</code> donne 3.5</td></tr>
+                    <tr><td><code>//</code></td><td>divise sans virgule</td><td><code>7 // 2</code> donne 3</td></tr>
+                    <tr><td><code>%</code></td><td>donne le reste de la division</td><td><code>7 % 2</code> donne 1</td></tr>
+                    <tr><td><code>**</code></td><td>puissance</td><td><code>2 ** 3</code> donne 8 (2 × 2 × 2)</td></tr>
+                </table>
+                <p>Attention&nbsp;: un nombre à virgule s'écrit avec un <b>point</b>&nbsp;: <code>3.5</code>.</p>
+                <div class="exemple"><pre data-essai>bonbons = 17
+enfants = 5
+affiche("Chacun reçoit", bonbons // enfants, "bonbons")
+affiche("Il en reste", bonbons % enfants)</pre></div>
+                <div class="resultat">Chacun reçoit 3 bonbons
+Il en reste 2</div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="demander">
+                <h2>❓ Poser une question</h2>
+                <p><code>demande</code> pose une question. Une petite fenêtre s'ouvre&nbsp;: tu tapes ta réponse au clavier
+                    et tu cliques sur OK.</p>
+                <div class="exemple"><pre data-essai>nom = demande("Comment t'appelles-tu ?")
+affiche("Enchanté,", nom)</pre></div>
+                <p>Pour une réponse qui est un nombre, utilise <code>demande_nombre</code>&nbsp;:</p>
+                <div class="exemple"><pre data-essai>âge = demande_nombre("Quel âge as-tu ?")
+affiche("L'an prochain, tu auras", âge + 1, "ans")</pre></div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="choisir">
+                <h2>🔀 Choisir avec <code>si</code></h2>
+                <p>Parfois, il faut faire une chose <b>seulement si</b> quelque chose est vrai.</p>
+                <div class="exemple"><pre data-essai>âge = 8
+si âge >= 6:
+    affiche("Tu vas à l'école")
+sinon:
+    affiche("Tu es encore petit")</pre></div>
+                <div class="resultat">Tu vas à l'école</div>
+                <div class="encadre attention">
+                    <p class="titre-encadre">⚠️ Deux règles très importantes</p>
+                    <p>1. La ligne du <code>si</code> se termine par deux-points <code>:</code>.</p>
+                    <p>2. Les ordres qui dépendent du <code>si</code> sont <b>décalés vers la droite</b>
+                        (appuie sur la touche Tab, ou mets 4 espaces). C'est ce décalage qui montre ce qui est «&nbsp;dedans&nbsp;».</p>
+                </div>
+                <p>Avec <code>sinonsi</code>, tu peux tester plusieurs choses l'une après l'autre&nbsp;:</p>
+                <div class="exemple"><pre data-essai>note = 15
+si note >= 16:
+    affiche("Excellent !")
+sinonsi note >= 10:
+    affiche("Bien !")
+sinon:
+    affiche("Il faut encore travailler")</pre></div>
+                <div class="resultat">Bien !</div>
+                <h3>Pour comparer</h3>
+                <table class="glossaire">
+                    <tr><th>Signe</th><th>Veut dire</th></tr>
+                    <tr><td><code>==</code></td><td>est égal à (attention&nbsp;: deux signes <code>=</code>&nbsp;!)</td></tr>
+                    <tr><td><code>!=</code></td><td>est différent de</td></tr>
+                    <tr><td><code>&lt;</code> et <code>&gt;</code></td><td>est plus petit que, est plus grand que</td></tr>
+                    <tr><td><code>&lt;=</code> et <code>&gt;=</code></td><td>est plus petit ou égal, est plus grand ou égal</td></tr>
+                    <tr><td><code>et</code>, <code>ou</code>, <code>non</code></td><td>pour combiner&nbsp;: <code>si il_pleut et non parapluie:</code></td></tr>
+                    <tr><td><code>dans</code></td><td>est dans la liste ou dans le texte&nbsp;: <code>si "a" dans mot:</code></td></tr>
+                </table>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="repeter">
+                <h2>🔁 Répéter</h2>
+                <p>Pour répéter des ordres plusieurs fois, on fait une <b>boucle</b>.</p>
+                <h3>Répéter un nombre de fois avec <code>pour</code></h3>
+                <div class="exemple"><pre data-essai>pour i dans intervalle(1, 6):
+    affiche("Je compte :", i)</pre></div>
+                <div class="resultat">Je compte : 1
+Je compte : 2
+Je compte : 3
+Je compte : 4
+Je compte : 5</div>
+                <p><code>intervalle(1, 6)</code> donne les nombres de 1 à 5. Le dernier nombre, 6, n'est pas compris.
+                    <code>intervalle(5)</code> donne 0, 1, 2, 3, 4.</p>
+                <h3>Répéter tant que c'est vrai avec <code>tantque</code></h3>
+                <div class="exemple"><pre data-essai>fusée = 5
+tantque fusée > 0:
+    affiche(fusée)
+    fusée -= 1
+affiche("Décollage ! 🚀")</pre></div>
+                <div class="encadre attention">
+                    <p class="titre-encadre">⚠️ Attention</p>
+                    <p>Si la condition reste toujours vraie, la boucle ne s'arrête jamais et la page se bloque.
+                        Il faut que quelque chose change dans la boucle&nbsp;: ici, <code>fusée</code> diminue.</p>
+                </div>
+                <p><code>sortir</code> quitte la boucle tout de suite. <code>continuer</code> passe directement au tour suivant.</p>
+                <div class="encadre defi">
+                    <p class="titre-encadre">🏆 À toi&nbsp;!</p>
+                    <p>Affiche la table de multiplication de 7&nbsp;: 7, 14, 21… jusqu'à 70.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="listes">
+                <h2>📚 Les listes</h2>
+                <p>Une <b>liste</b> range plusieurs choses dans une seule boîte. On l'écrit entre crochets <code>[ ]</code>.</p>
+                <div class="exemple"><pre data-essai>fruits = ["pomme", "poire", "cerise"]
+affiche(fruits[0])          # le premier fruit
+affiche(longueur(fruits))   # combien de fruits ?
+fruits.ajoute("kiwi")       # on ajoute un fruit à la fin
+pour fruit dans fruits:
+    affiche("J'aime :", fruit)</pre></div>
+                <div class="resultat">pomme
+3
+J'aime : pomme
+J'aime : poire
+J'aime : cerise
+J'aime : kiwi</div>
+                <p>Attention&nbsp;: on compte à partir de <b>0</b>. <code>fruits[0]</code> est le premier,
+                    <code>fruits[1]</code> le deuxième. <code>fruits[-1]</code> est le dernier.</p>
+                <h3>Les méthodes</h3>
+                <p>Quand une fonction s'écrit <b>après un point</b>, comme <code>fruits.ajoute("kiwi")</code>,
+                    on l'appelle une <b>méthode</b>. <code>fruits.ajoute("kiwi")</code> fait la même chose que
+                    <code>ajoute(fruits, "kiwi")</code>. Tu peux utiliser ainsi toutes les fonctions du glossaire&nbsp;:
+                    <code>mot.majuscules()</code>, <code>notes.somme()</code>…</p>
+                <h3>Les dictionnaires</h3>
+                <p>Un <b>dictionnaire</b> range des choses avec un nom. On l'écrit entre accolades <code>{ }</code>.</p>
+                <div class="exemple"><pre data-essai>animaux = {"chat": "miaou", "chien": "ouaf"}
+affiche("Le chat fait", animaux["chat"])</pre></div>
+                <div class="resultat">Le chat fait miaou</div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="fonctions">
+                <h2>🍰 Les fonctions</h2>
+                <p>Une <b>fonction</b>, c'est comme une recette&nbsp;: tu lui donnes un nom une fois,
+                    puis tu peux l'utiliser autant de fois que tu veux.</p>
+                <div class="exemple"><pre data-essai>fonction salue(prénom):
+    affiche("Bonjour", prénom, "!")
+
+salue("Léa")
+salue("Tom")</pre></div>
+                <div class="resultat">Bonjour Léa !
+Bonjour Tom !</div>
+                <p>Une fonction peut aussi <b>rendre un résultat</b> avec <code>retourne</code>&nbsp;:</p>
+                <div class="exemple"><pre data-essai>fonction double(n):
+    retourne n * 2
+
+affiche(double(21))</pre></div>
+                <div class="resultat">42</div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="dessiner">
+                <h2>🎨 Dessiner</h2>
+                <p>Le canevas, à droite, est une feuille de <b>800 points de large</b> et <b>600 points de haut</b>.
+                    Pour dire où dessiner, on donne deux nombres&nbsp;: <code>x</code> et <code>y</code>.</p>
+                <ul>
+                    <li><code>x</code> dit combien on va vers la <b>droite</b>.</li>
+                    <li><code>y</code> dit combien on va vers le <b>bas</b>.</li>
+                    <li>Le coin en haut à gauche est le point <code>(0, 0)</code>.</li>
+                </ul>
+                <svg class="repere" viewBox="0 0 420 260" role="img" aria-label="Le canevas : x va vers la droite, y va vers le bas">
+                    <rect x="40" y="30" width="340" height="200" rx="6" fill="#fff" stroke="#b35c2a" stroke-width="2"/>
+                    <circle cx="40" cy="30" r="5" fill="#b35c2a"/>
+                    <text x="12" y="20" font-size="14" fill="#5c5c5c" font-family="sans-serif">(0, 0)</text>
+                    <line x1="40" y1="30" x2="370" y2="30" stroke="#1d6fa5" stroke-width="3" marker-end="url(#fleche)"/>
+                    <text x="300" y="20" font-size="15" fill="#1d6fa5" font-family="sans-serif" font-weight="bold">x →</text>
+                    <line x1="40" y1="30" x2="40" y2="222" stroke="#2e7d32" stroke-width="3" marker-end="url(#fleche2)"/>
+                    <text x="6" y="200" font-size="15" fill="#2e7d32" font-family="sans-serif" font-weight="bold">y ↓</text>
+                    <circle cx="210" cy="130" r="5" fill="#e53935"/>
+                    <text x="220" y="135" font-size="14" fill="#1a1a1a" font-family="sans-serif">(400, 300) : le milieu</text>
+                    <text x="290" y="252" font-size="13" fill="#5c5c5c" font-family="sans-serif">(800, 600)</text>
+                    <defs>
+                        <marker id="fleche" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1d6fa5"/></marker>
+                        <marker id="fleche2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2e7d32"/></marker>
+                    </defs>
+                </svg>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Astuce</p>
+                    <p>Passe la souris sur le canevas&nbsp;: sous le dessin, tu vois les nombres <code>x</code> et <code>y</code> de l'endroit où tu es.</p>
+                </div>
+                <div class="exemple"><pre data-essai>fond("bleu clair")          # le ciel
+couleur("jaune")
+disque(650, 120, 60)        # le soleil
+couleur("vert")
+rectangle_plein(0, 450, 800, 150)   # l'herbe
+couleur("rouge")
+triangle_plein(300, 450, 500, 450, 400, 300)  # une tente</pre></div>
+                <p>Les couleurs&nbsp;: <i>rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris,
+                    cyan, magenta, turquoise, beige, or, argent, vert clair, bleu clair, bleu marine, gris clair, gris foncé</i>.
+                    Tu peux aussi inventer une couleur avec <code>rgb(rouge, vert, bleu)</code>, chaque nombre allant de 0 à 255.</p>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="tortue">
+                <h2>🐢 La tortue</h2>
+                <p>Une petite tortue se promène sur le canevas. Elle part du milieu et regarde vers la droite.
+                    Partout où elle passe, elle laisse un trait.</p>
+                <div class="exemple"><pre data-essai># Un carré
+pour i dans intervalle(4):
+    avance(100)
+    droite(90)</pre></div>
+                <ul>
+                    <li><code>avance(100)</code>&nbsp;: la tortue avance de 100 points.</li>
+                    <li><code>droite(90)</code>&nbsp;: elle tourne d'un quart de tour vers la droite. <code>gauche(90)</code> vers la gauche.</li>
+                    <li><code>lève_crayon()</code>&nbsp;: elle se déplace sans dessiner. <code>baisse_crayon()</code>&nbsp;: elle dessine à nouveau.</li>
+                </ul>
+                <div class="encadre defi">
+                    <p class="titre-encadre">🏆 À toi&nbsp;!</p>
+                    <p>Dessine un triangle. Indice&nbsp;: il faut 3 côtés et tourner de 120 à chaque fois.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="animer">
+                <h2>🎬 Animer</h2>
+                <p>Pour faire bouger un dessin, on le redessine très vite, un peu plus loin à chaque fois,
+                    comme dans un dessin animé. <code>animer</code> appelle ta fonction encore et encore.</p>
+                <div class="exemple"><pre data-essai>x = 0
+
+fonction image():
+    x += 5
+    efface()
+    couleur("orange")
+    disque(x % 800, 300, 30)
+
+animer(image, 30)    # toutes les 30 millisecondes</pre></div>
+                <p>Clique sur <b>■ Arrêter</b> pour arrêter l'animation.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Pour les plus grands</p>
+                    <p>Dans une fonction, <code>x = …</code> crée une nouvelle boîte qui n'existe que dans la fonction.
+                        Pour changer la boîte <code>x</code> du programme, écris <code>globale x</code> au début de la fonction,
+                        ou bien utilise <code>x += …</code>.</p>
+                </div>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="souris">
+                <h2>🖱️ Souris et clavier</h2>
+                <p>Ton programme peut réagir quand tu cliques ou quand tu appuies sur une touche.</p>
+                <div class="exemple"><pre data-essai>fonction clic(x, y):
+    couleur(choisis(["rouge", "vert", "bleu"]))
+    disque(x, y, 20)
+
+quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
+                <p>Avec <code>quand_touche(f)</code>, ta fonction <code>f(touche)</code> reçoit le nom de la touche&nbsp;:
+                    <code>"ArrowLeft"</code>, <code>"ArrowRight"</code>, <code>"ArrowUp"</code>, <code>"ArrowDown"</code> pour les flèches,
+                    <code>" "</code> pour la barre d'espace, <code>"a"</code> pour la lettre a…
+                    Clique d'abord sur le canevas, puis appuie sur les touches.</p>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="ranger">
+                <h2>🗂️ Ranger tes programmes</h2>
+                <ul>
+                    <li><b>＋ Nouveau</b> crée un nouveau programme.</li>
+                    <li>Le bouton avec un dossier crée un <b>répertoire</b>, comme un tiroir pour ranger tes programmes.</li>
+                    <li>Pour mettre un programme dans un répertoire, fais-le <b>glisser</b> dessus avec la souris.</li>
+                    <li>Quand la souris passe sur un programme, trois petits boutons apparaissent&nbsp;:
+                        ✏️ pour le renommer, ⬆️ pour l'enregistrer sur ton ordinateur, 🗑️ pour le supprimer.</li>
+                    <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer un fichier.</li>
+                </ul>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="astuces">
+                <h2>💡 Astuces</h2>
+                <ul>
+                    <li><b>Ctrl + Entrée</b> exécute le programme sans prendre la souris.</li>
+                    <li>Quand tu commences à taper un mot, la Pythonerie te propose la suite. Appuie sur <b>Entrée</b> pour la choisir.</li>
+                    <li>Après une ligne qui se termine par <code>:</code>, la touche Entrée décale tout seul la ligne suivante.</li>
+                    <li>Les exemples, à gauche, sont des idées de programmes. Un clic en crée une copie que tu peux changer.</li>
+                    <li>Le bouton 🌓, en haut, passe la Pythonerie en couleurs sombres.</li>
+                </ul>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="glossaire">
+                <h2>📖 Glossaire&nbsp;: tous les mots de la Pythonerie</h2>
+                <p>Voici tous les mots que la Pythonerie connaît, rangés par thème. Tape un mot pour le chercher&nbsp;:</p>
+                <input id="recherche" class="recherche" type="search" placeholder="🔍 Chercher un mot, par exemple : cercle" aria-label="Chercher un mot du glossaire">
+                <p class="compte" id="compte"></p>
+
+                <div id="glossaire-contenu">
+                <h3 id="g-langage">Les mots du langage</h3>
+                <table class="glossaire">
+                    <tr><th>Mot</th><th>Ce qu'il fait</th><th>Exemple</th></tr>
+                    <tr><td><code>si</code> … <code>:</code></td><td>fait quelque chose seulement si c'est vrai</td><td class="ex"><code>si âge > 6:</code></td></tr>
+                    <tr><td><code>sinonsi</code> … <code>:</code></td><td>sinon, teste autre chose</td><td class="ex"><code>sinonsi âge > 3:</code></td></tr>
+                    <tr><td><code>sinon:</code></td><td>dans tous les autres cas</td><td class="ex"><code>sinon:</code></td></tr>
+                    <tr><td><code>pour</code> … <code>dans</code> … <code>:</code></td><td>répète pour chaque élément</td><td class="ex"><code>pour i dans intervalle(3):</code></td></tr>
+                    <tr><td><code>tantque</code> … <code>:</code></td><td>répète tant que c'est vrai</td><td class="ex"><code>tantque n > 0:</code></td></tr>
+                    <tr><td><code>sortir</code></td><td>quitte la boucle tout de suite</td><td class="ex"><code>sortir</code></td></tr>
+                    <tr><td><code>continuer</code></td><td>passe au tour suivant de la boucle</td><td class="ex"><code>continuer</code></td></tr>
+                    <tr><td><code>fonction</code> … <code>:</code> (ou <code>def</code>)</td><td>crée une fonction, une recette</td><td class="ex"><code>fonction double(n):</code></td></tr>
+                    <tr><td><code>retourne</code> (ou <code>renvoie</code>)</td><td>donne le résultat d'une fonction</td><td class="ex"><code>retourne n * 2</code></td></tr>
+                    <tr><td><code>et</code>, <code>ou</code>, <code>non</code></td><td>combinent des conditions</td><td class="ex"><code>si a et non b:</code></td></tr>
+                    <tr><td><code>oux</code></td><td>«&nbsp;ou exclusif&nbsp;»&nbsp;: l'un ou l'autre, mais pas les deux</td><td class="ex"><code>a oux b</code></td></tr>
+                    <tr><td><code>dans</code>, <code>non dans</code></td><td>est (ou n'est pas) dans une liste ou un texte</td><td class="ex"><code>si 3 dans notes:</code></td></tr>
+                    <tr><td><code>est</code></td><td>est exactement la même chose</td><td class="ex"><code>si x est Rien:</code></td></tr>
+                    <tr><td><code>Vrai</code>, <code>Faux</code></td><td>oui et non</td><td class="ex"><code>gagné = Faux</code></td></tr>
+                    <tr><td><code>Rien</code></td><td>il n'y a rien</td><td class="ex"><code>trésor = Rien</code></td></tr>
+                    <tr><td><code>globale</code></td><td>dans une fonction, utilise la boîte du programme</td><td class="ex"><code>globale score</code></td></tr>
+                    <tr><td><code>classe</code> … <code>:</code></td><td>crée un nouveau genre d'objet (pour les grands)</td><td class="ex"><code>classe Chien:</code></td></tr>
+                    <tr><td><code>soi</code></td><td>dans une classe, l'objet lui-même</td><td class="ex"><code>soi.nom = nom</code></td></tr>
+                    <tr><td><code>essaie:</code> … <code>sauf(e):</code></td><td>essaie quelque chose, et rattrape l'erreur si ça rate</td><td class="ex"><code>essaie:</code></td></tr>
+                    <tr><td><code>attrape(e):</code></td><td>comme <code>sauf</code></td><td class="ex"><code>attrape(e):</code></td></tr>
+                    <tr><td><code>lever</code></td><td>déclenche une erreur avec un message</td><td class="ex"><code>lever "trop grand !"</code></td></tr>
+                    <tr><td><code>selon (x):</code> … <code>cas</code></td><td>choisit selon la valeur de x</td><td class="ex"><code>cas "a": affiche(1)</code></td></tr>
+                    <tr><td><code>lambda</code> (ou <code>λ</code>)</td><td>une petite fonction sans nom (pour les grands)</td><td class="ex"><code>[lambda(x) x * 2]</code></td></tr>
+                    <tr><td><code>f"…{x}…"</code></td><td>un texte qui contient la valeur d'une boîte</td><td class="ex"><code>f"J'ai {âge} ans"</code></td></tr>
+                    <tr><td><code>#</code></td><td>commence un commentaire, une note pour toi</td><td class="ex"><code># mon jeu</code></td></tr>
+                    <tr><td><code>importe</code>, <code>comme</code>, <code>règle</code>, <code>motif</code>, <code>prolog</code></td><td>mots avancés de LispE, pour les experts</td><td class="ex"></td></tr>
+                </table>
+
+                <h3 id="g-ecrire">Écrire et demander</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>affiche(a, b, …)</code></td><td>écrit dans la console, puis passe à la ligne</td><td class="ex"><code>affiche("Bonjour")</code></td></tr>
+                    <tr><td><code>écris(a, b, …)</code></td><td>écrit dans la console sans passer à la ligne</td><td class="ex"><code>écris("Bon")</code></td></tr>
+                    <tr><td><code>efface_console()</code></td><td>vide la console</td><td class="ex"><code>efface_console()</code></td></tr>
+                    <tr><td><code>demande(question)</code></td><td>pose une question et donne la réponse (un texte)</td><td class="ex"><code>nom = demande("Ton nom ?")</code></td></tr>
+                    <tr><td><code>demande_nombre(question)</code></td><td>pose une question et donne la réponse (un nombre)</td><td class="ex"><code>n = demande_nombre("Un nombre ?")</code></td></tr>
+                    <tr><td><code>lire(question)</code></td><td>comme <code>demande</code></td><td class="ex"><code>lire("Ton nom ?")</code></td></tr>
+                    <tr><td><code>lire_nombre(question)</code></td><td>comme <code>demande_nombre</code></td><td class="ex"><code>lire_nombre("Ton âge ?")</code></td></tr>
+                    <tr><td><code>input(question)</code></td><td>comme <code>demande</code> (le mot de Python)</td><td class="ex"><code>input("Ton nom ?")</code></td></tr>
+                </table>
+
+                <h3 id="g-nombres">Les nombres</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>aléatoire(a, b)</code></td><td>un nombre entier au hasard entre a et b</td><td class="ex"><code>dé = aléatoire(1, 6)</code></td></tr>
+                    <tr><td><code>hasard()</code></td><td>un nombre à virgule au hasard entre 0 et 1</td><td class="ex"><code>hasard()</code></td></tr>
+                    <tr><td><code>arrondi(x)</code>, <code>arrondi(x, n)</code></td><td>arrondit x (avec n chiffres après la virgule)</td><td class="ex"><code>arrondi(3.14159, 2)</code> donne 3.14</td></tr>
+                    <tr><td><code>absolu(x)</code> (ou <code>abs</code>)</td><td>le nombre sans son signe moins</td><td class="ex"><code>absolu(-5)</code> donne 5</td></tr>
+                    <tr><td><code>racine(x)</code></td><td>la racine carrée</td><td class="ex"><code>racine(16)</code> donne 4</td></tr>
+                    <tr><td><code>puissance(x, y)</code></td><td>x multiplié y fois par lui-même</td><td class="ex"><code>puissance(2, 3)</code> donne 8</td></tr>
+                    <tr><td><code>sinus(angle)</code>, <code>cosinus(angle)</code></td><td>sinus et cosinus d'un angle en degrés (pour les grands)</td><td class="ex"><code>sinus(90)</code> donne 1</td></tr>
+                    <tr><td><code>pi</code></td><td>le nombre π (environ 3.14159)</td><td class="ex"><code>2 * pi * rayon</code></td></tr>
+                    <tr><td><code>entier(x)</code></td><td>transforme en nombre entier</td><td class="ex"><code>entier("12")</code> donne 12</td></tr>
+                    <tr><td><code>réel(x)</code></td><td>transforme en nombre à virgule</td><td class="ex"><code>réel("2.5")</code> donne 2.5</td></tr>
+                    <tr><td><code>intervalle(fin)</code></td><td>les nombres de 0 jusqu'à fin (fin non comprise)</td><td class="ex"><code>intervalle(4)</code> donne [0, 1, 2, 3]</td></tr>
+                    <tr><td><code>intervalle(début, fin, pas)</code></td><td>les nombres de début à fin, en sautant de pas</td><td class="ex"><code>intervalle(0, 10, 2)</code> donne [0, 2, 4, 6, 8]</td></tr>
+                    <tr><td><code>range(…)</code></td><td>comme <code>intervalle</code> (le mot de Python)</td><td class="ex"><code>range(3)</code></td></tr>
+                </table>
+
+                <h3 id="g-listes">Les listes</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>liste.ajoute(x)</code></td><td>ajoute x à la fin de la liste</td><td class="ex"><code>fruits.ajoute("kiwi")</code></td></tr>
+                    <tr><td><code>liste.append(x)</code></td><td>comme <code>ajoute</code> (le mot de Python)</td><td class="ex"><code>fruits.append("kiwi")</code></td></tr>
+                    <tr><td><code>longueur(x)</code> (ou <code>len</code>)</td><td>combien il y a d'éléments (ou de lettres dans un texte)</td><td class="ex"><code>longueur([5, 8])</code> donne 2</td></tr>
+                    <tr><td><code>somme(liste)</code></td><td>additionne tous les nombres de la liste</td><td class="ex"><code>somme([1, 2, 3])</code> donne 6</td></tr>
+                    <tr><td><code>maximum(liste)</code></td><td>le plus grand (aussi <code>maximum(a, b)</code>)</td><td class="ex"><code>maximum([4, 9, 2])</code> donne 9</td></tr>
+                    <tr><td><code>minimum(liste)</code></td><td>le plus petit (aussi <code>minimum(a, b)</code>)</td><td class="ex"><code>minimum(4, 9)</code> donne 4</td></tr>
+                    <tr><td><code>trie(liste)</code></td><td>une copie de la liste, rangée dans l'ordre</td><td class="ex"><code>trie([3, 1, 2])</code> donne [1, 2, 3]</td></tr>
+                    <tr><td><code>inverse(liste)</code></td><td>la liste à l'envers</td><td class="ex"><code>inverse([1, 2, 3])</code> donne [3, 2, 1]</td></tr>
+                    <tr><td><code>choisis(liste)</code></td><td>un élément au hasard</td><td class="ex"><code>choisis(["pile", "face"])</code></td></tr>
+                    <tr><td><code>contient(x, y)</code></td><td>Vrai si y est dans x</td><td class="ex"><code>contient([1, 2], 2)</code> donne Vrai</td></tr>
+                </table>
+
+                <h3 id="g-textes">Les textes</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>majuscules(texte)</code></td><td>écrit le texte en MAJUSCULES</td><td class="ex"><code>majuscules("chat")</code> donne "CHAT"</td></tr>
+                    <tr><td><code>minuscules(texte)</code></td><td>écrit le texte en minuscules</td><td class="ex"><code>minuscules("CHAT")</code> donne "chat"</td></tr>
+                    <tr><td><code>remplace(texte, avant, après)</code></td><td>remplace un morceau du texte par un autre</td><td class="ex"><code>remplace("le chat", "chat", "chien")</code></td></tr>
+                    <tr><td><code>découpe(texte, séparateur)</code></td><td>coupe le texte en une liste de morceaux (aux espaces si on ne dit rien)</td><td class="ex"><code>découpe("a b c")</code> donne ["a", "b", "c"]</td></tr>
+                    <tr><td><code>nettoie(texte)</code> (ou <code>strip</code>)</td><td>enlève les espaces au début et à la fin</td><td class="ex"><code>nettoie("  oui  ")</code> donne "oui"</td></tr>
+                    <tr><td><code>"sép".joindre(liste)</code></td><td>colle les éléments d'une liste en un seul texte</td><td class="ex"><code>"-".joindre(["a", "b"])</code> donne "a-b"</td></tr>
+                    <tr><td><code>chaîne(x)</code></td><td>transforme en texte</td><td class="ex"><code>chaîne(12) + "!"</code> donne "12!"</td></tr>
+                    <tr><td><code>type_de(x)</code></td><td>dit de quel genre est x (nombre, texte, liste…) avec un mot anglais</td><td class="ex"><code>type_de(3)</code></td></tr>
+                </table>
+
+                <h3 id="g-dessin">Le dessin</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>efface()</code></td><td>efface tout le canevas</td><td class="ex"><code>efface()</code></td></tr>
+                    <tr><td><code>fond(couleur)</code></td><td>peint tout le fond d'une couleur</td><td class="ex"><code>fond("bleu clair")</code></td></tr>
+                    <tr><td><code>couleur(c)</code></td><td>choisit la couleur des prochaines formes</td><td class="ex"><code>couleur("rouge")</code></td></tr>
+                    <tr><td><code>couleur_trait(c)</code></td><td>choisit seulement la couleur des traits</td><td class="ex"><code>couleur_trait("noir")</code></td></tr>
+                    <tr><td><code>couleur_remplissage(c)</code></td><td>choisit seulement la couleur de l'intérieur des formes</td><td class="ex"><code>couleur_remplissage("jaune")</code></td></tr>
+                    <tr><td><code>rgb(r, v, b)</code></td><td>invente une couleur avec du rouge, du vert et du bleu (de 0 à 255)</td><td class="ex"><code>couleur(rgb(255, 128, 0))</code></td></tr>
+                    <tr><td><code>épaisseur(e)</code></td><td>choisit l'épaisseur des traits</td><td class="ex"><code>épaisseur(5)</code></td></tr>
+                    <tr><td><code>point(x, y)</code></td><td>dessine un point</td><td class="ex"><code>point(100, 100)</code></td></tr>
+                    <tr><td><code>ligne(x1, y1, x2, y2)</code></td><td>trace un trait d'un point à un autre</td><td class="ex"><code>ligne(0, 0, 800, 600)</code></td></tr>
+                    <tr><td><code>rectangle(x, y, largeur, hauteur)</code></td><td>dessine le bord d'un rectangle (x, y est le coin en haut à gauche)</td><td class="ex"><code>rectangle(10, 10, 200, 100)</code></td></tr>
+                    <tr><td><code>rectangle_plein(x, y, largeur, hauteur)</code></td><td>dessine un rectangle colorié</td><td class="ex"><code>rectangle_plein(10, 10, 200, 100)</code></td></tr>
+                    <tr><td><code>carré(x, y, côté)</code></td><td>dessine le bord d'un carré</td><td class="ex"><code>carré(50, 50, 80)</code></td></tr>
+                    <tr><td><code>carré_plein(x, y, côté)</code></td><td>dessine un carré colorié</td><td class="ex"><code>carré_plein(50, 50, 80)</code></td></tr>
+                    <tr><td><code>cercle(x, y, rayon)</code></td><td>dessine le bord d'un cercle (x, y est le centre)</td><td class="ex"><code>cercle(400, 300, 50)</code></td></tr>
+                    <tr><td><code>disque(x, y, rayon)</code></td><td>dessine un rond colorié</td><td class="ex"><code>disque(400, 300, 50)</code></td></tr>
+                    <tr><td><code>ellipse(x, y, rx, ry)</code></td><td>dessine le bord d'un ovale</td><td class="ex"><code>ellipse(400, 300, 100, 50)</code></td></tr>
+                    <tr><td><code>ellipse_pleine(x, y, rx, ry)</code></td><td>dessine un ovale colorié</td><td class="ex"><code>ellipse_pleine(400, 300, 100, 50)</code></td></tr>
+                    <tr><td><code>triangle(x1, y1, x2, y2, x3, y3)</code></td><td>dessine le bord d'un triangle avec ses trois coins</td><td class="ex"><code>triangle(100, 200, 200, 200, 150, 100)</code></td></tr>
+                    <tr><td><code>triangle_plein(x1, y1, x2, y2, x3, y3)</code></td><td>dessine un triangle colorié</td><td class="ex"><code>triangle_plein(100, 200, 200, 200, 150, 100)</code></td></tr>
+                    <tr><td><code>polygone(points)</code></td><td>dessine le bord d'une forme avec autant de coins que tu veux</td><td class="ex"><code>polygone([[0, 0], [100, 0], [50, 80]])</code></td></tr>
+                    <tr><td><code>polygone_plein(points)</code></td><td>dessine cette forme coloriée</td><td class="ex"><code>polygone_plein([[0, 0], [100, 0], [50, 80]])</code></td></tr>
+                    <tr><td><code>texte(x, y, message)</code></td><td>écrit un message sur le canevas</td><td class="ex"><code>texte(100, 50, "Bonjour")</code></td></tr>
+                    <tr><td><code>taille_texte(n)</code></td><td>choisit la taille des lettres</td><td class="ex"><code>taille_texte(40)</code></td></tr>
+                    <tr><td><code>police(nom)</code></td><td>choisit la forme des lettres</td><td class="ex"><code>police("serif")</code></td></tr>
+                    <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur (800) et la hauteur (600) du canevas</td><td class="ex"><code>largeur()</code></td></tr>
+                </table>
+
+                <h3 id="g-tortue">La tortue</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>avance(d)</code></td><td>la tortue avance de d points</td><td class="ex"><code>avance(100)</code></td></tr>
+                    <tr><td><code>recule(d)</code></td><td>la tortue recule de d points</td><td class="ex"><code>recule(50)</code></td></tr>
+                    <tr><td><code>droite(angle)</code></td><td>tourne vers la droite (90 = un quart de tour)</td><td class="ex"><code>droite(90)</code></td></tr>
+                    <tr><td><code>gauche(angle)</code></td><td>tourne vers la gauche</td><td class="ex"><code>gauche(45)</code></td></tr>
+                    <tr><td><code>lève_crayon()</code></td><td>la tortue se déplace sans dessiner</td><td class="ex"><code>lève_crayon()</code></td></tr>
+                    <tr><td><code>baisse_crayon()</code></td><td>la tortue dessine de nouveau</td><td class="ex"><code>baisse_crayon()</code></td></tr>
+                    <tr><td><code>va_à(x, y)</code></td><td>la tortue va directement à un endroit</td><td class="ex"><code>va_à(100, 100)</code></td></tr>
+                    <tr><td><code>oriente(angle)</code></td><td>tourne la tortue dans une direction&nbsp;: 0 = droite, 90 = bas, 180 = gauche, 270 = haut</td><td class="ex"><code>oriente(270)</code></td></tr>
+                    <tr><td><code>origine()</code></td><td>ramène la tortue au milieu</td><td class="ex"><code>origine()</code></td></tr>
+                    <tr><td><code>cache_tortue()</code></td><td>rend la tortue invisible</td><td class="ex"><code>cache_tortue()</code></td></tr>
+                    <tr><td><code>montre_tortue()</code></td><td>rend la tortue visible</td><td class="ex"><code>montre_tortue()</code></td></tr>
+                    <tr><td><code>position_x()</code>, <code>position_y()</code></td><td>où se trouve la tortue</td><td class="ex"><code>position_x()</code></td></tr>
+                    <tr><td><code>cap()</code></td><td>dans quelle direction regarde la tortue (en degrés)</td><td class="ex"><code>cap()</code></td></tr>
+                </table>
+
+                <h3 id="g-animation">Animation, souris et clavier</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>animer(f, délai)</code></td><td>appelle la fonction f toutes les «&nbsp;délai&nbsp;» millisecondes</td><td class="ex"><code>animer(image, 30)</code></td></tr>
+                    <tr><td><code>arrête()</code></td><td>arrête l'animation</td><td class="ex"><code>arrête()</code></td></tr>
+                    <tr><td><code>quand_clic(f)</code></td><td>appelle f(x, y) à chaque clic sur le canevas</td><td class="ex"><code>quand_clic(clic)</code></td></tr>
+                    <tr><td><code>quand_souris(f)</code></td><td>appelle f(x, y) quand la souris bouge sur le canevas</td><td class="ex"><code>quand_souris(suit)</code></td></tr>
+                    <tr><td><code>quand_touche(f)</code></td><td>appelle f(touche) quand on appuie sur une touche</td><td class="ex"><code>quand_touche(touche)</code></td></tr>
+                </table>
+                </div>
+
+                <details class="avance" id="g-avance">
+                    <summary>🔭 Pour aller plus loin&nbsp;: les instructions de LispE en français (<span id="nb-avance">…</span>)</summary>
+                    <p>La Pythonerie fonctionne grâce au langage <b>LispE</b>. Ces mots donnent accès à ses instructions,
+                        avec des noms français. Ils sont faits pour les plus grands et les curieux&nbsp;!
+                        La dernière colonne donne le nom de l'instruction dans LispE.</p>
+                    <div id="glossaire-avance"><p class="compte">Chargement…</p></div>
+                </details>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Thème : le même que celui choisi dans la Pythonerie
+        try {
+            if (localStorage.getItem('pythonerie.thème') === 'sombre') document.body.classList.add('dark-mode');
+        } catch (e) { /* rien */ }
+
+        // ---------- Coloration simple des exemples et bouton « Copier » ----------
+        const MOTS = new Set(['si', 'sinonsi', 'sinon', 'tantque', 'pour', 'dans', 'fonction', 'def', 'retourne',
+            'renvoie', 'sortir', 'continuer', 'et', 'ou', 'non', 'globale', 'classe', 'soi', 'essaie', 'sauf',
+            'lever', 'selon', 'cas', 'Vrai', 'Faux', 'Rien']);
+        const echappe = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        function colore(code) {
+            return code.split('\n').map(ligne => {
+                let html = '', reste = ligne;
+                const motif = /(#.*$)|(f?"[^"]*")|(\b\d+(?:\.\d+)?\b)|([A-Za-zÀ-ÿ_][\wÀ-ÿ]*)(\s*\()?|([^#"\wÀ-ÿ]+)/g;
+                let m;
+                while ((m = motif.exec(reste)) !== null) {
+                    if (m[1]) html += '<span class="cm-commentaire">' + echappe(m[1]) + '</span>';
+                    else if (m[2]) html += '<span class="cm-chaine">' + echappe(m[2]) + '</span>';
+                    else if (m[3]) html += '<span class="cm-nombre">' + m[3] + '</span>';
+                    else if (m[4]) {
+                        if (MOTS.has(m[4])) html += '<span class="cm-mot">' + m[4] + '</span>' + (m[5] || '');
+                        else if (m[5]) html += '<span class="cm-fonction">' + m[4] + '</span>' + m[5];
+                        else html += m[4];
+                    } else html += echappe(m[6]);
+                }
+                return html;
+            }).join('\n');
+        }
+        document.querySelectorAll('.exemple pre').forEach(pre => {
+            const code = pre.textContent;
+            pre.innerHTML = colore(code);
+            const bouton = document.createElement('button');
+            bouton.className = 'copier';
+            bouton.textContent = '📋 Copier';
+            bouton.title = 'Copier ce programme pour le coller dans l\'éditeur';
+            bouton.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(code);
+                    bouton.textContent = '✅ Copié !';
+                } catch (e) {
+                    bouton.textContent = '❌ Sélectionne le texte';
+                }
+                setTimeout(() => { bouton.textContent = '📋 Copier'; }, 1800);
+            });
+            pre.parentNode.appendChild(bouton);
+        });
+
+        // ---------- Glossaire avancé : chargé depuis basic/français.lisp ----------
+        async function chargeAvance() {
+            const zone = document.getElementById('glossaire-avance');
+            try {
+                const r = await fetch('basic/français.lisp', { cache: 'no-cache' });
+                if (!r.ok) throw new Error();
+                const texte = (await r.text()).normalize('NFC');
+                zone.innerHTML = '';
+                let table = null, section = null, nombre = 0;
+                texte.split('\n').forEach(l => {
+                    const titre = l.match(/^; (\S+\.cxx) — (.*)$/);
+                    if (titre) { section = titre[2]; table = null; return; }
+                    const m = l.match(/^\(link "([^"]+)" '(\S+?)\)\s*;\s*(.*)$/);
+                    if (!m) return;
+                    const [, nom, instruction, brut] = m;
+                    const description = brut.replace(/^[^\s(:]+/, nom);
+                    if (!table) {
+                        const h = document.createElement('h3');
+                        h.textContent = section.charAt(0).toUpperCase() + section.slice(1);
+                        zone.appendChild(h);
+                        table = document.createElement('table');
+                        table.className = 'glossaire';
+                        table.innerHTML = '<tr><th>Fonction</th><th>Ce qu\'elle fait</th><th>Dans LispE</th></tr>';
+                        zone.appendChild(table);
+                    }
+                    const [signature, ...explication] = description.split(' : ');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td><code></code></td><td></td><td class="lispe-nom"></td>';
+                    tr.children[0].firstChild.textContent = signature;
+                    tr.children[1].textContent = explication.join(' : ');
+                    tr.children[2].textContent = instruction;
+                    table.appendChild(tr);
+                    nombre++;
+                });
+                document.getElementById('nb-avance').textContent = nombre + ' mots';
+            } catch (e) {
+                zone.innerHTML = '<p class="compte">Cette liste se charge depuis la Pythonerie en ligne.</p>';
+            }
+            filtre();
+        }
+
+        // ---------- Recherche dans le glossaire ----------
+        const sansAccents = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+        function filtre() {
+            const q = sansAccents(document.getElementById('recherche').value.trim());
+            let vus = 0, total = 0;
+            document.querySelectorAll('#glossaire table.glossaire').forEach(table => {
+                let visibles = 0;
+                table.querySelectorAll('tr').forEach((tr, i) => {
+                    if (i === 0) return;
+                    total++;
+                    const ok = !q || sansAccents(tr.textContent).includes(q);
+                    tr.classList.toggle('cache', !ok);
+                    if (ok) { visibles++; vus++; }
+                });
+                table.classList.toggle('cache', visibles === 0);
+                const titre = table.previousElementSibling;
+                if (titre && titre.tagName === 'H3') titre.classList.toggle('cache', visibles === 0);
+            });
+            if (q) document.getElementById('g-avance').open = true;
+            document.getElementById('compte').textContent = q
+                ? (vus ? vus + ' mot' + (vus > 1 ? 's' : '') + ' trouvé' + (vus > 1 ? 's' : '') : 'Aucun mot trouvé. Essaie un autre mot !')
+                : total + ' mots dans le glossaire.';
+        }
+        document.getElementById('recherche').addEventListener('input', filtre);
+        chargeAvance();
+    </script>
+</body>
+
+</html>

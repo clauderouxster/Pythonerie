@@ -94,6 +94,9 @@ code {
 }
 .btn:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn:disabled { opacity: 0.45; cursor: default; }
+a.btn { text-decoration: none; display: inline-block; }
+.lien-guide { background: var(--accent-subtle); border-radius: var(--radius-md); padding: 8px 12px; }
+.lien-guide a { color: var(--accent); font-weight: 600; }
 .btn-secondaire {
     background: var(--bg-elevated);
     color: var(--text-secondary);

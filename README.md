@@ -101,6 +101,8 @@ Certains noms ne sont pas traduits, pour éviter les conflits : ceux que la bibl
 
 Le bouton **λ LispE** montre le code LispE produit. Le bouton **❓ Aide** présente toutes les fonctions.
 
+Le bouton **📖 Mode d'emploi** ouvre [docs/guide.html](docs/guide.html) : un guide en français simple pour les enfants à partir de 7 ans, avec des exemples à copier, de petits défis et un glossaire de tous les mots (mots du langage, bibliothèque et, pour aller plus loin, les instructions de `français.lisp`, chargées automatiquement). On y cherche un mot avec ou sans accents.
+
 ### Dessin, tortue, animation
 
 Le canevas mesure 800 × 600. L'origine est en haut à gauche et y augmente vers le bas.
@@ -123,6 +125,7 @@ Pythonerie/
 └── docs/                   le site, publié tel quel par GitHub Pages
     ├── .nojekyll
     ├── index.html          les trois zones et l'aide
+    ├── guide.html          mode d'emploi pour les enfants, avec le glossaire
     ├── style.css           thème clair et sombre (palette de TamedAgents)
     ├── js/
     │   ├── pythonerie.js   application : programmes, éditeur, compilation, exécution

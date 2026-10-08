@@ -2,7 +2,7 @@
 # La ligne qui ouvre un bloc se termine par ":"
 # et le contenu du bloc est décalé de 4 espaces.
 
-note = aleatoire(0, 20)
+note = aléatoire(0, 20)
 affiche("Ta note :", note)
 
 si note >= 16:
@@ -16,8 +16,8 @@ sinon:
 
 # On combine les conditions avec et / ou / non
 pluie = Vrai
-temperature = 25
-si temperature > 20 et non pluie:
+température = 25
+si température > 20 et non pluie:
     affiche("On va à la plage.")
 sinon:
     affiche("On reste à la maison.")

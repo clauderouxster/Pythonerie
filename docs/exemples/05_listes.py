@@ -11,9 +11,9 @@ affiche("Meilleure :", maximum(notes), " moins bonne :", minimum(notes))
 affiche("Triées :", trie(notes))
 
 # Une liste en compréhension
-carres = [x * x pour x dans intervalle(10)]
-pairs = [x pour x dans carres si x % 2 == 0]
-affiche(carres)
+carrés = [x * x pour x dans intervalle(10)]
+pairs = [x pour x dans carrés si x % 2 == 0]
+affiche(carrés)
 affiche(pairs)
 
 si 18 dans notes:
@@ -27,7 +27,7 @@ pour pays dans capitales:
 
 # Les chaînes de caractères
 phrase = "le petit chat dort"
-mots = decoupe(phrase, " ")
+mots = découpe(phrase, " ")
 affiche(mots, longueur(mots), "mots")
 affiche(majuscules(phrase))
 affiche("-".joindre(mots))

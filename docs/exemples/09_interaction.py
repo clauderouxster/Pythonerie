@@ -6,18 +6,18 @@
 px = 400
 py = 300
 taille = 40
-couleur_carre = "bleu"
+couleur_carré = "bleu"
 
 fonction dessine():
     fond("blanc")
     couleur("gris")
     taille_texte(16)
     texte(10, 10, "Flèches : déplacer   Espace : changer de couleur   Clic : déposer un point")
-    couleur(couleur_carre)
-    carre_plein(px - taille / 2, py - taille / 2, taille)
+    couleur(couleur_carré)
+    carré_plein(px - taille / 2, py - taille / 2, taille)
 
 fonction touche(t):
-    globale couleur_carre
+    globale couleur_carré
     si t == "ArrowLeft":
         px -= 20
     sinonsi t == "ArrowRight":
@@ -27,7 +27,7 @@ fonction touche(t):
     sinonsi t == "ArrowDown":
         py += 20
     sinonsi t == " ":
-        couleur_carre = choisis(["rouge", "vert", "bleu", "violet", "orange"])
+        couleur_carré = choisis(["rouge", "vert", "bleu", "violet", "orange"])
     dessine()
 
 fonction clic(x, y):

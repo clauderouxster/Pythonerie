@@ -1,4 +1,4 @@
-;Date: 2026/10/08 12:27:12
+;Date: 2026/10/08 13:49:47
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -17,8 +17,7 @@
    (check 
       (and
          (< (car i) (size tokens))      
-         ; les mots-clefs s'écrivent avec ou sans accents (règle = regle)
-         (eq (deaccentuate (lower (@ tokens (car i)))) (deaccentuate (lower value)))
+         (eq (lower (@ tokens (car i))) (lower value))
       )
       (+= i 1)
       (if keep
@@ -2375,14 +2374,14 @@
    )
 )
 
-;!rule := $regle Word %( ;4 patterns %) predicates+ $finregle
+;!rule := $règle Word %( ;4 patterns %) predicates+ $finrègle
 (defun C_rule (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (and
             (setq i1 (clone i0))
             (setq v1 ())
-            (compare tokens "regle" i1 v1 nil)
+            (compare tokens "règle" i1 v1 nil)
             (C_Word tokens i1 v1)
             (compare tokens "(" i1 v1 nil)
             (push error_id 4)
@@ -2390,7 +2389,7 @@
                   (C_patterns tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                   (P_rule_0 tokens i1 v1)
-                  (compare tokens "finregle" i1 v1 nil)
+                  (compare tokens "finrègle" i1 v1 nil)
                )
                (pop error_id)
                (setg do_not_stop false)
@@ -2825,7 +2824,7 @@
 
 
 (defun nokeywords(w)
-      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "globale" "global" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "regle" "finregle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "selon" "finselon") (deaccentuate (lower w))))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "globale" "global" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "selon" "finselon") (lower w)))
 )
    (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
 (setq parser_tok (tokenizer_rules))

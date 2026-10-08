@@ -207,8 +207,7 @@
    (check 
       (and
          (< (car i) (size tokens))      
-         ; les mots-clefs s'écrivent avec ou sans accents (règle = regle)
-         (eq (deaccentuate (lower (@ tokens (car i)))) (deaccentuate (lower value)))
+         (eq (lower (@ tokens (car i))) (lower value))
       )
       (+= i 1)
       (if keep
@@ -545,7 +544,7 @@
 
 (setq nokeyword `
 (defun nokeywords(w)
-      (not (in  '%1 (deaccentuate (lower w))))
+      (not (in  '%1 (lower w)))
 )
    `
 )

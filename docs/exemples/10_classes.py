@@ -6,7 +6,7 @@ classe Compte:
         soi.titulaire = titulaire
         soi.solde = solde
 
-    def depose(soi, montant):
+    def dépose(soi, montant):
         soi.solde += montant
         retourne soi.solde
 
@@ -17,16 +17,16 @@ classe Compte:
         soi.solde -= montant
         retourne soi.solde
 
-    def decris(soi):
+    def décris(soi):
         affiche(soi.titulaire, "possède", soi.solde, "euros")
 
 lea = Compte("Léa", 100)
 tom = Compte("Tom", 20)
-lea.depose(50)
+lea.dépose(50)
 tom.retire(30)
 lea.retire(30)
-lea.decris()
-tom.decris()
+lea.décris()
+tom.décris()
 
 # Les erreurs : essaie / sauf
 fonction divise(a, b):

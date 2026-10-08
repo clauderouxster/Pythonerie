@@ -2,7 +2,7 @@
 // Pythonerie — API de dessin
 // ---------------------------------------------------------------------
 // L'objet global Pyt est appelé depuis LispE via evaljs
-// (voir basic/bibliotheque.lisp) : (evaljs (list "Pyt.cercle" x y r false))
+// (voir basic/bibliothèque.lisp) : (evaljs (list "Pyt.cercle" x y r false))
 // exécute en JavaScript : Pyt.cercle(x, y, r, false);
 //
 // Le canevas a une taille logique fixe (LARGEUR x HAUTEUR) ; il est mis à
@@ -26,48 +26,43 @@ const Pyt = (function () {
     };
 
     let canevas = null, ctx = null, couche = null, ctxTortue = null;
-    let etat = null, tortue = null;
+    let état = null, tortue = null;
     let minuteries = [];
     let gestionnaires = { clic: null, souris: null, touche: null };
     // Fonction fournie par l'application pour exécuter du LispE : rappel(code)
     let rappel = null;
-    let dessinTortuePrevu = false;
+    let dessinTortuePrévu = false;
 
-    function etatInitial() {
+    function étatInitial() {
         return {
-            trait: '#1a1a1a', remplissage: '#1a1a1a', epaisseur: 2,
+            trait: '#1a1a1a', remplissage: '#1a1a1a', épaisseur: 2,
             taille: 20, police: 'Inter, sans-serif'
         };
     }
 
     function tortueInitiale() {
         // La tortue n'apparaît qu'à la première commande de tortue (sauf si on l'a cachée)
-        return { x: LARGEUR / 2, y: HAUTEUR / 2, cap: 0, crayon: true, visible: false, cachee: false };
+        return { x: LARGEUR / 2, y: HAUTEUR / 2, cap: 0, crayon: true, visible: false, cachée: false };
     }
-
-    // Les noms de couleurs s'écrivent avec ou sans accents : "gris foncé" = "gris fonce"
-    const sansAccents = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const COULEURS_SANS_ACCENTS = {};
-    Object.keys(COULEURS).forEach(k => { COULEURS_SANS_ACCENTS[sansAccents(k)] = COULEURS[k]; });
 
     function couleurCSS(c) {
         if (c === null || c === undefined) return '#000000';
         const nom = String(c).trim();
-        return COULEURS_SANS_ACCENTS[sansAccents(nom.toLowerCase())] || nom;
+        return COULEURS[nom.toLowerCase()] || nom;
     }
 
-    function nombre(v, defaut) {
+    function nombre(v, défaut) {
         const n = Number(v);
-        return Number.isFinite(n) ? n : (defaut === undefined ? 0 : defaut);
+        return Number.isFinite(n) ? n : (défaut === undefined ? 0 : défaut);
     }
 
     function appliqueStyle() {
-        ctx.strokeStyle = etat.trait;
-        ctx.fillStyle = etat.remplissage;
-        ctx.lineWidth = etat.epaisseur;
+        ctx.strokeStyle = état.trait;
+        ctx.fillStyle = état.remplissage;
+        ctx.lineWidth = état.épaisseur;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.font = etat.taille + 'px ' + etat.police;
+        ctx.font = état.taille + 'px ' + état.police;
         ctx.textBaseline = 'top';
     }
 
@@ -77,15 +72,15 @@ const Pyt = (function () {
 
     // ---------------- La tortue (couche séparée) ----------------
     function utiliseTortue() {
-        if (!tortue.cachee) tortue.visible = true;
-        prevoitTortue();
+        if (!tortue.cachée) tortue.visible = true;
+        prévoitTortue();
     }
 
-    function prevoitTortue() {
-        if (dessinTortuePrevu) return;
-        dessinTortuePrevu = true;
+    function prévoitTortue() {
+        if (dessinTortuePrévu) return;
+        dessinTortuePrévu = true;
         requestAnimationFrame(() => {
-            dessinTortuePrevu = false;
+            dessinTortuePrévu = false;
             dessineTortue();
         });
     }
@@ -128,11 +123,11 @@ const Pyt = (function () {
         rappel(code);
     }
 
-    function chaineLispE(s) {
+    function chaîneLispE(s) {
         return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
     }
 
-    function installeEvenements() {
+    function installeÉvénements() {
         couche.addEventListener('mousedown', (ev) => {
             if (!gestionnaires.clic) return;
             const p = positionSouris(ev);
@@ -140,12 +135,12 @@ const Pyt = (function () {
         });
         couche.addEventListener('mousemove', (ev) => {
             const p = positionSouris(ev);
-            const aff = document.getElementById('coordonnees');
+            const aff = document.getElementById('coordonnées');
             if (aff) aff.textContent = 'x : ' + p.x + '   y : ' + p.y;
             if (gestionnaires.souris) appelle(gestionnaires.souris, [p.x, p.y]);
         });
         couche.addEventListener('mouseleave', () => {
-            const aff = document.getElementById('coordonnees');
+            const aff = document.getElementById('coordonnées');
             if (aff) aff.textContent = '';
         });
         window.addEventListener('keydown', (ev) => {
@@ -154,7 +149,7 @@ const Pyt = (function () {
             const cible = ev.target;
             if (cible && (cible.closest && cible.closest('.CodeMirror, input, textarea, select'))) return;
             if (ev.key.startsWith('Arrow') || ev.key === ' ') ev.preventDefault();
-            appelle(gestionnaires.touche, [chaineLispE(ev.key)]);
+            appelle(gestionnaires.touche, [chaîneLispE(ev.key)]);
         });
     }
 
@@ -163,41 +158,41 @@ const Pyt = (function () {
         LARGEUR, HAUTEUR, COULEURS,
 
         // Appelé une fois par l'application
-        installe(elementCanevas, elementCouche, fonctionRappel) {
-            canevas = elementCanevas;
-            couche = elementCouche;
+        installe(élémentCanevas, élémentCouche, fonctionRappel) {
+            canevas = élémentCanevas;
+            couche = élémentCouche;
             canevas.width = couche.width = LARGEUR;
             canevas.height = couche.height = HAUTEUR;
             ctx = canevas.getContext('2d');
             ctxTortue = couche.getContext('2d');
             rappel = fonctionRappel;
-            installeEvenements();
-            this.reinitialise();
+            installeÉvénements();
+            this.réinitialise();
         },
 
         // Avant chaque exécution : on arrête tout et on repart d'une page blanche
-        reinitialise() {
-            this.arrete();
+        réinitialise() {
+            this.arrête();
             gestionnaires = { clic: null, souris: null, touche: null };
-            etat = etatInitial();
+            état = étatInitial();
             tortue = tortueInitiale();
             this.efface();
-            prevoitTortue();
+            prévoitTortue();
         },
 
         // ---------- Console ----------
         effaceConsole() {
             if (window.Pythonerie) window.Pythonerie.effaceConsole();
         },
-        // ecris() : texte sans retour à la ligne
-        ecris(texte) {
-            if (window.Pythonerie) window.Pythonerie.ecrisPartiel(String(texte));
+        // écris() : texte sans retour à la ligne
+        écris(texte) {
+            if (window.Pythonerie) window.Pythonerie.écrisPartiel(String(texte));
         },
         demande(question) {
             const r = window.prompt(String(question || ''), '');
             return r === null ? '' : r;
         },
-        aleatoire(a, b) {
+        aléatoire(a, b) {
             a = Math.ceil(nombre(a)); b = Math.floor(nombre(b));
             if (b < a) [a, b] = [b, a];
             return Math.floor(Math.random() * (b - a + 1)) + a;
@@ -218,18 +213,18 @@ const Pyt = (function () {
             ctx.fillRect(0, 0, LARGEUR, HAUTEUR);
             ctx.restore();
         },
-        couleur(c) { etat.trait = etat.remplissage = couleurCSS(c); },
-        couleurTrait(c) { etat.trait = couleurCSS(c); },
-        couleurRemplissage(c) { etat.remplissage = couleurCSS(c); },
-        epaisseur(e) { etat.epaisseur = Math.max(0.1, nombre(e, 1)); },
+        couleur(c) { état.trait = état.remplissage = couleurCSS(c); },
+        couleurTrait(c) { état.trait = couleurCSS(c); },
+        couleurRemplissage(c) { état.remplissage = couleurCSS(c); },
+        épaisseur(e) { état.épaisseur = Math.max(0.1, nombre(e, 1)); },
 
         // ---------- Formes ----------
         point(x, y) {
             appliqueStyle();
-            const r = Math.max(1, etat.epaisseur / 2);
+            const r = Math.max(1, état.épaisseur / 2);
             ctx.beginPath();
             ctx.arc(nombre(x), nombre(y), r, 0, 2 * Math.PI);
-            ctx.fillStyle = etat.trait;
+            ctx.fillStyle = état.trait;
             ctx.fill();
         },
         ligne(x1, y1, x2, y2) {
@@ -275,13 +270,13 @@ const Pyt = (function () {
         // ---------- Texte ----------
         texte(x, y, message) {
             appliqueStyle();
-            ctx.fillStyle = etat.remplissage;
+            ctx.fillStyle = état.remplissage;
             String(message).split('\n').forEach((l, i) => {
-                ctx.fillText(l, nombre(x), nombre(y) + i * etat.taille * 1.2);
+                ctx.fillText(l, nombre(x), nombre(y) + i * état.taille * 1.2);
             });
         },
-        tailleTexte(n) { etat.taille = Math.max(4, nombre(n, 20)); },
-        police(nom) { etat.police = String(nom || 'Inter, sans-serif'); },
+        tailleTexte(n) { état.taille = Math.max(4, nombre(n, 20)); },
+        police(nom) { état.police = String(nom || 'Inter, sans-serif'); },
 
         largeur() { return LARGEUR; },
         hauteur() { return HAUTEUR; },
@@ -303,7 +298,7 @@ const Pyt = (function () {
             utiliseTortue();
         },
         crayon(baisse) { tortue.crayon = !!baisse; },
-        vaA(x, y) {
+        vaÀ(x, y) {
             x = nombre(x); y = nombre(y);
             if (tortue.crayon) this.ligne(tortue.x, tortue.y, x, y);
             tortue.x = x;
@@ -312,20 +307,20 @@ const Pyt = (function () {
         },
         oriente(a) { tortue.cap = nombre(a) % 360; utiliseTortue(); },
         origine() {
-            const { crayon, cachee } = tortue;
+            const { crayon, cachée } = tortue;
             tortue = tortueInitiale();
             tortue.crayon = crayon;
-            tortue.cachee = cachee;
+            tortue.cachée = cachée;
             utiliseTortue();
         },
-        montreTortue(v) { tortue.visible = !!v; tortue.cachee = !v; prevoitTortue(); },
+        montreTortue(v) { tortue.visible = !!v; tortue.cachée = !v; prévoitTortue(); },
         tortueX() { return tortue.x; },
         tortueY() { return tortue.y; },
         tortueCap() { return tortue.cap; },
 
         // ---------- Animation et événements ----------
-        animer(nom, delai) {
-            const ms = Math.max(10, nombre(delai, 50));
+        animer(nom, délai) {
+            const ms = Math.max(10, nombre(délai, 50));
             const id = setInterval(() => appelle(nom, []), ms);
             minuteries.push(id);
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
@@ -333,7 +328,7 @@ const Pyt = (function () {
         quandClic(nom) { gestionnaires.clic = nom; },
         quandSouris(nom) { gestionnaires.souris = nom; },
         quandTouche(nom) { gestionnaires.touche = nom; },
-        arrete() {
+        arrête() {
             minuteries.forEach(clearInterval);
             minuteries = [];
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
@@ -342,7 +337,7 @@ const Pyt = (function () {
             return minuteries.length > 0 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.touche);
         },
         stoppeTout() {
-            this.arrete();
+            this.arrête();
             gestionnaires = { clic: null, souris: null, touche: null };
         },
 

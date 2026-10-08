@@ -1,8 +1,7 @@
 ;Date: 08/10/2026
 ;Description: Bibliothèque d'exécution de Pythonerie
 ; Ce fichier est chargé dans l'interpréteur LispE avant chaque programme.
-; Les noms sont écrits sans accents : le transpileur accepte aussi les formes
-; accentuées (épaisseur, aléatoire, carré, va_à...) grâce à deaccentuate.
+; Les noms suivent l'orthographe française : épaisseur, aléatoire, carré, va_à...
 ; Il définit les fonctions françaises du langage et les instructions de dessin,
 ; qui appellent l'objet JavaScript "Pyt" (voir js/canevas.js) via evaljs.
 ;
@@ -17,20 +16,20 @@
 ;------------------------------------------------------------------
 (defun efface_console () (evaljs "Pyt.effaceConsole()") true)
 
-; ecris(a, b, ...) écrit sans passer à la ligne. Dans le WebAssembly, chaque print de
+; écris(a, b, ...) écrit sans passer à la ligne. Dans le WebAssembly, chaque print de
 ; LispE arrive comme une ligne complète : on passe donc par la console JavaScript.
 ; defpat permet d'accepter de 1 à 8 arguments sous le même nom.
-(defun _ecris_liste (valeurs)
-   (evaljs (list "Pyt.ecris" (join (maplist '_texte valeurs false) " ")))
+(defun _écris_liste (valeurs)
+   (evaljs (list "Pyt.écris" (join (maplist '_texte valeurs false) " ")))
    true)
-(defpat ecris (a) (_ecris_liste (list a)))
-(defpat ecris (a b) (_ecris_liste (list a b)))
-(defpat ecris (a b c) (_ecris_liste (list a b c)))
-(defpat ecris (a b c d) (_ecris_liste (list a b c d)))
-(defpat ecris (a b c d e) (_ecris_liste (list a b c d e)))
-(defpat ecris (a b c d e f) (_ecris_liste (list a b c d e f)))
-(defpat ecris (a b c d e f g) (_ecris_liste (list a b c d e f g)))
-(defpat ecris (a b c d e f g h) (_ecris_liste (list a b c d e f g h)))
+(defpat écris (a) (_écris_liste (list a)))
+(defpat écris (a b) (_écris_liste (list a b)))
+(defpat écris (a b c) (_écris_liste (list a b c)))
+(defpat écris (a b c d) (_écris_liste (list a b c d)))
+(defpat écris (a b c d e) (_écris_liste (list a b c d e)))
+(defpat écris (a b c d e f) (_écris_liste (list a b c d e f)))
+(defpat écris (a b c d e f g) (_écris_liste (list a b c d e f g)))
+(defpat écris (a b c d e f g h) (_écris_liste (list a b c d e f g h)))
 
 ; Pose une question à l'utilisateur et renvoie sa réponse (une chaîne)
 (defun demande ((question ""))
@@ -50,8 +49,8 @@
 ;------------------------------------------------------------------
 (defun longueur (x) (size x))
 (defun entier (x) (integer x))
-(defun reel (x) (float x))
-(defun chaine (x) (_texte x))
+(defun réel (x) (float x))
+(defun chaîne (x) (_texte x))
 (defun type_de (x) (type x))
 
 ; intervalle(5) -> [0,1,2,3,4] ; intervalle(2, 5) -> [2,3,4] ; intervalle(0, 10, 2)
@@ -61,8 +60,8 @@
       (range a b pas)))
 
 ; Nombre entier au hasard entre a et b (inclus)
-(defun aleatoire (a b)
-   (integer (evaljs (list "Pyt.aleatoire" a b))))
+(defun aléatoire (a b)
+   (integer (evaljs (list "Pyt.aléatoire" a b))))
 
 ; Nombre réel au hasard entre 0 et 1
 (defun hasard ()
@@ -70,7 +69,7 @@
 
 ; Choisit un élément au hasard dans une liste
 (defun choisis (liste)
-   (@ liste (aleatoire 0 (- (size liste) 1))))
+   (@ liste (aléatoire 0 (- (size liste) 1))))
 
 (defun absolu (x) (fabs x))
 (defun abs (x) (fabs x))
@@ -89,8 +88,8 @@
 
 ; Trigonométrie en degrés
 (setq pi _pi)
-(defun sinus (degres) (sin (* (float degres) (/ _pi 180))))
-(defun cosinus (degres) (cos (* (float degres) (/ _pi 180))))
+(defun sinus (degrés) (sin (* (float degrés) (/ _pi 180))))
+(defun cosinus (degrés) (cos (* (float degrés) (/ _pi 180))))
 
 ; Listes
 (defun trie (liste) (sort '< (clone liste)))
@@ -99,8 +98,8 @@
 ; Chaînes de caractères
 (defun majuscules (s) (upper s))
 (defun minuscules (s) (lower s))
-(defun remplace (s avant apres) (replace s avant apres))
-(defun decoupe (s (separateur " ")) (split s separateur))
+(defun remplace (s avant après) (replace s avant après))
+(defun découpe (s (séparateur " ")) (split s séparateur))
 (defun nettoie (s) (trim s))
 (defun contient (conteneur x) (in_it conteneur x))
 
@@ -118,14 +117,14 @@
 (defun couleur (c) (evaljs (list "Pyt.couleur" c)) true)
 (defun couleur_trait (c) (evaljs (list "Pyt.couleurTrait" c)) true)
 (defun couleur_remplissage (c) (evaljs (list "Pyt.couleurRemplissage" c)) true)
-(defun epaisseur (e) (evaljs (list "Pyt.epaisseur" e)) true)
+(defun épaisseur (e) (evaljs (list "Pyt.épaisseur" e)) true)
 
 (defun point (x y) (evaljs (list "Pyt.point" x y)) true)
 (defun ligne (x1 y1 x2 y2) (evaljs (list "Pyt.ligne" x1 y1 x2 y2)) true)
 (defun rectangle (x y l h) (evaljs (list "Pyt.rectangle" x y l h false)) true)
 (defun rectangle_plein (x y l h) (evaljs (list "Pyt.rectangle" x y l h true)) true)
-(defun carre (x y cote) (evaljs (list "Pyt.rectangle" x y cote cote false)) true)
-(defun carre_plein (x y cote) (evaljs (list "Pyt.rectangle" x y cote cote true)) true)
+(defun carré (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté false)) true)
+(defun carré_plein (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté true)) true)
 (defun cercle (x y r) (evaljs (list "Pyt.cercle" x y r false)) true)
 (defun disque (x y r) (evaljs (list "Pyt.cercle" x y r true)) true)
 (defun ellipse (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry false)) true)
@@ -153,9 +152,9 @@
 (defun recule (d) (evaljs (list "Pyt.avance" (* -1 d))) true)
 (defun gauche (a) (evaljs (list "Pyt.tourne" (* -1 a))) true)
 (defun droite (a) (evaljs (list "Pyt.tourne" a)) true)
-(defun leve_crayon () (evaljs (list "Pyt.crayon" false)) true)
+(defun lève_crayon () (evaljs (list "Pyt.crayon" false)) true)
 (defun baisse_crayon () (evaljs (list "Pyt.crayon" true)) true)
-(defun va_a (x y) (evaljs (list "Pyt.vaA" x y)) true)
+(defun va_à (x y) (evaljs (list "Pyt.vaÀ" x y)) true)
 (defun oriente (angle) (evaljs (list "Pyt.oriente" angle)) true)
 (defun origine () (evaljs "Pyt.origine()") true)
 (defun montre_tortue () (evaljs (list "Pyt.montreTortue" true)) true)
@@ -168,11 +167,11 @@
 ; Animation et événements
 ; La fonction peut être donnée par son nom : animer(bouge, 30) ou animer("bouge", 30)
 ;------------------------------------------------------------------
-(defmacro animer (fonction delai) (evaljs (list "Pyt.animer" (string (quote fonction)) delai)))
+(defmacro animer (fonction délai) (evaljs (list "Pyt.animer" (string (quote fonction)) délai)))
 (defmacro quand_clic (fonction) (evaljs (list "Pyt.quandClic" (string (quote fonction)))))
 (defmacro quand_souris (fonction) (evaljs (list "Pyt.quandSouris" (string (quote fonction)))))
 (defmacro quand_touche (fonction) (evaljs (list "Pyt.quandTouche" (string (quote fonction)))))
-(defun arrete () (evaljs "Pyt.arrete()") true)
+(defun arrête () (evaljs "Pyt.arrête()") true)
 
 ;------------------------------------------------------------------
 ; Opérateurs « à la Python »
@@ -194,7 +193,7 @@
 (defun _infeg (a b) (if (_mixte a b) (<= (float a) b) (<= a b)))
 (defun _sup (a b) (if (_mixte a b) (> (float a) b) (> a b)))
 (defun _supeg (a b) (if (_mixte a b) (>= (float a) b) (>= a b)))
-(defun _egal (a b) (if (_mixte a b) (= (float a) b) (= a b)))
+(defun _égal (a b) (if (_mixte a b) (= (float a) b) (= a b)))
 (defun _diff (a b) (if (_mixte a b) (!= (float a) b) (!= a b)))
 
 ; Message d'une erreur attrapée par sauf(e), sans la pile d'appels LispE
@@ -211,9 +210,9 @@
 
 ;------------------------------------------------------------------
 ; Affichage « à la Python », en français : [1, 2, 3], Vrai, Faux, Rien, {"a": 1}
-; Le transpileur l'applique aux arguments de affiche() et ecris(), et chaine() l'utilise.
+; Le transpileur l'applique aux arguments de affiche() et écris(), et chaîne() l'utilise.
 ;------------------------------------------------------------------
-(setq _types_listes '("list_" "integers_" "floats_" "numbers_" "strings_" "shorts_" "llist_"))
+(setq _types_listes '("list_" "integers_" "floats_" "numbers_" "strings_" "shorts_" "llist_" "enum"))
 
 (defun _repr (x)
    (if (stringp x)
@@ -224,8 +223,15 @@
    (setq ty (string (type x)))
    (cond
       ((eq ty "string_") x)
-      ((in _types_listes ty)
-         (+ "[" (join (maplist '_repr x false) ", ") "]"))
+      ((or (in _types_listes ty) (= (@@ ty 0 7) "matrix_") (= (@@ ty 0 7) "tensor_"))
+         (setq morceaux ())
+         (loop e x (push morceaux (_repr e)))
+         (+ "[" (join morceaux ", ") "]"))
+      ; ensembles : {1, 2}
+      ((= (@@ ty 0 4) "set_")
+         (setq morceaux ())
+         (loop e x (push morceaux (_repr e)))
+         (+ "{" (join morceaux ", ") "}"))
       ((in ty "dictionary")
          (setq morceaux ())
          (loop k x (push morceaux (+ (_repr k) ": " (_repr (@ x k)))))

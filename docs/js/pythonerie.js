@@ -7,7 +7,7 @@
 // 2. L'éditeur (CodeMirror), toujours ouvert.
 // 3. L'exécution : le pseudo-Python francisé est transpilé en LispE par
 //    basic/transpiler.lisp, puis exécuté par LispE (WebAssembly) avec
-//    basic/bibliotheque.lisp, qui dessine dans le canevas via Pyt (canevas.js).
+//    basic/bibliothèque.lisp, qui dessine dans le canevas via Pyt (canevas.js).
 // =====================================================================
 
 const PROGRAMME_ACCUEIL = `# Bienvenue dans Pythonerie !
@@ -32,13 +32,13 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // État
     // ------------------------------------------------------------------
-    let wasmPret = false;
-    const sources = { basic: '', transpileur: '', bibliotheque: '' };
+    let wasmPrêt = false;
+    const sources = { basic: '', transpileur: '', bibliothèque: '', français: '' };
     let idxCompilateur = null;   // interpréteur LispE qui contient le transpileur
-    let idxExecution = null;     // interpréteur LispE du programme en cours
+    let idxExécution = null;     // interpréteur LispE du programme en cours
     let dernierLispE = '';
 
-    let editeur = null;
+    let éditeur = null;
     let stockage = null;
     let programmes = [];          // [{chemin, modifie}]
     let courant = null;           // chemin du programme ouvert ("Jeux/Balle")
@@ -50,7 +50,7 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // Console
     // ------------------------------------------------------------------
-    // Ligne commencée par ecris() et pas encore terminée
+    // Ligne commencée par écris() et pas encore terminée
     let ligneOuverte = null;
 
     function nouvelleLigneConsole(genre) {
@@ -63,22 +63,22 @@ const Pythonerie = (function () {
         return div;
     }
 
-    // ecris() : on complète la ligne ouverte ; chaque "\n" termine la ligne
-    function ecrisPartiel(texte) {
+    // écris() : on complète la ligne ouverte ; chaque "\n" termine la ligne
+    function écrisPartiel(texte) {
         const morceaux = texte.split('\n');
         morceaux.forEach((m, i) => {
-            const derniere = i === morceaux.length - 1;
-            if (derniere && m === '') return;
+            const dernière = i === morceaux.length - 1;
+            if (dernière && m === '') return;
             if (!ligneOuverte) ligneOuverte = nouvelleLigneConsole('sortie');
             ligneOuverte.textContent += m;
-            if (!derniere) ligneOuverte = null;
+            if (!dernière) ligneOuverte = null;
         });
         $('console').scrollTop = $('console').scrollHeight;
     }
 
-    function ecritConsole(texte, genre) {
+    function écritConsole(texte, genre) {
         const zone = $('console');
-        // affiche() après ecris() : on termine la ligne commencée
+        // affiche() après écris() : on termine la ligne commencée
         if (ligneOuverte && (genre || 'sortie') === 'sortie') {
             ligneOuverte.textContent += texte;
             ligneOuverte = null;
@@ -127,8 +127,8 @@ const Pythonerie = (function () {
         const l = m.match(/line:\s*(\d+)/);
         if (l) ligne = l[1];
         m = m.replace(/,?\s*line:\s*\d+(\s*in:\s*[^,\n]*)?/g, '');
-        for (const [motif, francais] of TRADUCTIONS) {
-            if (motif.test(m)) { m = m.replace(motif, francais); break; }
+        for (const [motif, français] of TRADUCTIONS) {
+            if (motif.test(m)) { m = m.replace(motif, français); break; }
         }
         let texte = /^Erreur/.test(m.trim()) ? m.trim() : 'Erreur : ' + m.trim();
         if (pile.length) texte += '\n   dans le code LispE : ' + pile[0].replace(LIGNE_PILE, '');
@@ -155,12 +155,68 @@ const Pythonerie = (function () {
             if (!r.ok) throw new Error('Impossible de charger ' + chemin);
             return r.text();
         };
-        [sources.basic, sources.transpileur, sources.bibliotheque] = await Promise.all([
-            lit('basic/basic.lisp'), lit('basic/transpiler.lisp'), lit('basic/bibliotheque.lisp')
+        [sources.basic, sources.transpileur, sources.bibliothèque, sources.français] = await Promise.all([
+            lit('basic/basic.lisp'), lit('basic/transpiler.lisp'), lit('basic/bibliothèque.lisp'),
+            lit('basic/français.lisp')
         ]);
+        ajouteNomsFrançais(sources.français);
     }
 
-    function prepareCompilateur() {
+    // Les noms français de français.lisp : (link "nom" 'instruction)   ; description
+    // Ils rejoignent la coloration, la complétion et l'aide.
+    function ajouteNomsFrançais(texte) {
+        const lignes = [];
+        let section = '';
+        texte.split('\n').forEach(l => {
+            const titre = l.match(/^; (\S+\.cxx) — (.*)$/);
+            if (titre) { section = titre[2]; return; }
+            const m = l.match(/^\(link "([^"]+)" '(\S+?)\)\s*;\s*(.*)$/);
+            if (!m) return;
+            const [, nom, instruction, brut] = m;
+            // La signature affichée porte toujours le nom du link (le commentaire peut
+            // garder un ancien nom : « insère(l, x, i) » pour insère)
+            const description = brut.replace(/^[^\s(:]+/, nom);
+            PYTHONERIE_FONCTIONS[nom] = description + '  [LispE : ' + instruction + ']';
+            lignes.push({ section, nom, instruction, description });
+        });
+        // La coloration reconnaît les nouveaux noms : changer de valeur force CodeMirror
+        // à recréer le mode (pythonerie et text/x-pythonerie désignent le même)
+        if (éditeur) éditeur.setOption('mode', éditeur.getOption('mode') === 'pythonerie' ? 'text/x-pythonerie' : 'pythonerie');
+        afficheAideFrançais(lignes);
+    }
+
+    function afficheAideFrançais(lignes) {
+        const zone = $('aideFrançais');
+        if (!zone) return;
+        zone.innerHTML = '';
+        let table = null, section = null;
+        lignes.forEach(l => {
+            if (l.section !== section) {
+                section = l.section;
+                const h = document.createElement('h4');
+                h.textContent = section.charAt(0).toUpperCase() + section.slice(1);
+                zone.appendChild(h);
+                table = document.createElement('table');
+                table.className = 'table-aide';
+                zone.appendChild(table);
+            }
+            const tr = document.createElement('tr');
+            const td1 = document.createElement('td');
+            const code = document.createElement('code');
+            code.textContent = l.description.split(' : ')[0];
+            td1.appendChild(code);
+            const td2 = document.createElement('td');
+            td2.textContent = (l.description.split(' : ').slice(1).join(' : ') || '');
+            const td3 = document.createElement('td');
+            td3.className = 'lispe';
+            td3.textContent = l.instruction;
+            tr.append(td1, td2, td3);
+            table.appendChild(tr);
+        });
+        $('nbFrançais').textContent = lignes.length;
+    }
+
+    function prépareCompilateur() {
         // Les instructions de LispE : la liste des atomes d'un interpréteur neuf.
         // Une variable de l'élève qui porte un de ces noms (max, list...) sera renommée.
         const idxNeuf = callCreateLispE();
@@ -173,8 +229,12 @@ const Pythonerie = (function () {
         // Noms des fonctions de la bibliothèque : une fonction de l'élève qui porte
         // le même nom sera renommée (LispE interdit les redéfinitions)
         callEvalLispE(idxCompilateur,
-            '(setq noms_bibliotheque (noms_definis (atob «' + base64(sources.bibliotheque) + '»)))');
+            '(setq noms_bibliothèque (noms_définis (atob «' + base64(sources.bibliothèque) + '»)))');
         callEvalLispE(idxCompilateur, '(charge_noms_lispe (atob «' + base64(instructions) + '»))');
+        // Noms français des instructions LispE (français.lisp), chargés APRÈS le transpileur
+        // pour que ses propres noms ne soient pas touchés
+        callEvalLispE(idxCompilateur, sources.français);
+        callEvalLispE(idxCompilateur, '(charge_noms_français (atob «' + base64(sources.français) + '»))');
     }
 
     // Renvoie {lispe} ou {erreur}
@@ -188,71 +248,71 @@ const Pythonerie = (function () {
         } catch (e) {
             // Après une exception, on repart d'un compilateur neuf
             try { callCleanLispE(idxCompilateur); } catch (e2) { /* rien */ }
-            prepareCompilateur();
+            prépareCompilateur();
             return { erreur: nettoieErreur(e) };
         }
     }
 
-    function evalue(idx, code) {
+    function évalue(idx, code) {
         const r = callEvalLispE(idx, code);
         if (typeof r === 'string' && /^Error:/.test(r)) throw new Error(r);
         return r;
     }
 
     function nouvelInterpreteur() {
-        if (idxExecution !== null) {
-            try { callCleanLispE(idxExecution); } catch (e) { /* rien */ }
+        if (idxExécution !== null) {
+            try { callCleanLispE(idxExécution); } catch (e) { /* rien */ }
         }
-        idxExecution = callCreateLispE();
-        evalue(idxExecution, sources.bibliotheque);
+        idxExécution = callCreateLispE();
+        évalue(idxExécution, sources.bibliothèque);
     }
 
     // Appelé par le canevas (animations, clics, touches)
     function rappel(code) {
-        if (idxExecution === null) return;
+        if (idxExécution === null) return;
         try {
-            evalue(idxExecution, code);
+            évalue(idxExécution, code);
         } catch (e) {
             Pyt.stoppeTout();
-            ecritConsole(nettoieErreur(e), 'erreur');
+            écritConsole(nettoieErreur(e), 'erreur');
             metAJourBoutons();
         }
     }
 
-    function execute() {
-        if (!wasmPret) { ecritConsole('LispE est encore en cours de chargement…', 'info'); return; }
-        const code = editeur.getValue();
+    function exécute() {
+        if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
+        const code = éditeur.getValue();
         Pyt.stoppeTout();
-        Pyt.reinitialise();
+        Pyt.réinitialise();
         effaceConsole();
 
         const c = compile(code);
         if (c.erreur) {
             dernierLispE = '';
             afficheLispE();
-            ecritConsole(c.erreur, 'erreur');
+            écritConsole(c.erreur, 'erreur');
             return;
         }
         dernierLispE = c.lispe;
         afficheLispE();
 
-        const debut = performance.now();
+        const début = performance.now();
         try {
             nouvelInterpreteur();
-            evalue(idxExecution, c.lispe);
-            const duree = Math.round(performance.now() - debut);
-            if (!Pyt.enCours()) ecritConsole('— Programme terminé (' + duree + ' ms)', 'info');
-            else ecritConsole('— Programme en cours (animation ou événements). Clique sur « Arrêter » pour le stopper.', 'info');
+            évalue(idxExécution, c.lispe);
+            const durée = Math.round(performance.now() - début);
+            if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
+            else écritConsole('— Programme en cours (animation ou événements). Clique sur « Arrêter » pour le stopper.', 'info');
         } catch (e) {
-            ecritConsole(nettoieErreur(e), 'erreur');
+            écritConsole(nettoieErreur(e), 'erreur');
             Pyt.stoppeTout();
         }
         metAJourBoutons();
     }
 
-    function arrete() {
+    function arrête() {
         Pyt.stoppeTout();
-        ecritConsole('— Programme arrêté', 'info');
+        écritConsole('— Programme arrêté', 'info');
         metAJourBoutons();
     }
 
@@ -261,7 +321,7 @@ const Pythonerie = (function () {
     }
 
     function metAJourBoutons() {
-        $('btnArreter').disabled = !Pyt.enCours();
+        $('btnArrêter').disabled = !Pyt.enCours();
     }
 
     // ------------------------------------------------------------------
@@ -275,7 +335,7 @@ const Pythonerie = (function () {
     // chemin est-il dans le répertoire dossier (ou est-il ce répertoire) ?
     const estDans = (chemin, dossier) => chemin === dossier || chemin.startsWith(dossier + '/');
 
-    async function verifie(r) {
+    async function vérifie(r) {
         if (!r.ok) throw new Error(await r.text());
         return r;
     }
@@ -283,65 +343,65 @@ const Pythonerie = (function () {
     const StockageServeur = {
         genre: 'serveur',
         async liste() {
-            return (await verifie(await fetch('api/programmes', { cache: 'no-cache' }))).json();
+            return (await vérifie(await fetch('api/programmes', { cache: 'no-cache' }))).json();
         },
         async lit(chemin) {
             const r = await fetch(url('programmes', chemin), { cache: 'no-cache' });
             if (!r.ok) throw new Error('Programme introuvable : ' + chemin);
             return r.text();
         },
-        async ecrit(chemin, code) {
-            await verifie(await fetch(url('programmes', chemin), {
+        async écrit(chemin, code) {
+            await vérifie(await fetch(url('programmes', chemin), {
                 method: 'PUT', headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: code
             }));
         },
         async supprime(chemin) {
-            await verifie(await fetch(url('programmes', chemin), { method: 'DELETE' }));
+            await vérifie(await fetch(url('programmes', chemin), { method: 'DELETE' }));
         },
         async renomme(ancien, nouveau) {
-            await verifie(await fetch(url('programmes', ancien), {
+            await vérifie(await fetch(url('programmes', ancien), {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ renomme: nouveau })
             }));
         },
-        async creeDossier(chemin) {
-            await verifie(await fetch(url('dossiers', chemin), {
+        async créeDossier(chemin) {
+            await vérifie(await fetch(url('dossiers', chemin), {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
             }));
         },
         async renommeDossier(ancien, nouveau) {
-            await verifie(await fetch(url('dossiers', ancien), {
+            await vérifie(await fetch(url('dossiers', ancien), {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ renomme: nouveau })
             }));
         },
         // Le contenu du répertoire remonte dans le répertoire parent
         async supprimeDossier(chemin) {
-            await verifie(await fetch(url('dossiers', chemin), { method: 'DELETE' }));
+            await vérifie(await fetch(url('dossiers', chemin), { method: 'DELETE' }));
         }
     };
 
-    const CLE_PROGRAMMES = 'pythonerie.programmes';
-    const CLE_DOSSIERS = 'pythonerie.dossiers';
+    const CLÉ_PROGRAMMES = 'pythonerie.programmes';
+    const CLÉ_DOSSIERS = 'pythonerie.dossiers';
     const StockageNavigateur = {
         genre: 'navigateur',
-        _lit(cle, defaut) {
-            try { return JSON.parse(localStorage.getItem(cle) || defaut); }
-            catch (e) { return JSON.parse(defaut); }
+        _lit(clé, défaut) {
+            try { return JSON.parse(localStorage.getItem(clé) || défaut); }
+            catch (e) { return JSON.parse(défaut); }
         },
-        _ecrit(cle, valeur) {
-            try { localStorage.setItem(cle, JSON.stringify(valeur)); }
+        _écrit(clé, valeur) {
+            try { localStorage.setItem(clé, JSON.stringify(valeur)); }
             catch (e) { throw new Error('Le navigateur refuse d\'enregistrer (mode privé ?)'); }
         },
-        _tout() { return this._lit(CLE_PROGRAMMES, '{}'); },
+        _tout() { return this._lit(CLÉ_PROGRAMMES, '{}'); },
         // Mémorise les répertoires qui n'existent qu'à travers leurs programmes,
         // pour qu'un répertoire vidé ne disparaisse pas (comme un vrai répertoire)
         async _figeDossiers() {
-            this._ecrit(CLE_DOSSIERS, (await this.liste()).dossiers);
+            this._écrit(CLÉ_DOSSIERS, (await this.liste()).dossiers);
         },
         async liste() {
             const tout = this._tout();
-            const dossiers = new Set(this._lit(CLE_DOSSIERS, '[]'));
+            const dossiers = new Set(this._lit(CLÉ_DOSSIERS, '[]'));
             // Les répertoires qui contiennent des programmes existent aussi
             Object.keys(tout).forEach(c => {
                 for (let d = parentDe(c); d; d = parentDe(d)) dossiers.add(d);
@@ -356,16 +416,16 @@ const Pythonerie = (function () {
             if (!p) throw new Error('Programme introuvable : ' + chemin);
             return p.code;
         },
-        async ecrit(chemin, code) {
+        async écrit(chemin, code) {
             const tout = this._tout();
             tout[chemin] = { code, modifie: Date.now() / 1000 };
-            this._ecrit(CLE_PROGRAMMES, tout);
+            this._écrit(CLÉ_PROGRAMMES, tout);
         },
         async supprime(chemin) {
             await this._figeDossiers();
             const tout = this._tout();
             delete tout[chemin];
-            this._ecrit(CLE_PROGRAMMES, tout);
+            this._écrit(CLÉ_PROGRAMMES, tout);
         },
         async renomme(ancien, nouveau) {
             await this._figeDossiers();
@@ -373,15 +433,15 @@ const Pythonerie = (function () {
             if (tout[nouveau]) throw new Error('Ce nom existe déjà');
             tout[nouveau] = tout[ancien];
             delete tout[ancien];
-            this._ecrit(CLE_PROGRAMMES, tout);
+            this._écrit(CLÉ_PROGRAMMES, tout);
         },
-        async creeDossier(chemin) {
-            const dossiers = new Set(this._lit(CLE_DOSSIERS, '[]'));
+        async créeDossier(chemin) {
+            const dossiers = new Set(this._lit(CLÉ_DOSSIERS, '[]'));
             dossiers.add(chemin);
-            this._ecrit(CLE_DOSSIERS, [...dossiers]);
+            this._écrit(CLÉ_DOSSIERS, [...dossiers]);
         },
         // Applique transforme(chemin) -> nouveau chemin aux programmes et aux répertoires
-        _deplace(transforme) {
+        _déplace(transforme) {
             const tout = this._tout();
             const nouveau = {};
             Object.keys(tout).forEach(c => {
@@ -393,20 +453,20 @@ const Pythonerie = (function () {
                 }
                 nouveau[n] = tout[c];
             });
-            this._ecrit(CLE_PROGRAMMES, nouveau);
-            this._ecrit(CLE_DOSSIERS, [...new Set(this._lit(CLE_DOSSIERS, '[]').map(transforme).filter(d => d))]);
+            this._écrit(CLÉ_PROGRAMMES, nouveau);
+            this._écrit(CLÉ_DOSSIERS, [...new Set(this._lit(CLÉ_DOSSIERS, '[]').map(transforme).filter(d => d))]);
         },
         async renommeDossier(ancien, nouveau) {
             const { programmes: p, dossiers: d } = await this.liste();
             if (d.includes(nouveau) || p.some(x => x.chemin === nouveau)) throw new Error('Ce nom existe déjà');
             if (estDans(nouveau, ancien)) throw new Error('Un répertoire ne peut pas aller dans lui-même');
             await this._figeDossiers();
-            this._deplace(c => estDans(c, ancien) ? nouveau + c.slice(ancien.length) : c);
+            this._déplace(c => estDans(c, ancien) ? nouveau + c.slice(ancien.length) : c);
         },
         async supprimeDossier(chemin) {
             const parent = parentDe(chemin);
             await this._figeDossiers();
-            this._deplace(c => {
+            this._déplace(c => {
                 if (c === chemin) return '';
                 return c.startsWith(chemin + '/') ? joint(parent, c.slice(chemin.length + 1)) : c;
             });
@@ -414,6 +474,8 @@ const Pythonerie = (function () {
     };
 
     async function choisitStockage() {
+        // GitHub Pages ne sert que des fichiers : inutile de chercher serveur.py
+        if (location.hostname.endsWith('.github.io')) return StockageNavigateur;
         try {
             const r = await fetch('api/programmes', { cache: 'no-cache' });
             const contenu = r.ok ? await r.json() : null;
@@ -446,10 +508,10 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     let dossiers = [];           // chemins des répertoires
     let dossierCourant = '';     // où vont les nouveaux programmes ('' = racine)
-    let plies = new Set();       // répertoires repliés
-    try { plies = new Set(JSON.parse(localStorage.getItem('pythonerie.plies') || '[]')); } catch (e) { /* rien */ }
-    function enregistrePlies() {
-        try { localStorage.setItem('pythonerie.plies', JSON.stringify([...plies])); } catch (e) { /* rien */ }
+    let pliés = new Set();       // répertoires repliés
+    try { pliés = new Set(JSON.parse(localStorage.getItem('pythonerie.pliés') || '[]')); } catch (e) { /* rien */ }
+    function enregistrePliés() {
+        try { localStorage.setItem('pythonerie.pliés', JSON.stringify([...pliés])); } catch (e) { /* rien */ }
     }
 
     // Icônes reprises de TamedAgents (app-sessions.js)
@@ -503,7 +565,7 @@ const Pythonerie = (function () {
             element.classList.remove('cible');
             let objet;
             try { objet = JSON.parse(ev.dataTransfer.getData(TYPE_GLISSE)); } catch (e) { return; }
-            await deplace(objet.genre, objet.chemin, dossier);
+            await déplace(objet.genre, objet.chemin, dossier);
         });
     }
 
@@ -524,34 +586,34 @@ const Pythonerie = (function () {
             .sort((a, b) => a.chemin.localeCompare(b.chemin, 'fr'));
 
         enfants.forEach(d => {
-            const plie = plies.has(d);
+            const plié = pliés.has(d);
             const li = ligneArbre(profondeur, 'dossier');
-            if (d === dossierCourant) li.classList.add('selection');
+            if (d === dossierCourant) li.classList.add('sélection');
             li.title = d;
             const chevron = document.createElement('span');
-            chevron.className = 'arbre-chevron' + (plie ? '' : ' ouvert');
+            chevron.className = 'arbre-chevron' + (plié ? '' : ' ouvert');
             chevron.innerHTML = SVG_CHEVRON;
-            const icone = document.createElement('span');
-            icone.className = 'arbre-icone';
-            icone.innerHTML = plie ? SVG_DOSSIER_FERME : SVG_DOSSIER_OUVERT;
+            const icône = document.createElement('span');
+            icône.className = 'arbre-icône';
+            icône.innerHTML = plié ? SVG_DOSSIER_FERME : SVG_DOSSIER_OUVERT;
             const nom = document.createElement('span');
             nom.className = 'programme-nom';
             nom.textContent = nomDe(d);
-            li.append(chevron, icone, nom, boutonsActions([
+            li.append(chevron, icône, nom, boutonsActions([
                 [SVG_RENOMMER, 'Renommer le répertoire « ' + nomDe(d) + ' »', () => renommeDossier(d)],
                 [SVG_SUPPRIMER, 'Supprimer le répertoire « ' + nomDe(d) + ' » (son contenu remonte d\'un niveau)', () => supprimeDossier(d)]
             ]));
             // Un clic sélectionne le répertoire (pour y créer des programmes) et l'ouvre ou le replie
             li.addEventListener('click', () => {
-                if (plie) plies.delete(d); else plies.add(d);
-                enregistrePlies();
+                if (plié) pliés.delete(d); else pliés.add(d);
+                enregistrePliés();
                 dossierCourant = d;
                 afficheArbre();
             });
             rendGlissable(li, 'dossier', d);
             rendCible(li, d);
             ul.appendChild(li);
-            if (!plie) afficheDossier(ul, d, profondeur + 1);
+            if (!plié) afficheDossier(ul, d, profondeur + 1);
         });
 
         progs.forEach(p => {
@@ -560,13 +622,13 @@ const Pythonerie = (function () {
             li.title = p.chemin;
             const espace = document.createElement('span');
             espace.className = 'arbre-chevron';
-            const icone = document.createElement('span');
-            icone.className = 'arbre-icone';
-            icone.innerHTML = SVG_PROGRAMME;
+            const icône = document.createElement('span');
+            icône.className = 'arbre-icône';
+            icône.innerHTML = SVG_PROGRAMME;
             const nom = document.createElement('span');
             nom.className = 'programme-nom';
             nom.textContent = nomDe(p.chemin);
-            li.append(espace, icone, nom, boutonsActions([
+            li.append(espace, icône, nom, boutonsActions([
                 [SVG_RENOMMER, 'Renommer « ' + nomDe(p.chemin) + ' »', () => renomme(p.chemin)],
                 [SVG_EXPORTER, 'Exporter « ' + nomDe(p.chemin) + ' » (télécharger le fichier .py)', () => exporte(p.chemin)],
                 [SVG_SUPPRIMER, 'Supprimer « ' + nomDe(p.chemin) + ' »', () => supprime(p.chemin)]
@@ -605,7 +667,7 @@ const Pythonerie = (function () {
         } catch (e) {
             programmes = [];
             dossiers = [];
-            ecritConsole('Impossible de lire la liste des programmes : ' + e.message, 'erreur');
+            écritConsole('Impossible de lire la liste des programmes : ' + e.message, 'erreur');
         }
         if (dossierCourant && !dossiers.includes(dossierCourant)) dossierCourant = '';
         afficheArbre();
@@ -630,28 +692,28 @@ const Pythonerie = (function () {
         try { localStorage.setItem('pythonerie.dernier', courant || ''); } catch (e) { /* rien */ }
     }
 
-    function etatSauvegarde(texte, genre) {
-        const e = $('etatSauvegarde');
+    function étatSauvegarde(texte, genre) {
+        const e = $('étatSauvegarde');
         e.textContent = texte;
-        e.className = 'etat-sauvegarde ' + (genre || '');
+        e.className = 'état-sauvegarde ' + (genre || '');
     }
 
     async function sauvegarde() {
         clearTimeout(minuterieSauvegarde);
         if (!courant || !modifie) return;
         try {
-            await stockage.ecrit(courant, editeur.getValue());
+            await stockage.écrit(courant, éditeur.getValue());
             modifie = false;
-            etatSauvegarde('Enregistré', 'ok');
+            étatSauvegarde('Enregistré', 'ok');
         } catch (e) {
-            etatSauvegarde('Non enregistré', 'erreur');
-            ecritConsole('Erreur d\'enregistrement : ' + e.message, 'erreur');
+            étatSauvegarde('Non enregistré', 'erreur');
+            écritConsole('Erreur d\'enregistrement : ' + e.message, 'erreur');
         }
     }
 
     function sauvegardePlusTard() {
         modifie = true;
-        etatSauvegarde('Modifié…', '');
+        étatSauvegarde('Modifié…', '');
         clearTimeout(minuterieSauvegarde);
         minuterieSauvegarde = setTimeout(sauvegarde, 1200);
     }
@@ -663,33 +725,33 @@ const Pythonerie = (function () {
         try {
             const code = await stockage.lit(chemin);
             chargementEnCours = true;
-            editeur.setValue(code);
-            editeur.clearHistory();
+            éditeur.setValue(code);
+            éditeur.clearHistory();
             chargementEnCours = false;
             courant = chemin;
             modifie = false;
             dossierCourant = parentDe(chemin);
             // On déplie les répertoires qui mènent au programme
-            for (let d = parentDe(chemin); d; d = parentDe(d)) plies.delete(d);
-            enregistrePlies();
+            for (let d = parentDe(chemin); d; d = parentDe(d)) pliés.delete(d);
+            enregistrePliés();
             afficheTitre();
-            etatSauvegarde('Enregistré', 'ok');
+            étatSauvegarde('Enregistré', 'ok');
             retientCourant();
             await rafraichitListe();
-            editeur.focus();
+            éditeur.focus();
         } catch (e) {
-            ecritConsole(e.message, 'erreur');
+            écritConsole(e.message, 'erreur');
         }
     }
 
     // Crée un programme nommé nom dans le répertoire dossier
-    async function cree(dossier, nom, code) {
+    async function crée(dossier, nom, code) {
         await sauvegarde();
         const chemin = cheminLibre(dossier, nom);
         try {
-            await stockage.ecrit(chemin, code);
+            await stockage.écrit(chemin, code);
         } catch (e) {
-            ecritConsole('Impossible de créer « ' + chemin + ' » : ' + e.message, 'erreur');
+            écritConsole('Impossible de créer « ' + chemin + ' » : ' + e.message, 'erreur');
             return;
         }
         await rafraichitListe();
@@ -701,7 +763,7 @@ const Pythonerie = (function () {
         const ici = dossierCourant ? ' (dans « ' + dossierCourant + ' »)' : '';
         const nom = nomValide(prompt('Nom du nouveau programme' + ici + ' :', nomDe(cheminLibre(dossierCourant, 'Programme'))));
         if (!nom) return;
-        await cree(dossierCourant, nom, '# ' + nom + '\n\n');
+        await crée(dossierCourant, nom, '# ' + nom + '\n\n');
     }
 
     async function nouveauDossier() {
@@ -711,12 +773,12 @@ const Pythonerie = (function () {
         const chemin = joint(dossierCourant, nom);
         if (existe(chemin)) { alert('Ce nom existe déjà ici.'); return; }
         try {
-            await stockage.creeDossier(chemin);
-            plies.delete(chemin);
+            await stockage.créeDossier(chemin);
+            pliés.delete(chemin);
             dossierCourant = chemin;
             await rafraichitListe();
         } catch (e) {
-            ecritConsole('Impossible de créer le répertoire : ' + e.message, 'erreur');
+            écritConsole('Impossible de créer le répertoire : ' + e.message, 'erreur');
         }
     }
 
@@ -728,7 +790,7 @@ const Pythonerie = (function () {
         try {
             await stockage.renomme(ancien, nouveau);
         } catch (e) {
-            ecritConsole('Impossible de renommer ou déplacer : ' + e.message, 'erreur');
+            écritConsole('Impossible de renommer ou déplacer : ' + e.message, 'erreur');
             return false;
         }
         if (ancien === courant) {
@@ -756,7 +818,7 @@ const Pythonerie = (function () {
         try {
             await stockage.supprime(chemin);
         } catch (e) {
-            ecritConsole('Impossible de supprimer : ' + e.message, 'erreur');
+            écritConsole('Impossible de supprimer : ' + e.message, 'erreur');
             return;
         }
         if (estOuvert) {
@@ -766,7 +828,7 @@ const Pythonerie = (function () {
         await rafraichitListe();
         if (!estOuvert) return;
         if (programmes.length) await ouvre(programmes[0].chemin);
-        else await cree('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
     }
 
     // Déplace un répertoire ; met à jour le programme ouvert et les répertoires repliés
@@ -778,13 +840,13 @@ const Pythonerie = (function () {
         try {
             await stockage.renommeDossier(ancien, nouveau);
         } catch (e) {
-            ecritConsole('Impossible de renommer ou déplacer le répertoire : ' + e.message, 'erreur');
+            écritConsole('Impossible de renommer ou déplacer le répertoire : ' + e.message, 'erreur');
             return;
         }
         const transforme = (c) => estDans(c, ancien) ? nouveau + c.slice(ancien.length) : c;
         if (courant) { courant = transforme(courant); afficheTitre(); retientCourant(); }
-        plies = new Set([...plies].map(transforme));
-        enregistrePlies();
+        pliés = new Set([...pliés].map(transforme));
+        enregistrePliés();
         dossierCourant = transforme(dossierCourant);
         await rafraichitListe();
     }
@@ -807,7 +869,7 @@ const Pythonerie = (function () {
         try {
             await stockage.supprimeDossier(chemin);
         } catch (e) {
-            ecritConsole('Impossible de supprimer le répertoire : ' + e.message, 'erreur');
+            écritConsole('Impossible de supprimer le répertoire : ' + e.message, 'erreur');
             return;
         }
         const avant = courant;
@@ -829,28 +891,28 @@ const Pythonerie = (function () {
     }
 
     // Glisser-déposer vers le répertoire dossier ('' = racine)
-    async function deplace(genre, chemin, dossier) {
+    async function déplace(genre, chemin, dossier) {
         if (genre === 'programme') {
             if (parentDe(chemin) === dossier) return;
             await changeCheminProgramme(chemin, joint(dossier, nomDe(chemin)));
         } else if (genre === 'dossier') {
             if (parentDe(chemin) === dossier || estDans(dossier, chemin)) return;
-            plies.delete(dossier);
+            pliés.delete(dossier);
             await changeCheminDossier(chemin, joint(dossier, nomDe(chemin)));
         }
     }
 
     async function duplique() {
         if (!courant) return;
-        await cree(parentDe(courant), nomDe(courant) + ' (copie)', editeur.getValue());
+        await crée(parentDe(courant), nomDe(courant) + ' (copie)', éditeur.getValue());
     }
 
     async function exporte(chemin = courant) {
         let code;
         try {
-            code = chemin === courant ? editeur.getValue() : await stockage.lit(chemin);
+            code = chemin === courant ? éditeur.getValue() : await stockage.lit(chemin);
         } catch (e) {
-            ecritConsole('Impossible d\'exporter : ' + e.message, 'erreur');
+            écritConsole('Impossible d\'exporter : ' + e.message, 'erreur');
             return;
         }
         const blob = new Blob([code], { type: 'text/x-python;charset=utf-8' });
@@ -866,7 +928,7 @@ const Pythonerie = (function () {
             const lecteur = new FileReader();
             lecteur.onload = async () => {
                 const nom = nomValide(f.name.replace(/\.[^.]+$/, '')) || 'Programme importé';
-                await cree(dossierCourant, nom, String(lecteur.result));
+                await crée(dossierCourant, nom, String(lecteur.result));
             };
             lecteur.readAsText(f, 'utf-8');
         });
@@ -889,9 +951,9 @@ const Pythonerie = (function () {
                     try {
                         const rc = await fetch('exemples/' + ex.fichier, { cache: 'no-cache' });
                         if (!rc.ok) throw new Error('Exemple introuvable');
-                        await cree(dossierCourant, ex.titre, await rc.text());
+                        await crée(dossierCourant, ex.titre, await rc.text());
                     } catch (e) {
-                        ecritConsole(e.message, 'erreur');
+                        écritConsole(e.message, 'erreur');
                     }
                 });
                 ul.appendChild(li);
@@ -920,9 +982,9 @@ const Pythonerie = (function () {
         else cm.replaceSelection('    ', 'end');
     }
 
-    function installeEditeur() {
+    function installeÉditeur() {
         const sombre = document.body.classList.contains('dark-mode');
-        editeur = CodeMirror.fromTextArea($('editeur'), {
+        éditeur = CodeMirror.fromTextArea($('éditeur'), {
             mode: 'pythonerie',
             theme: sombre ? 'dracula' : 'default',
             lineNumbers: true,
@@ -936,22 +998,22 @@ const Pythonerie = (function () {
                 'Enter': nouvelleLigne,
                 'Tab': tabulation,
                 'Shift-Tab': (cm) => cm.indentSelection('subtract'),
-                'Ctrl-Enter': execute,
-                'Cmd-Enter': execute,
+                'Ctrl-Enter': exécute,
+                'Cmd-Enter': exécute,
                 'Ctrl-S': () => { modifie = true; sauvegarde(); },
                 'Cmd-S': () => { modifie = true; sauvegarde(); },
-                'Ctrl-Space': (cm) => cm.showHint({ hint: pythonerieCompletion, completeSingle: false }),
+                'Ctrl-Space': (cm) => cm.showHint({ hint: pythonerieComplétion, completeSingle: false }),
                 'Ctrl-/': 'toggleComment',
                 'Cmd-/': 'toggleComment'
             }
         });
-        editeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); });
-        editeur.on('inputRead', (cm, ev) => {
+        éditeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); });
+        éditeur.on('inputRead', (cm, ev) => {
             if (ev.origin !== '+input' || !/^[\wÀ-ÿ]$/.test(ev.text[0])) return;
             const cur = cm.getCursor();
             const avant = cm.getLine(cur.line).slice(0, cur.ch);
             if (/(^|[^\wÀ-ÿ"'])[\wÀ-ÿ]{3}$/.test(avant) && !/#/.test(avant)) {
-                cm.showHint({ hint: pythonerieCompletion, completeSingle: false });
+                cm.showHint({ hint: pythonerieComplétion, completeSingle: false });
             }
         });
     }
@@ -959,10 +1021,10 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // Interface
     // ------------------------------------------------------------------
-    function basculeTheme() {
+    function basculeThème() {
         const sombre = document.body.classList.toggle('dark-mode');
-        editeur.setOption('theme', sombre ? 'dracula' : 'default');
-        try { localStorage.setItem('pythonerie.theme', sombre ? 'sombre' : 'clair'); } catch (e) { /* rien */ }
+        éditeur.setOption('theme', sombre ? 'dracula' : 'default');
+        try { localStorage.setItem('pythonerie.thème', sombre ? 'sombre' : 'clair'); } catch (e) { /* rien */ }
     }
 
     function basculeLispE() {
@@ -980,24 +1042,24 @@ const Pythonerie = (function () {
     }
 
     // Glisser la séparation entre l'éditeur et le canevas
-    function installeSeparateur() {
-        const sep = $('separateur');
+    function installeSéparateur() {
+        const sep = $('séparateur');
         const grille = $('espace');
-        let depart = null;
+        let départ = null;
         sep.addEventListener('mousedown', (ev) => {
-            depart = { x: ev.clientX, largeur: $('zoneCanevas').getBoundingClientRect().width };
+            départ = { x: ev.clientX, largeur: $('zoneCanevas').getBoundingClientRect().width };
             document.body.classList.add('redimensionne');
             ev.preventDefault();
         });
         window.addEventListener('mousemove', (ev) => {
-            if (!depart) return;
-            const l = Math.min(Math.max(depart.largeur - (ev.clientX - depart.x), 260), window.innerWidth * 0.7);
+            if (!départ) return;
+            const l = Math.min(Math.max(départ.largeur - (ev.clientX - départ.x), 260), window.innerWidth * 0.7);
             grille.style.setProperty('--largeur-canevas', l + 'px');
-            editeur.refresh();
+            éditeur.refresh();
         });
         window.addEventListener('mouseup', () => {
-            if (!depart) return;
-            depart = null;
+            if (!départ) return;
+            départ = null;
             document.body.classList.remove('redimensionne');
             try { localStorage.setItem('pythonerie.largeurCanevas', grille.style.getPropertyValue('--largeur-canevas')); } catch (e) { /* rien */ }
         });
@@ -1032,8 +1094,8 @@ const Pythonerie = (function () {
     }
 
     function installeBoutons() {
-        $('btnExecuter').addEventListener('click', execute);
-        $('btnArreter').addEventListener('click', arrete);
+        $('btnExécuter').addEventListener('click', exécute);
+        $('btnArrêter').addEventListener('click', arrête);
         $('btnLispE').addEventListener('click', basculeLispE);
         $('btnNouveau').addEventListener('click', nouveau);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
@@ -1052,9 +1114,9 @@ const Pythonerie = (function () {
         $('btnImporter').addEventListener('click', () => $('fichierImport').click());
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
-        $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.reinitialise(); metAJourBoutons(); });
+        $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', telechargeImage);
-        $('btnTheme').addEventListener('click', basculeTheme);
+        $('btnThème').addEventListener('click', basculeThème);
         $('btnAide').addEventListener('click', () => $('aide').classList.add('visible'));
         $('fermeAide').addEventListener('click', () => $('aide').classList.remove('visible'));
         $('aide').addEventListener('click', (ev) => { if (ev.target.id === 'aide') $('aide').classList.remove('visible'); });
@@ -1064,13 +1126,13 @@ const Pythonerie = (function () {
         window.addEventListener('beforeunload', () => { if (modifie) sauvegarde(); });
     }
 
-    async function demarre() {
+    async function démarre() {
         try {
-            if (localStorage.getItem('pythonerie.theme') === 'sombre') document.body.classList.add('dark-mode');
+            if (localStorage.getItem('pythonerie.thème') === 'sombre') document.body.classList.add('dark-mode');
         } catch (e) { /* rien */ }
-        installeEditeur();
+        installeÉditeur();
         installeBoutons();
-        installeSeparateur();
+        installeSéparateur();
         effaceConsole();
         Pyt.installe($('canevas'), $('coucheTortue'), rappel);
         metAJourBoutons();
@@ -1083,41 +1145,41 @@ const Pythonerie = (function () {
         try { dernier = localStorage.getItem('pythonerie.dernier'); } catch (e) { /* rien */ }
         if (dernier && programmes.some(p => p.chemin === dernier)) await ouvre(dernier);
         else if (programmes.length) await ouvre(programmes[0].chemin);
-        else await cree('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
     }
 
     // Appelé quand le WebAssembly de LispE est prêt
-    async function lispePret() {
+    async function lispePrêt() {
         try {
             await chargeSources();
-            prepareCompilateur();
-            wasmPret = true;
-            $('btnExecuter').disabled = false;
-            $('etatLispE').textContent = 'LispE prêt';
-            $('etatLispE').className = 'etat-lispe ok';
+            prépareCompilateur();
+            wasmPrêt = true;
+            $('btnExécuter').disabled = false;
+            $('étatLispE').textContent = 'LispE prêt';
+            $('étatLispE').className = 'état-lispe ok';
         } catch (e) {
-            $('etatLispE').textContent = 'LispE indisponible';
-            $('etatLispE').className = 'etat-lispe erreur';
-            ecritConsole('Impossible de préparer LispE : ' + (e.message || e), 'erreur');
+            $('étatLispE').textContent = 'LispE indisponible';
+            $('étatLispE').className = 'état-lispe erreur';
+            écritConsole('Impossible de préparer LispE : ' + (e.message || e), 'erreur');
         }
     }
 
     // Sortie standard de LispE. En cas d'erreur, le WebAssembly y écrit aussi la pile
     // d'appels et le message brut : on ne les montre pas, l'erreur est affichée proprement.
-    let apresPile = false;
+    let aprèsPile = false;
     function sortie(texte) {
         if (LIGNE_PILE.test(texte) || /^Error: .*line: \d+ in: /.test(texte)) {
-            apresPile = true;
+            aprèsPile = true;
             return;
         }
-        if (apresPile && texte === '') { apresPile = false; return; }
-        apresPile = false;
-        ecritConsole(texte, 'sortie');
+        if (aprèsPile && texte === '') { aprèsPile = false; return; }
+        aprèsPile = false;
+        écritConsole(texte, 'sortie');
     }
 
     return {
-        demarre, lispePret, execute, effaceConsole, sortie, ecrisPartiel,
-        signaleAnimation: () => { if ($('btnArreter')) metAJourBoutons(); },
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel,
+        signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
         compile // utile pour les tests depuis la console du navigateur
     };
 })();

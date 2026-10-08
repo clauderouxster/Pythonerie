@@ -59,8 +59,8 @@
    (setq v (parsing value))
    (cond
       ; x += 0.5 devient (_maj x (_plus x 0.5)) pour suivre les règles de Python.
-      ; _maj est remplacé par setq ou setg selon la portée de la variable (voir resout_portee)
-      ((and (not (consp letype)) (in_it ops_affectation k) (not (operation_sure (atom letype) v)))
+      ; _maj est remplacé par setq ou setg selon la portée de la variable (voir résout_portée)
+      ((and (not (consp letype)) (in_it ops_affectation k) (not (opération_sûre (atom letype) v)))
          (list '_maj (atom letype) (list (@ ops_affectation k) (atom letype) v)))
       ((consp letype)
          (nconcn (list op) (atom (@ letype 1)) (parsing (@ letype 2)) v))
@@ -370,8 +370,8 @@
    (setq code (maplist 'parsing code false))   
    (if (neq nm "__init__")
       (+= nm "_"))
-   (setq parametres (parsing parameters))
-   (nconcn (list 'defun (atom nm) parametres) (corps_fonction parametres code))
+   (setq paramètres (parsing parameters))
+   (nconcn (list 'defun (atom nm) paramètres) (corps_fonction paramètres code))
 )
 
 
@@ -397,19 +397,19 @@
 ; (_maj x valeur) devient (setq x valeur) pour une variable locale ou au niveau principal,
 ; et (setg x valeur) pour une variable globale modifiée dans une fonction.
 ; Un (setq x ...) sur une variable déclarée "globale" devient (setg x ...).
-(defun resout_portee (code dansfonction locaux globaux)
+(defun résout_portée (code dans_fonction locaux globaux)
    (ncheck (consp code)
       code
-      (setq tete (car code))
+      (setq tête (car code))
       (cond
-         ((eq tete '_maj)
+         ((eq tête '_maj)
             (setq x (cadr code))
             (list
-               (if (and dansfonction (or (in globaux x) (not (in locaux x)))) 'setg 'setq)
+               (if (and dans_fonction (or (in globaux x) (not (in locaux x)))) 'setg 'setq)
                x
-               (resout_portee (caddr code) dansfonction locaux globaux)))
-         ((and (eq tete 'setq) (atomp (cadr code)) (in globaux (cadr code)))
-            (list 'setg (cadr code) (resout_portee (caddr code) dansfonction locaux globaux)))
+               (résout_portée (caddr code) dans_fonction locaux globaux)))
+         ((and (eq tête 'setq) (atomp (cadr code)) (in globaux (cadr code)))
+            (list 'setg (cadr code) (résout_portée (caddr code) dans_fonction locaux globaux)))
          (true
             (setq r ())
             (loop e code
@@ -417,22 +417,22 @@
                ; LispE l'interpréterait comme une instruction
                (ife (consp e)
                   (if (neq (car e) '__globale__)
-                     (push r (resout_portee e dansfonction locaux globaux)))
+                     (push r (résout_portée e dans_fonction locaux globaux)))
                   (push r e)))
             r))))
 
-(defun corps_fonction (parametres code)
+(defun corps_fonction (paramètres code)
    (setq locaux ())
-   (loop p parametres (push locaux p))
+   (loop p paramètres (push locaux p))
    (setq globaux ())
    (collecte_locaux code locaux globaux)
-   (resout_portee code true locaux globaux))
+   (résout_portée code true locaux globaux))
 
 ; a function definition
 (defpat parsing ( ['function nm parameters $ code] )
    (setq code (maplist 'parsing code false))   
-   (setq parametres (parsing parameters))
-   (nconcn (list 'defun (atom nm) parametres) (corps_fonction parametres code))
+   (setq paramètres (parsing parameters))
+   (nconcn (list 'defun (atom nm) paramètres) (corps_fonction paramètres code))
 )
 
 ; lambda sans paramètre : [lambda() 7]
@@ -635,31 +635,31 @@
 ; En LispE, le type du premier argument l'emporte : (+ 1 0.5) vaut 1 et (< 1 1.5) est faux.
 ; Pour retrouver le comportement de Python, on remplace ces opérateurs par des fonctions
 ; de la bibliothèque (_plus, _inf...), sauf quand les valeurs littérales garantissent le résultat.
-(setq ops_python {"+":'_plus "-":'_moins "*":'_fois "/":'_divise "<":'_inf "<=":'_infeg ">":'_sup ">=":'_supeg "=":'_egal "!=":'_diff})
+(setq ops_python {"+":'_plus "-":'_moins "*":'_fois "/":'_divise "<":'_inf "<=":'_infeg ">":'_sup ">=":'_supeg "=":'_égal "!=":'_diff})
 
 ; Un nombre entier écrit dans le programme (3, 10...)
-(defun entier_litteral (x)
+(defun entier_littéral (x)
    (and (numberp x) (= x (float (integer x)))))
 
 ; Une expression dont on sait qu'elle produit une chaîne : "..." ou (string ...) ou (+ "..." ...)
-(defun chaine_certaine (x)
+(defun chaîne_certaine (x)
    (or
       (stringp x)
       (and (consp x) (in '("string" "_texte") (string (car x))))
-      (and (consp x) (eq (car x) '+) (chaine_certaine (cadr x)))))
+      (and (consp x) (eq (car x) '+) (chaîne_certaine (cadr x)))))
 
 ; L'opération native donne le même résultat qu'en Python
-(defun operation_sure (a b)
+(defun opération_sûre (a b)
    (or
-      (entier_litteral b)
-      (and (numberp a) (not (entier_litteral a)))
-      (chaine_certaine a)
-      (chaine_certaine b)))
+      (entier_littéral b)
+      (and (numberp a) (not (entier_littéral a)))
+      (chaîne_certaine a)
+      (chaîne_certaine b)))
 
 ; Construit l'opération (o a b) en tenant compte des règles de Python
-(defun operation_python (o a b)
+(defun opération_python (o a b)
    (setq k (string o))
-   (if (and (in_it ops_python k) (not (operation_sure a b)))
+   (if (and (in_it ops_python k) (not (opération_sûre a b)))
       (list (@ ops_python k) a b)
       (list o a b)))
 
@@ -670,9 +670,9 @@
    (pop vals)
    (setq a (last@ vals))
    (pop vals)
-   (if (and (consp a) (eq (car a) o) (neq o '**) (operation_sure a b))
+   (if (and (consp a) (eq (car a) o) (neq o '**) (opération_sûre a b))
       (block (push a b) (push vals a))
-      (push vals (operation_python o a b))))
+      (push vals (opération_python o a b))))
 
 ; calculus expression: A + 10 - 30
 (defpat parsing ( ['computing $ reste] )
@@ -701,12 +701,12 @@
 
 (defpat parsing ( ['onecomparison "non" a1 ['comparator $ op] a2])
    (setq op (parsing (nconcn '(comparator) op)))
-   (list 'not (operation_python op (parsing a1) (parsing a2)))
+   (list 'not (opération_python op (parsing a1) (parsing a2)))
 )
 
 (defpat parsing ( ['onecomparison a1 ['comparator $ op] a2])
    (setq op (parsing (nconcn '(comparator) op)))
-   (operation_python op (parsing a1) (parsing a2))
+   (opération_python op (parsing a1) (parsing a2))
 )
 
 ; a comparison: A < 10 or B > 10 and C <> 8
@@ -727,7 +727,7 @@
          (list 'not (list 'in_it (parsing a2) (parsing a1)))
          (if (eq op 'notin)
             (list 'in_it (parsing a2) (parsing a1))
-            (list 'not (operation_python op (parsing a1) (parsing a2)))))
+            (list 'not (opération_python op (parsing a1) (parsing a2)))))
       d))
 
 (defpat cmp_split ( ['comparing a1 ['comparator $ op] a2 $ d] )
@@ -737,7 +737,7 @@
          (list 'in_it (parsing a2) (parsing a1))
          (if (eq op 'notin)
             (list 'not (list 'in_it (parsing a2) (parsing a1)))
-            (operation_python op (parsing a1) (parsing a2))))
+            (opération_python op (parsing a1) (parsing a2))))
       d))
 
 (defpat cmp_split ( ['comparing "non" a $ d] )
@@ -822,13 +822,13 @@
 ;------------------------------------------------------------------
 ; Noms réservés : LispE interdit de redéfinir une fonction ou une instruction.
 ; Si l'élève définit une fonction qui porte le nom d'une fonction de la bibliothèque
-; (carre, somme...) ou d'une instruction LispE (sum, max...), on la renomme en nom_perso
+; (carré, somme...) ou d'une instruction LispE (sum, max...), on la renomme en nom_perso
 ; dans tout son programme. C'est l'équivalent du masquage de Python.
 ;------------------------------------------------------------------
-(setq noms_bibliotheque ())
+(setq noms_bibliothèque ())
 
 ; Extrait les noms définis par (defun nom ...), (defpat nom ...) ou (defmacro nom ...) dans un source LispE
-(defun noms_definis (source)
+(defun noms_définis (source)
    (setq noms ())
    (loop ligne (split source "\n")
       (setq l (trim ligne))
@@ -845,11 +845,30 @@
    (loop n (split texte "\n")
       (set@ noms_lispe n true)))
 
+; Noms français des instructions (français.lisp) : instruction -> nom français.
+; Sert à nommer lisiblement une variable ou une fonction de l'élève en collision :
+; produit = 1 devient (setq produit_v 1) et non (setq ∏_v 1).
+(setq noms_français {})
+
+(defun charge_noms_français (texte)
+   (setg noms_français {})
+   (loop ligne (split texte "\n")
+      (check (= (@@ ligne 0 7) "(link \"")
+         (setq morceaux (split ligne "\""))
+         (setq cible (trim (@@ (@ morceaux 2) "'" ")")))
+         (if (not (in_it noms_français cible))
+            (set@ noms_français cible (@ morceaux 1))))))
+
+; Nom lisible d'un atome renommé : le nom français s'il existe
+(defun nom_lisible (a suffixe)
+   (setq s (string a))
+   (+ (if (in_it noms_français s) (@ noms_français s) s) suffixe))
+
 (defun est_instruction (a)
    (in_it noms_lispe (string a)))
 
-(defun nom_reserve (a)
-   (or (in noms_bibliotheque (string a)) (est_instruction a)))
+(defun nom_réservé (a)
+   (or (in noms_bibliothèque (string a)) (est_instruction a)))
 
 (defun renomme_atomes (code table)
    (setq r ())
@@ -868,23 +887,23 @@
 (setq formes_lambda '("lambda" "λ"))
 (setq atomes_constants '("true" "false" "nil" "__root__"))
 
-(defun variable_reservee (a table)
-   (check (and (atomp a) (not (in atomes_constants (string a))) (nom_reserve a))
-      (set@ table (string a) (+ (string a) "_v"))))
+(defun variable_réservée (a table)
+   (check (and (atomp a) (not (in atomes_constants (string a))) (nom_réservé a))
+      (set@ table (string a) (nom_lisible a "_v"))))
 
 ; Première passe : les variables affectées ou les paramètres dont le nom est réservé
 (defun collecte_variables (code table)
    (check (consp code)
-      (setq tete (string (car code)))
+      (setq tête (string (car code)))
       (cond
-         ((and (in formes_affectation tete) (>= (size code) 2))
+         ((and (in formes_affectation tête) (>= (size code) 2))
             (ife (consp (cadr code))
-               (loop a (cadr code) (variable_reservee a table))
-               (variable_reservee (cadr code) table)))
-         ((and (in formes_fonction tete) (>= (size code) 3) (consp (caddr code)))
-            (loop a (caddr code) (variable_reservee a table)))
-         ((and (in formes_lambda tete) (>= (size code) 2) (consp (cadr code)))
-            (loop a (cadr code) (variable_reservee a table))))
+               (loop a (cadr code) (variable_réservée a table))
+               (variable_réservée (cadr code) table)))
+         ((and (in formes_fonction tête) (>= (size code) 3) (consp (caddr code)))
+            (loop a (caddr code) (variable_réservée a table)))
+         ((and (in formes_lambda tête) (>= (size code) 2) (consp (cadr code)))
+            (loop a (cadr code) (variable_réservée a table))))
       (loop e code
          (if (consp e) (collecte_variables e table)))))
 
@@ -897,20 +916,20 @@
 ; Seconde passe : tout sauf la position d'appel (le premier élément d'une liste)
 (defun renomme_variables (code table)
    (setq r ())
-   (setq tete (string (car code)))
+   (setq tête (string (car code)))
    (setq position 0)
    (loop e code
       (cond
          ((consp e)
             (ife (or
-                  (and (in formes_fonction tete) (eq position 2))
-                  (and (in formes_lambda tete) (eq position 1))
-                  (and (in formes_affectation tete) (eq position 1)))
+                  (and (in formes_fonction tête) (eq position 2))
+                  (and (in formes_lambda tête) (eq position 1))
+                  (and (in formes_affectation tête) (eq position 1)))
                ; liste de paramètres ou affectation multiple
                (push r (maplist (λ (a) (remplace_atome a table)) e false))
                (push r (renomme_variables e table))))
          ((eq position 0) (push r e))
-         ((and (in formes_fonction tete) (eq position 1)) (push r e))
+         ((and (in formes_fonction tête) (eq position 1)) (push r e))
          ((atomp e) (push r (remplace_atome e table)))
          (true (push r e)))
       (+= position 1))
@@ -919,43 +938,24 @@
 ; affiche(liste) doit montrer [1, 2] et Vrai, comme Python, et non (1 2) et true
 (defun habille_affichage (code)
    (setq r ())
-   (setq tete (if (atomp (car code)) (string (car code)) ""))
+   (setq tête (if (atomp (car code)) (string (car code)) ""))
    (setq position 0)
    (loop e code
       (cond
          ((consp e) (setq e (habille_affichage e))))
-      (if (and (> position 0) (in '("println" "print") tete) (not (chaine_certaine e)) (not (numberp e)))
+      (if (and (> position 0) (in '("println" "print") tête) (not (chaîne_certaine e)) (not (numberp e)))
          (push r (list '_texte e))
          (push r e))
       (+= position 1))
    r)
 
-; Les noms de la bibliothèque s'écrivent avec ou sans accents :
-; épaisseur, aléatoire, carré, va_à... deviennent epaisseur, aleatoire, carre, va_a.
-; Les noms choisis par l'élève (élève, résultat...) ne changent pas.
-(defun collecte_accents (code table)
-   (loop e code
-      (cond
-         ((consp e) (collecte_accents e table))
-         ((atomp e)
-            (setq n (string e))
-            (setq d (deaccentuate n))
-            ; d est une fonction de la bibliothèque, ou un alias de la grammaire
-            ; (@ecris := print : (atom "ecris") renvoie l'atome print)
-            (if (and (neq d n) (or (in noms_bibliotheque d) (neq (string (atom d)) d)))
-               (set@ table n d))))))
-
-(defun renomme_reserves (code)
-   (setq table {})
-   (collecte_accents code table)
-   (if table
-      (setq code (renomme_atomes code table)))
+(defun renomme_réservés (code)
    (setq table {})
    (loop c code
       (check (and (consp c) (in '("defun" "defpat" "defmacro") (string (car c))) (atomp (cadr c)))
          (setq n (string (cadr c)))
-         (if (nom_reserve (cadr c))
-            (set@ table n (+ n "_perso")))))
+         (if (nom_réservé (cadr c))
+            (set@ table n (nom_lisible (cadr c) "_perso")))))
    (if table
       (setq code (renomme_atomes code table)))
    (setq table {})
@@ -975,13 +975,14 @@
       (setq code (list 'println (join tree " ")))
       (loop line (cdr tree)
          (setq c (parsing line))
-         (if (consp c) (setq c (resout_portee c false () ())))
-         (if (and (consp . car c) (eq (caar c) 'class@))
+         (if (consp c) (setq c (résout_portée c false () ())))
+         ; c peut être un simple atome (une ligne réduite à un nom) : on teste consp avant car
+         (if (and (consp c) (consp (car c)) (eq (caar c) 'class@))
             (nconc code c)
 	      (push code c))
       )
    )
-   (renomme_reserves (habille_affichage code))
+   (renomme_réservés (habille_affichage code))
 )
 
 (defun compile(code)
@@ -1002,7 +1003,7 @@
 (defun espace(x) (- (size x) (size (trim x))))
 
 ; Mots-clefs qui ouvrent un bloc (la ligne doit se terminer par ":")
-(setq mots_blocs '("si" "sinon" "sinonsi" "pour" "tantque" "fonction" "def" "classe" "essaie" "sauf" "attrape" "selon" "regle" "motif" "prolog"))
+(setq mots_blocs '("si" "sinon" "sinonsi" "pour" "tantque" "fonction" "def" "classe" "essaie" "sauf" "attrape" "selon" "règle" "motif" "prolog"))
 ; Mots-clefs qui prolongent le bloc précédent (même indentation que le "si" ou le "essaie")
 (setq mots_suite '("sinon" "sinonsi" "sauf" "attrape"))
 
@@ -1013,7 +1014,7 @@
       (if (in " \t(:[{=.,+-*/" c)
          (break))
       (+= mot c))
-   (deaccentuate (lower mot)))
+   (lower mot))
 
 ; Analyse une ligne : retire le commentaire final (#...) en dehors des chaînes
 ; et calcule la variation du nombre de parenthèses/crochets/accolades ouverts.
@@ -1022,7 +1023,7 @@
    (setq texte "")
    (setq variation 0)
    (setq guillemet "")
-   (setq echap false)
+   (setq échap false)
    (loop c ligne
       (ncheck guillemet
          (block
@@ -1033,17 +1034,17 @@
                ; attention : c est réutilisé par loop, on en fait une copie
                ((in "\"'`" c) (setq guillemet (+ "" c)))))
          (cond
-            (echap (setq echap false))
-            ((= c "\\") (setq echap true))
+            (échap (setq échap false))
+            ((= c "\\") (setq échap true))
             ((= c guillemet) (setq guillemet ""))))
       (+= texte c))
    (list texte variation))
 
 ; Ferme le dernier bloc ouvert : on ajoute "fin" + le mot-clef du bloc
-(defun ferme_bloc(resultat pile)
+(defun ferme_bloc(résultat pile)
    (setq bloc (last@ pile))
    (pop pile)
-   (push resultat (+ (fill " " (car bloc)) "fin" (cadr bloc))))
+   (push résultat (+ (fill " " (car bloc)) "fin" (cadr bloc))))
 
 ; On transforme l'indentation en balises de fin explicites :
 ;   si x > 0:            si x > 0
@@ -1068,21 +1069,21 @@
    )
    (setq code (replace (replace code "\r" "") "\t" "    "))
    (setq lignes (split code "\n"))
-   (setq resultat ())
+   (setq résultat ())
    ; pile des blocs ouverts : (indentation mot-clef numéro-de-ligne)
    (setq pile ())
    ; nombre de parenthèses encore ouvertes (expression sur plusieurs lignes)
    (setq profondeur 0)
-   (setq numero 0)
+   (setq numéro 0)
    (loop ligne lignes
-      (+= numero 1)
+      (+= numéro 1)
       (setq info (analyse_ligne ligne))
       (setq texte (trimright (car info)))
       (setq clr (trim texte))
       (ife (> profondeur 0)
          ; suite d'une expression commencée sur une ligne précédente
          (block
-            (push resultat texte)
+            (push résultat texte)
             (+= profondeur (cadr info)))
          (check (and clr (neq (upper (@@ (+ clr " ") 0 4)) "REM "))
             (setq cpt (espace texte))
@@ -1095,33 +1096,33 @@
                   (if suite
                      (> (car (last@ pile)) cpt)
                      (>= (car (last@ pile)) cpt)))
-               (ferme_bloc resultat pile))
+               (ferme_bloc résultat pile))
             ; Les erreurs sont mémorisées dans erreur_injection (un throw est fragile dans le WebAssembly)
             (check (and suite (or (= (size pile) 0) (!= (car (last@ pile)) cpt)))
-               (setg erreur_injection (+ "Erreur ligne " numero " : \"" mot "\" n'est pas aligné avec un \"si\" ou un \"essaie\""))
+               (setg erreur_injection (+ "Erreur ligne " numéro " : \"" mot "\" n'est pas aligné avec un \"si\" ou un \"essaie\""))
                (break))
             (check (and (in mots_blocs mot) (not ouvre) (= profondeur 0))
-               (setg erreur_injection (+ "Erreur ligne " numero " : il manque \":\" à la fin de la ligne \"" clr "\""))
+               (setg erreur_injection (+ "Erreur ligne " numéro " : il manque \":\" à la fin de la ligne \"" clr "\""))
                (break))
             (ife ouvre
                (block
-                  (push resultat (@@ texte 0 -1))
+                  (push résultat (@@ texte 0 -1))
                   (if (not suite)
-                     (push pile (list cpt mot numero))))
-               (push resultat texte)))))
+                     (push pile (list cpt mot numéro))))
+               (push résultat texte)))))
    (while pile
-      (ferme_bloc resultat pile))
-   (setq result (join resultat "\n"))
+      (ferme_bloc résultat pile))
+   (setq result (join résultat "\n"))
    (loop a dlongstrings
       (setq result (replace result a (@ dlongstrings a))))
    result)
 
-; f"Bonjour {nom}, dans un an tu auras {age + 1} ans"
-; devient : ("Bonjour " + _texte(nom) + ", dans un an tu auras " + _texte(age + 1) + " ans")
-; (_texte est défini dans bibliotheque.lisp : il affiche les listes comme Python)
+; f"Bonjour {nom}, dans un an tu auras {âge + 1} ans"
+; devient : ("Bonjour " + _texte(nom) + ", dans un an tu auras " + _texte(âge + 1) + " ans")
+; (_texte est défini dans bibliothèque.lisp : il affiche les listes comme Python)
 ; La réécriture se fait sur le texte, avant l'analyse, si bien que les expressions
 ; entre accolades suivent la syntaxe de Pythonerie.
-(defun fchaine_texte (tok)
+(defun fchaîne_texte (tok)
    (setq s (@@ tok 2 -1))
    (setq morceaux ())
    (setq courant "")
@@ -1144,18 +1145,18 @@
       (+ "(" (join morceaux " + ") ")")
       "\"\""))
 
-(defun remplace_fchaines (code)
+(defun remplace_fchaînes (code)
    (check (in code "f\"")
       (loop a (tokenize_rules parser_tok code)
          (if (= (@@ a 0 2) "f\"")
-            (setq code (replace code a (fchaine_texte a))))))
+            (setq code (replace code a (fchaîne_texte a))))))
    code)
 
 ; We call this specific function to inject closing tags
 ; We then transform our Python into Lisp
 (defun compilepython(code)
    (setg pythonmode true)
-   (setq code (remplace_fchaines code))
+   (setq code (remplace_fchaînes code))
    (setq code (injecte_labels code))
    (if erreur_injection
       (return erreur_injection))

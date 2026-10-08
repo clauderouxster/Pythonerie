@@ -29,16 +29,16 @@
 
 <body>
     <!-- ===================== En-tête ===================== -->
-    <header class="entete">
+    <header class="en-tête">
         <div class="marque">
             <span class="logo">P</span>
             <span class="titre">Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
         </div>
-        <div class="actions-entete">
-            <span id="etatLispE" class="etat-lispe">Chargement de LispE…</span>
+        <div class="actions-en-tête">
+            <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
             <button id="btnAide" class="btn btn-secondaire">❓ Aide</button>
-            <button id="btnTheme" class="btn btn-secondaire" title="Thème clair / sombre">🌓</button>
+            <button id="btnThème" class="btn btn-secondaire" title="Thème clair / sombre">🌓</button>
         </div>
     </header>
 
@@ -46,22 +46,22 @@
         <!-- ===================== 1. Les programmes ===================== -->
         <aside class="programmes">
             <div class="section">
-                <div id="titreProgrammes" class="section-tete" title="Déposer ici pour ranger à la racine">
-                    <span class="etiquette">Mes programmes</span>
+                <div id="titreProgrammes" class="section-tête" title="Déposer ici pour ranger à la racine">
+                    <span class="étiquette">Mes programmes</span>
                 </div>
                 <div class="barre-programmes">
                     <button id="btnNouveau" class="btn btn-petit btn-large" title="Nouveau programme">＋ Nouveau</button>
-                    <button id="btnNouveauDossier" class="btn btn-secondaire btn-petit btn-icone" title="Nouveau répertoire" aria-label="Nouveau répertoire"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#C09553"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#DCB67A"/><path d="M8 6.5v5M5.5 9h5" stroke="#5a3d12" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                    <button id="btnNouveauDossier" class="btn btn-secondaire btn-petit btn-icône" title="Nouveau répertoire" aria-label="Nouveau répertoire"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#C09553"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#DCB67A"/><path d="M8 6.5v5M5.5 9h5" stroke="#5a3d12" stroke-width="1.3" stroke-linecap="round"/></svg></button>
                     <!-- Menu ☰ (comme dans la barre latérale de TamedAgents) -->
                     <span class="menu-ancre">
-                            <button id="btnMenuProgrammes" class="btn btn-secondaire btn-petit btn-icone" title="Autres actions" aria-label="Autres actions" aria-haspopup="true" aria-expanded="false">☰</button>
+                            <button id="btnMenuProgrammes" class="btn btn-secondaire btn-petit btn-icône" title="Autres actions" aria-label="Autres actions" aria-haspopup="true" aria-expanded="false">☰</button>
                             <div id="menuProgrammes" class="menu" role="menu" hidden>
                                 <div class="menu-section">Programme ouvert</div>
                                 <button id="btnRenommer" class="menu-item" role="menuitem">✏️ Renommer</button>
                                 <button id="btnDupliquer" class="menu-item" role="menuitem">📄 Copier</button>
                                 <button id="btnExporter" class="menu-item" role="menuitem">⬆️ Exporter (fichier .py)</button>
                                 <button id="btnSupprimer" class="menu-item danger" role="menuitem">🗑️ Supprimer</button>
-                                <div class="menu-separateur"></div>
+                                <div class="menu-séparateur"></div>
                                 <div class="menu-section">Importer</div>
                                 <button id="btnImporter" class="menu-item" role="menuitem">📂 Importer des fichiers .py…</button>
                             </div>
@@ -72,47 +72,47 @@
                 <div id="genreStockage" class="note"></div>
             </div>
             <div class="section">
-                <span class="etiquette">Exemples</span>
+                <span class="étiquette">Exemples</span>
                 <ul id="listeExemples" class="liste exemples"></ul>
                 <div class="note">Un clic crée une copie que tu peux modifier.</div>
             </div>
         </aside>
 
         <!-- ===================== 2. L'éditeur ===================== -->
-        <section class="zone-edition">
+        <section class="zone-édition">
             <div class="barre">
                 <div class="barre-gauche">
                     <span id="nomProgramme" class="nom-programme">—</span>
-                    <span id="etatSauvegarde" class="etat-sauvegarde"></span>
+                    <span id="étatSauvegarde" class="état-sauvegarde"></span>
                 </div>
                 <div class="barre-droite">
                     <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
-                    <button id="btnArreter" class="btn btn-secondaire btn-petit" disabled title="Arrêter les animations">■ Arrêter</button>
-                    <button id="btnExecuter" class="btn" disabled title="Ctrl+Entrée">▶ Exécuter</button>
+                    <button id="btnArrêter" class="btn btn-secondaire btn-petit" disabled title="Arrêter les animations">■ Arrêter</button>
+                    <button id="btnExécuter" class="btn" disabled title="Ctrl+Entrée">▶ Exécuter</button>
                 </div>
             </div>
-            <div class="conteneur-editeur">
-                <textarea id="editeur"></textarea>
+            <div class="conteneur-éditeur">
+                <textarea id="éditeur"></textarea>
             </div>
             <div id="panneauLispE" class="panneau-lispe">
-                <div class="section-tete"><span class="etiquette">Code LispE produit</span></div>
+                <div class="section-tête"><span class="étiquette">Code LispE produit</span></div>
                 <pre id="codeLispE"></pre>
             </div>
             <div class="zone-console">
-                <div class="section-tete">
-                    <span class="etiquette">Console</span>
+                <div class="section-tête">
+                    <span class="étiquette">Console</span>
                     <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
                 </div>
                 <div id="console" class="console"></div>
             </div>
         </section>
 
-        <div id="separateur" class="separateur" title="Glisser pour redimensionner"></div>
+        <div id="séparateur" class="séparateur" title="Glisser pour redimensionner"></div>
 
         <!-- ===================== 3. Le canevas ===================== -->
         <section id="zoneCanevas" class="zone-canevas">
             <div class="barre">
-                <span class="etiquette">Canevas <span class="note-dim">800 × 600</span></span>
+                <span class="étiquette">Canevas <span class="note-dim">800 × 600</span></span>
                 <div class="barre-droite">
                     <button id="btnEffaceCanevas" class="btn btn-secondaire btn-petit">Effacer</button>
                     <button id="btnImage" class="btn btn-secondaire btn-petit" title="Télécharger le dessin en PNG">Image</button>
@@ -122,14 +122,14 @@
                 <canvas id="canevas"></canvas>
                 <canvas id="coucheTortue"></canvas>
             </div>
-            <div id="coordonnees" class="coordonnees"></div>
+            <div id="coordonnées" class="coordonnées"></div>
         </section>
     </main>
 
     <!-- ===================== Aide ===================== -->
     <div id="aide" class="fond-modal">
         <div class="modal">
-            <div class="modal-tete">
+            <div class="modal-tête">
                 <h2>Aide de Pythonerie</h2>
                 <button id="fermeAide" class="btn btn-secondaire btn-petit">Fermer</button>
             </div>
@@ -137,21 +137,20 @@
                 <p>Pythonerie est un Python en français. Les blocs se reconnaissent à
                     l'<b>indentation</b> (4 espaces) et la ligne qui ouvre un bloc se termine par <code>:</code>.
                     <b>Ctrl+Entrée</b> exécute, <b>Ctrl+Espace</b> propose des mots, <b>Ctrl+/</b> met une ligne en commentaire.
-                    Les <b>accents sont facultatifs</b> dans les mots du langage et les fonctions :
-                    <code>épaisseur</code> ou <code>epaisseur</code>, <code>carré</code> ou <code>carre</code>,
-                    <code>va_à</code> ou <code>va_a</code>.</p>
+                    Les noms du langage s'écrivent avec leur orthographe : <code>épaisseur</code>,
+                    <code>carré</code>, <code>va_à</code>, <code>règle</code>.</p>
 
                 <h3>Les mots du langage</h3>
                 <div class="grille-aide">
 <pre class="exemple"># Un commentaire
-age = 12
+âge = 12
 nom = "Léa"
 affiche("Bonjour", nom)
-affiche(f"{nom} a {age} ans")
+affiche(f"{nom} a {âge} ans")
 
-si age >= 18:
+si âge >= 18:
     affiche("majeur")
-sinonsi age >= 12:
+sinonsi âge >= 12:
     affiche("ado")
 sinon:
     affiche("enfant")</pre>
@@ -165,7 +164,7 @@ tantque n < 3:
         continuer   # tour suivant
     # sortir : quitte la boucle
 
-fonction carre(x):
+fonction carré(x):
     retourne x * x
 
 def cube(x):       # def marche aussi
@@ -174,8 +173,8 @@ def cube(x):       # def marche aussi
 notes.ajoute(18)
 affiche(longueur(notes), somme(notes))
 pairs = [x pour x dans intervalle(10) si x % 2 == 0]
-age = {"Léa": 12, "Tom": 11}
-affiche(age["Léa"])
+âge = {"Léa": 12, "Tom": 11}
+affiche(âge["Léa"])
 
 si 15 dans notes et non (20 dans notes):
     affiche("oui")
@@ -221,6 +220,14 @@ selon (nom):
                     <tr><td><code>majuscules(t) minuscules(t)</code></td><td>texte</td>
                         <td><code>découpe(t, " ") remplace(t, a, b)</code></td><td>texte</td></tr>
                 </table>
+
+                <details class="aide-français">
+                    <summary>Les instructions de LispE en français (<span id="nbFrançais">…</span>)</summary>
+                    <p class="note">Ces noms sont d'autres noms des instructions de LispE (voir <code>basic/français.lisp</code>).
+                        La dernière colonne donne le nom LispE, celui qui apparaît
+                        dans « λ LispE ». Les angles sont en radians, sauf pour <code>sinus</code> et <code>cosinus</code>.</p>
+                    <div id="aideFrançais"></div>
+                </details>
 
                 <h3>Dessiner dans le canevas</h3>
                 <p>Le canevas mesure 800 × 600. Le point (0, 0) est <b>en haut à gauche</b>, y augmente vers le bas.
@@ -299,15 +306,15 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_touche(f)</pre>
                 console.error(texte);
             },
             onRuntimeInitialized: function () {
-                if (window.Pythonerie) window.Pythonerie.lispePret();
-                else window.addEventListener('load', function () { window.Pythonerie.lispePret(); });
+                if (window.Pythonerie) window.Pythonerie.lispePrêt();
+                else window.addEventListener('load', function () { window.Pythonerie.lispePrêt(); });
             }
         };
     </script>
     <script src="js/mode-pythonerie.js"></script>
     <script src="js/canevas.js"></script>
     <script src="js/pythonerie.js"></script>
-    <script>Pythonerie.demarre();</script>
+    <script>Pythonerie.démarre();</script>
     <script src="lispe/lispe.js"></script>
     <script src="lispe/lispe_functions.js"></script>
 </body>

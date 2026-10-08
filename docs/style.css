@@ -107,7 +107,7 @@ code {
 .btn-petit { font-size: 12px; padding: 4px 10px; }
 
 /* ---------------- En-tête ---------------- */
-.entete {
+.en-tête {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -130,10 +130,10 @@ code {
 }
 .titre { font-weight: 700; font-size: 17px; }
 .sous-titre { color: var(--text-muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.actions-entete { display: flex; align-items: center; gap: 8px; }
-.etat-lispe { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.etat-lispe.ok { color: var(--success); }
-.etat-lispe.erreur { color: var(--danger); }
+.actions-en-tête { display: flex; align-items: center; gap: 8px; }
+.état-lispe { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.état-lispe.ok { color: var(--success); }
+.état-lispe.erreur { color: var(--danger); }
 
 /* ---------------- Espace de travail : 3 zones ---------------- */
 .espace {
@@ -144,7 +144,7 @@ code {
     grid-template-columns: 230px minmax(320px, 1fr) 6px var(--largeur-canevas);
 }
 
-.etiquette {
+.étiquette {
     font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
@@ -154,7 +154,7 @@ code {
 .note { font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
 .note-dim { text-transform: none; font-weight: 400; margin-left: 4px; }
 
-.section-tete {
+.section-tête {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -189,7 +189,7 @@ code {
    actions (renommer, exporter, supprimer) visibles au survol */
 .barre-programmes { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
 .btn-large { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.btn-icone { padding: 3px 6px; display: flex; align-items: center; }
+.btn-icône { padding: 3px 6px; display: flex; align-items: center; }
 #listeProgrammes { min-height: 40px; border-radius: var(--radius-sm); }
 #listeProgrammes.cible, #titreProgrammes.cible { outline: 1px dashed var(--accent); outline-offset: 2px; }
 .liste li.arbre-ligne {
@@ -199,7 +199,7 @@ code {
     padding: 3px 4px 3px 4px;
     border-radius: var(--radius-sm);
 }
-.liste li.arbre-ligne.selection { background: var(--bg-hover); color: var(--text-primary); }
+.liste li.arbre-ligne.sélection { background: var(--bg-hover); color: var(--text-primary); }
 .liste li.arbre-ligne.cible { outline: 1px solid var(--accent); outline-offset: -1px; background: var(--accent-subtle); }
 .liste li.arbre-ligne.glisse { opacity: 0.4; }
 .arbre-guide { width: 14px; align-self: stretch; position: relative; flex-shrink: 0; }
@@ -217,9 +217,9 @@ code {
 }
 .arbre-chevron svg { width: 14px; height: 14px; transition: transform 0.1s; }
 .arbre-chevron.ouvert svg { transform: rotate(90deg); }
-.arbre-icone { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; margin-right: 4px; color: var(--text-muted); }
-.arbre-icone svg { width: 16px; height: 16px; }
-.liste li.actif .arbre-icone { color: var(--accent); }
+.arbre-icône { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; margin-right: 4px; color: var(--text-muted); }
+.arbre-icône svg { width: 16px; height: 16px; }
+.liste li.actif .arbre-icône { color: var(--accent); }
 .titre-dossier { color: var(--text-muted); font-weight: 500; }
 .programme-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .programme-actions {
@@ -284,7 +284,7 @@ code {
 }
 .menu-item:hover, .menu-item:focus-visible { background: var(--bg-hover); color: var(--text-primary); outline: none; }
 .menu-item.danger { color: var(--danger); }
-.menu-separateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
+.menu-séparateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
 
 /* Écrans tactiles : pas de survol, les actions restent visibles */
 @media (hover: none) { .programme-actions { opacity: 1; } }
@@ -294,7 +294,7 @@ code {
 .liste.exemples li::before { content: '▸ '; color: var(--text-muted); }
 
 /* 2. Édition */
-.zone-edition {
+.zone-édition {
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -311,11 +311,11 @@ code {
 }
 .barre-gauche, .barre-droite { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .nom-programme { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.etat-sauvegarde { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-.etat-sauvegarde.ok { color: var(--success); }
-.etat-sauvegarde.erreur { color: var(--danger); }
+.état-sauvegarde { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.état-sauvegarde.ok { color: var(--success); }
+.état-sauvegarde.erreur { color: var(--danger); }
 
-.conteneur-editeur {
+.conteneur-éditeur {
     flex: 3 1 0;
     min-height: 140px;
     border: 1px solid var(--border-color);
@@ -323,7 +323,7 @@ code {
     overflow: hidden;
     background: var(--bg-elevated);
 }
-.conteneur-editeur .CodeMirror {
+.conteneur-éditeur .CodeMirror {
     height: 100%;
     font-family: var(--font-mono);
     font-size: 14px;
@@ -372,8 +372,8 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 .console-vide { color: var(--console-info); font-style: italic; }
 
 /* Séparateur déplaçable */
-.separateur { cursor: col-resize; background: transparent; position: relative; }
-.separateur::after {
+.séparateur { cursor: col-resize; background: transparent; position: relative; }
+.séparateur::after {
     content: '';
     position: absolute;
     top: 0; bottom: 0; left: 2px;
@@ -381,7 +381,7 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     background: var(--border-color);
     border-radius: 2px;
 }
-.separateur:hover::after, body.redimensionne .separateur::after { background: var(--accent); }
+.séparateur:hover::after, body.redimensionne .séparateur::after { background: var(--accent); }
 
 /* 3. Canevas */
 .zone-canevas {
@@ -409,7 +409,7 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     height: 100%;
 }
 #coucheTortue { cursor: crosshair; }
-.coordonnees { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); min-height: 18px; }
+.coordonnées { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); min-height: 18px; }
 
 /* ---------------- Aide ---------------- */
 .fond-modal {
@@ -433,14 +433,14 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     flex-direction: column;
     overflow: hidden;
 }
-.modal-tete {
+.modal-tête {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
     border-bottom: 1px solid var(--border-color);
 }
-.modal-tete h2 { margin: 0; font-size: 18px; }
+.modal-tête h2 { margin: 0; font-size: 18px; }
 .modal-corps { padding: 6px 20px 20px; overflow-y: auto; line-height: 1.55; }
 .modal-corps h3 { font-size: 15px; margin: 20px 0 8px; color: var(--accent); }
 .grille-aide { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 10px; }
@@ -458,6 +458,10 @@ pre.exemple {
 .table-aide td { padding: 5px 8px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
 .table-aide td:nth-child(odd) { white-space: nowrap; }
 .table-aide td:nth-child(even) { color: var(--text-secondary); }
+.aide-français { margin-top: 16px; }
+.aide-français summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 15px; }
+.aide-français h4 { font-size: 13px; margin: 14px 0 4px; color: var(--text-secondary); }
+.table-aide td.lispe { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 
 /* ---------------- Écrans étroits ---------------- */
 @media (max-width: 1100px) {
@@ -466,7 +470,7 @@ pre.exemple {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(520px, auto) auto;
     }
-    .separateur { display: none; }
+    .séparateur { display: none; }
     .programmes { border-right: none; border-bottom: 1px solid var(--border-color); max-height: 260px; }
     .zone-canevas { overflow: visible; }
     .sous-titre { display: none; }
@@ -475,3 +479,6 @@ pre.exemple {
     .table-aide td:nth-child(odd) { white-space: normal; }
     .barre { flex-wrap: wrap; }
 }
+.aide-français .table-aide { table-layout: fixed; }
+.aide-français .table-aide td:nth-child(1) { width: 40%; white-space: normal; }
+.aide-français .table-aide td:nth-child(3) { width: 24%; }

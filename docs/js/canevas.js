@@ -144,6 +144,17 @@ const Pyt = (function () {
         return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
     }
 
+    // GitHub Pages refuse parfois une requête (erreur 503) quand on en envoie beaucoup
+    // à la fois (les 36 notes du piano) : on réessaie jusqu'à trois fois
+    async function téléchargeAvecReprise(adresse, essais = 3) {
+        for (let k = 1; ; k++) {
+            const r = await fetch(adresse);
+            if (r.ok) return r;
+            if (k >= essais || r.status < 500) throw new Error(String(r.status));
+            await new Promise(fin => setTimeout(fin, 300 * k));
+        }
+    }
+
     function signaleErreur(message) {
         if (window.Pythonerie && window.Pythonerie.erreur) window.Pythonerie.erreur(message);
         else console.error(message);
@@ -194,6 +205,11 @@ const Pyt = (function () {
             ctxTortue = couche.getContext('2d');
             rappel = fonctionRappel;
             installeÉvénements();
+            // Le navigateur peut garder le son « suspendu » tant que la page n'a pas reçu de geste :
+            // le premier clic ou la première touche, n'importe où, le réveille
+            ['pointerdown', 'keydown', 'touchend'].forEach(type => window.addEventListener(type, () => {
+                if (audio && audio.state === 'suspended') audio.resume();
+            }, { capture: true }));
             this.réinitialise();
         },
 
@@ -430,8 +446,8 @@ const Pyt = (function () {
             if (!ctx) {
                 créeÉlément();
             } else {
-                entrée.prêt = fetch(nom)
-                    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+                entrée.prêt = téléchargeAvecReprise(nom)
+                    .then(r => r.arrayBuffer())
                     .then(données => ctx.decodeAudioData(données))
                     .then(tampon => { entrée.tampon = tampon; })
                     .catch(() => créeÉlément());

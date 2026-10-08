@@ -29,6 +29,8 @@ Options : `--port 8080`, `--hôte 0.0.0.0` pour une salle de classe en réseau l
 
 On peut aussi servir `docs/` avec n'importe quel serveur statique (`cd docs && python3 -m http.server`) : comme sur GitHub Pages, les programmes sont alors gardés dans le navigateur.
 
+**Après chaque modification du code**, lance `python3 version.py`. Le script met à jour le numéro de version affiché dans l'en-tête (`v. aaaa.mm.jj.hh.MM` : année, mois, jour, heure, minute). Le même numéro est ajouté (`?v=…`) aux scripts, à la feuille de style et à `lispe.wasm` dans `docs/index.html`. GitHub Pages garde les fichiers 10 minutes en cache : sans ce numéro, un navigateur pourrait mélanger d'anciens scripts avec la nouvelle bibliothèque. Les fichiers `.lisp` sont, eux, toujours rechargés.
+
 ## Ranger ses programmes
 
 Comme dans TamedAgents :
@@ -123,6 +125,7 @@ Le canevas mesure 800 × 600. L'origine est en haut à gauche et y augmente vers
 Pythonerie/
 ├── README.md
 ├── serveur.py              serveur local : sert docs/ et conserve les programmes
+├── version.py              met à jour le numéro de version (à lancer après chaque modification)
 ├── .gitignore
 ├── programmes/             programmes des élèves et leurs répertoires (avec serveur.py)
 └── docs/                   le site, publié tel quel par GitHub Pages

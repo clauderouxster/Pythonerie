@@ -24,7 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2026.10.08.17.41">
 </head>
 
 <body>
@@ -34,6 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.08.17.41</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -315,6 +316,9 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
     </div>
 
     <!-- ===================== Scripts ===================== -->
+    <!-- ?v=… : le numéro de version (le même que dans l'en-tête). GitHub Pages garde les
+         fichiers 10 minutes en cache : un nouveau numéro force le navigateur à recharger
+         les nouveaux scripts. Il est mis à jour par « python3 version.py ». -->
     <script>
         // Module de LispE (Emscripten) : la sortie de affiche() arrive dans la console
         var Module = {
@@ -329,18 +333,22 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
                 // Messages internes de LispE : seulement dans la console du navigateur
                 console.error(texte);
             },
+            // lispe.wasm reçoit le même numéro de version que les scripts
+            locateFile: function (fichier, répertoire) {
+                return répertoire + fichier + '?v=2026.10.08.17.41';
+            },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
                 else window.addEventListener('load', function () { window.Pythonerie.lispePrêt(); });
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js"></script>
-    <script src="js/canevas.js"></script>
-    <script src="js/pythonerie.js"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.08.17.41"></script>
+    <script src="js/canevas.js?v=2026.10.08.17.41"></script>
+    <script src="js/pythonerie.js?v=2026.10.08.17.41"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js"></script>
-    <script src="lispe/lispe_functions.js"></script>
+    <script src="lispe/lispe.js?v=2026.10.08.17.41"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.08.17.41"></script>
 </body>
 
 </html>

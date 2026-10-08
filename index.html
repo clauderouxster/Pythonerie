@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pythonerie</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b35c2a'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3EP%3C/text%3E%3C/svg%3E">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- CodeMirror 5 (comme dans TamedAgents) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ===================== En-tête ===================== -->
+    <header class="entete">
+        <div class="marque">
+            <span class="logo">P</span>
+            <span class="titre">Pythonerie</span>
+            <span class="sous-titre">apprendre à programmer en français</span>
+        </div>
+        <div class="actions-entete">
+            <span id="etatLispE" class="etat-lispe">Chargement de LispE…</span>
+            <button id="btnAide" class="btn btn-secondaire">❓ Aide</button>
+            <button id="btnTheme" class="btn btn-secondaire" title="Thème clair / sombre">🌓</button>
+        </div>
+    </header>
+
+    <main id="espace" class="espace">
+        <!-- ===================== 1. Les programmes ===================== -->
+        <aside class="programmes">
+            <div class="section">
+                <div id="titreProgrammes" class="section-tete" title="Déposer ici pour ranger à la racine">
+                    <span class="etiquette">Mes programmes</span>
+                </div>
+                <div class="barre-programmes">
+                    <button id="btnNouveau" class="btn btn-petit btn-large" title="Nouveau programme">＋ Nouveau</button>
+                    <button id="btnNouveauDossier" class="btn btn-secondaire btn-petit btn-icone" title="Nouveau répertoire" aria-label="Nouveau répertoire"><svg viewBox="0 0 16 16" width="15" height="15" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#C09553"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#DCB67A"/><path d="M8 6.5v5M5.5 9h5" stroke="#5a3d12" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                    <!-- Menu ☰ (comme dans la barre latérale de TamedAgents) -->
+                    <span class="menu-ancre">
+                            <button id="btnMenuProgrammes" class="btn btn-secondaire btn-petit btn-icone" title="Autres actions" aria-label="Autres actions" aria-haspopup="true" aria-expanded="false">☰</button>
+                            <div id="menuProgrammes" class="menu" role="menu" hidden>
+                                <div class="menu-section">Programme ouvert</div>
+                                <button id="btnRenommer" class="menu-item" role="menuitem">✏️ Renommer</button>
+                                <button id="btnDupliquer" class="menu-item" role="menuitem">📄 Copier</button>
+                                <button id="btnExporter" class="menu-item" role="menuitem">⬆️ Exporter (fichier .py)</button>
+                                <button id="btnSupprimer" class="menu-item danger" role="menuitem">🗑️ Supprimer</button>
+                                <div class="menu-separateur"></div>
+                                <div class="menu-section">Importer</div>
+                                <button id="btnImporter" class="menu-item" role="menuitem">📂 Importer des fichiers .py…</button>
+                            </div>
+                        </span>
+                    <input type="file" id="fichierImport" accept=".py,.txt" multiple hidden>
+                </div>
+                <ul id="listeProgrammes" class="liste"></ul>
+                <div id="genreStockage" class="note"></div>
+            </div>
+            <div class="section">
+                <span class="etiquette">Exemples</span>
+                <ul id="listeExemples" class="liste exemples"></ul>
+                <div class="note">Un clic crée une copie que tu peux modifier.</div>
+            </div>
+        </aside>
+
+        <!-- ===================== 2. L'éditeur ===================== -->
+        <section class="zone-edition">
+            <div class="barre">
+                <div class="barre-gauche">
+                    <span id="nomProgramme" class="nom-programme">—</span>
+                    <span id="etatSauvegarde" class="etat-sauvegarde"></span>
+                </div>
+                <div class="barre-droite">
+                    <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
+                    <button id="btnArreter" class="btn btn-secondaire btn-petit" disabled title="Arrêter les animations">■ Arrêter</button>
+                    <button id="btnExecuter" class="btn" disabled title="Ctrl+Entrée">▶ Exécuter</button>
+                </div>
+            </div>
+            <div class="conteneur-editeur">
+                <textarea id="editeur"></textarea>
+            </div>
+            <div id="panneauLispE" class="panneau-lispe">
+                <div class="section-tete"><span class="etiquette">Code LispE produit</span></div>
+                <pre id="codeLispE"></pre>
+            </div>
+            <div class="zone-console">
+                <div class="section-tete">
+                    <span class="etiquette">Console</span>
+                    <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
+                </div>
+                <div id="console" class="console"></div>
+            </div>
+        </section>
+
+        <div id="separateur" class="separateur" title="Glisser pour redimensionner"></div>
+
+        <!-- ===================== 3. Le canevas ===================== -->
+        <section id="zoneCanevas" class="zone-canevas">
+            <div class="barre">
+                <span class="etiquette">Canevas <span class="note-dim">800 × 600</span></span>
+                <div class="barre-droite">
+                    <button id="btnEffaceCanevas" class="btn btn-secondaire btn-petit">Effacer</button>
+                    <button id="btnImage" class="btn btn-secondaire btn-petit" title="Télécharger le dessin en PNG">Image</button>
+                </div>
+            </div>
+            <div class="cadre-canevas">
+                <canvas id="canevas"></canvas>
+                <canvas id="coucheTortue"></canvas>
+            </div>
+            <div id="coordonnees" class="coordonnees"></div>
+        </section>
+    </main>
+
+    <!-- ===================== Aide ===================== -->
+    <div id="aide" class="fond-modal">
+        <div class="modal">
+            <div class="modal-tete">
+                <h2>Aide de Pythonerie</h2>
+                <button id="fermeAide" class="btn btn-secondaire btn-petit">Fermer</button>
+            </div>
+            <div class="modal-corps">
+                <p>Pythonerie est un Python en français. Les blocs se reconnaissent à
+                    l'<b>indentation</b> (4 espaces) et la ligne qui ouvre un bloc se termine par <code>:</code>.
+                    <b>Ctrl+Entrée</b> exécute, <b>Ctrl+Espace</b> propose des mots, <b>Ctrl+/</b> met une ligne en commentaire.
+                    Les <b>accents sont facultatifs</b> dans les mots du langage et les fonctions :
+                    <code>épaisseur</code> ou <code>epaisseur</code>, <code>carré</code> ou <code>carre</code>,
+                    <code>va_à</code> ou <code>va_a</code>.</p>
+
+                <h3>Les mots du langage</h3>
+                <div class="grille-aide">
+<pre class="exemple"># Un commentaire
+age = 12
+nom = "Léa"
+affiche("Bonjour", nom)
+affiche(f"{nom} a {age} ans")
+
+si age >= 18:
+    affiche("majeur")
+sinonsi age >= 12:
+    affiche("ado")
+sinon:
+    affiche("enfant")</pre>
+<pre class="exemple">pour i dans intervalle(5):
+    affiche(i)
+
+n = 0
+tantque n < 3:
+    n += 1
+    si n == 2:
+        continuer   # tour suivant
+    # sortir : quitte la boucle
+
+fonction carre(x):
+    retourne x * x
+
+def cube(x):       # def marche aussi
+    retourne x ** 3</pre>
+<pre class="exemple">notes = [12, 15, 9]
+notes.ajoute(18)
+affiche(longueur(notes), somme(notes))
+pairs = [x pour x dans intervalle(10) si x % 2 == 0]
+age = {"Léa": 12, "Tom": 11}
+affiche(age["Léa"])
+
+si 15 dans notes et non (20 dans notes):
+    affiche("oui")
+
+essaie:
+    lever "problème !"
+sauf(e):
+    affiche("erreur :", e)</pre>
+<pre class="exemple">classe Chien:
+    def __init__(soi, nom):
+        soi.nom = nom
+    def aboie(soi):
+        affiche(soi.nom, ": Ouaf !")
+
+rex = Chien("Rex")
+rex.aboie()
+
+ok = Vrai     # Vrai, Faux, Rien
+nom = "Tom"
+selon (nom):
+    cas "Léa": affiche("Salut Léa")
+    cas "Tom": affiche("Salut Tom")</pre>
+                </div>
+                <p class="note">Opérateurs : <code>+ - * / // % **</code>, comparaisons : <code>== != &lt; &lt;= &gt; &gt;=</code>,
+                    logique : <code>et ou non</code>, appartenance : <code>dans</code>, <code>non dans</code>.
+                    Mots-clefs : si, sinonsi, sinon, tantque, pour, dans, fonction/def, retourne, sortir, continuer,
+                    classe, soi, essaie, sauf, lever, selon, cas, lambda.</p>
+
+                <h3>Fonctions utiles</h3>
+                <table class="table-aide">
+                    <tr><td><code>affiche(a, b…)</code></td><td>écrit dans la console</td>
+                        <td><code>demande("Question ?")</code></td><td>demande un texte à l'utilisateur</td></tr>
+                    <tr><td><code>demande_nombre("…")</code></td><td>demande un nombre (synonymes : <code>lire</code>, <code>lire_nombre</code>, <code>input</code>)</td>
+                        <td><code>longueur(x)</code></td><td>taille d'une liste ou d'un texte</td></tr>
+                    <tr><td><code>intervalle(a, b, pas)</code></td><td>nombres de a à b (exclu)</td>
+                        <td><code>aléatoire(a, b)</code></td><td>entier au hasard entre a et b</td></tr>
+                    <tr><td><code>entier(x) réel(x) chaîne(x)</code></td><td>conversions</td>
+                        <td><code>arrondi(x, n)</code></td><td>arrondi à n décimales</td></tr>
+                    <tr><td><code>racine(x) absolu(x)</code></td><td>mathématiques</td>
+                        <td><code>sinus(a) cosinus(a)</code></td><td>angles en degrés</td></tr>
+                    <tr><td><code>somme(l) maximum(l) minimum(l)</code></td><td>sur une liste</td>
+                        <td><code>trie(l) inverse(l) choisis(l)</code></td><td>listes</td></tr>
+                    <tr><td><code>majuscules(t) minuscules(t)</code></td><td>texte</td>
+                        <td><code>découpe(t, " ") remplace(t, a, b)</code></td><td>texte</td></tr>
+                </table>
+
+                <h3>Dessiner dans le canevas</h3>
+                <p>Le canevas mesure 800 × 600. Le point (0, 0) est <b>en haut à gauche</b>, y augmente vers le bas.
+                    Survole le canevas pour voir les coordonnées.</p>
+                <table class="table-aide">
+                    <tr><td><code>efface()</code></td><td>page blanche</td>
+                        <td><code>fond("bleu clair")</code></td><td>peint tout le fond</td></tr>
+                    <tr><td><code>couleur("rouge")</code></td><td>couleur des formes</td>
+                        <td><code>couleur(rgb(255, 128, 0))</code></td><td>couleur sur mesure</td></tr>
+                    <tr><td><code>épaisseur(4)</code></td><td>épaisseur du trait</td>
+                        <td><code>point(x, y)</code></td><td>un point</td></tr>
+                    <tr><td><code>ligne(x1, y1, x2, y2)</code></td><td>un segment</td>
+                        <td><code>rectangle(x, y, l, h)</code></td><td>contour (<code>rectangle_plein</code>)</td></tr>
+                    <tr><td><code>cercle(x, y, r)</code></td><td>contour d'un cercle</td>
+                        <td><code>disque(x, y, r)</code></td><td>cercle plein</td></tr>
+                    <tr><td><code>carré(x, y, c)</code></td><td>(<code>carré_plein</code>)</td>
+                        <td><code>ellipse(x, y, rx, ry)</code></td><td>(<code>ellipse_pleine</code>)</td></tr>
+                    <tr><td><code>triangle(x1, y1, x2, y2, x3, y3)</code></td><td>(<code>triangle_plein</code>)</td>
+                        <td><code>polygone([[x, y], …])</code></td><td>(<code>polygone_plein</code>)</td></tr>
+                    <tr><td><code>texte(x, y, "Bonjour")</code></td><td>écrit dans le canevas</td>
+                        <td><code>taille_texte(30) police("serif")</code></td><td>style du texte</td></tr>
+                </table>
+                <p class="note">Couleurs : rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris,
+                    cyan, magenta, turquoise, beige, or, argent, vert clair, bleu clair, bleu marine, gris clair, gris foncé —
+                    ou n'importe quelle couleur CSS (<code>"#ff8800"</code>).</p>
+
+                <h3>La tortue</h3>
+                <table class="table-aide">
+                    <tr><td><code>avance(100) recule(50)</code></td><td>se déplace en dessinant</td>
+                        <td><code>gauche(90) droite(45)</code></td><td>tourne (degrés)</td></tr>
+                    <tr><td><code>lève_crayon() baisse_crayon()</code></td><td>dessine ou non</td>
+                        <td><code>va_à(x, y) oriente(angle)</code></td><td>position et direction</td></tr>
+                    <tr><td><code>origine()</code></td><td>retour au centre</td>
+                        <td><code>cache_tortue() montre_tortue()</code></td><td>visibilité</td></tr>
+                </table>
+
+                <h3>Animation et interaction</h3>
+<pre class="exemple">x = 0
+couleur_balle = "rouge"
+
+fonction bouge():
+    x += 5              # += modifie la variable globale x
+    efface()
+    couleur(couleur_balle)
+    disque(x % 800, 300, 30)
+
+animer(bouge, 30)       # toutes les 30 millisecondes
+
+fonction clic(cx, cy):
+    globale couleur_balle   # pour remplacer une variable globale avec =
+    couleur_balle = choisis(["rouge", "vert", "bleu"])
+quand_clic(clic)        # aussi : quand_souris(f), quand_touche(f)</pre>
+                <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
+                    écris <code>globale x</code> pour modifier la variable du programme. <code>x += …</code> modifie
+                    directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>
+                <p class="note">Le bouton « Arrêter » (ou <code>arrête()</code>) stoppe l'animation.
+                    Attention : une boucle <code>tantque Vrai:</code> sans fin bloque la page — utilise plutôt <code>animer</code>.
+                    Le bouton « λ LispE » montre le code LispE produit par le transpileur.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== Scripts ===================== -->
+    <script>
+        // Module de LispE (Emscripten) : la sortie de affiche() arrive dans la console
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function (texte) {
+                if (arguments.length > 1) texte = Array.prototype.slice.call(arguments).join(' ');
+                if (window.Pythonerie) window.Pythonerie.sortie(texte); else console.log(texte);
+            },
+            printErr: function (texte) {
+                if (arguments.length > 1) texte = Array.prototype.slice.call(arguments).join(' ');
+                // Messages internes de LispE : seulement dans la console du navigateur
+                console.error(texte);
+            },
+            onRuntimeInitialized: function () {
+                if (window.Pythonerie) window.Pythonerie.lispePret();
+                else window.addEventListener('load', function () { window.Pythonerie.lispePret(); });
+            }
+        };
+    </script>
+    <script src="js/mode-pythonerie.js"></script>
+    <script src="js/canevas.js"></script>
+    <script src="js/pythonerie.js"></script>
+    <script>Pythonerie.demarre();</script>
+    <script src="lispe/lispe.js"></script>
+    <script src="lispe/lispe_functions.js"></script>
+</body>
+
+</html>

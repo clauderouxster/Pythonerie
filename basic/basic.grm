@@ -1,0 +1,197 @@
+######################################
+# Grammaire du langage Pythonerie (pseudo-Python francisé)
+# Dérivée de la grammaire BasAIc de TamedAgents
+######################################
+# Le but de cette grammaire est de construire un arbre dans lequel chaque noeud a pour étiquette le nom de la règle.
+# Le nom de la règle est l'élément avant le signe :=
+# Il peut être précédé de caractères spéciaux.
+######################################
+# Le ° devant une règle définit le point d'entrée de la grammaire
+# Le ! devant une règle signifie que les %x ou $xxx sont seulement testés et n'apparaissent pas dans l'arbre final.
+# Le & devant une règle signifie que l'étiquette de la règle n'est insérée que si le nombre d'éléments est > 1
+# Le ^ devant une règle signifie que l'élément de l'arbre ne contiendra pas l'étiquette de la règle
+######################################
+# Les commentaires commencent par un '#'
+######################################
+# Le ^ est l'opérateur "ou", il sélectionne la valeur appropriée parmi différents appels
+# % teste une ponctuation précise, $ ou € teste une chaîne précise
+# Note : "$mot" place "mot" dans une liste protégée, ce qui empêche "Word" de reconnaître "mot" comme un nom
+# [..] englobe une séquence d'actions
+# ? : optionnel, * : zéro ou plusieurs, + : au moins un
+######################################
+# Word, astring et anumber sont déclarés hors de la grammaire (voir compiler.lisp)
+######################################
+# Mots-clefs (insensibles à la casse) :
+#   si / sinonsi / sinon / finsi / alors
+#   tantque / fintantque
+#   pour / dans / finpour
+#   fonction / finfonction (ou def / findef)
+#   retourne / renvoie / sortir / continuer / lever
+#   classe / finclasse / soi
+#   essaie / sauf / attrape / finessaie
+#   selon / cas / finselon
+#   et / ou / oux / non / est
+#   importe / comme
+#   globale (ou global)
+#   regle / finregle, motif / finmotif, prolog / finprolog
+# Les mots-clefs s'écrivent avec ou sans accents : règle = regle (voir compare dans compiler.lisp)
+#   lambda / λ
+######################################
+
+;1 il manque un "]" fermant >>>
+;2 il manque un ")" fermant pour une "méthode" >>>
+;3 il manque un "]" fermant pour une "liste" >>>
+;4 il manque la fin d'une "fonction" >>>
+;5 il manque la fin d'un "si" >>>
+;6 il manque la fin d'un "tantque" >>>
+;7 il manque la fin d'un "pour ... dans" >>>
+;8 il manque la fin d'un "pour" >>>
+;9 erreur dans l'analyse d'une méthode >>>
+;10 erreur dans un intervalle, on ne peut pas enchaîner les intervalles >>>
+;11 erreur dans l'analyse d'un dictionnaire >>>
+;12 erreur dans une liste en compréhension >>>
+;13 erreur dans un "joindre" (style Python) >>>
+;14 erreur dans un "selon" >>>
+;15 erreur dans un essaie/sauf >>>
+;16 erreur dans la définition d'une classe >>>
+;17 erreur dans une lambda >>>
+;18 erreur dans une expression booléenne
+
+# Le ° indique le point d'entrée de la grammaire (la règle de tête)
+°analyse := [importing^classedef^function^rule^patternrule^prologrule^expressions]+
+
+# Alias résolus à la compilation
+@append := push
+@ajoute := push
+@len := size
+@strip := trim
+@affiche := println
+
+operator := [%< %<]^[%> %>]^[%^ %^]^[%* %*]^[%/ %/]^%&^%|^%+^%-^%*^%/^%%^%^
+
+operatorop := [%< %< %=]^[%> %> %=]^[%^ %^ %=]^[%* %* %=]^[%/ %/ %=]^[%& %=]^[%| %=]^[%+ %=]^[%- %=]^[%* %=]^[%/ %=]^[%% %=]^[%^ %=]
+
+orand := $ou^$et^$oux
+
+comparator := [$non $dans]^[%< %>]^[%! %=]^[%< %=]^[%= %=]^[%> %=]^%<^%>^$dans^$est
+
+onecomparison := $non? computing comparator computing
+
+comparing := $non? computing [comparator computing]? [orand ;18 comparison]*
+
+negation := $non
+
+!comppar := negation? %( comparing %)
+
+^comparison := comppar|comparing
+^compareorcompute := comparison|computing
+
+!powerforminus := callitem %* %* callitem [%* %* callitem]*
+!minus := %- [powerforminus^callitem]
+
+# Les différents types de variables :
+interval := %[ computing? %: ;10 computing? %]
+
+!indexes := %[ ;1 computing [%, computing]* %]
+
+!valuelist := %[ ;3 [ computing [%, computing]* ]? %]
+
+!itemdictionary := [astring^minus^anumber^variable] %: computing
+!valuedictionary := %{ ;11 [itemdictionary [%, itemdictionary]* ]? %}
+
+!dimvariable :=  Word [interval^indexes]+
+
+!selfvariable := $soi %. [dimvariable^Word]
+
+variable := dimvariable^Word
+
+!variables := Word [%, Word]*
+
+!multiassignment := %[ variables %]
+
+argcompute := comparing^computing
+
+!arguments := argcompute [%, argcompute]*
+
+!callmethod := %. Word %( ;2 [computing [%, computing]*]? %)
+callinterval := %[ computing? %: ;10 computing? %]
+!callindexes := %[ ;1 computing [%, computing]* %]
+
+call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
+
+method := variable callmethod [callinterval^callindexes^callmethod]*
+
+catching := [$sauf^$attrape] [%( Word %)]? expressions+
+!amaybe := $essaie ;15  expressions+ catching $finessaie
+
+!assignmenttopself :=  selfvariable operatorop computing
+
+!assignmentself :=  selfvariable %= compareorcompute
+
+!assignmentop :=  variable operatorop computing
+
+!assignment := [multiassignment^variable] %= compareorcompute
+
+# a, b = b, a + b
+!tupleassign := Word %, variables %= computing [%, computing]*
+
+!assignmentg := [multiassignment^variable] %= %: compareorcompute
+
+!walrus := Word %: %=  compareorcompute
+
+!parenthetic := %( computing %)
+
+# Style Python : ", ".joindre(liste) ou ", ".join(liste)
+!tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)
+!alapython := [astring^anumber] %. Pythonword ;13 %( [computing [%, computing]*]? %)
+
+# Le ^ évite de construire une sous-liste (callitem ...) pour chaque élément
+^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable
+
+# Le & supprime l'étiquette computing s'il n'y a pas d'opérateur
+&computing := callitem  [operator callitem]*
+
+!importing := $importe [astring^Word] [$comme Word]?
+
+!multiop := Word computing [%, computing]*
+
+# globale x, y : dans une fonction, x et y désignent les variables globales
+!globaldecl := [$globale^$global] variables
+
+returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
+
+^expressions := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+^predicates := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+^body := lispe^globaldecl^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+
+!classedef := $classe Word ;16 classfunc+ $finclasse
+!methparams := %( $soi ;4 [%, variables]? %)
+!classfunc := [$fonction^$def] Word methparams expressions+ [$finfonction^$findef]
+
+!then := $alors? expressions+
+!else := $sinon expressions+
+
+!tail := %$ variable
+!patternlist := %[ ;3 [ pattern [%, pattern]* tail? ]? %]
+!itempattern := [astring^minus^anumber^variable] %: pattern
+!patterndictionary := %{ ;11 [itempattern [%, itempattern]* tail? ]? %}
+pattern := patternlist^patterndictionary^astring^minus^anumber^variable
+!patterns := pattern [%, pattern]*
+
+!parameters := %( ;4 variables? %)
+
+!function := [$fonction^$def] Word parameters expressions+ [$finfonction^$findef]
+!rule := $regle Word %( ;4 patterns %) predicates+ $finregle
+!patternrule := $motif Word %( ;4 patterns %) predicates+ $finmotif
+!prologrule := $prolog Word %( ;4 patterns %) predicates+ $finprolog
+
+!lambda := %[ [$lambda^$λ] ;17 %( variables? %) body %]
+!comprehension := %[ computing $pour ;12 Word $dans computing [$si comparison]? %]
+
+!elif := $sinonsi ;5 comparison then [elif^else]?
+!if := $si ;5 comparison then [elif^else]? $finsi
+!while := $tantque ;6 comparison expressions+ $fintantque
+!forin := $pour variable $dans ;7 callitem expressions+ $finpour
+!for := $pour ;8 assignment %, comparison %, assignment expressions+ $finpour
+!acase := $cas astring %: expressions
+!switch := $selon ;14 %( variable %) acase+ $finselon

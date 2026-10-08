@@ -312,6 +312,8 @@ a.btn { text-decoration: none; display: inline-block; }
 /* Le nom de l'élève, en haut à droite */
 .btn.élève { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .btn.élève.inconnu #nomÉlève { font-style: italic; color: var(--text-muted); }
+/* Mode utilisateur unique : le nom reste lisible, mais le bouton ne réagit pas */
+.btn.élève:disabled { opacity: 0.7; }
 .menu-séparateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
 
 /* Écrans tactiles : pas de survol, les actions restent visibles */

@@ -607,9 +607,31 @@ const Pythonerie = (function () {
     // l'a pas tapé. Il est demandé pour exécuter du code et pour créer une archive.
     // Il est gardé pour l'onglet (sessionStorage) : sur un ordinateur partagé,
     // fermer l'onglet déconnecte l'élève.
+    // Mode « Utilisateur unique » (par défaut, gardé dans le localStorage) : pas de
+    // login, l'utilisateur s'appelle « Unique » et il est connecté en permanence ;
+    // le bouton 👤 est désactivé. Décoché dans le menu ☰, on passe en mode
+    // « plusieurs élèves », où chacun doit taper son nom.
     // ------------------------------------------------------------------
+    const NOM_UNIQUE = 'Unique';
+    const CLÉ_UNIQUE = 'pythonerie.utilisateurUnique';
+    let utilisateurUnique = true;
+    try { utilisateurUnique = localStorage.getItem(CLÉ_UNIQUE) !== 'non'; } catch (e) { /* rien */ }
+
     let élève = null;
     try { élève = sessionStorage.getItem('pythonerie.élève'); } catch (e) { /* rien */ }
+
+    // Le nom sous lequel on travaille : « Unique », ou celui que l'élève a tapé
+    function nomCourant() {
+        return utilisateurUnique ? NOM_UNIQUE : élève;
+    }
+
+    function basculeUtilisateurUnique() {
+        utilisateurUnique = !utilisateurUnique;
+        try { localStorage.setItem(CLÉ_UNIQUE, utilisateurUnique ? 'oui' : 'non'); } catch (e) { /* rien */ }
+        // dans les deux sens, on repart sans élève connecté : en mode plusieurs
+        // élèves, le nom sera demandé à la première exécution
+        changeÉlève(null);
+    }
 
     function changeÉlève(nom) {
         élève = nom || null;
@@ -621,9 +643,14 @@ const Pythonerie = (function () {
     }
 
     function afficheÉlève() {
-        $('nomÉlève').textContent = élève || 'inconnu';
-        $('btnÉlève').classList.toggle('inconnu', !élève);
-        $('btnÉlève').title = élève ? 'Connecté : ' + élève + ' (cliquer pour se déconnecter)' : 'Se connecter : taper son nom';
+        const nom = nomCourant();
+        $('nomÉlève').textContent = nom || 'inconnu';
+        $('btnÉlève').classList.toggle('inconnu', !nom);
+        $('btnÉlève').disabled = utilisateurUnique;
+        $('btnÉlève').title = utilisateurUnique ? 'Mode utilisateur unique : pas besoin de se connecter (voir le menu ☰)'
+            : élève ? 'Connecté : ' + élève + ' (cliquer pour se déconnecter)' : 'Se connecter : taper son nom';
+        $('btnUtilisateurUnique').setAttribute('aria-checked', String(utilisateurUnique));
+        $('btnUtilisateurUnique').textContent = (utilisateurUnique ? '☑' : '☐') + ' Utilisateur unique (sans connexion)';
     }
 
     // Demande le nom de l'élève ; renvoie Vrai s'il est connecté à la fin
@@ -642,7 +669,7 @@ const Pythonerie = (function () {
     }
 
     function exigeÉlève(raison) {
-        return !!élève || demandeÉlève(raison);
+        return utilisateurUnique || !!élève || demandeÉlève(raison);
     }
 
     // ------------------------------------------------------------------
@@ -698,7 +725,7 @@ const Pythonerie = (function () {
     function nomArchive() {
         const d = new Date();
         const n = (x) => String(x).padStart(2, '0');
-        const identifiant = élève.replace(/[^\p{L}\p{N}\-]+/gu, '_');
+        const identifiant = nomCourant().replace(/[^\p{L}\p{N}\-]+/gu, '_');
         return identifiant + '_' + d.getFullYear() + '_' + n(d.getMonth() + 1) + '_' + n(d.getDate()) + '_' + n(d.getHours()) + '_' + n(d.getMinutes());
     }
 
@@ -708,7 +735,7 @@ const Pythonerie = (function () {
         try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return null; }
         const nom = nomArchive();
         const archive = {
-            format: FORMAT_ARCHIVE, version: 1, élève, créée: new Date().toISOString(),
+            format: FORMAT_ARCHIVE, version: 1, élève: nomCourant(), créée: new Date().toISOString(),
             programmes: instant.programmes, dossiers: instant.dossiers
         };
         const blob = new Blob([JSON.stringify(archive, null, 1)], { type: 'application/json' });
@@ -782,7 +809,7 @@ const Pythonerie = (function () {
     // temporaire, historique de la console).
     // ------------------------------------------------------------------
     async function déconnecte() {
-        if (!élève) return;
+        if (utilisateurUnique || !élève) return;
         let instant;
         try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return; }
         let archivé = null;
@@ -842,7 +869,6 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         Pyt.réinitialise();
         changeÉlève(null);
-        cacheBandeauArchive();
         metAJourAnnulation();
         effaceConsole();
         écritConsole('— Au revoir, ' + ancien + ' ! L\'espace a été vidé.', 'info');
@@ -869,15 +895,27 @@ const Pythonerie = (function () {
         });
         const nb = Object.keys(instant.programmes).length;
         const auteur = archive.élève ? ' de ' + archive.élève : '';
-        if (!confirm('Charger l\'archive' + auteur + ' (' + nb + ' programmes) ?\n\n'
-            + 'Elle remplace TOUS les programmes en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return;
-        // sauvegarde temporaire des programmes en cours, pour pouvoir annuler
-        try {
-            const avant = await instantané();
-            localStorage.setItem(CLÉ_SAUVEGARDE, JSON.stringify({ élève, date: new Date().toISOString(), ...avant }));
-        } catch (e) {
-            écritConsole('Chargement abandonné : impossible de sauvegarder les programmes en cours (' + e.message + ').', 'erreur');
+        let avant;
+        try { avant = await instantané(); } catch (e) {
+            écritConsole('Chargement abandonné : impossible de lire les programmes en cours (' + e.message + ').', 'erreur');
             return;
+        }
+        // Rien à perdre (aucun programme, ou le programme d'accueil intact) :
+        // ni avertissement, ni sauvegarde temporaire
+        const àProtéger = !espaceVide(avant);
+        if (àProtéger) {
+            if (!confirm('Charger l\'archive' + auteur + ' (' + nb + ' programmes) ?\n\n'
+                + 'Elle remplace TOUS les programmes en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return;
+            // sauvegarde temporaire des programmes en cours, pour pouvoir annuler
+            try {
+                localStorage.setItem(CLÉ_SAUVEGARDE, JSON.stringify({ élève, date: new Date().toISOString(), ...avant }));
+            } catch (e) {
+                écritConsole('Chargement abandonné : impossible de sauvegarder les programmes en cours (' + e.message + ').', 'erreur');
+                return;
+            }
+        } else {
+            // une ancienne sauvegarde ne correspond plus à rien : « Annuler » ne doit pas la ramener
+            try { localStorage.removeItem(CLÉ_SAUVEGARDE); } catch (e) { /* rien */ }
         }
         try {
             await remplaceTout(instant);
@@ -885,9 +923,10 @@ const Pythonerie = (function () {
         } catch (e) {
             écritConsole('Erreur pendant le chargement de l\'archive : ' + e.message + '. Utilise « Annuler le chargement ».', 'erreur');
         }
-        // l'archive appartient peut-être à un autre élève : on se déconnecte
-        changeÉlève(null);
-        afficheBandeauArchive('Archive' + auteur + ' chargée : ' + nb + ' programmes. Tape ton nom (👤 en haut) pour exécuter du code.');
+        // Des programmes ont été remplacés : l'archive appartient peut-être à un autre élève,
+        // on déconnecte (le nom sera redemandé à la prochaine exécution). Si l'espace était
+        // vide, l'élève connecté vient simplement de charger son archive : il reste connecté.
+        if (àProtéger) changeÉlève(null);
         metAJourAnnulation();
     }
 
@@ -907,35 +946,12 @@ const Pythonerie = (function () {
         }
         try { localStorage.removeItem(CLÉ_SAUVEGARDE); } catch (e) { /* rien */ }
         changeÉlève(avant.élève || null);
-        cacheBandeauArchive();
         metAJourAnnulation();
         écritConsole('— Les programmes d\'avant le chargement sont revenus.', 'info');
     }
 
     function metAJourAnnulation() {
         $('btnAnnuleArchive').disabled = !sauvegardeTemporaire();
-    }
-
-    function afficheBandeauArchive(message) {
-        const bandeau = $('bandeauArchive');
-        bandeau.innerHTML = '';
-        const texte = document.createElement('span');
-        texte.textContent = message;
-        const annuler = document.createElement('button');
-        annuler.className = 'btn btn-secondaire btn-petit';
-        annuler.textContent = '↶ Annuler le chargement';
-        annuler.addEventListener('click', annuleArchive);
-        const fermer = document.createElement('button');
-        fermer.className = 'btn btn-secondaire btn-petit';
-        fermer.textContent = '✕';
-        fermer.title = 'Fermer ce message (l\'annulation reste possible dans le menu ☰)';
-        fermer.addEventListener('click', cacheBandeauArchive);
-        bandeau.append(texte, annuler, fermer);
-        bandeau.hidden = false;
-    }
-
-    function cacheBandeauArchive() {
-        $('bandeauArchive').hidden = true;
     }
 
     async function choisitStockage() {
@@ -1737,6 +1753,7 @@ const Pythonerie = (function () {
             if (f) chargeArchive(f);
         });
         $('btnAnnuleArchive').addEventListener('click', annuleArchive);
+        $('btnUtilisateurUnique').addEventListener('click', basculeUtilisateurUnique);
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });

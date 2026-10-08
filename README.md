@@ -80,8 +80,9 @@ Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, 
 ## Les programmes de l'élève
 
 - En ligne, les programmes sont conservés dans le navigateur de l'élève.
-- Le bouton **👤** en haut de l'écran affiche le nom de l'élève (« inconnu » au départ). Il faut le taper pour exécuter du code. Il est oublié quand on ferme l'onglet, ce qui convient aux ordinateurs partagés. Un deuxième clic sur **👤** déconnecte l'élève : si ses programmes ont changé depuis sa dernière archive (ou s'il n'en a jamais créé), la Pythonerie lui propose d'en créer une. Ensuite, tout son espace est vidé : programmes, répertoires, sauvegarde temporaire et historique de la console.
-- Pour partager un environnement, le menu ☰ propose de **créer une archive** : un fichier `nom_aaaa_mm_jj_hh_MM.json` qui contient tous les programmes et les répertoires, enregistré dans le dossier Téléchargements. **Charger une archive** remplace tous les programmes en cours par ceux de l'archive et déconnecte l'élève. Les programmes précédents sont mis de côté : **Annuler le chargement** les fait revenir.
+- Par défaut, la Pythonerie est en mode **Utilisateur unique** : pas de connexion, l'utilisateur s'appelle « Unique » et le bouton **👤** est désactivé. Ce mode convient à un ordinateur personnel. Sur un ordinateur partagé, on décoche **Utilisateur unique** dans le menu ☰ : la Pythonerie passe en mode **plusieurs élèves**, et chacun doit taper son nom. Ce choix est gardé dans le navigateur.
+- En mode plusieurs élèves, le bouton **👤** en haut de l'écran affiche le nom de l'élève (« inconnu » au départ). Il faut le taper pour exécuter du code. Il est oublié quand on ferme l'onglet, ce qui convient aux ordinateurs partagés. Un deuxième clic sur **👤** déconnecte l'élève : si ses programmes ont changé depuis sa dernière archive (ou s'il n'en a jamais créé), la Pythonerie lui propose d'en créer une. Ensuite, tout son espace est vidé : programmes, répertoires, sauvegarde temporaire et historique de la console.
+- Pour partager un environnement, le menu ☰ propose de **créer une archive** : un fichier `nom_aaaa_mm_jj_hh_MM.json` qui contient tous les programmes et les répertoires, enregistré dans le dossier Téléchargements. **Charger une archive** remplace tous les programmes en cours par ceux de l'archive. En mode plusieurs élèves, si l'espace contenait déjà des programmes, l'élève est déconnecté (son nom sera redemandé à la prochaine exécution) ; si l'espace était vide, il reste connecté. S'il y avait des programmes, ils sont mis de côté, après confirmation : **Annuler le chargement** les fait revenir. Si l'espace était vide (ou ne contenait que le programme d'accueil), l'archive est chargée directement.
 - On les range dans des répertoires et on les déplace en les faisant glisser. Au survol d'un programme, on peut le renommer, l'exporter dans un fichier `.py` ou le supprimer. Pour en supprimer plusieurs à la fois, on les choisit avec Cmd+clic ou Ctrl+clic (un par un) ou Maj+clic (une suite), puis on clique sur **Supprimer** dans le bandeau, ou on appuie sur la touche Suppr. Le menu ☰ permet aussi de copier un programme ou d'importer des fichiers `.py`.
 
 ## Utiliser la Pythonerie sur sa machine
@@ -104,6 +105,20 @@ Options :
 ## Comment ça marche
 
 Le programme de l'élève est traduit en **LispE**, le langage qui est réellement exécuté, directement dans le navigateur. Rien n'est envoyé à un serveur. Le bouton **λ LispE**, au-dessus de l'éditeur, montre le code LispE produit, pour les curieux.
+
+## Protection des données (RGPD)
+
+La Pythonerie est parfaitement compatible avec le **RGPD** européen et avec ses équivalents canadiens, la **LPRPDE** (loi fédérale) et la **Loi 25** du Québec, pour une raison simple : tout s'exécute dans le navigateur. Une fois la page chargée, rien ne transite par le réseau.
+
+- **Aucune donnée n'est envoyée** : les programmes, le nom de l'élève et l'historique de la console restent dans le navigateur de l'ordinateur. Aucun serveur ne les reçoit, aucun compte n'est créé.
+- **Aucun pistage** : ni cookie, ni mesure d'audience, ni publicité, ni service tiers. L'éditeur et les polices de caractères sont fournis par le site lui-même, sans appel à un autre site (pas de Google Fonts, pas de CDN).
+- **Le nom de l'élève** n'est qu'une étiquette : il sert à nommer les archives. Il est oublié à la fermeture de l'onglet, et la déconnexion efface tout l'espace de l'élève.
+- **Les archives** sont des fichiers enregistrés sur l'ordinateur, dans le dossier Téléchargements. C'est l'élève ou l'enseignant qui décide de les transmettre.
+
+Deux remarques pour les établissements :
+
+- Comme pour toute page web, l'hébergeur du site (GitHub Pages) voit passer l'adresse de l'ordinateur au moment où la page est téléchargée. Pour l'éviter, on peut lancer la Pythonerie sur une machine de l'établissement (voir [Utiliser la Pythonerie sur sa machine](#utiliser-la-pythonerie-sur-sa-machine)) : les programmes sont alors enregistrés sur cette machine, et nulle part ailleurs.
+- Un programme qui charge une image ou un son depuis une adresse `https://…` d'un autre site contacte ce site. Les exemples fournis n'utilisent que des fichiers de la Pythonerie.
 
 ## Limites connues
 

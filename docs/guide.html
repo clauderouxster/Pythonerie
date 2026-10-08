@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mode d'emploi de la Pythonerie</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b35c2a'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3EP%3C/text%3E%3C/svg%3E">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="vendor/fonts/polices.css" rel="stylesheet">
     <style>
         :root {
             --fond: #f5f0e8;
@@ -259,6 +259,7 @@
                 <a href="#souris">🖱️ Souris et clavier</a>
                 <a href="#medias">🖼️ Images et sons</a>
                 <a href="#ranger">🗂️ Ranger tes programmes</a>
+                <a href="#donnees">🔒 Tes programmes restent chez toi</a>
                 <a href="#astuces">💡 Astuces</a>
                 <div class="groupe">Glossaire</div>
                 <a href="#glossaire">📖 Tous les mots</a>
@@ -708,7 +709,11 @@ joue_son(ding)</pre></div>
                     <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer un fichier.</li>
                 </ul>
                 <h3>👤 Dire qui tu es</h3>
-                <p>En haut à droite, le bouton <b>👤</b> montre ton nom. Au début, il affiche <i>inconnu</i>.
+                <p>Au départ, la Pythonerie est en mode <b>Utilisateur unique</b>&nbsp;: le bouton <b>👤</b>, en haut à droite,
+                    affiche <i>Unique</i> et tu n'as pas besoin de dire qui tu es. C'est pratique sur ton ordinateur à toi.</p>
+                <p>Si plusieurs élèves se servent du même ordinateur, ouvre le menu <b>☰</b> et décoche
+                    <b>☑ Utilisateur unique</b>. Chaque élève doit alors taper son nom&nbsp;:</p>
+                <p>Le bouton <b>👤</b> montre ton nom. Au début, il affiche <i>inconnu</i>.
                     Clique dessus et tape ton nom (ou l'identifiant que t'a donné ton enseignant).
                     Il faut l'avoir tapé pour exécuter un programme&nbsp;: sinon, la Pythonerie te le demande.</p>
                 <p>Quand tu as fini, clique de nouveau sur <b>👤</b> pour te <b>déconnecter</b>. Tous tes programmes sont
@@ -722,9 +727,30 @@ joue_son(ding)</pre></div>
                         <code>Léa_2026_10_08_14_30.json</code>&nbsp;: ton nom, puis l'année, le mois, le jour, l'heure et la minute.
                         Tu le trouves dans le dossier <b>Téléchargements</b>.</li>
                     <li>Pour ouvrir une archive, choisis <b>📥 Charger une archive…</b>. Attention&nbsp;: elle <b>remplace</b>
-                        tous les programmes qui sont dans la Pythonerie. Ton nom est aussi effacé&nbsp;: tape-le de nouveau.</li>
-                    <li>Tu t'es trompé&nbsp;? Clique sur <b>↶ Annuler le chargement</b>&nbsp;: tes programmes d'avant reviennent.</li>
+                        tous les programmes qui sont dans la Pythonerie. Si plusieurs élèves partagent l'ordinateur et qu'il y avait déjà des programmes, ton nom est aussi effacé&nbsp;: la Pythonerie te le redemandera quand tu exécuteras un programme.</li>
+                    <li>Tu t'es trompé&nbsp;? Dans le menu <b>☰</b>, choisis <b>↶ Annuler le chargement de l'archive</b>&nbsp;: tes programmes d'avant reviennent.</li>
                 </ul>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="donnees">
+                <h2>🔒 Tes programmes restent chez toi</h2>
+                <p>La Pythonerie fonctionne <b>entièrement dans ton navigateur</b>. Une fois la page ouverte, rien ne part
+                    sur Internet&nbsp;: tes programmes et ton nom restent sur l'ordinateur. Personne d'autre ne les voit,
+                    sauf si tu donnes toi-même une archive à quelqu'un.</p>
+                <p>Il n'y a pas de compte à créer, pas de publicité et pas de cookie qui te suit.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">👪 Pour les parents et les enseignants</p>
+                    <p>La Pythonerie est parfaitement compatible avec
+                    le RGPD européen et avec ses équivalents canadiens, la LPRPDE et la Loi&nbsp;25 du Québec. Tout s'exécute dans
+                    le navigateur&nbsp;: une fois la page chargée, rien ne transite par le réseau. Aucune donnée n'est envoyée à un
+                    serveur, il n'y a ni cookie, ni mesure d'audience, ni service tiers (l'éditeur et les polices de caractères sont
+                    fournis par le site lui-même). Le nom de l'élève sert seulement à nommer les archives&nbsp;; il est oublié
+                    à la fermeture de l'onglet. Comme pour toute page web, l'hébergeur du site voit l'adresse de l'ordinateur au
+                    moment du téléchargement de la page&nbsp;; pour l'éviter, on peut installer la Pythonerie sur une machine de
+                    l'établissement (voir le fichier README du projet). Enfin, un programme qui charge une image ou un son depuis
+                    l'adresse d'un autre site contacte ce site.</p>
+                </div>
             </section>
 
             <!-- ================================================================ -->

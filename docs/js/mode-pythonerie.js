@@ -103,7 +103,13 @@ const PYTHONERIE_FONCTIONS = {
     'arrête': 'arrête() — arrête les animations',
     'quand_clic': 'quand_clic(fonction) — appelle fonction(x, y) à chaque clic',
     'quand_souris': 'quand_souris(fonction) — appelle fonction(x, y) quand la souris bouge',
-    'quand_touche': 'quand_touche(fonction) — appelle fonction(touche) à chaque touche'
+    'quand_touche': 'quand_touche(fonction) — appelle fonction(touche) à chaque touche',
+    'quand_glisse': 'quand_glisse(fonction) — appelle fonction(x, y) quand la souris bouge avec le bouton appuyé',
+    // Images et sons
+    'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',
+    'place_image': 'place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) — dessine l\'image',
+    'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
+    'joue_son': 'joue_son(numéro) — joue le son'
 };
 
 // Pour la complétion seulement : taper « mel » propose « mélange »

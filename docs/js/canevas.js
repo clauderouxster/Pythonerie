@@ -28,7 +28,24 @@ const Pyt = (function () {
     let canevas = null, ctx = null, couche = null, ctxTortue = null;
     let état = null, tortue = null;
     let minuteries = [];
-    let gestionnaires = { clic: null, souris: null, touche: null };
+    let gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+    // Images et sons chargés par le programme : charge_image et charge_son renvoient leur numéro
+    let images = [];
+    let sons = [];
+    let enLecture = [];        // lecteurs <audio> en cours (solution de repli)
+    let sourcesActives = [];   // sons Web Audio en cours
+    let audio = null;
+    // Le contexte Web Audio est créé au premier son (pendant le clic sur « Exécuter »)
+    function contexteAudio() {
+        if (!audio) {
+            const Contexte = window.AudioContext || window.webkitAudioContext;
+            if (Contexte) audio = new Contexte({ latencyHint: 'interactive' });
+        }
+        return audio;
+    }
+    // Augmente à chaque efface() ou fond() : une image qui finit de se charger après
+    // un effacement n'est plus dessinée
+    let génération = 0;
     // Fonction fournie par l'application pour exécuter du LispE : rappel(code)
     let rappel = null;
     let dessinTortuePrévu = false;
@@ -127,19 +144,29 @@ const Pyt = (function () {
         return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
     }
 
+    function signaleErreur(message) {
+        if (window.Pythonerie && window.Pythonerie.erreur) window.Pythonerie.erreur(message);
+        else console.error(message);
+    }
+
     function installeÉvénements() {
-        couche.addEventListener('mousedown', (ev) => {
+        // Événements « pointer » : la souris, mais aussi le doigt sur une tablette
+        couche.addEventListener('pointerdown', (ev) => {
+            // on garde le pointeur même s'il sort du canevas pendant un glissé
+            if (couche.setPointerCapture) couche.setPointerCapture(ev.pointerId);
             if (!gestionnaires.clic) return;
             const p = positionSouris(ev);
             appelle(gestionnaires.clic, [p.x, p.y]);
         });
-        couche.addEventListener('mousemove', (ev) => {
+        couche.addEventListener('pointermove', (ev) => {
             const p = positionSouris(ev);
             const aff = document.getElementById('coordonnées');
             if (aff) aff.textContent = 'x : ' + p.x + '   y : ' + p.y;
             if (gestionnaires.souris) appelle(gestionnaires.souris, [p.x, p.y]);
+            // bouton appuyé (ou doigt posé) : on fait glisser
+            if (gestionnaires.glisse && (ev.buttons & 1)) appelle(gestionnaires.glisse, [p.x, p.y]);
         });
-        couche.addEventListener('mouseleave', () => {
+        couche.addEventListener('pointerleave', () => {
             const aff = document.getElementById('coordonnées');
             if (aff) aff.textContent = '';
         });
@@ -173,7 +200,10 @@ const Pyt = (function () {
         // Avant chaque exécution : on arrête tout et on repart d'une page blanche
         réinitialise() {
             this.arrête();
-            gestionnaires = { clic: null, souris: null, touche: null };
+            this.arrêteSons();
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+            images = [];
+            sons = [];
             état = étatInitial();
             tortue = tortueInitiale();
             this.efface();
@@ -200,6 +230,7 @@ const Pyt = (function () {
 
         // ---------- Styles ----------
         efface() {
+            génération++;
             ctx.save();
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, LARGEUR, HAUTEUR);
@@ -208,6 +239,7 @@ const Pyt = (function () {
             ctx.restore();
         },
         fond(c) {
+            génération++;
             ctx.save();
             ctx.fillStyle = couleurCSS(c);
             ctx.fillRect(0, 0, LARGEUR, HAUTEUR);
@@ -327,6 +359,7 @@ const Pyt = (function () {
         },
         quandClic(nom) { gestionnaires.clic = nom; },
         quandSouris(nom) { gestionnaires.souris = nom; },
+        quandGlisse(nom) { gestionnaires.glisse = nom; },
         quandTouche(nom) { gestionnaires.touche = nom; },
         arrête() {
             minuteries.forEach(clearInterval);
@@ -334,14 +367,117 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
         },
         enCours() {
-            return minuteries.length > 0 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.touche);
+            return minuteries.length > 0 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche);
         },
         stoppeTout() {
             this.arrête();
-            gestionnaires = { clic: null, souris: null, touche: null };
+            this.arrêteSons();
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
         },
 
-        // Image PNG du dessin
+        // ---------- Images ----------
+        // charge_image(adresse) : renvoie le numéro de l'image (0, 1, 2...)
+        chargeImage(adresse) {
+            const img = new Image();
+            const entrée = { img, adresse: String(adresse), erreur: false };
+            img.onerror = () => {
+                entrée.erreur = true;
+                signaleErreur('Erreur : impossible de charger l\'image « ' + entrée.adresse + ' »');
+            };
+            img.src = entrée.adresse;
+            images.push(entrée);
+            return images.length - 1;
+        },
+        // place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) :
+        // (x, y) est le coin en haut à gauche de l'image
+        placeImage(numéro, x, y, l, h) {
+            const entrée = images[numéro];
+            if (!entrée) throw new Error('Image inconnue : ' + numéro + ' (utilise le numéro renvoyé par charge_image)');
+            const dessine = () => {
+                const lg = (l === null || l === undefined) ? entrée.img.naturalWidth : nombre(l);
+                const ht = (h === null || h === undefined) ? entrée.img.naturalHeight * (lg / (entrée.img.naturalWidth || 1)) : nombre(h);
+                ctx.drawImage(entrée.img, nombre(x), nombre(y), lg, ht);
+            };
+            if (entrée.img.complete && entrée.img.naturalWidth > 0) {
+                dessine();
+            } else if (!entrée.erreur) {
+                // pas encore chargée : on la dessine dès qu'elle arrive, sauf si on a effacé entre-temps
+                const gén = génération;
+                entrée.img.addEventListener('load', () => { if (gén === génération) dessine(); }, { once: true });
+            }
+        },
+
+        // ---------- Sons ----------
+        // Les sons passent par l'API Web Audio : chaque son est décodé une fois en mémoire,
+        // puis joué sans délai (un lecteur <audio> met plusieurs dizaines de millisecondes
+        // à démarrer). Si le décodage est impossible (son d'un autre site sans autorisation,
+        // format inconnu), on se replie sur un lecteur <audio>.
+        // charge_son(adresse) : renvoie le numéro du son (0, 1, 2...)
+        chargeSon(adresse) {
+            const nom = String(adresse);
+            const entrée = { nom, tampon: null, élément: null };
+            const créeÉlément = () => {
+                const élément = new Audio();
+                élément.preload = 'auto';
+                élément.onerror = () => {
+                    entrée.introuvable = true;
+                    signaleErreur('Erreur : impossible de charger le son « ' + nom + ' »');
+                };
+                élément.src = nom;
+                entrée.élément = élément;
+            };
+            const ctx = contexteAudio();
+            if (!ctx) {
+                créeÉlément();
+            } else {
+                entrée.prêt = fetch(nom)
+                    .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+                    .then(données => ctx.decodeAudioData(données))
+                    .then(tampon => { entrée.tampon = tampon; })
+                    .catch(() => créeÉlément());
+            }
+            sons.push(entrée);
+            return sons.length - 1;
+        },
+        // joue_son(numéro) : les sons peuvent se superposer (accords, notes répétées)
+        joueSon(numéro) {
+            const entrée = sons[numéro];
+            if (!entrée) throw new Error('Son inconnu : ' + numéro + ' (utilise le numéro renvoyé par charge_son)');
+            const ctx = contexteAudio();
+            if (entrée.tampon && ctx) {
+                // le navigateur suspend l'audio tant qu'on n'a pas cliqué : un clic le réveille
+                if (ctx.state === 'suspended') ctx.resume();
+                const source = ctx.createBufferSource();
+                source.buffer = entrée.tampon;
+                source.connect(ctx.destination);
+                source.onended = () => { sourcesActives = sourcesActives.filter(s => s !== source); };
+                sourcesActives.push(source);
+                source.start();
+            } else if (entrée.élément) {
+                const son = entrée.élément;
+                let lecture = son;
+                if (!son.paused && !son.ended) lecture = son.cloneNode(true);
+                else son.currentTime = 0;
+                enLecture.push(lecture);
+                lecture.onended = () => { enLecture = enLecture.filter(x => x !== lecture); };
+                const promesse = lecture.play();
+                // (un fichier introuvable a déjà été signalé au chargement)
+                if (promesse && promesse.catch) promesse.catch(e => {
+                    if (!entrée.introuvable) signaleErreur('Erreur : le son ne peut pas être joué (' + e.message + ')');
+                });
+            } else if (entrée.prêt) {
+                // pas encore décodé (on vient juste de le charger) : il joue dès qu'il est prêt
+                entrée.prêt.then(() => this.joueSon(numéro));
+            }
+        },
+        arrêteSons() {
+            sourcesActives.forEach(s => { try { s.stop(); } catch (e) { /* déjà fini */ } });
+            sourcesActives = [];
+            enLecture.forEach(x => { try { x.pause(); } catch (e) { /* rien */ } });
+            enLecture = [];
+        },
+
+        // Image PNG du dessin (impossible si une image vient d'un autre site sans autorisation)
         image() { return canevas.toDataURL('image/png'); }
     };
 })();

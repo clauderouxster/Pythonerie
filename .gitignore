@@ -1,0 +1,7 @@
+# Programmes des élèves conservés par serveur.py (données locales)
+programmes/*
+!programmes/.gitkeep
+
+__pycache__/
+*.pyc
+.DS_Store

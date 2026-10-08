@@ -173,7 +173,20 @@
 (defmacro quand_clic (fonction) (block (evaljs (list "Pyt.quandClic" (string (quote fonction)))) nil))
 (defmacro quand_souris (fonction) (block (evaljs (list "Pyt.quandSouris" (string (quote fonction)))) nil))
 (defmacro quand_touche (fonction) (block (evaljs (list "Pyt.quandTouche" (string (quote fonction)))) nil))
+(defmacro quand_glisse (fonction) (block (evaljs (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
 (defun arrête () (evaljs "Pyt.arrête()") nil)
+
+;------------------------------------------------------------------
+; Images et sons
+; charge_image et charge_son renvoient un numéro, à donner ensuite à place_image et joue_son.
+; L'adresse est celle d'un fichier du site (exemples/médias/étoile.svg) ou une adresse
+; complète (https://...).
+;------------------------------------------------------------------
+(defun charge_image (adresse) (integer (evaljs (list "Pyt.chargeImage" (string adresse)))))
+; place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur)
+(defun place_image (image x y (l nil) (h nil)) (evaljs (list "Pyt.placeImage" image x y l h)) nil)
+(defun charge_son (adresse) (integer (evaljs (list "Pyt.chargeSon" (string adresse)))))
+(defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
 
 ;------------------------------------------------------------------
 ; Opérateurs « à la Python »

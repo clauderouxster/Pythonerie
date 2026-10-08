@@ -1161,9 +1161,15 @@ const Pythonerie = (function () {
         afficheLispE();
     }
 
-    function telechargeImage() {
+    function téléchargeImage() {
         const a = document.createElement('a');
-        a.href = Pyt.image();
+        try {
+            a.href = Pyt.image();
+        } catch (e) {
+            // une image chargée depuis un autre site, sans autorisation, « verrouille » le canevas
+            écritConsole('Erreur : impossible d\'enregistrer le dessin, il contient une image venant d\'un autre site.', 'erreur');
+            return;
+        }
         a.download = (courant || 'dessin') + '.png';
         a.click();
     }
@@ -1242,7 +1248,7 @@ const Pythonerie = (function () {
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
-        $('btnImage').addEventListener('click', telechargeImage);
+        $('btnImage').addEventListener('click', téléchargeImage);
         $('btnThème').addEventListener('click', basculeThème);
         $('btnAide').addEventListener('click', () => $('aide').classList.add('visible'));
         $('fermeAide').addEventListener('click', () => $('aide').classList.remove('visible'));
@@ -1307,6 +1313,7 @@ const Pythonerie = (function () {
 
     return {
         démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel,
+        erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
         compile // utile pour les tests depuis la console du navigateur
     };

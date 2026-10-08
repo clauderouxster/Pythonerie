@@ -277,6 +277,18 @@ selon (nom):
                         <td><code>cache_tortue() montre_tortue()</code></td><td>visibilité</td></tr>
                 </table>
 
+                <h3>Images et sons</h3>
+                <table class="table-aide">
+                    <tr><td><code>img = charge_image("exemples/médias/étoile.svg")</code></td><td>charge une image et renvoie son numéro</td>
+                        <td><code>place_image(img, x, y)</code></td><td>dessine l'image, (x, y) est son coin en haut à gauche</td></tr>
+                    <tr><td><code>place_image(img, x, y, l, h)</code></td><td>en choisissant sa largeur et sa hauteur</td>
+                        <td><code>snd = charge_son("exemples/médias/ding.wav")</code></td><td>charge un son et renvoie son numéro</td></tr>
+                    <tr><td><code>joue_son(snd)</code></td><td>joue le son</td>
+                        <td></td><td></td></tr>
+                </table>
+                <p class="note">L'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
+                    Une image d'un autre site s'affiche, mais le bouton « Image » ne peut plus enregistrer le dessin.</p>
+
                 <h3>Animation et interaction</h3>
 <pre class="exemple">x = 0
 couleur_balle = "rouge"
@@ -291,7 +303,7 @@ animer(bouge, 30)       # toutes les 30 millisecondes
 
 fonction clic(cx, cy):
     couleur_balle =: choisis(["rouge", "vert", "bleu"])   # =: modifie la variable du programme
-quand_clic(clic)        # aussi : quand_souris(f), quand_touche(f)</pre>
+quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche(f)</pre>
                 <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
                     écris <code>x =: …</code> pour modifier la variable du programme. <code>x += …</code> modifie
                     directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>

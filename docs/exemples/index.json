@@ -53,5 +53,20 @@
     "fichier": "11_courbe.py",
     "titre": "11. Courbe mathématique",
     "description": "les axes x et y, et la courbe de la fonction courbe(x) sur un intervalle"
+  },
+  {
+    "fichier": "12_images_sons.py",
+    "titre": "12. Images et sons",
+    "description": "charge_image, place_image, charge_son, joue_son"
+  },
+  {
+    "fichier": "13_dessin_souris.py",
+    "titre": "13. Dessiner à la souris",
+    "description": "quand_glisse : dessiner en gardant le bouton appuyé"
+  },
+  {
+    "fichier": "14_piano.py",
+    "titre": "14. Piano",
+    "description": "un piano de trois octaves : souris, glissando et clavier de l'ordinateur"
   }
 ]

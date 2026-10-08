@@ -114,7 +114,8 @@ Le canevas mesure 800 × 600. L'origine est en haut à gauche et y augmente vers
 - Texte : `texte(x, y, message)`, `taille_texte`, `police`.
 - Saisie au clavier : `demande("Ton nom ?")` renvoie un texte, `demande_nombre(...)` un nombre. Les synonymes sont `lire`, `lire_nombre` et `input`. La question s'affiche dans une boîte de dialogue du navigateur.
 - Tortue : `avance`, `recule`, `gauche`, `droite`, `lève_crayon`, `baisse_crayon`, `va_à`, `oriente`, `origine`, `cache_tortue`. La tortue n'apparaît qu'à la première commande de tortue.
-- Animation et événements : `animer(fonction, délai_ms)`, `quand_clic(f)` qui appelle `f(x, y)`, `quand_souris(f)`, `quand_touche(f)` qui appelle `f(touche)`, et `arrête()`.
+- Animation et événements : `animer(fonction, délai_ms)`, `quand_clic(f)` qui appelle `f(x, y)`, `quand_souris(f)`, `quand_glisse(f)` qui appelle `f(x, y)` quand la souris bouge bouton appuyé (ou le doigt sur une tablette), `quand_touche(f)` qui appelle `f(touche)`, et `arrête()`.
+- Images et sons : `img = charge_image(adresse)` et `snd = charge_son(adresse)` renvoient un numéro ; `place_image(img, x, y)` (ou `place_image(img, x, y, largeur, hauteur)`) dessine l'image avec son coin en haut à gauche en (x, y) ; `joue_son(snd)` joue le son. L'adresse est un fichier du site (`exemples/médias/étoile.svg`) ou une adresse complète. Une image encore en chargement est dessinée dès qu'elle arrive, sauf si le canevas a été effacé entre-temps. Les sons passent par l'API Web Audio : ils sont décodés une fois en mémoire au chargement, puis joués sans délai et peuvent se superposer (accords, notes répétées) ; un son qui ne peut pas être décodé (autre site sans autorisation) est joué par un lecteur `<audio>`. Le bouton « Arrêter » coupe aussi les sons.
 
 ## Organisation du répertoire
 
@@ -144,7 +145,8 @@ Pythonerie/
     │   ├── transpiler.lisp arbre → LispE, indentation → balises de fin, règles Python
     │   ├── bibliothèque.lisp fonctions françaises et liaisons vers le canevas
     │   └── français.lisp   noms français des instructions LispE (link)
-    └── exemples/           dix exemples progressifs (index.json)
+    └── exemples/           quatorze exemples progressifs (index.json)
+        └── médias/         l'image et les sons des exemples (piano/ : les 36 notes, de do3 à si5)
 ```
 
 ### API de serveur.py

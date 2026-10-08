@@ -257,6 +257,7 @@
                 <a href="#tortue">🐢 La tortue</a>
                 <a href="#animer">🎬 Animer</a>
                 <a href="#souris">🖱️ Souris et clavier</a>
+                <a href="#medias">🖼️ Images et sons</a>
                 <a href="#ranger">🗂️ Ranger tes programmes</a>
                 <a href="#astuces">💡 Astuces</a>
                 <div class="groupe">Glossaire</div>
@@ -656,6 +657,39 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <code>"ArrowLeft"</code>, <code>"ArrowRight"</code>, <code>"ArrowUp"</code>, <code>"ArrowDown"</code> pour les flèches,
                     <code>" "</code> pour la barre d'espace, <code>"a"</code> pour la lettre a…
                     Clique d'abord sur le canevas, puis appuie sur les touches.</p>
+                <h3>Dessiner en faisant glisser la souris</h3>
+                <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris
+                    <b>en gardant le bouton appuyé</b> (ou ton doigt posé, sur une tablette).</p>
+                <div class="exemple"><pre data-essai>fonction peint(x, y):
+    couleur("violet")
+    disque(x, y, 6)
+
+quand_glisse(peint)    # appuie, et fais glisser la souris sur le canevas</pre></div>
+                <p>Ouvre l'exemple <b>13. Dessiner à la souris</b> pour un vrai petit logiciel de dessin.</p>
+            </section>
+
+            <!-- ================================================================ -->
+            <section id="medias">
+                <h2>🖼️ Images et sons</h2>
+                <p>Ton programme peut aussi montrer des images et jouer des sons. Il faut d'abord les <b>charger</b>,
+                    en donnant leur <b>adresse</b>&nbsp;: le nom d'un fichier de la Pythonerie, ou une adresse Internet
+                    qui commence par <code>https://</code>.</p>
+                <p>Le chargement te donne un <b>numéro</b>. Range-le dans une boîte&nbsp;: c'est grâce à lui
+                    que tu retrouves ton image ou ton son.</p>
+                <div class="exemple"><pre data-essai>étoile = charge_image("exemples/médias/étoile.svg")
+ding = charge_son("exemples/médias/ding.wav")
+
+fond("bleu marine")
+place_image(étoile, 100, 100)            # le coin en haut à gauche est en (100, 100)
+place_image(étoile, 300, 100, 200, 200)  # en plus grand : 200 de large, 200 de haut
+joue_son(ding)</pre></div>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Bon à savoir</p>
+                    <p>Une image met parfois un petit moment à arriver. Si tu la places tout de suite,
+                        elle s'affiche dès qu'elle est prête.</p>
+                    <p>Ouvre l'exemple <b>12. Images et sons</b>&nbsp;: chaque clic allume une étoile avec un petit bruit.
+                        Et l'exemple <b>14. Piano</b> te donne un vrai piano de trois octaves&nbsp;! 🎹</p>
+                </div>
             </section>
 
             <!-- ================================================================ -->
@@ -830,6 +864,16 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <tr><td><code>cap()</code></td><td>dans quelle direction regarde la tortue (en degrés)</td><td class="ex"><code>cap()</code></td></tr>
                 </table>
 
+                <h3 id="g-medias">Images et sons</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>charge_image(adresse)</code></td><td>charge une image et donne son numéro</td><td class="ex"><code>img = charge_image("exemples/médias/étoile.svg")</code></td></tr>
+                    <tr><td><code>place_image(numéro, x, y)</code></td><td>dessine l'image&nbsp;; (x, y) est son coin en haut à gauche</td><td class="ex"><code>place_image(img, 100, 50)</code></td></tr>
+                    <tr><td><code>place_image(numéro, x, y, largeur, hauteur)</code></td><td>dessine l'image à la taille choisie</td><td class="ex"><code>place_image(img, 0, 0, 80, 80)</code></td></tr>
+                    <tr><td><code>charge_son(adresse)</code></td><td>charge un son et donne son numéro</td><td class="ex"><code>snd = charge_son("exemples/médias/ding.wav")</code></td></tr>
+                    <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
+                </table>
+
                 <h3 id="g-animation">Animation, souris et clavier</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
@@ -837,6 +881,7 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <tr><td><code>arrête()</code></td><td>arrête l'animation</td><td class="ex"><code>arrête()</code></td></tr>
                     <tr><td><code>quand_clic(f)</code></td><td>appelle f(x, y) à chaque clic sur le canevas</td><td class="ex"><code>quand_clic(clic)</code></td></tr>
                     <tr><td><code>quand_souris(f)</code></td><td>appelle f(x, y) quand la souris bouge sur le canevas</td><td class="ex"><code>quand_souris(suit)</code></td></tr>
+                    <tr><td><code>quand_glisse(f)</code></td><td>appelle f(x, y) quand la souris bouge en gardant le bouton appuyé</td><td class="ex"><code>quand_glisse(peint)</code></td></tr>
                     <tr><td><code>quand_touche(f)</code></td><td>appelle f(touche) quand on appuie sur une touche</td><td class="ex"><code>quand_touche(touche)</code></td></tr>
                 </table>
                 </div>

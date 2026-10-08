@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Une étoile souriante pour les exemples de la Pythonerie -->
+  <path d="M60 6 L75 42 L114 45 L84 70 L93 108 L60 88 L27 108 L36 70 L6 45 L45 42 Z"
+        fill="#ffd54f" stroke="#e6a100" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="49" cy="58" r="5" fill="#5a3d12"/>
+  <circle cx="71" cy="58" r="5" fill="#5a3d12"/>
+  <path d="M48 72 Q60 84 72 72" fill="none" stroke="#5a3d12" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -51,6 +51,7 @@
 (defun entier (x) (integer x))
 (defun réel (x) (float x))
 (defun chaîne (x) (_texte x))
+(defun chaine (x) (_texte x))
 (defun type_de (x) (type x))
 
 ; intervalle(5) -> [0,1,2,3,4] ; intervalle(2, 5) -> [2,3,4] ; intervalle(0, 10, 2)
@@ -143,7 +144,8 @@
 (defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) nil)
 (defun police (nom) (evaljs (list "Pyt.police" nom)) nil)
 
-; Dimensions du canevas
+; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)
+; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
 (defun largeur () (float (evaljs "Pyt.largeur()")))
 (defun hauteur () (float (evaljs "Pyt.hauteur()")))
 
@@ -190,30 +192,40 @@
 
 ;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
-; lit_fichier(nom) : contenu d'un fichier du disque, que l'élève choisit dans une fenêtre
-; (le programme est relancé une fois le fichier choisi), ou d'une adresse https://...
+; lit_fichier() : contenu d'un fichier du disque, que l'élève choisit dans une fenêtre
+; (le programme est relancé une fois le fichier choisi) ;
+; lit_fichier("https://...") : le texte d'une adresse Internet.
 ; écrit_fichier(nom, texte) : le fichier est téléchargé (dossier Téléchargements).
 ;------------------------------------------------------------------
-; Une erreur côté navigateur (fichier absent, nom invalide) devient une erreur du
+; Une erreur côté navigateur (fichier absent, nom invalide, taille impossible) devient une erreur du
 ; programme, que l'élève peut attraper avec essaie / sauf.
-(defun _erreur_fichier ()
-   (setq e (evaljs "Pyt.erreurFichier()"))
+(defun _erreur_navigateur ()
+   (setq e (evaljs "Pyt.dernièreErreur()"))
    (if (!= e "") (throw e)))
 
-(defun lit_fichier (nom)
-   (setq contenu (evaljs (list "Pyt.litFichier" (string nom))))
-   (_erreur_fichier)
+(defun lit_fichier ((adresse nil))
+   (setq contenu
+      (if (nullp adresse)
+         (evaljs "Pyt.litFichier()")
+         (evaljs (list "Pyt.litFichier" (string adresse)))))
+   (_erreur_navigateur)
    contenu)
+
+; canevas(largeur, hauteur) : nouvelle taille du canevas (efface le dessin)
+(defun canevas (l h)
+   (evaljs (list "Pyt.canevas" l h))
+   (_erreur_navigateur)
+   nil)
 
 ; charge_données(nom) : un fichier du répertoire Matériels du site (matériel de cours)
 (defun charge_données (nom)
    (setq contenu (evaljs (list "Pyt.chargeDonnées" (string nom))))
-   (_erreur_fichier)
+   (_erreur_navigateur)
    contenu)
 
 (defun écrit_fichier (nom texte)
    (evaljs (list "Pyt.écritFichier" (string nom) (_texte texte)))
-   (_erreur_fichier)
+   (_erreur_navigateur)
    nil)
 
 ;------------------------------------------------------------------

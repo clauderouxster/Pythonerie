@@ -5,14 +5,18 @@
 // (voir basic/bibliothèque.lisp) : (evaljs (list "Pyt.cercle" x y r false))
 // exécute en JavaScript : Pyt.cercle(x, y, r, false);
 //
-// Le canevas a une taille logique fixe (LARGEUR x HAUTEUR) ; il est mis à
+// Le canevas a une taille logique (LARGEUR x HAUTEUR, 800 x 600 sauf appel à canevas) ; il est mis à
 // l'échelle à l'écran. L'origine (0, 0) est en haut à gauche, y vers le bas.
 // Une seconde couche transparente affiche la tortue sans laisser de trace.
 // =====================================================================
 
 const Pyt = (function () {
-    const LARGEUR = 800;
-    const HAUTEUR = 600;
+    // 800 x 600 par défaut ; canevas(largeur, hauteur) la change pour le programme en cours
+    const LARGEUR_DÉFAUT = 800;
+    const HAUTEUR_DÉFAUT = 600;
+    const TAILLE_MAX = 4000;
+    let LARGEUR = LARGEUR_DÉFAUT;
+    let HAUTEUR = HAUTEUR_DÉFAUT;
 
     // Couleurs en français (toute couleur CSS reste utilisable : "#ff8800", "rgb(...)")
     const COULEURS = {
@@ -155,7 +159,18 @@ const Pyt = (function () {
         }
     }
 
-    let erreurFichier = '';
+    let dernièreErreur = '';
+
+    // Taille logique des deux calques ; le cadre suit les proportions (voir style.css)
+    function dimensionne(lg, ht) {
+        LARGEUR = lg;
+        HAUTEUR = ht;
+        if (canevas.width !== lg) canevas.width = couche.width = lg;
+        if (canevas.height !== ht) canevas.height = couche.height = ht;
+        canevas.parentElement.style.aspectRatio = lg + ' / ' + ht;
+        const étiquette = document.getElementById('tailleCanevas');
+        if (étiquette) étiquette.textContent = lg + ' × ' + ht;
+    }
 
     function signaleErreur(message) {
         if (window.Pythonerie && window.Pythonerie.erreur) window.Pythonerie.erreur(message);
@@ -195,14 +210,12 @@ const Pyt = (function () {
 
     // ================= API publique =================
     return {
-        LARGEUR, HAUTEUR, COULEURS,
+        COULEURS,
 
         // Appelé une fois par l'application
         installe(élémentCanevas, élémentCouche, fonctionRappel) {
             canevas = élémentCanevas;
             couche = élémentCouche;
-            canevas.width = couche.width = LARGEUR;
-            canevas.height = couche.height = HAUTEUR;
             ctx = canevas.getContext('2d');
             ctxTortue = couche.getContext('2d');
             rappel = fonctionRappel;
@@ -217,6 +230,7 @@ const Pyt = (function () {
 
         // Avant chaque exécution : on arrête tout et on repart d'une page blanche
         réinitialise() {
+            dimensionne(LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT);
             this.arrête();
             this.arrêteSons();
             gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
@@ -328,6 +342,22 @@ const Pyt = (function () {
         tailleTexte(n) { état.taille = Math.max(4, nombre(n, 20)); },
         police(nom) { état.police = String(nom || 'Inter, sans-serif'); },
 
+        // canevas(largeur, hauteur) : change la taille du canevas (le dessin est effacé et
+        // la tortue revient au centre). À chaque exécution, il reprend sa taille de 800 x 600.
+        canevas(l, h) {
+            dernièreErreur = '';
+            const lg = Math.round(nombre(l, NaN)), ht = Math.round(nombre(h, NaN));
+            if (!(lg >= 1 && lg <= TAILLE_MAX && ht >= 1 && ht <= TAILLE_MAX)) {
+                dernièreErreur = 'canevas : la largeur et la hauteur sont des nombres entre 1 et ' + TAILLE_MAX
+                    + ' (« ' + l + ' », « ' + h + ' »)';
+                return;
+            }
+            dimensionne(lg, ht);
+            const t = tortueInitiale();
+            tortue.x = t.x; tortue.y = t.y; tortue.cap = t.cap;
+            this.efface();
+            prévoitTortue();
+        },
         largeur() { return LARGEUR; },
         hauteur() { return HAUTEUR; },
 
@@ -394,27 +424,33 @@ const Pyt = (function () {
         },
 
         // ---------- Fichiers ----------
-        // lit_fichier(nom) : un fichier du disque, choisi par l'élève (voir pythonerie.js),
-        // ou une adresse complète https://... (lecture synchrone : le programme attend)
-        litFichier(nom) {
-            erreurFichier = '';
-            nom = String(nom).normalize('NFC');
-            if (!/^https?:\/\//i.test(nom)) {
-                const r = window.Pythonerie.litFichierLocal(nom);
-                if (r.erreur) { erreurFichier = r.erreur; return ''; }
+        // lit_fichier() : un fichier du disque, choisi par l'élève (voir pythonerie.js)
+        // lit_fichier("https://...") : le texte d'une adresse Internet (lecture synchrone :
+        // le programme attend ; le site doit autoriser la lecture depuis une autre page)
+        litFichier(adresse) {
+            dernièreErreur = '';
+            if (adresse === undefined || adresse === null) {
+                const r = window.Pythonerie.litFichierLocal();
+                if (r.erreur) { dernièreErreur = r.erreur; return ''; }
                 return r.contenu;
+            }
+            adresse = String(adresse).normalize('NFC').trim();
+            if (!/^https:\/\/[^\s]+$/i.test(adresse)) {
+                dernièreErreur = 'lit_fichier : l\'adresse doit commencer par https:// (« ' + adresse + ' »). '
+                    + 'Pour un fichier de ton ordinateur, écris lit_fichier() sans rien entre les parenthèses.';
+                return '';
             }
             const requête = new XMLHttpRequest();
             try {
-                requête.open('GET', nom, false);
+                requête.open('GET', adresse, false);
                 requête.overrideMimeType('text/plain; charset=utf-8');
                 requête.send();
             } catch (e) {
-                erreurFichier = 'impossible de lire « ' + nom + ' »';
+                dernièreErreur = 'impossible de lire « ' + adresse + ' » (pas de connexion, ou le site refuse d\'être lu par une autre page)';
                 return '';
             }
             if (requête.status !== 200) {
-                erreurFichier = 'fichier introuvable : « ' + nom + ' »';
+                dernièreErreur = 'impossible de lire « ' + adresse + ' » (erreur ' + requête.status + ')';
                 return '';
             }
             return requête.responseText.normalize('NFC');
@@ -422,10 +458,10 @@ const Pyt = (function () {
         // écrit_fichier(nom, texte) : téléchargé dans le dossier Téléchargements,
         // ce qui fonctionne partout (en ligne, avec serveur.py, sur une tablette)
         écritFichier(nom, texte) {
-            erreurFichier = '';
+            dernièreErreur = '';
             nom = String(nom).normalize('NFC').trim();
             if (!nom || /[\\/:*?"<>|]/.test(nom) || nom.startsWith('.')) {
-                erreurFichier = 'nom de fichier invalide : « ' + nom + ' » (un simple nom, sans répertoire)';
+                dernièreErreur = 'nom de fichier invalide : « ' + nom + ' » (un simple nom, sans répertoire)';
                 return;
             }
             if (!nom.includes('.')) nom += '.txt';
@@ -436,16 +472,16 @@ const Pyt = (function () {
             a.click();
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         },
-        // le message de la dernière erreur de lit_fichier / écrit_fichier ('' si tout va bien)
-        erreurFichier() {
-            return erreurFichier;
+        // le message de la dernière erreur (lit_fichier, écrit_fichier, canevas...) ; '' si tout va bien
+        dernièreErreur() {
+            return dernièreErreur;
         },
 
         // charge_données(nom) : un fichier du répertoire Matériels (voir pythonerie.js)
         chargeDonnées(nom) {
-            erreurFichier = '';
+            dernièreErreur = '';
             const r = window.Pythonerie.chargeDonnées(nom);
-            if (r.erreur) { erreurFichier = r.erreur; return ''; }
+            if (r.erreur) { dernièreErreur = r.erreur; return ''; }
             return r.contenu;
         },
 

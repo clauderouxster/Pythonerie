@@ -81,8 +81,9 @@ const PYTHONERIE_FONCTIONS = {
     'texte': 'texte(x, y, message) — écrit dans le canevas',
     'taille_texte': 'taille_texte(n) — taille des lettres en pixels',
     'police': 'police(nom) — "serif", "monospace", "Comic Sans MS"...',
-    'largeur': 'largeur() — largeur du canevas (800)',
-    'hauteur': 'hauteur() — hauteur du canevas (600)',
+    'canevas': 'canevas(largeur, hauteur) — change la taille du canevas (800 × 600 sinon)',
+    'largeur': 'largeur() — largeur du canevas (800 au départ)',
+    'hauteur': 'hauteur() — hauteur du canevas (600 au départ)',
     // Tortue
     'avance': 'avance(distance) — la tortue avance',
     'recule': 'recule(distance) — la tortue recule',
@@ -111,7 +112,7 @@ const PYTHONERIE_FONCTIONS = {
     'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
     'joue_son': 'joue_son(numéro) — joue le son',
     'charge_données': 'charge_données(nom) — texte d\'un fichier du répertoire Matériels',
-    'lit_fichier': 'lit_fichier(nom) — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre',
+    'lit_fichier': 'lit_fichier() — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre ; lit_fichier("https://…") — texte d\'une adresse Internet',
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements'
 };
 

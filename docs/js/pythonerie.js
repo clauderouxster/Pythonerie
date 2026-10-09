@@ -301,7 +301,10 @@ const Pythonerie = (function () {
         if (relancé !== true) {
             écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
             fichiersÉcrits = new Set();
+            lecture = { fichiers: [], rang: 0 };
         }
+        lecture.rang = 0;
+        fichierDemandé = false;
         const c = compileConsole(code);
         if (c.erreur) { écritConsole(c.erreur, 'erreur'); return; }
         try {
@@ -315,15 +318,17 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // lit_fichier(nom) : un fichier du disque de l'élève. Le navigateur ne peut le lire
+    // lit_fichier() : un fichier du disque de l'élève. Le navigateur ne peut le lire
     // que si l'élève le choisit lui-même, et le programme ne peut pas attendre ce choix :
-    // au premier lit_fichier d'un nom, le programme s'arrête, la fenêtre de sélection
-    // s'ouvre, puis le programme repart depuis le début avec le contenu du fichier.
-    // Les fichiers choisis ne servent que pour l'exécution en cours : une nouvelle
-    // exécution les redemande (ils ont pu changer sur le disque).
+    // quand le programme arrive à un lit_fichier() sans fichier, il s'arrête, la fenêtre
+    // de sélection s'ouvre, puis le programme repart depuis le début. Les fichiers choisis
+    // sont rendus dans l'ordre des appels : le premier lit_fichier() reçoit le premier
+    // fichier, le deuxième le deuxième... Ils ne servent que pour l'exécution en cours :
+    // une nouvelle exécution les redemande (ils ont pu changer sur le disque).
     // ------------------------------------------------------------------
-    let fichiersLus = new Map();
-    let fichierDemandé = null;
+    let lecture = { fichiers: [], rang: 0 };        // programme et console
+    let lectureÉvénements = { fichiers: [], rang: 0 };  // animations, clics, touches
+    let fichierDemandé = false;
     // Les fichiers déjà téléchargés par écrit_fichier pendant cette exécution : quand le
     // programme repart après le choix d'un fichier, on ne les télécharge pas une seconde fois
     let fichiersÉcrits = new Set();
@@ -337,19 +342,20 @@ const Pythonerie = (function () {
     }
 
     // Appelé par Pyt.litFichier : { contenu } ou { erreur }
-    function litFichierLocal(nom) {
-        nom = nfc(String(nom)).trim();
-        if (fichiersLus.has(nom)) return { contenu: fichiersLus.get(nom) };
-        fichierDemandé = nom;
-        return { erreur: 'il faut choisir le fichier « ' + nom + ' » sur ton ordinateur' };
+    function litFichierLocal() {
+        const i = lecture.rang++;
+        if (i < lecture.fichiers.length) return { contenu: lecture.fichiers[i] };
+        fichierDemandé = true;
+        return { erreur: 'il faut choisir un fichier sur ton ordinateur' };
     }
 
     // Ouvre la fenêtre de sélection du fichier demandé, puis relance
     function choisitFichier(relancer) {
-        const nom = fichierDemandé;
-        fichierDemandé = null;
+        fichierDemandé = false;
+        const numéro = lecture.fichiers.length + 1;
+        const quel = numéro === 1 ? 'un fichier' : 'un ' + numéro + 'e fichier';
         Pyt.stoppeTout();
-        écritConsole('— Le programme a besoin du fichier « ' + nom + ' » : choisis-le sur ton ordinateur.', 'info');
+        écritConsole('— Le programme a besoin d\'' + quel + ' : choisis-le sur ton ordinateur.', 'info');
         const entrée = $('fichierDonnées');
         const ouvre = () => {
             entrée.onchange = async () => {
@@ -357,7 +363,7 @@ const Pythonerie = (function () {
                 entrée.value = '';
                 if (!f) return;
                 try {
-                    fichiersLus.set(nom, nfc(await f.text()));
+                    lecture.fichiers.push(nfc(await f.text()));
                 } catch (e) {
                     écritConsole('Impossible de lire le fichier « ' + f.name + ' » : ' + e.message, 'erreur');
                     return;
@@ -370,8 +376,8 @@ const Pythonerie = (function () {
         // Le navigateur n'ouvre la fenêtre que juste après un clic ou une touche. Après une
         // relance (un deuxième fichier), ce n'est plus le cas : on demande un clic.
         if (!navigator.userActivation || navigator.userActivation.isActive) { ouvre(); return; }
-        dialogue('Choisir un fichier', 'Le programme a besoin du fichier « ' + nom + ' ».',
-            [{ texte: '📂 Choisir « ' + nom + ' »', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }])
+        dialogue('Choisir un fichier', 'Le programme a besoin d\'' + quel + '.',
+            [{ texte: '📂 Choisir le fichier', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }])
             .then(choix => {
                 if (choix) ouvre();
                 else écritConsole('— Aucun fichier choisi : le programme est arrêté.', 'info');
@@ -466,6 +472,11 @@ const Pythonerie = (function () {
     // Appelé par le canevas (animations, clics, touches)
     function rappel(code) {
         if (idxExécution === null) return;
+        // pendant un événement, lit_fichier() puise dans les fichiers choisis pour les événements
+        const lectureProgramme = lecture;
+        lecture = lectureÉvénements;
+        lecture.rang = 0;
+        fichierDemandé = false;
         try {
             évalue(idxExécution, code);
         } catch (e) {
@@ -475,18 +486,18 @@ const Pythonerie = (function () {
                 metAJourBoutons();
             }
         }
+        lecture = lectureProgramme;
         // lit_fichier dans une animation ou un clic : le fichier choisi servira la fois suivante
         if (fichierDemandé) choisitFichierPendantAnimation();
     }
 
     function choisitFichierPendantAnimation() {
-        const nom = fichierDemandé;
-        fichierDemandé = null;
+        fichierDemandé = false;
         const entrée = $('fichierDonnées');
         entrée.onchange = async () => {
             const f = entrée.files[0];
             entrée.value = '';
-            if (f) fichiersLus.set(nom, nfc(await f.text()));
+            if (f) lectureÉvénements.fichiers.push(nfc(await f.text()));
         };
         entrée.oncancel = null;
         entrée.click();
@@ -503,8 +514,13 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         Pyt.réinitialise();
         effaceConsole();
-        if (relancé !== true) { fichiersLus = new Map(); fichiersÉcrits = new Set(); }
-        fichierDemandé = null;
+        if (relancé !== true) {
+            lecture = { fichiers: [], rang: 0 };
+            lectureÉvénements = { fichiers: [], rang: 0 };
+            fichiersÉcrits = new Set();
+        }
+        lecture.rang = 0;
+        fichierDemandé = false;
 
         const c = compile(code);
         if (c.erreur) {

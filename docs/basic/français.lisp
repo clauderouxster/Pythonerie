@@ -34,6 +34,7 @@
 (link "est_rien" 'nullp)                 ; est_rien(x) : Vrai si x vaut Rien
 (link "est_nombre" 'numberp)             ; est_nombre(x) : Vrai si x est un nombre
 (link "est_chaîne" 'stringp)             ; est_chaîne(x) : Vrai si x est une chaîne
+(link "est_chaine" 'stringp)             ; est_chaîne(x) : Vrai si x est une chaîne
 (link "est_zéro" 'zerop)                 ; est_zéro(x) : Vrai si x vaut 0
 
 ;------------------------------------------------------------------
@@ -72,6 +73,7 @@
 (link "liste_réels" 'floats)             ; liste_réels(a, b, ...) : liste de réels (simple précision)
 (link "liste_nombres" 'numbers)          ; liste_nombres(a, b, ...) : liste de nombres réels
 (link "liste_chaînes" 'strings)          ; liste_chaînes(a, b, ...) : liste de chaînes
+(link "liste_chaines" 'strings)          ; liste_chaînes(a, b, ...) : liste de chaînes
 (link "intervalle_infini" 'irange)       ; intervalle_infini(début, pas) : suite de nombres sans fin
 
 ;------------------------------------------------------------------
@@ -85,6 +87,7 @@
 (link "dictionnaire_ordonné" 'dictionarytree)  ; dictionnaire_ordonne() : dictionnaire trié selon ses clés
 (link "ensemble" 'set)                   ; ensemble(a, b, ...) : ensemble (sans doublons)
 (link "ensemble_chaînes" 'sets)          ; ensemble_chaînes(a, b, ...) : ensemble de chaînes
+(link "ensemble_chaines" 'sets)          ; ensemble_chaînes(a, b, ...) : ensemble de chaînes
 (link "ensemble_entiers" 'seti)          ; ensemble_entiers(a, b, ...) : ensemble d'entiers
 (link "ensemble_nombres" 'setn)          ; ensemble_nombres(a, b, ...) : ensemble de nombres
 
@@ -137,10 +140,12 @@
 (link "matrice_réels" 'matrix_float)       ; matrice_réels(l, c, valeur) : matrice de réels (simple précision)
 (link "matrice_nombres" 'matrix_number)    ; matrice_nombres(l, c, valeur) : matrice de nombres
 (link "matrice_chaînes" 'matrix_string)    ; matrice_chaînes(l, c, valeur) : matrice de chaînes
+(link "matrice_chaines" 'matrix_string)    ; matrice_chaînes(l, c, valeur) : matrice de chaînes
 (link "tenseur_entiers" 'tensor_integer)   ; tenseur_entiers(d1, d2, ..., valeur) : tenseur d'entiers
 (link "tenseur_réels" 'tensor_float)       ; tenseur_réels(d1, d2, ..., valeur) : tenseur de réels (simple précision)
 (link "tenseur_nombres" 'tensor_number)    ; tenseur_nombres(d1, d2, ..., valeur) : tenseur de nombres
 (link "tenseur_chaînes" 'tensor_string)    ; tenseur_chaînes(d1, d2, ..., valeur) : tenseur de chaînes
+(link "tenseur_chaines" 'tensor_string)    ; tenseur_chaînes(d1, d2, ..., valeur) : tenseur de chaînes
 (link "résous" 'solve)                   ; résous(matrice, vecteur) : résout un système linéaire
 
 ;------------------------------------------------------------------

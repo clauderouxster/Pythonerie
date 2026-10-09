@@ -589,6 +589,11 @@ affiche(double(21))</pre></div>
                     <p class="titre-encadre">💡 Astuce</p>
                     <p>Passe la souris sur le canevas&nbsp;: sous le dessin, tu vois les nombres <code>x</code> et <code>y</code> de l'endroit où tu es.</p>
                 </div>
+                <p>Tu veux une feuille d'une autre taille&nbsp;? Écris <code>canevas(largeur, hauteur)</code> au début de ton
+                    programme. <code>canevas(400, 400)</code> te donne une feuille carrée de 400 sur 400. Le dessin est effacé et
+                    la tortue revient au milieu. <code>largeur()</code> et <code>hauteur()</code> te disent toujours la taille
+                    de la feuille&nbsp;: <code>disque(largeur() / 2, hauteur() / 2, 50)</code> dessine un rond au milieu, quelle que
+                    soit sa taille. À chaque exécution, la feuille reprend sa taille de 800 sur 600.</p>
                 <div class="exemple"><pre data-essai>fond("bleu clair")          # le ciel
 couleur("jaune")
 disque(650, 120, 60)        # le soleil
@@ -696,9 +701,9 @@ joue_son(ding)</pre></div>
                 <p><code>écrit_fichier(nom, texte)</code> enregistre ton texte dans un fichier, qui arrive dans ton dossier
                     <b>Téléchargements</b>. Donne-lui un simple nom, sans répertoire&nbsp;: <code>"scores"</code> devient
                     <code>scores.txt</code>.</p>
-                <p><code>lit_fichier(nom)</code> te donne tout le texte d'un fichier de ton ordinateur. Pour protéger
+                <p><code>lit_fichier()</code>, sans rien entre les parenthèses, te donne tout le texte d'un fichier de ton ordinateur. Pour protéger
                     ton ordinateur, la Pythonerie n'a pas le droit d'y lire ce qu'elle veut&nbsp;: c'est <b>toi</b> qui choisis
-                    le fichier. Quand le programme arrive à <code>lit_fichier</code>, il s'arrête, une fenêtre s'ouvre pour
+                    le fichier. Quand le programme arrive à <code>lit_fichier()</code>, il s'arrête, une fenêtre s'ouvre pour
                     que tu choisisses le fichier, puis le programme recommence tout seul depuis le début, avec le texte du fichier.
                     La fenêtre revient à chaque fois que tu exécutes le programme&nbsp;: si tu as changé le fichier entre-temps,
                     c'est la nouvelle version qui est lue.</p>
@@ -706,10 +711,13 @@ joue_son(ding)</pre></div>
 écrit_fichier("courses", "pommes\npain\nfromage")
 
 # 2. On le relit : choisis courses.txt dans Téléchargements
-texte = lit_fichier("courses.txt")
+texte = lit_fichier()
 pour article dans texte.découpe("\n"):
     affiche("Il faut acheter :", article)</pre></div>
-                <p>Si tu fermes la fenêtre sans choisir de fichier, le programme s'arrête.</p>
+                <p>Si tu fermes la fenêtre sans choisir de fichier, le programme s'arrête. Si ton programme appelle
+                    <code>lit_fichier()</code> deux fois, la Pythonerie te demande deux fichiers, l'un après l'autre.</p>
+                <p>Entre les parenthèses, tu peux aussi donner l'adresse d'une page Internet, qui commence par
+                    <code>https://</code>&nbsp;: <code>lit_fichier("https://…")</code> te donne son texte, si le site le permet.</p>
 
                 <h3>📚 Le matériel de ton enseignant</h3>
                 <p>Au-dessus des <b>Exemples</b>, le répertoire <b>Matériels</b> contient ce que ton enseignant a préparé
@@ -927,7 +935,8 @@ pour ligne dans lignes[1:]:          # la première ligne donne les titres
                     <tr><td><code>texte(x, y, message)</code></td><td>écrit un message sur le canevas</td><td class="ex"><code>texte(100, 50, "Bonjour")</code></td></tr>
                     <tr><td><code>taille_texte(n)</code></td><td>choisit la taille des lettres</td><td class="ex"><code>taille_texte(40)</code></td></tr>
                     <tr><td><code>police(nom)</code></td><td>choisit la forme des lettres</td><td class="ex"><code>police("serif")</code></td></tr>
-                    <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur (800) et la hauteur (600) du canevas</td><td class="ex"><code>largeur()</code></td></tr>
+                    <tr><td><code>canevas(largeur, hauteur)</code></td><td>change la taille du canevas (800 sur 600 au départ) et efface le dessin</td><td class="ex"><code>canevas(400, 400)</code></td></tr>
+                    <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur et la hauteur du canevas (800 et 600 au départ)</td><td class="ex"><code>largeur()</code></td></tr>
                 </table>
 
                 <h3 id="g-tortue">La tortue</h3>
@@ -961,7 +970,8 @@ pour ligne dans lignes[1:]:          # la première ligne donne les titres
                 <h3 id="g-fichiers">Fichiers</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
-                    <tr><td><code>lit_fichier(nom)</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier("courses.txt")</code></td></tr>
+                    <tr><td><code>lit_fichier()</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier()</code></td></tr>
+                    <tr><td><code>lit_fichier(adresse)</code></td><td>donne le texte d'une page Internet&nbsp;; l'adresse commence par <code>https://</code></td><td class="ex"><code>t = lit_fichier("https://…")</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
                     <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire Matériels, préparé par ton enseignant</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>
                 </table>

@@ -104,7 +104,7 @@ const PYTHONERIE_FONCTIONS = {
     'arrête': 'arrête() — arrête les animations',
     'quand_clic': 'quand_clic(fonction) — appelle fonction(x, y) à chaque clic',
     'quand_souris': 'quand_souris(fonction) — appelle fonction(x, y) quand la souris bouge',
-    'quand_touche': 'quand_touche(fonction) — appelle fonction(touche) à chaque touche',
+    'quand_touche': 'quand_touche(fonction) — appelle fonction(touche) à chaque touche : "gauche", "droite", "haut", "bas", "espace", "a"…',
     'quand_glisse': 'quand_glisse(fonction) — appelle fonction(x, y) quand la souris bouge avec le bouton appuyé',
     // Images et sons
     'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',

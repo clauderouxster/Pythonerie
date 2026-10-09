@@ -73,5 +73,10 @@
     "fichier": "15_casse_briques.py",
     "titre": "15. Casse-briques",
     "description": "un jeu complet : animation, souris, clavier, sons, score et vies"
+  },
+  {
+    "fichier": "16_serpent.py",
+    "titre": "16. Le serpent",
+    "description": "le jeu du serpent : grille, listes, clavier ou toucher, score"
   }
 ]

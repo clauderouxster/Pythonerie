@@ -576,7 +576,49 @@ const Pythonerie = (function () {
     }
 
     function metAJourBoutons() {
-        $('btnArrêter').disabled = !Pyt.enCours();
+        $('btnArrêter').disabled = $('btnArrêterPlein').disabled = !Pyt.enCours();
+    }
+
+    // ------------------------------------------------------------------
+    // Plein écran du canevas. Le navigateur peut le refuser (iPhone, cadre intégré...) :
+    // la scène occupe alors toute la fenêtre (« secours »). Échap revient dans les deux cas.
+    // ------------------------------------------------------------------
+    function enPleinÉcran() {
+        return $('scèneCanevas').classList.contains('plein');
+    }
+
+    async function entrePleinÉcran() {
+        const scène = $('scèneCanevas');
+        // les touches doivent aller au programme, pas à l'éditeur ou à la console
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        scène.classList.add('plein');
+        metAJourBoutons();
+        try {
+            if (!scène.requestFullscreen) throw new Error();
+            await scène.requestFullscreen();
+        } catch (e) {
+            scène.classList.add('secours');
+        }
+    }
+
+    function quittePleinÉcran() {
+        const scène = $('scèneCanevas');
+        if (document.fullscreenElement === scène && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        scène.classList.remove('plein', 'secours');
+    }
+
+    function installePleinÉcran() {
+        $('btnPleinÉcran').addEventListener('click', entrePleinÉcran);
+        $('btnQuittePlein').addEventListener('click', quittePleinÉcran);
+        $('btnArrêterPlein').addEventListener('click', arrête);
+        // sortie par Échap (ou par le navigateur) du vrai plein écran
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && !$('scèneCanevas').classList.contains('secours')) quittePleinÉcran();
+        });
+        // Échap dans le mode de secours
+        window.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && $('scèneCanevas').classList.contains('secours')) quittePleinÉcran();
+        });
     }
 
     // ------------------------------------------------------------------
@@ -1934,7 +1976,7 @@ const Pythonerie = (function () {
                 const titre = élément.titre || élément.fichier;
                 const li = ligneArbre(1, 'programme');
                 li.title = (élément.description ? élément.description + ' — ' : '')
-                    + (programme ? 'un clic crée une copie que tu peux modifier' : 'données : un clic montre comment les lire');
+                    + (programme ? 'un clic crée une copie que tu peux modifier (ou ouvre ta copie, si tu l\'as déjà)' : 'données : un clic montre comment les lire');
                 const espace = document.createElement('span');
                 espace.className = 'arbre-chevron';
                 const icôneÉl = document.createElement('span');
@@ -1950,10 +1992,21 @@ const Pythonerie = (function () {
                             + '\n   Pour le lire dans un programme : texte = charge_données("' + élément.fichier + '")', 'info');
                         return;
                     }
+                    // Déjà copié (un programme du même nom, de préférence dans le répertoire
+                    // courant) : on l'ouvre, plutôt que d'en créer « 15. Casse-briques 2 »
+                    const nom = titre.replace(/\.py$/i, '');
+                    const copies = programmes.filter(p => nomDe(p.chemin) === nom);
+                    if (copies.length) {
+                        const copie = copies.find(p => parentDe(p.chemin) === dossierCourant) || copies[0];
+                        await ouvre(copie.chemin);
+                        écritConsole('— « ' + nom + ' » est déjà dans tes programmes : le voici. '
+                            + 'Pour repartir de l\'exemple d\'origine, renomme ou supprime ta copie.', 'info');
+                        return;
+                    }
                     try {
                         const rc = await fetch(répertoire + '/' + élément.fichier.split('/').map(encodeURIComponent).join('/'), { cache: 'no-cache' });
                         if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
-                        await crée(dossierCourant, titre.replace(/\.py$/i, ''), nfc(await rc.text()));
+                        await crée(dossierCourant, nom, nfc(await rc.text()));
                     } catch (e) {
                         écritConsole(e.message, 'erreur');
                     }
@@ -2170,6 +2223,7 @@ const Pythonerie = (function () {
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', téléchargeImage);
+        installePleinÉcran();
         $('btnThème').addEventListener('click', basculeThème);
         $('btnAide').addEventListener('click', () => $('aide').classList.add('visible'));
         $('fermeAide').addEventListener('click', () => $('aide').classList.remove('visible'));

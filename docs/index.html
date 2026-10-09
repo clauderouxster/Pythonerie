@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.09.10.13">
+    <link rel="stylesheet" href="style.css?v=2026.10.09.10.43">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.10.13</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.10.43</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -155,11 +155,19 @@
                 <div class="barre-droite">
                     <button id="btnEffaceCanevas" class="btn btn-secondaire btn-petit">Effacer</button>
                     <button id="btnImage" class="btn btn-secondaire btn-petit" title="Télécharger le dessin en PNG">Image</button>
+                    <button id="btnPleinÉcran" class="btn btn-secondaire btn-petit" title="Afficher le canevas en plein écran (Échap pour revenir)">⛶ Plein écran</button>
                 </div>
             </div>
-            <div class="cadre-canevas">
-                <canvas id="canevas"></canvas>
-                <canvas id="coucheTortue"></canvas>
+            <!-- La scène : le canevas, et en plein écran une barre pour arrêter le programme et revenir -->
+            <div id="scèneCanevas" class="scène-canevas">
+                <div class="barre-plein-écran">
+                    <button id="btnArrêterPlein" class="btn btn-secondaire btn-petit" disabled title="Arrêter le programme">■ Arrêter</button>
+                    <button id="btnQuittePlein" class="btn btn-secondaire btn-petit" title="Revenir à l'affichage normal (Échap)">✕ Quitter le plein écran</button>
+                </div>
+                <div class="cadre-canevas">
+                    <canvas id="canevas"></canvas>
+                    <canvas id="coucheTortue"></canvas>
+                </div>
             </div>
             <div id="coordonnées" class="coordonnées"></div>
         </section>
@@ -302,7 +310,8 @@ selon (nom):
 
                 <h3>Dessiner dans le canevas</h3>
                 <p>Le canevas mesure 800 × 600. Le point (0, 0) est <b>en haut à gauche</b>, y augmente vers le bas.
-                    Survole le canevas pour voir les coordonnées. <code>canevas(400, 400)</code>, au début du programme, change
+                    Survole le canevas pour voir les coordonnées. <b>⛶ Plein écran</b> l'agrandit à tout l'écran, avec <b>■ Arrêter</b>
+                    et <b>✕ Quitter le plein écran</b> (ou Échap). <code>canevas(400, 400)</code>, au début du programme, change
                     sa taille (le dessin est effacé) ; <code>largeur()</code> et <code>hauteur()</code> donnent la taille actuelle.
                     À chaque exécution, il reprend sa taille de 800 × 600.</p>
                 <table class="table-aide">
@@ -324,7 +333,8 @@ selon (nom):
                         <td><code>taille_texte(30) police("serif")</code></td><td>style du texte</td></tr>
                 </table>
                 <p class="note">Couleurs : rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris,
-                    cyan, magenta, turquoise, beige, or, argent, vert clair, bleu clair, bleu marine, gris clair, gris foncé —
+                    cyan, magenta, turquoise, beige, or, argent, bleu marine, et leurs nuances « clair » et « foncé »
+                    (rouge foncé, vert foncé, bleu clair, gris clair…) —
                     ou n'importe quelle couleur CSS (<code>"#ff8800"</code>).</p>
 
                 <h3>La tortue</h3>
@@ -374,7 +384,8 @@ animer(bouge, 30)       # toutes les 30 millisecondes
 
 fonction clic(cx, cy):
     couleur_balle =: choisis(["rouge", "vert", "bleu"])   # =: modifie la variable du programme
-quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche(f)</pre>
+quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche(f)
+                        # quand_touche : "gauche", "droite", "haut", "bas", "espace", "entrée", "a"…</pre>
                 <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
                     écris <code>x =: …</code> pour modifier la variable du programme. <code>x += …</code> modifie
                     directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>
@@ -405,7 +416,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.09.10.13';
+                return répertoire + fichier + '?v=2026.10.09.10.43';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -413,12 +424,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.09.10.13"></script>
-    <script src="js/canevas.js?v=2026.10.09.10.13"></script>
-    <script src="js/pythonerie.js?v=2026.10.09.10.13"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.09.10.43"></script>
+    <script src="js/canevas.js?v=2026.10.09.10.43"></script>
+    <script src="js/pythonerie.js?v=2026.10.09.10.43"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.09.10.13"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.09.10.13"></script>
+    <script src="lispe/lispe.js?v=2026.10.09.10.43"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.09.10.43"></script>
 </body>
 
 </html>

@@ -511,6 +511,27 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 }
 /* touch-action : sur une tablette, glisser le doigt dessine au lieu de faire défiler la page */
 #coucheTortue { cursor: crosshair; touch-action: none; }
+
+/* Plein écran : la scène (barre + canevas) occupe tout l'écran ; le canevas garde ses
+   proportions (--ratio, posé par canevas.js) et prend la plus grande taille possible */
+.barre-plein-écran { display: none; }
+.scène-canevas.plein {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: #101010;
+    box-sizing: border-box;
+}
+.scène-canevas.plein.secours { position: fixed; inset: 0; z-index: 1000; }
+.scène-canevas.plein .barre-plein-écran { display: flex; gap: 8px; align-self: flex-end; }
+.scène-canevas.plein .cadre-canevas {
+    flex: none;
+    width: min(100%, calc((100vh - 70px) * var(--ratio, 1.3333)));
+    border-color: #333;
+}
 .coordonnées { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); min-height: 18px; }
 
 /* ---------------- Aide ---------------- */

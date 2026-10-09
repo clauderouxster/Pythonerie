@@ -26,7 +26,25 @@ const Pyt = (function () {
         magenta: '#d81b60', turquoise: '#26a69a', beige: '#f5f0e1', or: '#ffb300',
         argent: '#bdbdbd', 'vert clair': '#9ccc65', 'bleu clair': '#64b5f6',
         'bleu marine': '#1a237e', 'gris clair': '#e0e0e0', 'gris foncé': '#424242',
+        // les nuances : « clair » et « foncé » (invariables, comme dans « une robe vert foncé »)
+        'rouge clair': '#ef9a9a', 'rouge foncé': '#b71c1c',
+        'vert foncé': '#1b5e20', 'bleu foncé': '#0d47a1',
+        'jaune clair': '#fff59d', 'jaune foncé': '#f9a825',
+        'orange clair': '#ffcc80', 'orange foncé': '#e65100',
+        'violet clair': '#ce93d8', 'violet foncé': '#4a148c',
+        'rose clair': '#f8bbd0', 'rose foncé': '#ad1457',
+        'marron clair': '#a1887f', 'marron foncé': '#3e2723',
         transparent: 'rgba(0,0,0,0)'
+    };
+
+    // Les noms des touches, en français : quand_touche(f) reçoit "gauche", "espace", "entrée"...
+    // (une lettre, un chiffre ou un signe reste tel quel : "a", "7", "?")
+    const NOMS_TOUCHES = {
+        ArrowLeft: 'gauche', ArrowRight: 'droite', ArrowUp: 'haut', ArrowDown: 'bas',
+        ' ': 'espace', Enter: 'entrée', Escape: 'échap', Backspace: 'retour arrière',
+        Tab: 'tabulation', Delete: 'suppr', Insert: 'inser', Home: 'début', End: 'fin',
+        PageUp: 'page haut', PageDown: 'page bas', Shift: 'maj', CapsLock: 'verr maj',
+        Control: 'ctrl', Alt: 'alt', AltGraph: 'alt gr', Meta: 'cmd'
     };
 
     let canevas = null, ctx = null, couche = null, ctxTortue = null;
@@ -168,6 +186,7 @@ const Pyt = (function () {
         if (canevas.width !== lg) canevas.width = couche.width = lg;
         if (canevas.height !== ht) canevas.height = couche.height = ht;
         canevas.parentElement.style.aspectRatio = lg + ' / ' + ht;
+        canevas.parentElement.style.setProperty('--ratio', String(lg / ht));
         const étiquette = document.getElementById('tailleCanevas');
         if (étiquette) étiquette.textContent = lg + ' × ' + ht;
     }
@@ -204,7 +223,8 @@ const Pyt = (function () {
             const cible = ev.target;
             if (cible && (cible.closest && cible.closest('.CodeMirror, input, textarea, select'))) return;
             if (ev.key.startsWith('Arrow') || ev.key === ' ') ev.preventDefault();
-            appelle(gestionnaires.touche, [chaîneLispE(ev.key.normalize('NFC'))]);
+            const nom = NOMS_TOUCHES[ev.key] || ev.key;
+            appelle(gestionnaires.touche, [chaîneLispE(nom.normalize('NFC'))]);
         });
     }
 

@@ -77,11 +77,11 @@ fonction clic(x, y):
     lance()
 
 fonction clavier(t):
-    si t == "ArrowLeft":
+    si t == "gauche":
         place_raquette(raquette_x + raquette_l / 2 - 40)
-    sinonsi t == "ArrowRight":
+    sinonsi t == "droite":
         place_raquette(raquette_x + raquette_l / 2 + 40)
-    sinonsi t == " ":
+    sinonsi t == "espace":
         lance()
 
 # Une brique touchée disparaît, et la balle rebondit

@@ -603,7 +603,10 @@ rectangle_plein(0, 450, 800, 150)   # l'herbe
 couleur("rouge")
 triangle_plein(300, 450, 500, 450, 400, 300)  # une tente</pre></div>
                 <p>Les couleurs&nbsp;: <i>rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris,
-                    cyan, magenta, turquoise, beige, or, argent, vert clair, bleu clair, bleu marine, gris clair, gris foncé</i>.
+                    cyan, magenta, turquoise, beige, or, argent, bleu marine</i>, et leurs nuances avec <i>clair</i> ou <i>foncé</i>&nbsp;:
+                    <i>rouge clair, rouge foncé, vert clair, vert foncé, bleu clair, bleu foncé, jaune clair, jaune foncé,
+                    orange clair, orange foncé, violet clair, violet foncé, rose clair, rose foncé, marron clair, marron foncé,
+                    gris clair, gris foncé</i>.
                     Tu peux aussi inventer une couleur avec <code>rgb(rouge, vert, bleu)</code>, chaque nombre allant de 0 à 255.</p>
             </section>
 
@@ -661,8 +664,9 @@ animer(image, 30)    # toutes les 30 millisecondes</pre></div>
 
 quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                 <p>Avec <code>quand_touche(f)</code>, ta fonction <code>f(touche)</code> reçoit le nom de la touche&nbsp;:
-                    <code>"ArrowLeft"</code>, <code>"ArrowRight"</code>, <code>"ArrowUp"</code>, <code>"ArrowDown"</code> pour les flèches,
-                    <code>" "</code> pour la barre d'espace, <code>"a"</code> pour la lettre a…
+                    <code>"gauche"</code>, <code>"droite"</code>, <code>"haut"</code>, <code>"bas"</code> pour les flèches,
+                    <code>"espace"</code> pour la barre d'espace, <code>"entrée"</code>, <code>"échap"</code>, <code>"retour arrière"</code>…
+                    et <code>"a"</code> pour la lettre a, <code>"7"</code> pour le chiffre 7.
                     Clique d'abord sur le canevas, puis appuie sur les touches.</p>
                 <h3>Dessiner en faisant glisser la souris</h3>
                 <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris
@@ -678,6 +682,8 @@ quand_glisse(peint)    # appuie, et fais glisser la souris sur le canevas</pre><
                     <p>L'exemple <b>15. Casse-briques</b> réunit tout ce que tu as appris&nbsp;: une animation, la souris
                         et les flèches pour la raquette, des sons, un score et trois vies. Lis-le, puis change-le&nbsp;:
                         une raquette plus large, plus de rangées de briques, d'autres couleurs, une balle plus rapide…</p>
+                    <p>L'exemple <b>16. Le serpent</b> est un autre jeu&nbsp;: le serpent est une <b>liste</b> de cases, qui
+                        grandit à chaque pomme. Dirige-le avec les flèches (ou Z Q S D), ou en touchant l'écran sur une tablette.</p>
                 </div>
             </section>
 
@@ -728,7 +734,7 @@ pour article dans texte.découpe("\n"):
 
                 <h3>📚 Le matériel de ton enseignant</h3>
                 <p>Au-dessus des <b>Exemples</b>, le répertoire <b>Matériels</b> contient ce que ton enseignant a préparé
-                    pour la classe. Un clic sur un programme en crée une copie, comme pour un exemple. Les autres fichiers
+                    pour la classe. Un clic sur un programme en crée une copie (ou ouvre ta copie, si tu l'as déjà), comme pour un exemple. Les autres fichiers
                     sont des <b>données</b>&nbsp;: une liste de mots, des nombres, des pays… Clique sur l'un d'eux pour savoir
                     ce qu'il contient, puis lis-le dans ton programme avec <code>charge_données</code>, sans fenêtre à ouvrir&nbsp;:</p>
                 <div class="exemple"><pre data-essai>texte = charge_données("capitales.csv")
@@ -842,7 +848,8 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                     <li>Quand tu commences à taper un mot, la Pythonerie te propose la suite. Appuie sur <b>Entrée</b> pour la choisir.</li>
                     <li>Après une ligne qui se termine par <code>:</code>, la touche Entrée décale tout seul la ligne suivante.</li>
                     <li>Le répertoire <b>Matériels</b>, s'il y en a un, contient ce que ton enseignant a préparé pour toi.</li>
-                    <li>Le répertoire <b>Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer.</li>
+                    <li>Le répertoire <b>Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer. Si tu l'as déjà copié, la Pythonerie ouvre ta copie au lieu d'en faire une deuxième&nbsp;; pour repartir de l'exemple d'origine, renomme ou supprime ta copie.</li>
+                    <li>Le bouton <b>⛶ Plein écran</b>, au-dessus du canevas, l'agrandit à tout l'écran&nbsp;: c'est parfait pour jouer au casse-briques&nbsp;! <b>■ Arrêter</b> arrête ton programme, et <b>✕ Quitter le plein écran</b> (ou la touche Échap) te ramène à l'affichage normal.</li>
                     <li>Le bouton 🌓, en haut, passe la Pythonerie en couleurs sombres.</li>
                 </ul>
             </section>

@@ -697,12 +697,12 @@
 )
 
 ; a comparison: A < 10 or B > 10 and C <> 8
-(defpat parsing ( ['comppar ['negation "non"] comparing] )
-   (list 'not (parsing comparing))
+(defpat parsing ( ['comppar ['negation "non"] $ d] )
+   (parsing (nconc '(comparing "non") d))
 )
 
-(defpat parsing ( ['comppar comparing] )
-   (parsing comparing)
+(defpat parsing ( ['comppar $ comparing] )
+   (parsing (nconc '(comparing) comparing))
 )
 
 ; a comparison: A < 10 or B > 10 and C <> 8

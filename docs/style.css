@@ -511,6 +511,21 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 }
 /* touch-action : sur une tablette, glisser le doigt dessine au lieu de faire défiler la page */
 #coucheTortue { cursor: crosshair; touch-action: none; }
+/* saisie(clef, x, y, fonction) : le champ est placé en coordonnées du canevas ;
+   container-type permet de dimensionner ses lettres en cqw (largeur du cadre) */
+.cadre-canevas { container-type: inline-size; }
+.saisie-canevas {
+    position: absolute;
+    z-index: 2;
+    box-sizing: border-box;
+    padding: 0.25em 0.45em;
+    border: 1px solid #8a8a8a;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.2;
+}
+.saisie-canevas:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 
 /* Plein écran : la scène (barre + canevas) occupe tout l'écran ; le canevas garde ses
    proportions (--ratio, posé par canevas.js) et prend la plus grande taille possible */

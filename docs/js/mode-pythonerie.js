@@ -28,6 +28,7 @@ const PYTHONERIE_FONCTIONS = {
     'len': 'len(x) — comme longueur',
     'entier': 'entier(x) — convertit en nombre entier',
     'réel': 'réel(x) — convertit en nombre à virgule',
+    'nombre': 'nombre(texte) — un nombre à virgule (« 2,5 » ou « 2.5 ») ; 0.0 si ce n\'est pas un nombre',
     'chaîne': 'chaîne(x) — convertit en texte',
     'type_de': 'type_de(x) — le type d\'une valeur',
     'intervalle': 'intervalle(fin) ou intervalle(début, fin, pas) — liste de nombres',
@@ -105,6 +106,10 @@ const PYTHONERIE_FONCTIONS = {
     'quand_clic': 'quand_clic(fonction) — appelle fonction(x, y) à chaque clic',
     'quand_souris': 'quand_souris(fonction) — appelle fonction(x, y) quand la souris bouge',
     'quand_touche': 'quand_touche(fonction) — appelle fonction(touche) à chaque touche : "gauche", "droite", "haut", "bas", "espace", "a"…',
+    'saisie': 'saisie(clef, x, y, fonction) — un champ de saisie dans le canevas ; Entrée appelle fonction(clef, valeur)',
+    'active_saisie': 'active_saisie(clef) — donne la main au champ (son contenu est sélectionné)',
+    'saisie_active': 'saisie_active() — la clef du champ qui a la main ("" sinon)',
+    'largeur_saisie': 'largeur_saisie(l) — largeur des champs créés ensuite (200 au départ)',
     'quand_glisse': 'quand_glisse(fonction) — appelle fonction(x, y) quand la souris bouge avec le bouton appuyé',
     // Images et sons
     'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',

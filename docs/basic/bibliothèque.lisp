@@ -50,6 +50,12 @@
 (defun longueur (x) (size x))
 (defun entier (x) (integer x))
 (defun réel (x) (float x))
+; nombre(x) : un nombre à virgule, à partir d'un texte (« 2,5 » ou « 2.5 ») ; un texte
+; vide ou qui n'est pas un nombre donne 0.0
+(defun nombre (x)
+   (if (stringp x)
+      (number (replace (trim x) "," "."))
+      (float x)))
 (defun chaîne (x) (_texte x))
 (defun chaine (x) (_texte x))
 (defun type_de (x) (type x))
@@ -176,6 +182,18 @@
 (defmacro quand_souris (fonction) (block (evaljs (list "Pyt.quandSouris" (string (quote fonction)))) nil))
 (defmacro quand_touche (fonction) (block (evaljs (list "Pyt.quandTouche" (string (quote fonction)))) nil))
 (defmacro quand_glisse (fonction) (block (evaljs (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
+; saisie(clef, x, y, fonction) : un champ de saisie dans le canevas ; Entrée (ou un clic
+; dans un autre champ) appelle fonction(clef, valeur), la valeur étant un texte
+(defmacro saisie (clef x y fonction) (block (evaljs (list "Pyt.saisie" (string clef) x y (string (quote fonction)))) nil))
+; largeur_saisie(l) : la largeur des champs créés ensuite (200 au départ)
+(defun largeur_saisie (l) (evaljs (list "Pyt.largeurSaisie" l)) nil)
+; active_saisie(clef) : donne la main au champ (le champ quitté envoie sa valeur)
+(defun active_saisie (clef)
+   (evaljs (list "Pyt.activeSaisie" (string clef)))
+   (_erreur_navigateur)
+   nil)
+; saisie_active() : la clef du champ qui a la main ("" s'il n'y en a pas)
+(defun saisie_active () (evaljs "Pyt.saisieActive()"))
 (defun arrête () (evaljs "Pyt.arrête()") nil)
 
 ;------------------------------------------------------------------

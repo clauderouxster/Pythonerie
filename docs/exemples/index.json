@@ -83,5 +83,10 @@
     "fichier": "17_envahisseurs.py",
     "titre": "17. Les envahisseurs de l'espace",
     "description": "le célèbre jeu de tir : une flotte qui avance, des bombes, des vagues de plus en plus rapides"
+  },
+  {
+    "fichier": "18_tableur.py",
+    "titre": "18. Un mini tableur",
+    "description": "des champs de saisie dans une grille : flèches, Entrée et totaux des colonnes"
   }
 ]

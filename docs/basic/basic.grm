@@ -80,7 +80,7 @@ comparing := $non? computing [comparator computing]? [orand ;18 comparison]*
 
 negation := $non
 
-!comppar := negation? %( comparing %)
+!comppar := negation? %( comparing %) [orand ;18 comparison]*
 
 ^comparison := comppar|comparing
 ^compareorcompute := comparison|computing

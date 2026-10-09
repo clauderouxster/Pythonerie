@@ -180,6 +180,61 @@ const Pyt = (function () {
     let dernièreErreur = '';
 
     // Taille logique des deux calques ; le cadre suit les proportions (voir style.css)
+    // ---------- Champs de saisie : saisie(clef, x, y, fonction) ----------
+    // Un vrai champ <input>, posé sur le canevas en coordonnées du canevas (il suit
+    // l'agrandissement et le plein écran). Entrée, ou un clic dans un autre champ,
+    // appelle fonction(clef, valeur) ; la valeur est toujours un texte.
+    const champs = new Map();     // clef -> { élément, fonction, x, y, l, envoyé }
+    const LARGEUR_CHAMP = 200;    // en points du canevas ; largeur_saisie(l) la change
+    let largeurChamp = LARGEUR_CHAMP;
+
+    function placeChamp(champ) {
+        const e = champ.élément;
+        e.style.left = (champ.x * 100 / LARGEUR) + '%';
+        e.style.top = (champ.y * 100 / HAUTEUR) + '%';
+        e.style.width = (champ.l * 100 / LARGEUR) + '%';
+        // la police et la taille courantes (police, taille_texte) au moment de saisie() ;
+        // la taille suit la largeur affichée du canevas (unités cqw)
+        e.style.fontFamily = champ.police;
+        e.style.fontSize = (champ.taille * 100 / LARGEUR) + 'cqw';
+    }
+
+    function envoieChamp(clef, toujours) {
+        const champ = champs.get(clef);
+        if (!champ) return;
+        const valeur = champ.élément.value.normalize('NFC');
+        // un clic dans un autre champ n'envoie la valeur que si elle a changé
+        if (!toujours && valeur === champ.envoyé) return;
+        champ.envoyé = valeur;
+        // un instant plus tard : le champ peut être quitté pendant que le programme
+        // s'exécute (active_saisie dans quand_touche), qu'on ne relance pas en plein milieu
+        const fonction = champ.fonction;
+        setTimeout(() => appelle(fonction, [chaîneLispE(clef), chaîneLispE(valeur)]), 0);
+    }
+
+    // Dans un champ, les flèches et Entrée vont aussi à quand_touche (pour passer d'un
+    // champ à l'autre) ; gauche et droite seulement au bord du texte, pour pouvoir
+    // encore déplacer le curseur pendant qu'on corrige
+    function transmetTouche(ev) {
+        if (!gestionnaires.touche) return;
+        const e = ev.target, n = e.value.length, d = e.selectionStart, f = e.selectionEnd;
+        const tout = d === 0 && f === n;
+        let nom = null;
+        if (ev.key === 'ArrowUp') nom = 'haut';
+        else if (ev.key === 'ArrowDown') nom = 'bas';
+        else if (ev.key === 'Enter') nom = 'entrée';
+        else if (ev.key === 'ArrowLeft' && ((d === 0 && f === 0) || tout)) nom = 'gauche';
+        else if (ev.key === 'ArrowRight' && ((d === n && f === n) || tout)) nom = 'droite';
+        if (!nom) return;
+        ev.preventDefault();
+        appelle(gestionnaires.touche, [chaîneLispE(nom)]);
+    }
+
+    function retireChamps() {
+        champs.forEach(c => c.élément.remove());
+        champs.clear();
+    }
+
     function dimensionne(lg, ht) {
         LARGEUR = lg;
         HAUTEUR = ht;
@@ -189,6 +244,7 @@ const Pyt = (function () {
         canevas.parentElement.style.setProperty('--ratio', String(lg / ht));
         const étiquette = document.getElementById('tailleCanevas');
         if (étiquette) étiquette.textContent = lg + ' × ' + ht;
+        champs.forEach(placeChamp);
     }
 
     function signaleErreur(message) {
@@ -250,6 +306,8 @@ const Pyt = (function () {
 
         // Avant chaque exécution : on arrête tout et on repart d'une page blanche
         réinitialise() {
+            retireChamps();
+            largeurChamp = LARGEUR_CHAMP;
             dimensionne(LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT);
             this.arrête();
             this.arrêteSons();
@@ -435,12 +493,69 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
         },
         enCours() {
-            return minuteries.length > 0 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche);
+            return minuteries.length > 0 || champs.size > 0
+                || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche);
         },
         stoppeTout() {
+            retireChamps();
             this.arrête();
             this.arrêteSons();
             gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+        },
+
+        // ---------- Champs de saisie ----------
+        // saisie(clef, x, y, fonction) : crée le champ « clef », ou le déplace s'il existe déjà
+        saisie(clef, x, y, nom) {
+            clef = String(clef).normalize('NFC');
+            let champ = champs.get(clef);
+            if (!champ) {
+                const e = document.createElement('input');
+                e.type = 'text';
+                e.className = 'saisie-canevas';
+                e.spellcheck = false;
+                e.autocomplete = 'off';
+                e.setAttribute('aria-label', clef);
+                e.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') { ev.preventDefault(); envoieChamp(clef, true); }
+                    transmetTouche(ev);
+                });
+                // on quitte ce champ pour un autre champ de saisie
+                e.addEventListener('blur', (ev) => {
+                    const vers = ev.relatedTarget;
+                    if (vers && vers.classList && vers.classList.contains('saisie-canevas')) envoieChamp(clef, false);
+                });
+                // un clic dans le champ ne doit pas être pris pour un clic dans le canevas
+                e.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+                canevas.parentElement.appendChild(e);
+                champ = { élément: e, envoyé: null };
+                champs.set(clef, champ);
+            }
+            champ.fonction = String(nom);
+            champ.x = nombre(x);
+            champ.y = nombre(y);
+            champ.l = largeurChamp;
+            champ.police = état.police;
+            champ.taille = état.taille;
+            placeChamp(champ);
+            if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+        },
+        // largeur_saisie(l) : la largeur des champs créés ensuite (200 au départ)
+        largeurSaisie(l) {
+            largeurChamp = Math.max(20, nombre(l, LARGEUR_CHAMP));
+        },
+        // active_saisie(clef) : le champ prend la main, son contenu est sélectionné
+        // (ce qu'on tape le remplace) ; le champ qu'on quitte envoie sa valeur
+        activeSaisie(clef) {
+            dernièreErreur = '';
+            const champ = champs.get(String(clef).normalize('NFC'));
+            if (!champ) { dernièreErreur = 'active_saisie : il n\'y a pas de champ « ' + clef + ' »'; return; }
+            champ.élément.focus();
+            champ.élément.select();
+        },
+        // saisie_active() : la clef du champ qui a la main ("" s'il n'y en a pas)
+        saisieActive() {
+            for (const [clef, champ] of champs) if (champ.élément === document.activeElement) return clef;
+            return '';
         },
 
         // ---------- Fichiers ----------

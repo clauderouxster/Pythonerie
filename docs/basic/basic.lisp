@@ -1,4 +1,4 @@
-;Date: 2026/10/09 10:04:40
+;Date: 2026/10/09 15:01:20
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -576,7 +576,7 @@
    )
 )
 
-;!comppar := negation? %( comparing %)
+;!comppar := negation? %( comparing %) [orand ;18 comparison]*
 (defun C_comppar (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -587,6 +587,7 @@
             (compare tokens "(" i1 v1 nil)
             (C_comparing tokens i1 v1)
             (compare tokens ")" i1 v1 nil)
+            (S_comppar_1 tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -599,6 +600,27 @@
    (setq v1 ())
    (check (C_negation tokens i1 v1)
       (nconc vp v1)
+   )
+   true)
+
+(defun S_comppar_1 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_orand tokens i2 v2)
+         (push error_id 18)
+         (if (C_comparison tokens i2 v2)
+            (pop error_id)
+            (setg do_not_stop false)
+         )
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
    )
    true)
 

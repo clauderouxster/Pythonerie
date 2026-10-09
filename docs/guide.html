@@ -668,6 +668,37 @@ quand_clic(clic)    # à chaque clic, une bulle de couleur</pre></div>
                     <code>"espace"</code> pour la barre d'espace, <code>"entrée"</code>, <code>"échap"</code>, <code>"retour arrière"</code>…
                     et <code>"a"</code> pour la lettre a, <code>"7"</code> pour le chiffre 7.
                     Clique d'abord sur le canevas, puis appuie sur les touches.</p>
+                <h3>✍️ Un champ pour écrire dans le canevas</h3>
+                <p><code>saisie(clef, x, y, f)</code> pose un <b>champ de saisie</b> dans le canevas, au point (x, y)&nbsp;: c'est une
+                    petite case où l'on peut taper du texte. La <code>clef</code> est le nom du champ. Quand tu appuies sur
+                    <b>Entrée</b>, ou quand tu cliques dans un autre champ, ta fonction est appelée&nbsp;: <code>f(clef, valeur)</code>.
+                    La clef te dit quel champ a changé, et la valeur est ce que tu as tapé, toujours sous forme de texte
+                    (utilise <code>entier(valeur)</code> pour avoir un nombre).</p>
+                <div class="exemple"><pre data-essai>fonction reçu(clef, valeur):
+    si clef == "nom":
+        affiche("Bonjour", valeur, "!")
+    sinonsi clef == "âge":
+        affiche("Dans un an, tu auras", entier(valeur) + 1, "ans.")
+
+texte(100, 75, "Ton nom :")
+saisie("nom", 100, 100, reçu)
+texte(100, 155, "Ton âge :")
+saisie("âge", 100, 180, reçu)</pre></div>
+                <p>Pour un nombre à virgule, utilise <code>nombre(valeur)</code>&nbsp;: il accepte <code>2,5</code> comme <code>2.5</code>,
+                    et donne 0 si ce n'est pas un nombre.</p>
+                <p>Trois autres fonctions t'aident à passer d'un champ à l'autre&nbsp;:</p>
+                <ul>
+                    <li><code>active_saisie(clef)</code> met le curseur dans ce champ, comme si tu avais cliqué dessus.
+                        Ce que tu tapes remplace son contenu. Le champ que tu quittes envoie sa valeur, si elle a changé.</li>
+                    <li><code>saisie_active()</code> te dit quel champ a le curseur (<code>""</code> s'il n'y en a pas).</li>
+                    <li><code>largeur_saisie(l)</code> choisit la largeur des champs que tu crées ensuite (200 au départ).</li>
+                    <li>Un champ prend la police et la taille du texte du moment&nbsp;: écris <code>police("serif")</code>
+                        ou <code>taille_texte(30)</code> <b>avant</b> <code>saisie(…)</code> pour changer ses lettres.</li>
+                </ul>
+                <p>Dans un champ, les flèches <b>haut</b> et <b>bas</b> et la touche <b>Entrée</b> vont aussi à
+                    <code>quand_touche</code>&nbsp;; <b>gauche</b> et <b>droite</b> aussi, quand le curseur est au bord du texte.
+                    C'est ainsi que l'exemple <b>18. Un mini tableur</b> passe d'une case à l'autre avec les flèches.</p>
+
                 <h3>Dessiner en faisant glisser la souris</h3>
                 <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris
                     <b>en gardant le bouton appuyé</b> (ou ton doigt posé, sur une tablette).</p>
@@ -920,6 +951,7 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                     <tr><td><code>pi</code></td><td>le nombre π (environ 3.14159)</td><td class="ex"><code>2 * pi * rayon</code></td></tr>
                     <tr><td><code>entier(x)</code></td><td>transforme en nombre entier</td><td class="ex"><code>entier("12")</code> donne 12</td></tr>
                     <tr><td><code>réel(x)</code></td><td>transforme en nombre à virgule</td><td class="ex"><code>réel("2.5")</code> donne 2.5</td></tr>
+                    <tr><td><code>nombre(texte)</code></td><td>un nombre à virgule, à partir d'un texte écrit avec une virgule ou un point&nbsp;; 0 si ce n'est pas un nombre</td><td class="ex"><code>nombre("2,5")</code> donne 2.5</td></tr>
                     <tr><td><code>intervalle(fin)</code></td><td>les nombres de 0 jusqu'à fin (fin non comprise)</td><td class="ex"><code>intervalle(4)</code> donne [0, 1, 2, 3]</td></tr>
                     <tr><td><code>intervalle(début, fin, pas)</code></td><td>les nombres de début à fin, en sautant de pas</td><td class="ex"><code>intervalle(0, 10, 2)</code> donne [0, 2, 4, 6, 8]</td></tr>
                     <tr><td><code>range(…)</code></td><td>comme <code>intervalle</code> (le mot de Python)</td><td class="ex"><code>range(3)</code></td></tr>
@@ -1031,6 +1063,10 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                     <tr><td><code>quand_souris(f)</code></td><td>appelle f(x, y) quand la souris bouge sur le canevas</td><td class="ex"><code>quand_souris(suit)</code></td></tr>
                     <tr><td><code>quand_glisse(f)</code></td><td>appelle f(x, y) quand la souris bouge en gardant le bouton appuyé</td><td class="ex"><code>quand_glisse(peint)</code></td></tr>
                     <tr><td><code>quand_touche(f)</code></td><td>appelle f(touche) quand on appuie sur une touche</td><td class="ex"><code>quand_touche(touche)</code></td></tr>
+                    <tr><td><code>saisie(clef, x, y, f)</code></td><td>pose un champ de saisie au point (x, y)&nbsp;; Entrée (ou un clic dans un autre champ) appelle f(clef, valeur)</td><td class="ex"><code>saisie("nom", 100, 100, reçu)</code></td></tr>
+                    <tr><td><code>active_saisie(clef)</code></td><td>met le curseur dans ce champ</td><td class="ex"><code>active_saisie("A1")</code></td></tr>
+                    <tr><td><code>saisie_active()</code></td><td>la clef du champ qui a le curseur (<code>""</code> s'il n'y en a pas)</td><td class="ex"><code>clef = saisie_active()</code></td></tr>
+                    <tr><td><code>largeur_saisie(l)</code></td><td>la largeur des champs créés ensuite (200 au départ)</td><td class="ex"><code>largeur_saisie(100)</code></td></tr>
                 </table>
                 </div>
 

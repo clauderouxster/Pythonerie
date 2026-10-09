@@ -192,9 +192,9 @@
       (list 'sign r))
 )
 
-; a numerical value
+; a numerical value: an integer stays an integer (7), a float stays a float (7.0)
 (defpat parsing ( ['anumber d] )
-   (number d)
+   (if (numberp d) d (number d))
 )
 
 (defpat parsing ( ['f_ $ d] )

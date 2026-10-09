@@ -78,5 +78,10 @@
     "fichier": "16_serpent.py",
     "titre": "16. Le serpent",
     "description": "le jeu du serpent : grille, listes, clavier ou toucher, score"
+  },
+  {
+    "fichier": "17_envahisseurs.py",
+    "titre": "17. Les envahisseurs de l'espace",
+    "description": "le célèbre jeu de tir : une flotte qui avance, des bombes, des vagues de plus en plus rapides"
   }
 ]

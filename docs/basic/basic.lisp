@@ -149,13 +149,16 @@
    )
 )
 
-
 (defun C_anumber (tokens i v)
    (check (< (car i) (size tokens))
       (setq w (@ tokens (car i)))
-      (check ( (or (= w "0") (= w "0.0") (integer w) (number w)))
+      (check ( (or (= w "0") (= w "0.0") (= w "00") (= w "0.00") (integer w) (number w)))
          (+= i 1)
-         (push v (list 'anumber (float w)))
+         ; 7 reste un entier, 7.0 et 1.5e3 sont des réels (0x1E est un entier hexadécimal)
+         (push v (list 'anumber
+            (if (or (in w ".") (and (not (in w "x")) (or (in w "e") (in w "E"))))
+               (float w)
+               (integer w))))
          (return true)
       )
    )
@@ -2818,7 +2821,7 @@ f"{[\"] ~%r}*"=34
 '~%r*'=34
 0b{1 0}+=57
 0x%1+(.%1+({p P}({%- %+})%d+))=57
-%d+(.%d+({eE}({%- %+})%d+))=57
+%d+(.%d+)(({eE}({%- %+})%d+))=57
 %o=63
 %p=32
 %h{%h %d}*=65

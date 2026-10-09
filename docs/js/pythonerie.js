@@ -312,6 +312,7 @@ const Pythonerie = (function () {
             écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
             fichiersÉcrits = new Set();
             lecture = { fichiers: [], rang: 0 };
+            donnéesRetenues = false;
         }
         lecture.rang = 0;
         fichierDemandé = false;
@@ -529,6 +530,7 @@ const Pythonerie = (function () {
             lecture = { fichiers: [], rang: 0 };
             lectureÉvénements = { fichiers: [], rang: 0 };
             fichiersÉcrits = new Set();
+            donnéesRetenues = false;
         }
         lecture.rang = 0;
         fichierDemandé = false;
@@ -1604,6 +1606,42 @@ const Pythonerie = (function () {
         if (annulationsOnglets.length > 30) annulationsOnglets.shift();
     }
 
+    // range_données("don3", valeur) : le programme écrit dans un onglet de la section Données.
+    // L'onglet doit exister, ou venir juste après le dernier (on le crée). Renvoie "" ou un
+    // message d'erreur. La première écriture d'une exécution est mémorisée pour ↶.
+    let donnéesRetenues = false;
+    function rangeDonnées(nom, texte) {
+        const m = /^don(\d+)$/i.exec(nfc(String(nom)).trim());
+        if (!m) return 'range_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
+        const n = Number(m[1]);
+        if (n > onglets.length || n >= ONGLETS_MAX) {
+            return 'range_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don'
+                + (onglets.length - 1) + ', on peut seulement créer don' + onglets.length;
+        }
+        if (!donnéesRetenues) { retientOnglets(); donnéesRetenues = true; }
+        if (n === onglets.length) onglets.push('');                         // don3 après don0..don2
+        onglets[n] = nfc(String(texte)).replace(/\r\n?/g, '\n');
+        afficheOnglets();          // l'onglet est mis à jour à l'écran
+        sauvegardePlusTard();      // et enregistré avec le programme
+        return '';
+    }
+
+    // prend_données("don0") : le contenu actuel d'un onglet (y compris ce que range_données
+    // vient d'y ranger) ; "" pour un onglet vide. L'erreur éventuelle est lue ensuite par
+    // erreurDonnées() (evaljs ne renvoie qu'une valeur).
+    let erreurDonnées = '';
+    function prendDonnées(nom) {
+        erreurDonnées = '';
+        const m = /^don(\d+)$/i.exec(nfc(String(nom)).trim());
+        if (!m) { erreurDonnées = 'prend_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)'; return ''; }
+        const n = Number(m[1]);
+        if (n >= onglets.length) {
+            erreurDonnées = 'prend_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don' + (onglets.length - 1);
+            return '';
+        }
+        return onglets[n];
+    }
+
     function annuleOnglet() {
         const avant = annulationsOnglets.pop();
         if (!avant) return;
@@ -2320,7 +2358,8 @@ const Pythonerie = (function () {
     function oubliePile() { aprèsPile = false; }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, rangeDonnées, prendDonnées,
+        erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
         compile // utile pour les tests depuis la console du navigateur

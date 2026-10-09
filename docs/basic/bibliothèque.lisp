@@ -241,6 +241,20 @@
    (_erreur_navigateur)
    contenu)
 
+; range_données("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
+; l'onglet don0 de la section Données ; l'onglet est créé s'il vient juste après le dernier
+(defun range_données (nom valeur)
+   (setq e (evaljs (list "Pythonerie.rangeDonnées" (string nom) (_texte valeur))))
+   (if (!= e "") (throw e))
+   nil)
+
+; prend_données("don0") : le texte actuel de l'onglet don0 de la section Données ("" s'il est vide)
+(defun prend_données (nom)
+   (setq contenu (evaljs (list "Pythonerie.prendDonnées" (string nom))))
+   (setq e (evaljs "Pythonerie.erreurDonnées()"))
+   (if (!= e "") (throw e))
+   contenu)
+
 (defun écrit_fichier (nom texte)
    (evaljs (list "Pyt.écritFichier" (string nom) (_texte texte)))
    (_erreur_navigateur)

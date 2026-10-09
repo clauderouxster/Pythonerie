@@ -963,7 +963,6 @@
 (defun transpile (code)
    ; Transpiling into LispE
    (setq tree (abstract_tree code))
-
    ; __root__ is a special function that defines the top block of a LispE program
    (setq code '(__root__))
 
@@ -1234,8 +1233,8 @@
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
       (setq formes (cdr lsp))
       (check formes
-         (setq dernière (last@ formes))
-         (if (expression_console dernière)
-            (set@ formes (- (size formes) 1) (list '_console_valeur dernière))))
+         (setq dern (last@ formes))
+         (if (expression_console dern)
+            (set@ formes (- (size formes) 1) (list '_console_valeur dern))))
       (texte_lispe formes)))
 

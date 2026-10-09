@@ -83,6 +83,7 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 
 ### Fichiers et données
 - `don0`, `don1`… : le texte des onglets de données du programme (bouton « Données » de l'éditeur). Un onglet vide ne crée pas de variable. À utiliser quand l'élève colle ses propres données.
+- `range_données("don1", valeur)` : écrit la valeur (une liste ou un nombre est écrit comme `affiche` l'écrirait) dans l'onglet Don1, enregistré avec le programme. L'onglet doit exister, ou venir juste après le dernier (on le crée) ; sinon, c'est une erreur. Pendant l'exécution, la variable `don1` garde sa valeur du départ ; `prend_données("don1")` renvoie le texte actuel de l'onglet (y compris ce qu'un `range_données` vient d'y écrire, `""` s'il est vide ; un onglet inexistant est une erreur).
 - `charge_données(nom)` : le texte d'un fichier du répertoire `docs/matériels/` du site (matériel de l'enseignant ; par exemple `charge_données("capitales.csv")`).
 - `lit_fichier()` (sans argument) : un fichier de l'ordinateur, choisi par l'élève dans une fenêtre (le programme repart du début une fois le fichier choisi) ; `lit_fichier("https://…")` : le texte d'une adresse Internet, si le site l'autorise.
 - `écrit_fichier(nom, texte)` : enregistre le texte dans le dossier Téléchargements (`"scores"` devient `scores.txt`).

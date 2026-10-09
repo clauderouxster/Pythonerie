@@ -805,6 +805,23 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                     <p>Si tu retires un onglet du milieu, les suivants changent de numéro&nbsp;: <b>Don2</b> devient <b>Don1</b>.
                         Pense à changer leurs noms dans ton programme, ou clique sur <b>↶</b>.</p>
                 </div>
+                <h3>Ranger et reprendre des données depuis ton programme</h3>
+                <p><code>range_données("don1", valeur)</code> écrit la valeur dans l'onglet <b>Don1</b>, à la place de ce qu'il
+                    contenait. Une liste ou un nombre y est écrit comme <code>affiche</code> l'écrirait. Tu peux aussi créer
+                    l'onglet qui vient juste après le dernier&nbsp;: avec <b>Don0</b>, <b>Don1</b> et <b>Don2</b>,
+                    <code>range_données("don3", …)</code> crée <b>Don3</b>. Plus loin (<code>"don5"</code>), c'est une erreur.</p>
+                <div class="exemple"><pre data-essai>carrés = [n * n pour n dans intervalle(1, 11)]
+range_données("don0", carrés)
+range_données("don1", "Bravo, tu as rangé des données !")
+affiche("Regarde les onglets Don0 et Don1 (bouton ▦ Données).")</pre></div>
+                <p>Les données rangées sont enregistrées avec ton programme. Dans le programme qui tourne, <code>don0</code>
+                    garde sa valeur du départ&nbsp;: il prendra la nouvelle valeur à la prochaine exécution. Si ton programme a
+                    écrasé des données par erreur, clique sur <b>↶</b>, dans les onglets&nbsp;: elles reviennent.</p>
+                <p>Pour relire un onglet tel qu'il est maintenant, même juste après l'avoir changé, utilise
+                    <code>prend_données("don1")</code>&nbsp;: tu obtiens son texte (<code>""</code> s'il est vide).</p>
+                <div class="exemple"><pre data-essai>range_données("don0", "pomme")
+fruit = prend_données("don0")
+affiche("Dans Don0, il y a :", fruit)</pre></div>
             </section>
 
             <!-- ================================================================ -->
@@ -1048,6 +1065,8 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
                     <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)&nbsp;; un onglet vide ne crée pas de variable</td><td class="ex"><code>don0.découpe("\n")</code></td></tr>
+                    <tr><td><code>range_données(nom, valeur)</code></td><td>écrit la valeur dans un onglet de données (il peut créer l'onglet qui suit le dernier)</td><td class="ex"><code>range_données("don1", scores)</code></td></tr>
+                    <tr><td><code>prend_données(nom)</code></td><td>le texte actuel d'un onglet de données (<code>""</code> s'il est vide)</td><td class="ex"><code>t = prend_données("don1")</code></td></tr>
                     <tr><td><code>lit_fichier()</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier()</code></td></tr>
                     <tr><td><code>lit_fichier(adresse)</code></td><td>donne le texte d'une page Internet&nbsp;; l'adresse commence par <code>https://</code></td><td class="ex"><code>t = lit_fichier("https://…")</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>

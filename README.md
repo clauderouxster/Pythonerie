@@ -74,6 +74,16 @@ Quelques règles à connaître :
 - **Animer et réagir** : `animer(fonction, délai)`, `quand_clic(f)`, `quand_souris(f)`, `quand_glisse(f)` (souris déplacée bouton appuyé, ou doigt sur une tablette), `quand_touche(f)`, `arrête()`.
 - **Images et sons** : `img = charge_image(adresse)`, `place_image(img, x, y)`, `snd = charge_son(adresse)`, `joue_son(snd)`.
 - **Fichiers** : `texte = charge_données(nom)` lit un fichier du répertoire **Matériels**, déposé par l'enseignant (voir plus bas). `texte = lit_fichier()`, sans argument, lit un fichier de l'ordinateur, y compris depuis la version en ligne. Un navigateur ne peut lire que les fichiers que l'utilisateur choisit lui-même : quand le programme arrive à `lit_fichier()`, une fenêtre de sélection s'ouvre, puis le programme repart depuis le début avec le contenu du fichier. Avec plusieurs `lit_fichier()`, les fichiers sont demandés l'un après l'autre et rendus dans l'ordre des appels. Ils sont redemandés à chaque exécution, pour toujours lire leur dernière version. Le contenu reste dans le navigateur, rien n'est envoyé. Avec un argument, `lit_fichier("https://…")` lit le texte d'une adresse Internet, si le site l'autorise ; l'adresse doit commencer par `https://`. `écrit_fichier(nom, texte)` enregistre le texte dans le dossier Téléchargements, ce qui fonctionne sur tous les ordinateurs et toutes les tablettes.
+- **Les données du programme** : le bouton **▦ Données**, au-dessus de l'éditeur, remplace le programme par des onglets **Don0**, **Don1**, **Don2**… que l'on peut ajouter ou retirer ; le bouton devient alors **✎ Code**, pour revenir au programme. On y tape ou colle des données, ou on y charge un fichier de l'ordinateur (**📂 Charger un fichier…**). À l'exécution, chaque onglet non vide est ajouté au début du programme sous la forme `don0 = """…"""`, ou `'''…'''` si les données contiennent `"""` ; dans les rares cas où aucune des deux ne convient (les données contiennent `"""` et `'''`, finissent par un guillemet, contiennent un accent grave…), sous la forme `don0 = de_base64("…")`, qui transporte n'importe quel texte sans le modifier : le programme s'en sert par la variable `don0`, `don1`… Un onglet vide ne crée pas de variable. Les données sont enregistrées avec le programme, à la fin du fichier, dans une section de commentaires qui indique le nombre d'onglets et de lignes ; elles le suivent donc dans l'export `.py`, les archives et le répertoire Matériels, et retrouvent leurs onglets à la relecture :
+
+  ```text
+  #=== Données de la Pythonerie : 2 onglets ===
+  #=== don0 : 2 lignes ===
+  #|pays,capitale
+  #|France,Paris
+  #=== don1 : 0 ligne ===
+  #=== Fin des données ===
+  ```
 - **Pour aller plus loin** : environ 180 instructions supplémentaires portant des noms français (`mélange`, `pgcd`, `commence_par`, `loi_normale`…), décrites dans le glossaire du mode d'emploi.
 
 Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, en passant par la tortue, une balle qui rebondit, une courbe mathématique et un petit logiciel de dessin, se trouvent dans le répertoire **Exemples**. Un clic sur un exemple en crée une copie que l'on peut modifier.
@@ -90,7 +100,7 @@ Quatorze exemples, du premier « Bonjour » jusqu'à un piano de trois octaves, 
 
 Le répertoire `docs/matériels/` reçoit le matériel de cours destiné aux élèves. Il apparaît dans la colonne de gauche, sous le nom **Matériels**, au-dessus des **Exemples**, dès qu'il contient au moins un fichier décrit dans son `index.json`.
 
-- **Des programmes** (`.py`) : comme pour un exemple, un clic de l'élève en crée une copie qu'il peut modifier.
+- **Des programmes** (`.py`) : comme pour un exemple, un clic de l'élève en crée une copie qu'il peut modifier. Un programme exporté avec ses onglets de données (bouton **▦ Données**) les garde : l'élève les retrouve dans ses onglets.
 - **Des données** (textes, listes, fichiers `.csv`…) : un programme les lit avec `charge_données("capitales.csv")`, qui renvoie tout le texte du fichier. Un clic de l'élève sur un fichier de données affiche son explication et la ligne à écrire pour le lire. Le répertoire contient un petit exemple, `capitales.csv`, que l'on peut supprimer.
 
 Après avoir ajouté, remplacé ou retiré des fichiers, l'enseignant lance le script `inventaire.py`, placé dans le répertoire :

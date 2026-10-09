@@ -586,7 +586,9 @@ f"{[\"] ~%r}*"=34
    (setg do_not_stop true)
    (key@ error_messages 0 "Erreur de syntaxe")
    ; The magic of LispE. A one-liner to get rid of lines that starts with REM
-   (setq code (join (filterlist (\(x) (neq (lower (@@ (trim x) 0 4)) "rem ")) (split code "\n")) "\n"))
+   ; (splite, and not split, keeps the empty lines, for instance inside a """...""" string ;
+   ; the final "\n" is needed: splite drops the last piece when the string does not end with the separator)
+   (setq code (join (filterlist (\(x) (neq (lower (@@ (trim x) 0 4)) "rem ")) (splite (+ code "\n") "\n")) "\n"))
    (setq tokens (tokenize_rules parser_tok (+ code "\n")))
    (setq i '(0))
    (setq res (C_analyse tokens i ()))

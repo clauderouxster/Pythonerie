@@ -370,6 +370,45 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 .CodeMirror-hints { font-family: var(--font-mono); font-size: 12px; z-index: 50; }
 
 .panneau-lispe { display: none; flex: 1 1 0; min-height: 80px; flex-direction: column; }
+
+/* Les données du programme : onglets Don0, Don1... */
+.panneau-données { flex: 3 1 0; min-height: 140px; display: flex; flex-direction: column; gap: 6px; }
+.panneau-données[hidden], .conteneur-éditeur[hidden] { display: none; }
+.barre-onglets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.espace-barre { flex: 1; }
+.onglets { display: flex; gap: 2px; flex-wrap: wrap; }
+.onglet {
+    padding: 4px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+}
+.onglet:hover { background: var(--bg-hover); color: var(--text-primary); }
+.onglet.vide { font-style: italic; color: var(--text-muted); }
+.onglet.actif { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); font-weight: 600; font-style: normal; }
+.texte-données {
+    flex: 1;
+    min-height: 100px;
+    resize: none;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+}
+.texte-données:focus { outline: 2px solid var(--accent-subtle); border-color: var(--accent); }
+.note-données { font-size: 12px; color: var(--text-muted); min-height: 16px; }
+.note-données code { font-family: var(--font-mono); color: var(--accent); }
 .panneau-lispe.visible { display: flex; }
 .panneau-lispe pre {
     flex: 1;

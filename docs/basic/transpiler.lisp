@@ -988,7 +988,7 @@
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
       (setq r (@@ (trim . prettify (cdr lsp) 100) 1 -1))
       (if (= (@ r 0) "\n")
-         (join (maplist (\(x) (if (and (>= (size x) 3) (eq (@ x 0) " ") (eq (@ x 1) " ") (eq (@ x 2) " ")) (@@ x 3) x)) (split r "\n")) "\n")
+         (désindente r)
          r)))
 
 ; ------------------------------------------------------------------------
@@ -1049,20 +1049,41 @@
 ;                        affiche("fin")
 (setq erreur_injection "")
 
+; Les chaînes longues ("""...""" ou '''...''') sont mises de côté avant l'analyse des
+; lignes, sous la forme d'un repère KX§0§, KX§1§... : leurs lignes (vides, décalées,
+; terminées par « : ») ne doivent pas être prises pour du code. On les repère directement
+; dans le texte : la chaîne commence au premier délimiteur rencontré et finit au même
+; délimiteur. Renvoie (code-avec-repères table), la table associant chaque repère à sa chaîne.
+(defun protège_chaînes_longues(code)
+   (setq table {})
+   (setq morceaux ())
+   (setq position 0)
+   (setq i 0)
+   (setq encore true)
+   (while encore
+      (setq a (find code `"""` position))
+      (setq b (find code "'''" position))
+      (setq début (cond ((nullp a) b) ((nullp b) a) ((< a b) a) (true b)))
+      (setq fin (if (nullp début) nil (find code (@@ code début (+ début 3)) (+ début 3))))
+      (ife (nullp fin)
+         (setq encore false)
+         (block
+            (setq lb (+ "KX§" i "§"))
+            (push morceaux (@@ code position début))
+            (push morceaux lb)
+            (set@ table lb (@@ code début (+ fin 3)))
+            (setq position (+ fin 3))
+            (+= i 1))))
+   (push morceaux (@@ code position (size code)))
+   (list (join morceaux "") table))
+
 (defun injecte_labels(code)
    (setg erreur_injection "")
    (setq dlongstrings {})
    (check (or (in code `"""`) (in code "'''"))
-      (setq toks (tokenize_rules parser_tok code))
-      (setq ky "KX§")
-      (setq i 0)
-      (loop a toks
-         (check (or (= (@@ a 0 3) "'''") (= (@@ a 0 3) `"""`))
-            (setq lb (+ ky i "§"))
-            (setq code (replace code a lb))
-            (set@ dlongstrings lb a)
-            (+= i 1)))
-   )
+      (setq protégé (protège_chaînes_longues code))
+      (setq code (car protégé))
+      (setq dlongstrings (cadr protégé)))
    (setq code (replace (replace code "\r" "") "\t" "    "))
    (setq lignes (split code "\n"))
    (setq résultat ())
@@ -1151,10 +1172,28 @@
 ; We call this specific function to inject closing tags
 ; We then transform our Python into Lisp
 ; Le texte LispE d'une liste de formes
+; Le code LispE mis en forme est décalé de 3 espaces (il était dans __root__) : on retire
+; ce décalage ligne par ligne, mais pas à l'intérieur d'une chaîne `...` sur plusieurs lignes
+; (une chaîne """...""" du programme, ou des données) : son contenu, lignes vides et
+; espaces compris, doit rester intact. splite garde les lignes vides ; le "\n" final
+; est nécessaire, car splite perd le dernier morceau quand la chaîne ne finit pas par "\n".
+(defun désindente (r)
+   (setq lignes ())
+   (setq dedans false)
+   (loop x (splite (+ r "\n") "\n")
+      (if (and (not dedans) (>= (size x) 3) (eq (@ x 0) " ") (eq (@ x 1) " ") (eq (@ x 2) " "))
+         (push lignes (@@ x 3))
+         (push lignes x))
+      (if (= (% (size (findall x "`")) 2) 1)
+         (setq dedans (not dedans))))
+   ; r commence par "\n" : la première ligne est vide
+   (if (and lignes (= (car lignes) "")) (setq lignes (cdr lignes)))
+   (join lignes "\n"))
+
 (defun texte_lispe (formes)
    (setq r (@@ (trim . prettify formes 100) 1 -1))
    (if (= (@ r 0) "\n")
-      (join (maplist (\(x) (if (and (>= (size x) 3) (eq (@ x 0) " ") (eq (@ x 1) " ") (eq (@ x 2) " ")) (@@ x 3) x)) (split r "\n")) "\n")
+      (désindente r)
       r))
 
 (defun compilepython(code)

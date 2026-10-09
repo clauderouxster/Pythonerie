@@ -128,7 +128,17 @@ const Pythonerie = (function () {
         // Pour une erreur levée exprès (lever, ou lit_fichier...), le haut de la pile est
         // le « throw » lui-même, et parfois un « if » et les fonctions internes de la bibliothèque (_...) :
         // inutile de les montrer, l'endroit utile est l'appel de l'élève qui suit.
-        const pile = m.split('\n').filter(l => LIGNE_PILE.test(l));
+        // Le message brut : la pile, une ligne vide, puis le message. Une entrée de la pile
+        // peut contenir des sauts de ligne (une chaîne de données, par exemple) : on coupe
+        // à la dernière ligne vide.
+        let avant = m;
+        if (LIGNE_PILE.test(m.trim()) && m.includes('\n\n')) {
+            const coupure = m.lastIndexOf('\n\n');
+            avant = m.slice(0, coupure);
+            m = avant.split('\n').filter(l => LIGNE_PILE.test(l)).join('\n') + '\n' + m.slice(coupure + 2);
+        }
+        // l'entrée __root__ (tout le programme) n'indique pas d'endroit utile
+        const pile = avant.split('\n').filter(l => LIGNE_PILE.test(l) && !/^\[(\d+|-)\] \(__root__\b/.test(l));
         const levée = pile.length > 0 && /^\[(\d+|-)\] \(throw\b/.test(pile[0]);
         if (levée) {
             while (pile.length && /^\[(\d+|-)\] \((throw\b|if\b|_)/.test(pile[0])) pile.shift();
@@ -305,6 +315,7 @@ const Pythonerie = (function () {
         }
         lecture.rang = 0;
         fichierDemandé = false;
+        oubliePile();
         const c = compileConsole(code);
         if (c.erreur) { écritConsole(c.erreur, 'erreur'); return; }
         try {
@@ -521,12 +532,18 @@ const Pythonerie = (function () {
         }
         lecture.rang = 0;
         fichierDemandé = false;
+        oubliePile();
 
-        const c = compile(code);
+        // Les données (onglets non vides) sont ajoutées au début du programme : une ligne
+        // par onglet (une chaîne sur plusieurs lignes compte pour une seule ligne dans
+        // l'analyse) ; les numéros de ligne des erreurs sont donc décalés d'autant.
+        const défs = définitionsDonnées();
+        const c = compile(défs.length ? défs.join('\n') + '\n' + code : code);
         if (c.erreur) {
             dernierLispE = '';
             afficheLispE();
-            écritConsole(c.erreur, 'erreur');
+            écritConsole(défs.length ? c.erreur.replace(/\b(ligne|line:?) (\d+)/g,
+                (m, mot, n) => mot + ' ' + Math.max(1, Number(n) - défs.length)) : c.erreur, 'erreur');
             return;
         }
         dernierLispE = c.lispe;
@@ -1370,11 +1387,236 @@ const Pythonerie = (function () {
         e.className = 'état-sauvegarde ' + (genre || '');
     }
 
+    // ------------------------------------------------------------------
+    // Les données du programme (bouton « Données ») : des onglets Don0, Don1...
+    // À l'exécution, chaque onglet non vide devient une variable : don0 = """...""".
+    // Elles sont enregistrées avec le programme, dans une section à part, à la fin du
+    // fichier (en mémoire, à l'export .py et dans les archives) :
+    //
+    //   #=== Données de la Pythonerie : 2 onglets ===
+    //   #=== don0 : 2 lignes ===
+    //   #|pays,capitale
+    //   #|France,Paris
+    //   #=== don1 : 0 ligne ===
+    //   #=== Fin des données ===
+    //
+    // Chaque ligne de données est précédée de « #| » : la section n'est faite que de
+    // commentaires, et le nombre de lignes de chaque onglet permet de les relire exactement.
+    // ------------------------------------------------------------------
+    const EN_TÊTE_DONNÉES = /^#=== Données de la Pythonerie : (\d+) onglets? ===$/;
+    const TÊTE_ONGLET = /^#=== don(\d+) : (\d+) lignes? ===$/;
+    const FIN_DONNÉES = '#=== Fin des données ===';
+    const ONGLETS_MAX = 20;
+    let onglets = [''];
+    let ongletActif = 0;
+    let modeDonnées = false;
+
+    const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+
+    // Le texte enregistré : le code, puis la section des données (s'il y en a)
+    function assembleDonnées(code, liste) {
+        if (liste.length <= 1 && !liste[0]) return code;
+        const lignes = ['#=== Données de la Pythonerie : ' + pluriel(liste.length, 'onglet') + ' ==='];
+        liste.forEach((t, i) => {
+            const contenu = t === '' ? [] : t.split('\n');
+            lignes.push('#=== don' + i + ' : ' + pluriel(contenu.length, 'ligne') + ' ===');
+            contenu.forEach(l => lignes.push('#|' + l));
+        });
+        lignes.push(FIN_DONNÉES);
+        return code.replace(/\n+$/, '') + '\n\n' + lignes.join('\n') + '\n';
+    }
+
+    // Sépare le texte enregistré en { code, onglets } ; sans section valide, tout est du code
+    function sépareDonnées(texte) {
+        texte = texte.replace(/\r\n?/g, '\n');
+        const lignes = texte.split('\n');
+        for (let i = 0; i < lignes.length; i++) {
+            const m = EN_TÊTE_DONNÉES.exec(lignes[i]);
+            if (!m) continue;
+            const liste = litSectionDonnées(lignes, i + 1, Number(m[1]));
+            if (!liste) continue;
+            const code = lignes.slice(0, i).join('\n').replace(/\n+$/, '');
+            return { code: code ? code + '\n' : '', onglets: liste };
+        }
+        return { code: texte, onglets: [''] };
+    }
+
+    function litSectionDonnées(lignes, j, n) {
+        if (n < 1 || n > ONGLETS_MAX) return null;
+        const liste = [];
+        for (let k = 0; k < n; k++) {
+            const m = TÊTE_ONGLET.exec(lignes[j] || '');
+            if (!m || Number(m[1]) !== k) return null;
+            const nb = Number(m[2]);
+            j++;
+            const contenu = [];
+            for (let x = 0; x < nb; x++, j++) {
+                if (lignes[j] === undefined || !lignes[j].startsWith('#|')) return null;
+                contenu.push(lignes[j].slice(2));
+            }
+            liste.push(contenu.join('\n'));
+        }
+        if (lignes[j] !== FIN_DONNÉES || lignes.slice(j + 1).some(l => l.trim())) return null;
+        return liste;
+    }
+
+    // Le programme complet, tel qu'il est enregistré
+    function texteComplet() {
+        return assembleDonnées(éditeur.getValue(), onglets);
+    }
+
+    // Écrit un onglet comme une chaîne du programme. Les chaînes """...""" et '''...'''
+    // gardent leur contenu tel quel (pas d'échappement) : on prend celle qui ne peut pas
+    // être coupée par le contenu. Le contenu ne doit pas non plus contenir d'accent grave
+    // (le délimiteur des chaînes LispE), ni de ligne commençant par « rem » (une ligne de
+    // commentaire du BASIC, retirée avant l'analyse), ni f" (réécrit pour les f-chaînes).
+    // Dans ces cas rares, on passe par le base64, qui transporte tout sans risque.
+    function littéralDonnées(t) {
+        const risqué = t.includes('`') || t.includes('KX§') || t.includes('f"')
+            || t.split('\n').some(l => /^rem /i.test(l.trim()));
+        const sûr = (d) => !risqué && !t.includes(d) && !t.endsWith(d[0]);
+        if (sûr('"""')) return '"""' + t + '"""';
+        if (sûr("'''")) return "'''" + t + "'''";
+        return 'de_base64("' + base64(t) + '")';
+    }
+
+    // Les lignes ajoutées au début du programme : don0 = """...""", don1 = ...
+    // (un onglet vide ne définit pas de variable)
+    function définitionsDonnées() {
+        const défs = [];
+        onglets.forEach((t, i) => { if (t !== '') défs.push('don' + i + ' = ' + littéralDonnées(t)); });
+        return défs;
+    }
+
+    function afficheOnglets() {
+        const zone = $('ongletsDonnées');
+        zone.innerHTML = '';
+        onglets.forEach((t, i) => {
+            const b = document.createElement('button');
+            b.className = 'onglet' + (i === ongletActif ? ' actif' : '') + (t === '' ? ' vide' : '');
+            b.textContent = 'Don' + i;
+            b.setAttribute('role', 'tab');
+            b.title = t === '' ? 'Onglet vide' : 'don' + i + ' : ' + pluriel(t.split('\n').length, 'ligne');
+            b.addEventListener('click', () => { ongletActif = i; afficheOnglets(); $('texteDonnées').focus(); });
+            zone.appendChild(b);
+        });
+        const texte = $('texteDonnées');
+        if (texte.value !== onglets[ongletActif]) texte.value = onglets[ongletActif];
+        afficheNoteDonnées();
+        $('btnAjouteOnglet').disabled = onglets.length >= ONGLETS_MAX;
+        libelléBoutonDonnées();
+    }
+
+    // En mode Données, le bouton ramène au code : il s'appelle alors « Code »
+    function libelléBoutonDonnées() {
+        const pleins = onglets.filter(t => t !== '').length;
+        $('btnDonnées').textContent = modeDonnées ? '✎ Code' : '▦ Données' + (pleins ? ' (' + pleins + ')' : '');
+    }
+
+    function afficheNoteDonnées() {
+        const t = onglets[ongletActif];
+        const nom = 'don' + ongletActif;
+        $('noteDonnées').innerHTML = t === ''
+            ? 'Onglet vide : il ne crée pas de variable <code>' + nom + '</code>.'
+            : 'Dans ton programme, ces données s\'appellent <code>' + nom + '</code> (' + pluriel(t.split('\n').length, 'ligne') + ').';
+    }
+
+    function changeOngletsChargés(liste) {
+        onglets = liste.length ? liste : [''];
+        ongletActif = 0;
+        afficheOnglets();
+    }
+
+    function basculeDonnées() {
+        modeDonnées = !modeDonnées;
+        $('panneauDonnées').hidden = !modeDonnées;
+        $('conteneurÉditeur').hidden = modeDonnées;
+        $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'Les données du programme : don0, don1...';
+        libelléBoutonDonnées();
+        if (modeDonnées) $('texteDonnées').focus();
+        else { éditeur.refresh(); éditeur.focus(); }
+    }
+
+    function ajouteOnglet() {
+        if (onglets.length >= ONGLETS_MAX) return;
+        onglets.push('');
+        ongletActif = onglets.length - 1;
+        afficheOnglets();
+        $('texteDonnées').focus();
+    }
+
+    function retireOnglet() {
+        const nom = 'Don' + ongletActif;
+        if (onglets.length === 1) {
+            if (onglets[0] === '' || !confirm('Vider l\'onglet ' + nom + ' ?')) return;
+            onglets[0] = '';
+        } else {
+            const suivants = onglets.length - 1 > ongletActif
+                ? '\n\nLes onglets suivants changent de numéro : Don' + (ongletActif + 1) + ' devient ' + nom + '…'
+                  + ' Pense à changer leurs noms (don' + (ongletActif + 1) + '…) dans ton programme.'
+                : '';
+            if ((onglets[ongletActif] !== '' || suivants) && !confirm('Retirer l\'onglet ' + nom + ' ?' + suivants)) return;
+            onglets.splice(ongletActif, 1);
+            ongletActif = Math.min(ongletActif, onglets.length - 1);
+        }
+        afficheOnglets();
+        sauvegardePlusTard();
+    }
+
+    // Comme dans TamedAgents : le fichier choisi remplit l'onglet affiché
+    async function chargeOnglet(fichier) {
+        let texte;
+        try {
+            texte = nfc(await fichier.text()).replace(/\r\n?/g, '\n');
+        } catch (e) {
+            écritConsole('Impossible de lire « ' + fichier.name + ' » : ' + e.message, 'erreur');
+            return;
+        }
+        const nom = 'Don' + ongletActif;
+        if (onglets[ongletActif] !== '' && !confirm('Remplacer le contenu de l\'onglet ' + nom + ' par celui de « ' + fichier.name + ' » ?')) return;
+        onglets[ongletActif] = texte;
+        afficheOnglets();
+        sauvegardePlusTard();
+        écritConsole('— « ' + fichier.name + ' » est dans l\'onglet ' + nom + ' : dans ton programme, c\'est la variable don' + ongletActif + '.', 'info');
+    }
+
+    function installeDonnées() {
+        $('btnDonnées').addEventListener('click', basculeDonnées);
+        $('btnAjouteOnglet').addEventListener('click', ajouteOnglet);
+        $('btnRetireOnglet').addEventListener('click', retireOnglet);
+        $('btnChargeOnglet').addEventListener('click', () => $('fichierOnglet').click());
+        $('fichierOnglet').addEventListener('change', (ev) => {
+            const f = ev.target.files[0];
+            ev.target.value = '';
+            if (f) chargeOnglet(f);
+        });
+        const texte = $('texteDonnées');
+        texte.addEventListener('input', () => {
+            const était = onglets[ongletActif];
+            onglets[ongletActif] = nfc(texte.value);
+            // vide <-> rempli : l'onglet change d'aspect
+            if ((était === '') !== (onglets[ongletActif] === '')) afficheOnglets();
+            else afficheNoteDonnées();
+            sauvegardePlusTard();
+        });
+        texte.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); exécute(); }
+            else if (ev.key === 's' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); modifie = true; sauvegarde(); }
+            else if (ev.key === 'Tab' && !ev.shiftKey) {
+                // une tabulation dans les données (fichiers séparés par des tabulations)
+                ev.preventDefault();
+                texte.setRangeText('\t', texte.selectionStart, texte.selectionEnd, 'end');
+                texte.dispatchEvent(new Event('input'));
+            }
+        });
+        afficheOnglets();
+    }
+
     async function sauvegarde() {
         clearTimeout(minuterieSauvegarde);
         if (!courant || !modifie) return;
         try {
-            await stockage.écrit(courant, éditeur.getValue());
+            await stockage.écrit(courant, texteComplet());
             modifie = false;
             étatSauvegarde('Enregistré', 'ok');
         } catch (e) {
@@ -1395,9 +1637,10 @@ const Pythonerie = (function () {
         if (chemin === courant) return;
         await sauvegarde();
         try {
-            const code = await stockage.lit(chemin);
+            const { code, onglets: données } = sépareDonnées(await stockage.lit(chemin));
             chargementEnCours = true;
             éditeur.setValue(code);
+            changeOngletsChargés(données);
             éditeur.clearHistory();
             chargementEnCours = false;
             courant = chemin;
@@ -1576,13 +1819,13 @@ const Pythonerie = (function () {
 
     async function duplique() {
         if (!courant) return;
-        await crée(parentDe(courant), nomDe(courant) + ' (copie)', éditeur.getValue());
+        await crée(parentDe(courant), nomDe(courant) + ' (copie)', texteComplet());
     }
 
     async function exporte(chemin = courant) {
         let code;
         try {
-            code = chemin === courant ? éditeur.getValue() : await stockage.lit(chemin);
+            code = chemin === courant ? texteComplet() : await stockage.lit(chemin);
         } catch (e) {
             écritConsole('Impossible d\'exporter : ' + e.message, 'erreur');
             return;
@@ -1867,6 +2110,7 @@ const Pythonerie = (function () {
         $('btnExécuter').addEventListener('click', exécute);
         $('btnArrêter').addEventListener('click', arrête);
         $('btnLispE').addEventListener('click', basculeLispE);
+        installeDonnées();
         $('btnNouveau').addEventListener('click', nouveau);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
         $('btnNouveauDossier').addEventListener('click', nouveauDossier);
@@ -1968,18 +2212,29 @@ const Pythonerie = (function () {
     // Sortie standard de LispE. En cas d'erreur, le WebAssembly y écrit aussi la pile
     // d'appels, une ligne vide et le message brut (« message, line: 3 in: main », précédé
     // de « Error: » sauf pour lever) : on ne les montre pas, l'erreur est affichée proprement.
+    // Une entrée de la pile peut s'étendre sur plusieurs lignes (une chaîne de données) :
+    // tout ce qui suit le début de la pile est avalé, jusqu'au message brut.
     const MESSAGE_BRUT = /line: \d+ in: /;
     let aprèsPile = false;
+    let ligneVide = null;   // la dernière ligne écrite, si elle est vide
     function sortie(texte) {
-        if (LIGNE_PILE.test(texte) || /^Error: /.test(texte) && MESSAGE_BRUT.test(texte)) {
-            aprèsPile = true;
+        if (LIGNE_PILE.test(texte)) { aprèsPile = true; return; }
+        if (aprèsPile) {
+            if (MESSAGE_BRUT.test(texte)) aprèsPile = false;
             return;
         }
-        if (aprèsPile && texte === '') return;
-        if (aprèsPile && MESSAGE_BRUT.test(texte)) { aprèsPile = false; return; }
-        aprèsPile = false;
+        if (/^Error: /.test(texte) && MESSAGE_BRUT.test(texte)) {
+            // le WebAssembly écrit une ligne vide juste avant ce message : on la retire
+            if (ligneVide && ligneVide.parentNode && ligneVide === $('console').lastElementChild) ligneVide.remove();
+            ligneVide = null;
+            return;
+        }
         écritConsole(texte, 'sortie');
+        ligneVide = texte === '' ? $('console').lastElementChild : null;
     }
+
+    // Avant chaque exécution : une pile laissée incomplète n'avale pas la suite
+    function oubliePile() { aprèsPile = false; }
 
     return {
         démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées,

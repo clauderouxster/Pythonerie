@@ -254,8 +254,12 @@
 ; Message d'une erreur attrapée par sauf(e), sans la pile d'appels LispE
 ; ("[12] (throw ...)") ni la position dans le code LispE (", line: ...")
 (defun _message_erreur (e)
+   (setq s (string e))
+   ; la pile, une ligne vide, puis le message : une entrée de la pile peut s'étendre
+   ; sur plusieurs lignes (une chaîne de données), on garde ce qui suit la dernière ligne vide
+   (if (in s "\n\n") (setq s (@ (split s "\n\n") -1)))
    (setq lignes ())
-   (loop l (split (string e) "\n")
+   (loop l (split s "\n")
       (check (and (trim l) (not (and (= (@@ l 0 1) "[") (in l "] ("))))
          (push lignes l)))
    (setq m (join lignes "\n"))

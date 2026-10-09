@@ -68,5 +68,10 @@
     "fichier": "14_piano.py",
     "titre": "14. Piano",
     "description": "un piano de trois octaves : souris, glissando et clavier de l'ordinateur"
+  },
+  {
+    "fichier": "15_casse_briques.py",
+    "titre": "15. Casse-briques",
+    "description": "un jeu complet : animation, souris, clavier, sons, score et vies"
   }
 ]

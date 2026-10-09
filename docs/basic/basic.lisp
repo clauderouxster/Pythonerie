@@ -1,4 +1,4 @@
-;Date: 2026/10/08 15:50:15
+;Date: 2026/10/09 10:04:40
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -153,7 +153,7 @@
 (defun C_anumber (tokens i v)
    (check (< (car i) (size tokens))
       (setq w (@ tokens (car i)))
-      (check ( (or (= w "0") (integer w) (number w)))
+      (check ( (or (= w "0") (= w "0.0") (integer w) (number w)))
          (+= i 1)
          (push v (list 'anumber (float w)))
          (return true)

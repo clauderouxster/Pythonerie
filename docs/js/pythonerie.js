@@ -1502,8 +1502,14 @@ const Pythonerie = (function () {
         });
         const texte = $('texteDonnées');
         if (texte.value !== onglets[ongletActif]) texte.value = onglets[ongletActif];
+        // le nom de la variable est celui de l'onglet ouvert : don0, don1...
+        texte.placeholder = 'Tape ou colle tes données ici, ou charge un fichier.\n'
+            + 'Tu pourras les appeler dans ton code avec la variable don' + ongletActif + '.';
         afficheNoteDonnées();
         $('btnAjouteOnglet').disabled = onglets.length >= ONGLETS_MAX;
+        $('btnRetireOnglet').disabled = ongletActif === 0 && onglets[0] === '';
+        $('btnRetireOnglet').title = ongletActif === 0 ? 'Vider l\'onglet Don0 (il reste toujours là)' : 'Retirer l\'onglet Don' + ongletActif;
+        $('btnAnnuleOnglet').disabled = !annulationsOnglets.length;
         libelléBoutonDonnées();
     }
 
@@ -1522,6 +1528,7 @@ const Pythonerie = (function () {
     }
 
     function changeOngletsChargés(liste) {
+        annulationsOnglets = [];
         onglets = liste.length ? liste : [''];
         ongletActif = 0;
         afficheOnglets();
@@ -1545,18 +1552,39 @@ const Pythonerie = (function () {
         $('texteDonnées').focus();
     }
 
+    // Annuler : avant chaque retrait, vidage ou remplacement par un fichier, on garde les
+    // onglets tels qu'ils étaient ; ↶ les fait revenir (plusieurs fois de suite si besoin).
+    // La pile est oubliée quand on ouvre un autre programme.
+    let annulationsOnglets = [];
+
+    function retientOnglets() {
+        annulationsOnglets.push({ onglets: [...onglets], actif: ongletActif });
+        if (annulationsOnglets.length > 30) annulationsOnglets.shift();
+    }
+
+    function annuleOnglet() {
+        const avant = annulationsOnglets.pop();
+        if (!avant) return;
+        onglets = avant.onglets;
+        ongletActif = avant.actif;
+        afficheOnglets();
+        sauvegardePlusTard();
+    }
+
+    // − retire l'onglet ouvert ; Don0 reste toujours là : il est seulement vidé
     function retireOnglet() {
-        const nom = 'Don' + ongletActif;
-        if (onglets.length === 1) {
-            if (onglets[0] === '' || !confirm('Vider l\'onglet ' + nom + ' ?')) return;
+        if (ongletActif === 0) {
+            if (onglets[0] === '') return;
+            retientOnglets();
             onglets[0] = '';
         } else {
-            const suivants = onglets.length - 1 > ongletActif
-                ? '\n\nLes onglets suivants changent de numéro : Don' + (ongletActif + 1) + ' devient ' + nom + '…'
-                  + ' Pense à changer leurs noms (don' + (ongletActif + 1) + '…) dans ton programme.'
-                : '';
-            if ((onglets[ongletActif] !== '' || suivants) && !confirm('Retirer l\'onglet ' + nom + ' ?' + suivants)) return;
+            retientOnglets();
+            const suivants = ongletActif < onglets.length - 1;
             onglets.splice(ongletActif, 1);
+            if (suivants) {
+                écritConsole('— Les onglets suivants ont changé de numéro : Don' + (ongletActif + 1) + ' est devenu Don' + ongletActif
+                    + '… Pense à changer leurs noms dans ton programme (ou clique sur ↶ pour annuler).', 'info');
+            }
             ongletActif = Math.min(ongletActif, onglets.length - 1);
         }
         afficheOnglets();
@@ -1573,7 +1601,7 @@ const Pythonerie = (function () {
             return;
         }
         const nom = 'Don' + ongletActif;
-        if (onglets[ongletActif] !== '' && !confirm('Remplacer le contenu de l\'onglet ' + nom + ' par celui de « ' + fichier.name + ' » ?')) return;
+        if (onglets[ongletActif] !== '') retientOnglets();
         onglets[ongletActif] = texte;
         afficheOnglets();
         sauvegardePlusTard();
@@ -1584,6 +1612,7 @@ const Pythonerie = (function () {
         $('btnDonnées').addEventListener('click', basculeDonnées);
         $('btnAjouteOnglet').addEventListener('click', ajouteOnglet);
         $('btnRetireOnglet').addEventListener('click', retireOnglet);
+        $('btnAnnuleOnglet').addEventListener('click', annuleOnglet);
         $('btnChargeOnglet').addEventListener('click', () => $('fichierOnglet').click());
         $('fichierOnglet').addEventListener('change', (ev) => {
             const f = ev.target.files[0];

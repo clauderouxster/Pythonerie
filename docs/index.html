@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.09.09.36">
+    <link rel="stylesheet" href="style.css?v=2026.10.09.09.45">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.09.36</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.09.45</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -117,9 +117,10 @@
                 <div class="barre-onglets">
                     <div id="ongletsDonnées" class="onglets" role="tablist"></div>
                     <button id="btnAjouteOnglet" class="btn btn-secondaire btn-petit" title="Ajouter un onglet">＋</button>
+                    <button id="btnRetireOnglet" class="btn btn-secondaire btn-petit" title="Retirer l'onglet ouvert (Don0 est seulement vidé)">−</button>
+                    <button id="btnAnnuleOnglet" class="btn btn-secondaire btn-petit" title="Annuler" disabled>↶</button>
                     <span class="espace-barre"></span>
                     <button id="btnChargeOnglet" class="btn btn-secondaire btn-petit" title="Mettre le contenu d'un fichier de l'ordinateur dans cet onglet">📂 Charger un fichier…</button>
-                    <button id="btnRetireOnglet" class="btn btn-secondaire btn-petit" title="Retirer cet onglet">✕ Retirer l'onglet</button>
                 </div>
                 <textarea id="texteDonnées" class="texte-données" spellcheck="false" placeholder="Tape ou colle tes données ici, ou charge un fichier."></textarea>
                 <div id="noteDonnées" class="note-données"></div>
@@ -353,7 +354,7 @@ selon (nom):
                         <td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)</td></tr>
                 </table>
                 <p class="note">Le bouton <b>▦ Données</b>, au-dessus de l'éditeur, montre les onglets de données du programme ; il devient alors <b>✎ Code</b>, pour revenir au programme.
-                    On y tape ou colle des données, ou on y charge un fichier (📂). À l'exécution, chaque onglet non vide devient
+                    On y tape ou colle des données, ou on y charge un fichier (📂). <b>＋</b> ajoute un onglet, <b>−</b> retire l'onglet ouvert (Don0 est seulement vidé), <b>↶</b> annule. À l'exécution, chaque onglet non vide devient
                     une variable : <code>don0</code>, <code>don1</code>… Les données sont enregistrées avec le programme,
                     et le suivent dans l'export et les archives.</p>
                 <p class="note">L'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
@@ -404,7 +405,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.09.09.36';
+                return répertoire + fichier + '?v=2026.10.09.09.45';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -412,12 +413,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.09.09.36"></script>
-    <script src="js/canevas.js?v=2026.10.09.09.36"></script>
-    <script src="js/pythonerie.js?v=2026.10.09.09.36"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.09.09.45"></script>
+    <script src="js/canevas.js?v=2026.10.09.09.45"></script>
+    <script src="js/pythonerie.js?v=2026.10.09.09.45"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.09.09.36"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.09.09.36"></script>
+    <script src="lispe/lispe.js?v=2026.10.09.09.45"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.09.09.45"></script>
 </body>
 
 </html>

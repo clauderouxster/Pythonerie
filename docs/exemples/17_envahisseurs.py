@@ -87,13 +87,17 @@ fonction clic(x, y):
     place_vaisseau(x)
     tire()
 
+# Espace (ou haut) tire ; les flèches sont lues dans image(), tant qu'elles sont tenues
 fonction clavier(t):
-    si t == "gauche":
-        place_vaisseau(vaisseau_x - 25)
-    sinonsi t == "droite":
-        place_vaisseau(vaisseau_x + 25)
-    sinonsi t == "espace" ou t == "haut":
+    si t == "espace" ou t == "haut":
         tire()
+
+# Les flèches tenues déplacent le vaisseau en douceur, à chaque image
+fonction pilote_clavier():
+    si touche_enfoncée("gauche"):
+        place_vaisseau(vaisseau_x - 6)
+    si touche_enfoncée("droite"):
+        place_vaisseau(vaisseau_x + 6)
 
 # La flotte avance par petits pas ; moins il reste d'envahisseurs, plus elle va vite
 fonction avance_flotte():
@@ -245,6 +249,7 @@ fonction dessine():
 
 fonction image():
     si état == "jeu":
+        pilote_clavier()
         avance_flotte()
         lâche_bombes()
         avance_tir()

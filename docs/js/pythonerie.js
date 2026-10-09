@@ -605,6 +605,7 @@ const Pythonerie = (function () {
 
     function quittePleinÉcran() {
         const scène = $('scèneCanevas');
+        Pyt.relâcheTouches();
         if (document.fullscreenElement === scène && document.exitFullscreen) document.exitFullscreen().catch(() => {});
         scène.classList.remove('plein', 'secours');
     }

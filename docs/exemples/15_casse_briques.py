@@ -1,5 +1,5 @@
 # 15. Casse-briques
-# La souris (ou les flèches du clavier) déplace la raquette.
+# La souris (ou les flèches du clavier, tenues enfoncées) déplace la raquette.
 # Clic ou Espace : lancer la balle. Casse toutes les briques sans laisser
 # tomber la balle : tu as 3 vies ! (Clique d'abord dans le canevas pour
 # que le clavier fonctionne.)
@@ -76,13 +76,18 @@ fonction souris(x, y):
 fonction clic(x, y):
     lance()
 
+# Espace lance la balle ; les flèches sont lues dans image(), tant qu'elles sont tenues
 fonction clavier(t):
-    si t == "gauche":
-        place_raquette(raquette_x + raquette_l / 2 - 40)
-    sinonsi t == "droite":
-        place_raquette(raquette_x + raquette_l / 2 + 40)
-    sinonsi t == "espace":
+    si t == "espace":
         lance()
+
+# Les flèches tenues déplacent la raquette doucement, à chaque image
+fonction pilote_clavier():
+    centre = raquette_x + raquette_l / 2
+    si touche_enfoncée("gauche"):
+        place_raquette(centre - 9)
+    si touche_enfoncée("droite"):
+        place_raquette(centre + 9)
 
 # Une brique touchée disparaît, et la balle rebondit
 fonction casse_brique():
@@ -168,6 +173,7 @@ fonction dessine():
         texte(255, 390, "Clic ou Espace : rejouer")
 
 fonction image():
+    pilote_clavier()
     si état == "jeu":
         avance_balle()
     dessine()

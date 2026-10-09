@@ -181,6 +181,10 @@
 (defmacro quand_clic (fonction) (block (evaljs (list "Pyt.quandClic" (string (quote fonction)))) nil))
 (defmacro quand_souris (fonction) (block (evaljs (list "Pyt.quandSouris" (string (quote fonction)))) nil))
 (defmacro quand_touche (fonction) (block (evaljs (list "Pyt.quandTouche" (string (quote fonction)))) nil))
+; quand_relâche(f) : f(touche) quand on relâche une touche (même nom qu'à l'appui)
+(defmacro quand_relâche (fonction) (block (evaljs (list "Pyt.quandRelâche" (string (quote fonction)))) nil))
+; touche_enfoncée(nom) : Vrai tant que la touche est tenue (à appeler dans la fonction d'animer)
+(defun touche_enfoncée (nom) (> (evaljs (list "Pyt.toucheEnfoncée" (string nom))) 0))
 (defmacro quand_glisse (fonction) (block (evaljs (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
 ; saisie(clef, x, y, fonction) : un champ de saisie dans le canevas ; Entrée (ou un clic
 ; dans un autre champ) appelle fonction(clef, valeur), la valeur étant un texte

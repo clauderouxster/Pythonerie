@@ -50,7 +50,7 @@ const Pyt = (function () {
     let canevas = null, ctx = null, couche = null, ctxTortue = null;
     let état = null, tortue = null;
     let minuteries = [];
-    let gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+    let gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
     // Images et sons chargés par le programme : charge_image et charge_son renvoient leur numéro
     let images = [];
     let sons = [];
@@ -274,14 +274,42 @@ const Pyt = (function () {
             if (aff) aff.textContent = '';
         });
         window.addEventListener('keydown', (ev) => {
-            if (!gestionnaires.touche) return;
             // On laisse l'éditeur et les champs de saisie tranquilles
             const cible = ev.target;
             if (cible && (cible.closest && cible.closest('.CodeMirror, input, textarea, select'))) return;
+            const nom = (NOMS_TOUCHES[ev.key] || ev.key).normalize('NFC');
+            // la touche est tenue : on retient son nom sous sa position physique (event.code),
+            // pour lui associer exactement un relâchement, avec le même nom
+            if (!ev.repeat) enfoncées.set(ev.code || ev.key, nom);
+            if (!gestionnaires.touche && !gestionnaires.relâche && !minuteries.length) return;
             if (ev.key.startsWith('Arrow') || ev.key === ' ') ev.preventDefault();
-            const nom = NOMS_TOUCHES[ev.key] || ev.key;
-            appelle(gestionnaires.touche, [chaîneLispE(nom.normalize('NFC'))]);
+            // quand_touche reçoit aussi les répétitions du système, comme avant
+            if (gestionnaires.touche) appelle(gestionnaires.touche, [chaîneLispE(nom)]);
         });
+        // Le relâchement est toujours traité si l'appui a été retenu, même si le focus
+        // est passé entre-temps à un champ de saisie : tout appui retenu reçoit un relâchement
+        window.addEventListener('keyup', (ev) => {
+            const code = ev.code || ev.key;
+            if (!enfoncées.has(code)) return;
+            const nom = enfoncées.get(code);
+            enfoncées.delete(code);
+            if (gestionnaires.relâche) appelle(gestionnaires.relâche, [chaîneLispE(nom)]);
+        });
+        // Une touche relâchée pendant que la page n'a pas le focus n'envoie pas de keyup :
+        // on relâche tout quand la fenêtre perd le focus ou que l'onglet est caché
+        window.addEventListener('blur', () => relâcheTout(true));
+        document.addEventListener('visibilitychange', () => { if (document.hidden) relâcheTout(true); });
+    }
+
+    // Les touches tenues : event.code -> le nom transmis au programme lors de l'appui
+    const enfoncées = new Map();
+
+    // prévenir : appeler quand_relâche pour chacune (perte du focus) ; sinon (nouvelle
+    // exécution, Arrêter), on oublie simplement les touches
+    function relâcheTout(prévenir) {
+        const noms = [...enfoncées.values()];
+        enfoncées.clear();
+        if (prévenir && gestionnaires.relâche) noms.forEach(nom => appelle(gestionnaires.relâche, [chaîneLispE(nom)]));
     }
 
     // ================= API publique =================
@@ -307,11 +335,12 @@ const Pyt = (function () {
         // Avant chaque exécution : on arrête tout et on repart d'une page blanche
         réinitialise() {
             retireChamps();
+            relâcheTout(false);
             largeurChamp = LARGEUR_CHAMP;
             dimensionne(LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT);
             this.arrête();
             this.arrêteSons();
-            gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
             images = [];
             sons = [];
             état = étatInitial();
@@ -487,6 +516,16 @@ const Pyt = (function () {
         quandSouris(nom) { gestionnaires.souris = nom; },
         quandGlisse(nom) { gestionnaires.glisse = nom; },
         quandTouche(nom) { gestionnaires.touche = nom; },
+        // quand_relâche(f) : f(touche) au relâchement, avec le nom reçu à l'appui
+        quandRelâche(nom) { gestionnaires.relâche = nom; },
+        // touche_enfoncée(nom) : 1 si la touche est tenue, 0 sinon
+        toucheEnfoncée(nom) {
+            nom = String(nom).normalize('NFC');
+            for (const n of enfoncées.values()) if (n === nom) return 1;
+            return 0;
+        },
+        // à la sortie du plein écran (voir pythonerie.js)
+        relâcheTouches() { relâcheTout(true); },
         arrête() {
             minuteries.forEach(clearInterval);
             minuteries = [];
@@ -494,13 +533,14 @@ const Pyt = (function () {
         },
         enCours() {
             return minuteries.length > 0 || champs.size > 0
-                || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche);
+                || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche);
         },
         stoppeTout() {
             retireChamps();
+            relâcheTout(false);
             this.arrête();
             this.arrêteSons();
-            gestionnaires = { clic: null, souris: null, glisse: null, touche: null };
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
         },
 
         // ---------- Champs de saisie ----------

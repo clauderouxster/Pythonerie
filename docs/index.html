@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.09.16.04">
+    <link rel="stylesheet" href="style.css?v=2026.10.09.22.44">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.16.04</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.22.44</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -388,6 +388,7 @@ fonction clic(cx, cy):
     couleur_balle =: choisis(["rouge", "vert", "bleu"])   # =: modifie la variable du programme
 quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche(f)
                         # quand_touche : "gauche", "droite", "haut", "bas", "espace", "entrée", "a"…
+                        # dans la fonction d'animer : si touche_enfoncée("gauche"): … ; quand_relâche(f) : f(touche) au relâchement
                         # saisie("nom", 100, 100, f) : un champ de saisie ; Entrée appelle f(clef, valeur)
                         # active_saisie(clef), saisie_active(), largeur_saisie(l) ; nombre("2,5") donne 2.5</pre>
                 <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
@@ -420,7 +421,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.09.16.04';
+                return répertoire + fichier + '?v=2026.10.09.22.44';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -428,12 +429,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.09.16.04"></script>
-    <script src="js/canevas.js?v=2026.10.09.16.04"></script>
-    <script src="js/pythonerie.js?v=2026.10.09.16.04"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.09.22.44"></script>
+    <script src="js/canevas.js?v=2026.10.09.22.44"></script>
+    <script src="js/pythonerie.js?v=2026.10.09.22.44"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.09.16.04"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.09.16.04"></script>
+    <script src="lispe/lispe.js?v=2026.10.09.22.44"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.09.22.44"></script>
 </body>
 
 </html>

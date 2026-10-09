@@ -110,6 +110,8 @@ const PYTHONERIE_FONCTIONS = {
     'active_saisie': 'active_saisie(clef) — donne la main au champ (son contenu est sélectionné)',
     'saisie_active': 'saisie_active() — la clef du champ qui a la main ("" sinon)',
     'largeur_saisie': 'largeur_saisie(l) — largeur des champs créés ensuite (200 au départ)',
+    'quand_relâche': 'quand_relâche(fonction) — appelle fonction(touche) quand on relâche une touche',
+    'touche_enfoncée': 'touche_enfoncée(nom) — Vrai tant que la touche est tenue (dans la fonction d\'animer)',
     'quand_glisse': 'quand_glisse(fonction) — appelle fonction(x, y) quand la souris bouge avec le bouton appuyé',
     // Images et sons
     'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',

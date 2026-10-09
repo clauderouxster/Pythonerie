@@ -88,5 +88,10 @@
     "fichier": "18_tableur.py",
     "titre": "18. Un mini tableur",
     "description": "des champs de saisie dans une grille : flèches, Entrée et totaux des colonnes"
+  },
+  {
+    "fichier": "19_asteroides.py",
+    "titre": "19. Le jeu astéroïdes",
+    "description": "Le jeu astéroïdes: survivre à des astéroïdes en mouvement"
   }
 ]

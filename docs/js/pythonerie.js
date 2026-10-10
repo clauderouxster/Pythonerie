@@ -433,7 +433,8 @@ const Pythonerie = (function () {
     // l'élève répond sous la console (Entrée), puis le programme repart du début : les
     // réponses déjà données sont rendues dans l'ordre et réécrites dans la console, les
     // sons de la partie rejouée sont coupés, et le hasard reprend la même graine (mêmes
-    // tirages, donc mêmes questions). Échap abandonne : le programme s'arrête.
+    // tirages, donc mêmes questions ; voir aussi random_seed dans exécute). Échap abandonne :
+    // le programme s'arrête.
     // Pendant une animation, un clic, ou dans la ligne >>>, on ne peut pas rejouer :
     // demande() ouvre alors la fenêtre du navigateur.
     // ------------------------------------------------------------------
@@ -735,6 +736,9 @@ const Pythonerie = (function () {
         Pyt.coupeSons(réponses.liste.length > 0);
         try {
             nouvelInterpréteur();
+            // le hasard de LispE (mélange, au_hasard, les lois de probabilité) reprend lui
+            // aussi la même graine : une relance refait les mêmes tirages
+            évalue(idxExécution, '(random_seed ' + (graineExécution % 2147483647) + ')');
             dansProgramme = true;
             try { évalue(idxExécution, c.lispe); } finally { dansProgramme = false; }
             const durée = Math.round(performance.now() - début);

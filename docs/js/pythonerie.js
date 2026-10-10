@@ -1320,8 +1320,7 @@ const Pythonerie = (function () {
         éléments.push({ séparateur: true });
         éléments.push({ texte: '🆕 Nouveau projet…', action: nouveauProjet });
         éléments.push({ texte: '✏️ Renommer « ' + nomDuProjet + ' »…', action: renommeProjet });
-        const p = projetPrécédent();
-        if (p) éléments.push({ texte: '↶ Revenir à « ' + p + ' »', action: revientProjetPrécédent });
+        éléments.push({ texte: '📦 Exporter le projet', action: exporteProjet });
         ouvreDéroulante($('nomProjet'), éléments);
     }
 

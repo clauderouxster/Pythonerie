@@ -679,6 +679,8 @@ const Pythonerie = (function () {
             écritConsole('— Ton projet est vide : crée d\'abord un programme (bouton ＋ Nouveau).', 'info');
             return;
         }
+        // en plein écran du code, on ne verrait ni la console ni le canevas
+        if (zonePleine === 'code') quitteZonePleine();
         const code = éditeur.getValue();
         Pyt.stoppeTout();
         Pyt.réinitialise();
@@ -793,6 +795,67 @@ const Pythonerie = (function () {
         Pyt.relâcheTouches();
         if (document.fullscreenElement === scène && document.exitFullscreen) document.exitFullscreen().catch(() => {});
         scène.classList.remove('plein', 'secours');
+    }
+
+    // ------------------------------------------------------------------
+    // Plein écran du code ou de la console : la zone occupe toute la fenêtre (une classe
+    // sur body) et le navigateur passe en plein écran s'il le permet. C'est la page entière
+    // qui passe en plein écran, pas la zone seule : les propositions de l'éditeur
+    // (Ctrl+Espace) et les fenêtres de dialogue restent visibles. La police ne change pas.
+    // Exécuter quitte le plein écran du code, pour voir la console et le canevas.
+    // ------------------------------------------------------------------
+    let zonePleine = null;      // 'code', 'console' ou null
+
+    function basculeZonePleine(zone) {
+        if (zonePleine === zone) { quitteZonePleine(); return; }
+        if (zonePleine) document.body.classList.remove('plein-' + zonePleine);
+        zonePleine = zone;
+        document.body.classList.add('plein-' + zone);
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => { /* la fenêtre suffit */ });
+        }
+        aprèsChangementZone();
+    }
+
+    function quitteZonePleine() {
+        if (!zonePleine) return;
+        document.body.classList.remove('plein-' + zonePleine);
+        zonePleine = null;
+        if (document.fullscreenElement === document.documentElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+        }
+        aprèsChangementZone();
+    }
+
+    function aprèsChangementZone() {
+        [['btnPleinCode', 'code', 'Le code en plein écran'], ['btnPleinConsole', 'console', 'La console en plein écran']].forEach(([id, zone, titre]) => {
+            const b = $(id), dedans = zonePleine === zone;
+            b.textContent = dedans ? '✕' : '⛶';
+            b.title = dedans ? 'Quitter le plein écran (Échap)' : titre;
+            b.setAttribute('aria-label', b.title);
+        });
+        requestAnimationFrame(() => {
+            éditeur.refresh();
+            $('console').scrollTop = $('console').scrollHeight;
+            if (zonePleine === 'code') (modeDonnées ? $('texteDonnées') : éditeur).focus();
+            else if (zonePleine === 'console') $('saisieConsole').focus();
+        });
+    }
+
+    function installeZonesPleines() {
+        $('btnPleinCode').addEventListener('click', () => basculeZonePleine('code'));
+        $('btnPleinConsole').addEventListener('click', () => basculeZonePleine('console'));
+        // Échap (ou le navigateur) a quitté le plein écran : la zone reprend sa place
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && zonePleine) quitteZonePleine();
+        });
+        // sans vrai plein écran (refusé par le navigateur), Échap ramène aussi l'affichage normal ;
+        // mais pas quand Échap sert déjà : abandonner une question, fermer les propositions
+        window.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Escape' || !zonePleine || document.fullscreenElement) return;
+            if (questionPosée !== null || (éditeur.state && éditeur.state.completionActive)) return;
+            quitteZonePleine();
+        });
     }
 
     function installePleinÉcran() {
@@ -2841,6 +2904,7 @@ const Pythonerie = (function () {
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', téléchargeImage);
         installePleinÉcran();
+        installeZonesPleines();
         $('btnThème').addEventListener('click', basculeThème);
         $('btnAide').addEventListener('click', () => $('aide').classList.add('visible'));
         $('fermeAide').addEventListener('click', () => $('aide').classList.remove('visible'));

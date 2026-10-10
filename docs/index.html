@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.10.10.44">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.11.01">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.10.44</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.11.01</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -107,6 +107,7 @@
                     <span id="étatSauvegarde" class="état-sauvegarde"></span>
                 </div>
                 <div class="barre-droite">
+                    <button id="btnPleinCode" class="btn btn-secondaire btn-petit btn-icône" title="Le code en plein écran" aria-label="Le code en plein écran">⛶</button>
                     <button id="btnDonnées" class="btn btn-secondaire btn-petit" title="Les données du projet : don0, don1...">▦ Données</button>
                     <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
                     <button id="btnArrêter" class="btn btn-secondaire btn-petit" disabled title="Arrêter les animations">■ Arrêter</button>
@@ -144,6 +145,8 @@
             <div class="zone-console">
                 <div class="section-tête">
                     <span class="étiquette">Console</span>
+                    <span class="espace-barre"></span>
+                    <button id="btnPleinConsole" class="btn btn-secondaire btn-petit btn-icône" title="La console en plein écran" aria-label="La console en plein écran">⛶</button>
                     <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
                 </div>
                 <div id="console" class="console"></div>
@@ -207,6 +210,7 @@
                 <p>Pythonerie est un Python en français. Les blocs se reconnaissent à
                     l'<b>indentation</b> (4 espaces) et la ligne qui ouvre un bloc se termine par <code>:</code>.
                     <b>Ctrl+Entrée</b> exécute, <b>Ctrl+Espace</b> propose des mots, <b>Ctrl+/</b> met une ligne en commentaire.
+                    Les boutons <b>⛶</b> de l'éditeur et de la console les mettent en plein écran (<b>✕</b> ou Échap pour revenir ; <b>▶ Exécuter</b> quitte le plein écran de l'éditeur).
                     Sous la console, la ligne <code>&gt;&gt;&gt;</code> exécute du code tout de suite, comme l'invite de Python :
                     tape <code>notes</code> pour voir le contenu de la variable, <code>longueur(notes)</code>, <code>x = 5</code>…
                     Elle utilise les variables et les fonctions du dernier programme exécuté. <b>Maj+Entrée</b> passe à la ligne
@@ -445,7 +449,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.10.10.44';
+                return répertoire + fichier + '?v=2026.10.10.11.01';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -453,14 +457,14 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.10.10.44"></script>
-    <script src="js/zip.js?v=2026.10.10.10.44"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.10.10.44"></script>
-    <script src="js/canevas.js?v=2026.10.10.10.44"></script>
-    <script src="js/pythonerie.js?v=2026.10.10.10.44"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.11.01"></script>
+    <script src="js/zip.js?v=2026.10.10.11.01"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.10.11.01"></script>
+    <script src="js/canevas.js?v=2026.10.10.11.01"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.11.01"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.10.10.44"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.10.10.44"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.11.01"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.11.01"></script>
 </body>
 
 </html>

@@ -369,6 +369,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .état-sauvegarde.erreur { color: var(--danger); }
 
 .conteneur-éditeur {
+    position: relative;
     flex: 3 1 0;
     min-height: 140px;
     border: 1px solid var(--border-color);
@@ -397,6 +398,13 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 /* Les données du programme : onglets Don0, Don1... */
 .panneau-données { flex: 3 1 0; min-height: 140px; display: flex; flex-direction: column; gap: 6px; }
 .panneau-données[hidden], .conteneur-éditeur[hidden] { display: none; }
+/* Projet sans programme : un message par-dessus l'éditeur verrouillé */
+.éditeur-vide { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; color: var(--text-secondary); font-size: 15px; }
+.éditeur-vide[hidden] { display: none; }
+.éditeur-vide p { margin: 0; }
+.éditeur-vide .btn { padding: 9px 18px; font-size: 14px; }
+.éditeur-vide-note { font-size: 13px; color: var(--text-muted); max-width: 340px; }
 .barre-onglets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .espace-barre { flex: 1; }
 .onglets { display: flex; gap: 2px; flex-wrap: wrap; }

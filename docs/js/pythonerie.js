@@ -10,24 +10,6 @@
 //    basic/bibliothèque.lisp, qui dessine dans le canevas via Pyt (canevas.js).
 // =====================================================================
 
-const PROGRAMME_ACCUEIL = `# Bienvenue dans la Pythonerie !
-# Écris ton programme ici, puis clique sur « Exécuter » (ou Ctrl+Entrée).
-
-nom = "Pythonerie"
-affiche("Bonjour depuis", nom)
-
-pour i dans intervalle(1, 6):
-    affiche(i, "au carré vaut", i * i)
-
-# On dessine dans le canevas à droite
-fond("beige")
-couleur("bleu")
-disque(400, 300, 120)
-couleur("blanc")
-taille_texte(32)
-texte(335, 284, "Bonjour !")
-`;
-
 const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // État
@@ -605,6 +587,10 @@ const Pythonerie = (function () {
             écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
             return;
         }
+        if (!courant) {
+            écritConsole('— Ton projet est vide : crée d\'abord un programme (bouton ＋ Nouveau).', 'info');
+            return;
+        }
         const code = éditeur.getValue();
         Pyt.stoppeTout();
         Pyt.réinitialise();
@@ -1020,7 +1006,7 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         await rafraichitListe();
         if (programmes.length) await ouvre(programmes[0].chemin);
-        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else aucunProgramme();
     }
 
     // Un chemin de programme est accepté seulement s'il est fait de noms valides
@@ -1143,12 +1129,12 @@ const Pythonerie = (function () {
         try { localStorage.setItem(CLÉ_EXPORTÉ, empreinte(instant)); } catch (e) { /* rien */ }
     }
 
-    // Rien à garder : aucun fichier, aucune donnée, et aucun programme ou seulement le programme d'accueil intact
+    // Rien à garder : aucun programme, aucun fichier, aucune donnée
     function espaceVide(instant) {
         const codes = Object.values(instant.programmes);
         if (instant.fichiers && instant.fichiers.length) return false;
         if ((instant.onglets || []).some(o => o !== '')) return false;
-        return codes.length === 0 || (codes.length === 1 && codes[0].trim() === PROGRAMME_ACCUEIL.trim());
+        return codes.length === 0;
     }
 
     // Fenêtre de dialogue : renvoie la valeur du bouton choisi (null pour Échap) ;
@@ -1838,7 +1824,7 @@ const Pythonerie = (function () {
         await rafraichitListe();
         if (!ouvertSupprimé) return;
         if (programmes.length) await ouvre(programmes[0].chemin);
-        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else aucunProgramme();
     }
 
     function afficheArbre() {
@@ -2171,6 +2157,23 @@ const Pythonerie = (function () {
         minuterieSauvegarde = setTimeout(sauvegarde, 1200);
     }
 
+    // Le projet n'a aucun programme : l'éditeur est vide et verrouillé, et un message
+    // propose d'en créer un
+    function aucunProgramme() {
+        clearTimeout(minuterieSauvegarde);
+        courant = null;
+        modifie = false;
+        chargementEnCours = true;
+        éditeur.setValue('');
+        éditeur.clearHistory();
+        chargementEnCours = false;
+        éditeur.setOption('readOnly', 'nocursor');
+        $('éditeurVide').hidden = false;
+        afficheTitre();
+        étatSauvegarde('', '');
+        retientCourant();
+    }
+
     let chargementEnCours = false;
     async function ouvre(chemin) {
         if (chemin === courant) return;
@@ -2179,6 +2182,8 @@ const Pythonerie = (function () {
             const code = await stockage.lit(chemin);
             chargementEnCours = true;
             éditeur.setValue(code);
+            éditeur.setOption('readOnly', false);
+            $('éditeurVide').hidden = true;
             éditeur.clearHistory();
             chargementEnCours = false;
             courant = chemin;
@@ -2281,7 +2286,7 @@ const Pythonerie = (function () {
         await rafraichitListe();
         if (!estOuvert) return;
         if (programmes.length) await ouvre(programmes[0].chemin);
-        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else aucunProgramme();
     }
 
     // Déplace un répertoire ; met à jour le programme ouvert et les répertoires repliés
@@ -2361,6 +2366,7 @@ const Pythonerie = (function () {
     }
 
     async function exporte(chemin = courant) {
+        if (!chemin) return;
         let code;
         try {
             code = chemin === courant ? éditeur.getValue() : await stockage.lit(chemin);
@@ -2681,6 +2687,7 @@ const Pythonerie = (function () {
 
     function installeBoutons() {
         $('btnExécuter').addEventListener('click', exécute);
+        $('btnPremierProgramme').addEventListener('click', nouveau);
         $('btnArrêter').addEventListener('click', arrête);
         $('btnLispE').addEventListener('click', basculeLispE);
         installeDonnées();
@@ -2776,7 +2783,7 @@ const Pythonerie = (function () {
         try { dernier = localStorage.getItem('pythonerie.dernier'); } catch (e) { /* rien */ }
         if (dernier && programmes.some(p => p.chemin === dernier)) await ouvre(dernier);
         else if (programmes.length) await ouvre(programmes[0].chemin);
-        else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
+        else aucunProgramme();
     }
 
     // Appelé quand le WebAssembly de LispE est prêt

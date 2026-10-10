@@ -192,7 +192,7 @@ fonction clic(x, y):
 # --- On pose les objets du panneau ---
 # ils prennent la police et la taille du texte du moment
 
-taille_texte(15)
+taille_texte(12)
 largeur_saisie(PANNEAU - 24)
 saisie("titre", 12, 28, titre_changé)
 liste_déroulante("forme", 12, 84, FORMES, forme_choisie)

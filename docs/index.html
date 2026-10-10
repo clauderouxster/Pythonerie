@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.10.10.19">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.10.44">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.10.19</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.10.44</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -307,7 +307,7 @@ selon (nom):
                 <h3>Fonctions utiles</h3>
                 <table class="table-aide">
                     <tr><td><code>affiche(a, b…)</code></td><td>écrit dans la console</td>
-                        <td><code>demande("Question ?")</code></td><td>demande un texte à l'utilisateur</td></tr>
+                        <td><code>demande("Question ?")</code></td><td>demande un texte à l'utilisateur : la réponse se tape sous la console (Entrée ; Échap arrête)</td></tr>
                     <tr><td><code>demande_nombre("…")</code></td><td>demande un nombre (synonymes : <code>lire</code>, <code>lire_nombre</code>, <code>input</code>)</td>
                         <td><code>longueur(x)</code></td><td>taille d'une liste ou d'un texte</td></tr>
                     <tr><td><code>intervalle(a, b, pas)</code></td><td>nombres de a à b (exclu)</td>
@@ -445,7 +445,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.10.10.19';
+                return répertoire + fichier + '?v=2026.10.10.10.44';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -453,14 +453,14 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.10.10.19"></script>
-    <script src="js/zip.js?v=2026.10.10.10.19"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.10.10.19"></script>
-    <script src="js/canevas.js?v=2026.10.10.10.19"></script>
-    <script src="js/pythonerie.js?v=2026.10.10.10.19"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.10.44"></script>
+    <script src="js/zip.js?v=2026.10.10.10.44"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.10.10.44"></script>
+    <script src="js/canevas.js?v=2026.10.10.10.44"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.10.44"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.10.10.19"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.10.10.19"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.10.44"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.10.44"></script>
 </body>
 
 </html>

@@ -182,6 +182,26 @@ const Pyt = (function () {
 
     let dernièreErreur = '';
 
+    // Le hasard de la Pythonerie (aléatoire, hasard, choisis) : un générateur à graine
+    // (mulberry32). Quand le programme repart du début après une réponse à demande(), il
+    // reprend la même graine : il refait les mêmes tirages, et pose les mêmes questions.
+    let étatHasard = (Math.random() * 4294967296) >>> 0;
+    function aléa() {
+        étatHasard = (étatHasard + 0x6D2B79F5) >>> 0;
+        let x = étatHasard;
+        x = Math.imul(x ^ (x >>> 15), x | 1);
+        x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    }
+    // Pendant la partie rejouée d'un programme (voir demande), les sons sont coupés
+    let sonsCoupés = false;
+
+    // Les sons déjà décodés, par adresse (blob: d'un son du projet, fichier du site, https://).
+    // Le programme s'exécute d'un seul trait, et demande() bloque la page : un son décodé
+    // pendant que le programme tourne ne serait prêt qu'à la fin. Les sons nommés dans le
+    // code sont donc décodés avant l'exécution (préchargeSons), et charge_son les trouve ici.
+    const sonsDécodés = new Map();      // adresse -> AudioBuffer
+
     // Taille logique des deux calques ; le cadre suit les proportions (voir style.css)
     // ---------- Champs de saisie : saisie(clef, x, y, fonction) ----------
     // Un vrai champ <input>, posé sur le canevas en coordonnées du canevas (il suit
@@ -432,15 +452,26 @@ const Pyt = (function () {
         écris(texte) {
             if (window.Pythonerie) window.Pythonerie.écrisPartiel(String(texte));
         },
+        // demande(question) : la question est posée dans la console (voir pythonerie.js).
+        // Sans réponse, le programme s'arrête le temps que l'élève réponde, puis repart du
+        // début. Pendant une animation ou un clic, on ne peut pas repartir : la fenêtre du
+        // navigateur pose alors la question.
         demande(question) {
-            const r = window.prompt(String(question || ''), '');
-            return r === null ? '' : r.normalize('NFC');
+            dernièreErreur = '';
+            const r = window.Pythonerie ? window.Pythonerie.réponseÀ(String(question)) : null;
+            if (r && r.manque) { dernièreErreur = 'le programme attend une réponse'; return ''; }
+            if (r) return r.réponse;
+            const réponse = window.prompt(String(question || ''), '');
+            return réponse === null ? '' : réponse.normalize('NFC');
         },
         aléatoire(a, b) {
             a = Math.ceil(nombre(a)); b = Math.floor(nombre(b));
             if (b < a) [a, b] = [b, a];
-            return Math.floor(Math.random() * (b - a + 1)) + a;
+            return Math.floor(aléa() * (b - a + 1)) + a;
         },
+        hasard() { return aléa(); },
+        graine(g) { étatHasard = g >>> 0; },
+        coupeSons(oui) { sonsCoupés = !!oui; },
 
         // ---------- Styles ----------
         efface() {
@@ -610,11 +641,13 @@ const Pyt = (function () {
             return minuteries.length > 0 || champs.size > 0
                 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche);
         },
-        stoppeTout() {
+        // gardeSons : le programme s'arrête sur une question (demande) ; le son qu'il vient
+        // de lancer (« bravo ! ») continue pendant que l'élève lit la question
+        stoppeTout(gardeSons) {
             retireChamps();
             relâcheTout(false);
             this.arrête();
-            this.arrêteSons();
+            if (!gardeSons) this.arrêteSons();
             gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
         },
 
@@ -982,22 +1015,42 @@ const Pyt = (function () {
                 entrée.élément = élément;
             };
             const ctx = contexteAudio();
-            if (!ctx) {
+            if (sonsDécodés.has(nom)) {
+                entrée.tampon = sonsDécodés.get(nom);       // décodé avant l'exécution : prêt à jouer
+            } else if (!ctx) {
                 créeÉlément();
             } else {
                 entrée.prêt = téléchargeAvecReprise(nom)
                     .then(r => r.arrayBuffer())
                     .then(données => ctx.decodeAudioData(données))
-                    .then(tampon => { entrée.tampon = tampon; })
+                    .then(tampon => { entrée.tampon = tampon; sonsDécodés.set(nom, tampon); })
                     .catch(() => créeÉlément());
             }
             sons.push(entrée);
             return sons.length - 1;
         },
+        // Avant l'exécution : décode les sons que le programme va charger (noms : les
+        // arguments des charge_son("…") de son code). Renvoie une promesse, ou null s'il n'y a
+        // rien à attendre ; on n'attend jamais plus de délai ms (réseau lent).
+        préchargeSons(noms, délai = 3000) {
+            const ctx = contexteAudio();
+            if (!ctx) return null;
+            // appelé pendant le clic sur « Exécuter » : le navigateur autorise alors le son
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const àDécoder = [...new Set(noms.map(n => adresseMédia(n, 'sons')).filter(a => a && !sonsDécodés.has(a)))];
+            if (!àDécoder.length) return null;
+            const tous = Promise.all(àDécoder.map(a => téléchargeAvecReprise(a)
+                .then(r => r.arrayBuffer())
+                .then(données => ctx.decodeAudioData(données))
+                .then(tampon => { sonsDécodés.set(a, tampon); })
+                .catch(() => { /* charge_son signalera l'erreur, ou passera par un lecteur <audio> */ })));
+            return Promise.race([tous, new Promise(fin => setTimeout(fin, délai))]);
+        },
         // joue_son(numéro) : les sons peuvent se superposer (accords, notes répétées)
         joueSon(numéro) {
             const entrée = sons[numéro];
             if (!entrée) throw new Error('Son inconnu : ' + numéro + ' (utilise le numéro renvoyé par charge_son)');
+            if (sonsCoupés) return;          // déjà entendu, avant la dernière réponse
             const ctx = contexteAudio();
             if (entrée.tampon && ctx) {
                 // le navigateur suspend l'audio tant qu'on n'a pas cliqué : un clic le réveille

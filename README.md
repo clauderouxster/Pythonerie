@@ -68,7 +68,7 @@ Quelques règles à connaître :
 
 ## Ce que l'on peut faire
 
-- **Écrire et demander** : `affiche`, `écris`, `demande("Ton nom ?")`, `demande_nombre(...)`.
+- **Écrire et demander** : `affiche`, `écris`, `demande("Ton nom ?")`, `demande_nombre(...)`. Comme `input()` en Python, la question s'écrit dans la console et la ligne sous la console attend la réponse (Entrée pour répondre, Échap pour arrêter le programme) : aucune fenêtre ne bloque la page, si bien que les sons jouent et que la console s'affiche au fur et à mesure. Pour cela, le programme s'arrête à chaque question sans réponse, puis repart du début une fois la réponse donnée : les réponses déjà données sont rendues dans l'ordre, la partie déjà jouée est rejouée sans ses sons, et le hasard d'`aléatoire`, `hasard` et `choisis` refait les mêmes tirages, de sorte que les questions ne changent pas. Pendant une animation ou un clic, où l'on ne peut pas repartir du début, `demande` ouvre la fenêtre du navigateur.
 - **Calculer** : `aléatoire(1, 6)`, `arrondi`, `racine`, `somme`, `maximum`, `minimum`, `intervalle`…
 - **Listes et textes** : `ajoute`, `longueur`, `trie`, `inverse`, `choisis`, `majuscules`, `découpe`, `remplace`, les listes en compréhension, les dictionnaires.
 - **Dessiner** sur un canevas de 800 × 600 (ou de la taille choisie avec `canevas(largeur, hauteur)` ; `largeur()` et `hauteur()` donnent la taille actuelle), dont l'origine est en haut à gauche : `point`, `ligne`, `rectangle`, `carré`, `cercle`, `disque`, `ellipse`, `triangle`, `polygone` (avec leurs versions pleines), `fond`, `couleur` (avec des noms français, et leurs nuances `"rouge foncé"`, `"bleu clair"`…), `épaisseur`, `rgb(r, g, b)`, et `texte` avec `taille_texte` et `police`.

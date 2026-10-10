@@ -31,9 +31,13 @@
 (defpat écris (a b c d e f g) (_écris_liste (list a b c d e f g)))
 (defpat écris (a b c d e f g h) (_écris_liste (list a b c d e f g h)))
 
-; Pose une question à l'utilisateur et renvoie sa réponse (une chaîne)
+; Pose une question à l'utilisateur et renvoie sa réponse (une chaîne), tapée dans la
+; console ; sans réponse, le programme s'arrête le temps que l'élève réponde (il repart
+; ensuite du début : voir pythonerie.js)
 (defun demande ((question ""))
-   (evaljs (list "Pyt.demande" (string question))))
+   (setq réponse (evaljs (list "Pyt.demande" (string question))))
+   (_erreur_navigateur)
+   réponse)
 
 ; Pose une question et renvoie la réponse sous forme de nombre
 (defun demande_nombre ((question ""))
@@ -72,7 +76,7 @@
 
 ; Nombre réel au hasard entre 0 et 1
 (defun hasard ()
-   (float (evaljs "Math.random()")))
+   (float (evaljs "Pyt.hasard()")))
 
 ; Choisit un élément au hasard dans une liste
 (defun choisis (liste)

@@ -468,6 +468,10 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 }
 .console-ligne { white-space: pre-wrap; word-break: break-word; }
 .console-ligne.commande { color: var(--console-commande); }
+/* demande() : la question du programme, puis la réponse de l'élève */
+.console-ligne.question { color: var(--console-fg); }
+.console-ligne .réponse-élève { color: var(--console-commande); }
+.saisie-console.en-question .invite { font-weight: 700; }
 .console { border-radius: var(--radius-md) var(--radius-md) 0 0; }
 /* Ligne de commande sous la console */
 .saisie-console {

@@ -189,6 +189,38 @@
 ; saisie(clef, x, y, fonction) : un champ de saisie dans le canevas ; Entrée (ou un clic
 ; dans un autre champ) appelle fonction(clef, valeur), la valeur étant un texte
 (defmacro saisie (clef x y fonction) (block (evaljs (list "Pyt.saisie" (string clef) x y (string (quote fonction)))) nil))
+; Les autres objets du canevas (même règle : la fonction est donnée par son nom)
+; bouton(clef, x, y, texte, f) : un clic appelle f(clef, texte)
+(defmacro bouton (clef x y texte fonction) (block (evaljs (list "Pyt.bouton" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+; case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) quand on la coche ou la décoche
+(defmacro case_à_cocher (clef x y texte fonction) (block (evaljs (list "Pyt.caseÀCocher" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+; bouton_radio(clef, groupe, x, y, texte, f) : un seul coché par groupe ; f(groupe, clef) quand on le choisit
+(defmacro bouton_radio (clef groupe x y texte fonction) (block (evaljs (list "Pyt.boutonRadio" (string clef) (string groupe) x y (_texte texte) (string (quote fonction)))) nil))
+; glissière(clef, x, y, mini, maxi, valeur, f) : f(clef, valeur) pendant qu'on la déplace
+(defmacro glissière (clef x y mini maxi valeur fonction) (block (evaljs (list "Pyt.glissière" (string clef) x y mini maxi valeur (string (quote fonction)))) nil))
+; zone_édition(clef, x, y, lignes, f) : un texte sur plusieurs lignes ; f(clef, texte) quand on la quitte (ou Ctrl+Entrée)
+(defmacro zone_édition (clef x y lignes fonction) (block (evaljs (list "Pyt.zoneÉdition" (string clef) x y lignes (string (quote fonction)))) nil))
+; liste_déroulante(clef, x, y, éléments, f) : f(clef, choix) quand on choisit un élément
+(defmacro liste_déroulante (clef x y éléments fonction) (block (evaljs (list "Pyt.listeDéroulante" (string clef) x y (json éléments) (string (quote fonction)))) nil))
+; liste_hiérarchique(clef, x, y, lignes, arbre, f) : un arbre ; un élément est un texte ou [nom, [enfants]] ;
+; un clic appelle f(clef, chemin), chemin étant la liste des noms depuis la racine
+(defmacro liste_hiérarchique (clef x y lignes arbre fonction) (block (evaljs (list "Pyt.listeHiérarchique" (string clef) x y lignes (json arbre) (string (quote fonction)))) nil))
+; valeur_objet(clef) : la valeur actuelle d'un objet (texte, nombre, Vrai / Faux pour une case ou
+; un radio, le chemin choisi pour une liste hiérarchique)
+(defun valeur_objet (clef)
+   (setq v (evaljs (list "Pyt.valeurObjet" (string clef))))
+   (_erreur_navigateur)
+   (setq g (evaljs (list "Pyt.genreObjet" (string clef))))
+   (cond
+      ((or (= g "case") (= g "radio")) (= v "1"))
+      ((= g "glissière") (if (in v ".") (float v) (integer v)))
+      ((= g "arbre") (json_parse v))
+      (true v)))
+; change_objet(clef, valeur) : change la valeur d'un objet, sans appeler sa fonction
+(defun change_objet (clef valeur)
+   (evaljs (list "Pyt.changeObjet" (string clef) (if (consp valeur) (json valeur) valeur)))
+   (_erreur_navigateur)
+   nil)
 ; largeur_saisie(l) : la largeur des champs créés ensuite (200 au départ)
 (defun largeur_saisie (l) (evaljs (list "Pyt.largeurSaisie" l)) nil)
 ; active_saisie(clef) : donne la main au champ (le champ quitté envoie sa valeur)

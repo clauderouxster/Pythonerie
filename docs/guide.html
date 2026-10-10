@@ -720,6 +720,44 @@ saisie("âge", 100, 180, reçu)</pre></div>
                     <code>quand_touche</code>&nbsp;; <b>gauche</b> et <b>droite</b> aussi, quand le curseur est au bord du texte.
                     C'est ainsi que l'exemple <b>18. Un mini tableur</b> passe d'une case à l'autre avec les flèches.</p>
 
+                <h3>🧩 Boutons, cases, listes et autres objets</h3>
+                <p>Comme un champ de saisie, tu peux poser dans le canevas d'autres objets que l'on manipule à la souris.
+                    Chacun a une <b>clef</b> (son nom), se place au point (x, y), prend la police et la taille du texte du
+                    moment, et appelle ta fonction quand on s'en sert. Cette fonction reçoit toujours <b>deux</b> valeurs&nbsp;:
+                    une même fonction peut donc servir à plusieurs objets.</p>
+                <ul>
+                    <li><code>bouton(clef, x, y, texte, f)</code>&nbsp;: un bouton&nbsp;; un clic appelle <code>f(clef, texte)</code>.</li>
+                    <li><code>case_à_cocher(clef, x, y, texte, f)</code>&nbsp;: une case&nbsp;; <code>f(clef, coché)</code> reçoit
+                        <code>Vrai</code> ou <code>Faux</code>.</li>
+                    <li><code>bouton_radio(clef, groupe, x, y, texte, f)</code>&nbsp;: dans un même <b>groupe</b>, un seul bouton est
+                        choisi à la fois&nbsp;; en choisir un appelle <code>f(groupe, clef)</code>.</li>
+                    <li><code>glissière(clef, x, y, mini, maxi, valeur, f)</code>&nbsp;: une réglette qui va de mini à maxi&nbsp;;
+                        <code>f(clef, valeur)</code> pendant qu'on la déplace.</li>
+                    <li><code>liste_déroulante(clef, x, y, éléments, f)</code>&nbsp;: une liste où l'on choisit un élément&nbsp;;
+                        <code>f(clef, choix)</code>.</li>
+                    <li><code>liste_hiérarchique(clef, x, y, lignes, arbre, f)</code>&nbsp;: une liste en arbre, que l'on déplie.
+                        Un élément est un texte, ou <code>[nom, [enfants…]]</code> pour un groupe. Un clic appelle
+                        <code>f(clef, chemin)</code>&nbsp;: <code>chemin</code> est la liste des noms depuis le haut, par exemple
+                        <code>["Fruits", "pomme"]</code>, et <code>chemin[-1]</code> est l'élément cliqué.</li>
+                    <li><code>zone_édition(clef, x, y, lignes, f)</code>&nbsp;: un texte sur plusieurs lignes (Entrée passe à la
+                        ligne)&nbsp;; <code>f(clef, texte)</code> quand tu quittes la zone, ou avec <b>Ctrl+Entrée</b>.</li>
+                </ul>
+                <p><code>valeur_objet(clef)</code> lit la valeur d'un objet à tout moment, et <code>change_objet(clef, valeur)</code>
+                    la change (sans appeler sa fonction)&nbsp;: <code>change_objet("taille", 30)</code>,
+                    <code>change_objet("grille", Vrai)</code>…</p>
+                <div class="exemple"><pre data-essai>fonction choisi(clef, valeur):
+    affiche(clef, ":", valeur)
+
+taille_texte(16)
+bouton("ok", 20, 20, "Bonjour !", choisi)
+case_à_cocher("son", 20, 70, "Avec le son", choisi)
+bouton_radio("petit", "taille", 20, 110, "Petit", choisi)
+bouton_radio("grand", "taille", 20, 140, "Grand", choisi)
+glissière("vitesse", 20, 180, 1, 10, 5, choisi)
+liste_déroulante("animal", 20, 220, ["chat", "chien", "lapin"], choisi)
+liste_hiérarchique("aliments", 300, 20, 6, [["Fruits", ["pomme", "poire"]], ["Légumes", ["carotte", "salade"]], "Pain"], choisi)</pre></div>
+                <p>L'exemple <b>20. L'atelier de formes</b> se sert de tous ces objets à la fois.</p>
+
                 <h3>Dessiner en faisant glisser la souris</h3>
                 <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris
                     <b>en gardant le bouton appuyé</b> (ou ton doigt posé, sur une tablette).</p>
@@ -1109,6 +1147,15 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     <tr><td><code>active_saisie(clef)</code></td><td>met le curseur dans ce champ</td><td class="ex"><code>active_saisie("A1")</code></td></tr>
                     <tr><td><code>saisie_active()</code></td><td>la clef du champ qui a le curseur (<code>""</code> s'il n'y en a pas)</td><td class="ex"><code>clef = saisie_active()</code></td></tr>
                     <tr><td><code>largeur_saisie(l)</code></td><td>la largeur des champs créés ensuite (200 au départ)</td><td class="ex"><code>largeur_saisie(100)</code></td></tr>
+                    <tr><td><code>bouton(clef, x, y, texte, f)</code></td><td>un bouton&nbsp;; un clic appelle f(clef, texte)</td><td class="ex"><code>bouton("ok", 20, 20, "Valider", clic)</code></td></tr>
+                    <tr><td><code>case_à_cocher(clef, x, y, texte, f)</code></td><td>une case à cocher&nbsp;; f(clef, Vrai ou Faux)</td><td class="ex"><code>case_à_cocher("son", 20, 60, "Son", f)</code></td></tr>
+                    <tr><td><code>bouton_radio(clef, groupe, x, y, texte, f)</code></td><td>un seul choisi par groupe&nbsp;; f(groupe, clef)</td><td class="ex"><code>bouton_radio("rouge", "couleur", 20, 100, "Rouge", f)</code></td></tr>
+                    <tr><td><code>glissière(clef, x, y, mini, maxi, valeur, f)</code></td><td>une réglette&nbsp;; f(clef, valeur) quand on la déplace</td><td class="ex"><code>glissière("taille", 20, 140, 10, 80, 30, f)</code></td></tr>
+                    <tr><td><code>liste_déroulante(clef, x, y, éléments, f)</code></td><td>une liste à choix&nbsp;; f(clef, choix)</td><td class="ex"><code>liste_déroulante("forme", 20, 180, ["disque", "carré"], f)</code></td></tr>
+                    <tr><td><code>liste_hiérarchique(clef, x, y, lignes, arbre, f)</code></td><td>une liste en arbre&nbsp;; f(clef, chemin)</td><td class="ex"><code>liste_hiérarchique("a", 20, 220, 6, [["Fruits", ["pomme"]]], f)</code></td></tr>
+                    <tr><td><code>zone_édition(clef, x, y, lignes, f)</code></td><td>un texte sur plusieurs lignes&nbsp;; f(clef, texte) quand on la quitte</td><td class="ex"><code>zone_édition("notes", 20, 260, 4, f)</code></td></tr>
+                    <tr><td><code>valeur_objet(clef)</code></td><td>la valeur actuelle d'un objet</td><td class="ex"><code>valeur_objet("taille")</code></td></tr>
+                    <tr><td><code>change_objet(clef, valeur)</code></td><td>change la valeur d'un objet (sans appeler sa fonction)</td><td class="ex"><code>change_objet("son", Vrai)</code></td></tr>
                 </table>
                 </div>
 

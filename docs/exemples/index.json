@@ -93,5 +93,10 @@
     "fichier": "19_asteroides.py",
     "titre": "19. Le jeu astéroïdes",
     "description": "Le jeu astéroïdes: survivre à des astéroïdes en mouvement"
+  },
+  {
+    "fichier": "20_atelier.py",
+    "titre": "20. L'atelier de formes",
+    "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, zone d'édition"
   }
 ]

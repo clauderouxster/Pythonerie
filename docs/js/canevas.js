@@ -162,8 +162,11 @@ const Pyt = (function () {
         rappel(code);
     }
 
+    // une chaîne "..." de LispE : les sauts de ligne s'écrivent \n (un vrai saut de ligne
+    // entre guillemets ne peut pas être relu par LispE)
     function chaîneLispE(s) {
-        return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+        return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+            .replace(/\r\n?/g, '\n').replace(/\n/g, '\\n').replace(/\t/g, '\\t') + '"';
     }
 
     // GitHub Pages refuse parfois une requête (erreur 503) quand on en envoie beaucoup
@@ -192,7 +195,8 @@ const Pyt = (function () {
         const e = champ.élément;
         e.style.left = (champ.x * 100 / LARGEUR) + '%';
         e.style.top = (champ.y * 100 / HAUTEUR) + '%';
-        e.style.width = (champ.l * 100 / LARGEUR) + '%';
+        // un bouton, une case ou un radio prend la largeur de son texte
+        e.style.width = champ.l ? (champ.l * 100 / LARGEUR) + '%' : '';
         // la police et la taille courantes (police, taille_texte) au moment de saisie() ;
         // la taille suit la largeur affichée du canevas (unités cqw)
         e.style.fontFamily = champ.police;
@@ -228,6 +232,65 @@ const Pyt = (function () {
         if (!nom) return;
         ev.preventDefault();
         appelle(gestionnaires.touche, [chaîneLispE(nom)]);
+    }
+
+    // ---------- Les objets du canevas : saisie, bouton, case à cocher, bouton radio,
+    // glissière, zone d'édition. Ils partagent la table champs (une clef = un objet) ;
+    // un nouvel appel avec la même clef déplace l'objet, ou le remplace s'il est d'un autre genre.
+    function objetDe(clef, genre, fabrique) {
+        let o = champs.get(clef);
+        if (o && o.genre !== genre) { o.élément.remove(); champs.delete(clef); o = null; }
+        if (!o) {
+            o = { clef, genre, envoyé: null };
+            o.élément = fabrique(o);
+            // un clic sur l'objet ne doit pas être pris pour un clic dans le canevas
+            o.élément.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+            canevas.parentElement.appendChild(o.élément);
+            champs.set(clef, o);
+        }
+        return o;
+    }
+
+    function poseObjet(o, nom, x, y, l) {
+        o.fonction = String(nom);
+        o.x = nombre(x);
+        o.y = nombre(y);
+        o.l = l;
+        o.police = état.police;
+        o.taille = état.taille;
+        placeChamp(o);
+        if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+    }
+
+    // une case à cocher ou un bouton radio : la case, puis son texte, dans un <label>
+    function fabriqueCoche(o, type, quandChange) {
+        const l = document.createElement('label');
+        l.className = 'objet-canevas coche-canevas';
+        const c = document.createElement('input');
+        c.type = type;
+        const t = document.createElement('span');
+        l.append(c, t);
+        // la case rend le focus : la barre d'espace d'un jeu ne la changera pas
+        c.addEventListener('change', () => { c.blur(); quandChange(); });
+        o.entrée = c;
+        o.texte = t;
+        return l;
+    }
+
+    // une valeur venue de LispE en JSON (liste imbriquée) ; sinon la valeur telle quelle
+    function lisJSON(v, défaut) {
+        if (typeof v !== 'string') return v === undefined || v === null ? défaut : v;
+        try { return JSON.parse(v); } catch (e) { return v; }
+    }
+
+    function valeurGlissière(o) {
+        const v = Number(o.élément.value);
+        return o.entiers ? Math.round(v) : Math.round(v * 1e6) / 1e6;
+    }
+
+    // l'appel au programme se fait un instant plus tard (voir envoieChamp)
+    function appelleBientôt(fonction, args) {
+        setTimeout(() => appelle(fonction, args), 0);
     }
 
     function retireChamps() {
@@ -547,11 +610,10 @@ const Pyt = (function () {
         // saisie(clef, x, y, fonction) : crée le champ « clef », ou le déplace s'il existe déjà
         saisie(clef, x, y, nom) {
             clef = String(clef).normalize('NFC');
-            let champ = champs.get(clef);
-            if (!champ) {
+            const o = objetDe(clef, 'saisie', () => {
                 const e = document.createElement('input');
                 e.type = 'text';
-                e.className = 'saisie-canevas';
+                e.className = 'saisie-canevas objet-canevas';
                 e.spellcheck = false;
                 e.autocomplete = 'off';
                 e.setAttribute('aria-label', clef);
@@ -564,20 +626,204 @@ const Pyt = (function () {
                     const vers = ev.relatedTarget;
                     if (vers && vers.classList && vers.classList.contains('saisie-canevas')) envoieChamp(clef, false);
                 });
-                // un clic dans le champ ne doit pas être pris pour un clic dans le canevas
-                e.addEventListener('pointerdown', (ev) => ev.stopPropagation());
-                canevas.parentElement.appendChild(e);
-                champ = { élément: e, envoyé: null };
-                champs.set(clef, champ);
+                return e;
+            });
+            poseObjet(o, nom, x, y, largeurChamp);
+        },
+
+        // bouton(clef, x, y, texte, f) : un clic appelle f(clef, texte) ; comme pour les autres
+        // objets, la fonction reçoit toujours deux valeurs
+        bouton(clef, x, y, texte, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'bouton', (o) => {
+                const e = document.createElement('button');
+                e.type = 'button';
+                e.className = 'objet-canevas bouton-canevas';
+                // le bouton rend le focus : la barre d'espace d'un jeu ne le recliquera pas
+                e.addEventListener('click', () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), chaîneLispE(e.textContent)]); });
+                return e;
+            });
+            o.élément.textContent = String(texte).normalize('NFC');
+            poseObjet(o, nom, x, y, null);
+        },
+
+        // case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) à chaque changement
+        caseÀCocher(clef, x, y, texte, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'case', (o) => fabriqueCoche(o, 'checkbox', () =>
+                appelleBientôt(o.fonction, [chaîneLispE(o.clef), o.entrée.checked ? 'true' : 'false'])));
+            o.texte.textContent = String(texte).normalize('NFC');
+            o.élément.style.color = état.remplissage;
+            poseObjet(o, nom, x, y, null);
+        },
+
+        // bouton_radio(clef, groupe, x, y, texte, f) : un seul bouton coché par groupe ;
+        // choisir un bouton appelle f(groupe, clef)
+        boutonRadio(clef, groupe, x, y, texte, nom) {
+            clef = String(clef).normalize('NFC');
+            groupe = String(groupe).normalize('NFC');
+            const o = objetDe(clef, 'radio', (o) => fabriqueCoche(o, 'radio', () =>
+                appelleBientôt(o.fonction, [chaîneLispE(o.groupe), chaîneLispE(o.clef)])));
+            o.groupe = groupe;
+            o.entrée.name = 'pythonerie-radio-' + groupe;
+            o.texte.textContent = String(texte).normalize('NFC');
+            o.élément.style.color = état.remplissage;
+            poseObjet(o, nom, x, y, null);
+        },
+
+        // glissière(clef, x, y, mini, maxi, valeur, f) : f(clef, valeur) pendant qu'on la déplace ;
+        // entre deux entiers, elle avance d'un en un, sinon par centièmes de l'intervalle
+        glissière(clef, x, y, mini, maxi, valeur, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'glissière', (o) => {
+                const e = document.createElement('input');
+                e.type = 'range';
+                e.className = 'objet-canevas glissière-canevas';
+                e.setAttribute('aria-label', clef);
+                e.addEventListener('input', () => appelleBientôt(o.fonction, [chaîneLispE(o.clef), String(valeurGlissière(o))]));
+                return e;
+            });
+            const a = nombre(mini, 0), b = nombre(maxi, 100), v = nombre(valeur, a);
+            // entière si les bornes et la valeur de départ sont entières : glissière(…, 0, 1, 0.5, …) ne l'est pas
+            o.entiers = Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(v);
+            o.élément.min = a;
+            o.élément.max = b;
+            o.élément.step = o.entiers ? 1 : (b - a) / 100;
+            o.élément.value = v;
+            poseObjet(o, nom, x, y, largeurChamp);
+        },
+
+        // zone_édition(clef, x, y, lignes, f) : un texte sur plusieurs lignes (Entrée passe
+        // à la ligne) ; f(clef, texte) quand on quitte la zone, ou avec Ctrl+Entrée
+        zoneÉdition(clef, x, y, lignes, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'zone', () => {
+                const e = document.createElement('textarea');
+                e.className = 'saisie-canevas objet-canevas édition-canevas';
+                e.spellcheck = false;
+                e.setAttribute('aria-label', clef);
+                e.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); envoieChamp(clef, true); }
+                });
+                e.addEventListener('blur', () => envoieChamp(clef, false));
+                return e;
+            });
+            o.élément.rows = Math.max(1, Math.round(nombre(lignes, 4)));
+            poseObjet(o, nom, x, y, largeurChamp);
+        },
+
+        // liste_déroulante(clef, x, y, éléments, f) : f(clef, choix) quand on choisit un élément
+        // (les éléments arrivent en JSON : une liste de LispE imbriquée ne passe pas telle quelle)
+        listeDéroulante(clef, x, y, éléments, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'déroulante', (o) => {
+                const e = document.createElement('select');
+                e.className = 'objet-canevas déroulante-canevas';
+                e.setAttribute('aria-label', clef);
+                e.addEventListener('change', () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), chaîneLispE(e.value)]); });
+                return e;
+            });
+            const liste = lisJSON(éléments, []);
+            o.élément.innerHTML = '';
+            (Array.isArray(liste) ? liste : [liste]).forEach(v => {
+                const op = document.createElement('option');
+                op.textContent = op.value = String(v).normalize('NFC');
+                o.élément.appendChild(op);
+            });
+            poseObjet(o, nom, x, y, null);
+        },
+
+        // liste_hiérarchique(clef, x, y, lignes, arbre, f) : un arbre que l'on déplie ;
+        // un élément est un texte (une feuille) ou [nom, [enfants...]] (une branche).
+        // Un clic sur un élément appelle f(clef, chemin), chemin étant la liste des noms
+        // depuis la racine : ["Légumes", "Racines", "carotte"]
+        listeHiérarchique(clef, x, y, lignes, arbre, nom) {
+            clef = String(clef).normalize('NFC');
+            const o = objetDe(clef, 'arbre', () => {
+                const e = document.createElement('div');
+                e.className = 'objet-canevas arbre-canevas';
+                e.setAttribute('role', 'tree');
+                e.setAttribute('aria-label', clef);
+                return e;
+            });
+            o.chemin = [];
+            o.élément.innerHTML = '';
+            const ajoute = (parent, éléments, chemin) => {
+                (Array.isArray(éléments) ? éléments : [éléments]).forEach(él => {
+                    const branche = Array.isArray(él) && él.length === 2 && !Array.isArray(él[0]) && Array.isArray(él[1]);
+                    const nomÉl = String(branche ? él[0] : (Array.isArray(él) ? él.join(' ') : él)).normalize('NFC');
+                    const ici = [...chemin, nomÉl];
+                    const ligne = document.createElement(branche ? 'summary' : 'div');
+                    ligne.className = 'arbre-élément' + (branche ? ' arbre-branche' : '');
+                    ligne.textContent = nomÉl;
+                    ligne.addEventListener('click', () => {
+                        o.élément.querySelectorAll('.arbre-élément.choisi').forEach(x => x.classList.remove('choisi'));
+                        ligne.classList.add('choisi');
+                        o.chemin = ici;
+                        appelleBientôt(o.fonction, [chaîneLispE(o.clef), '(list ' + ici.map(chaîneLispE).join(' ') + ')']);
+                    });
+                    if (branche) {
+                        const d = document.createElement('details');
+                        d.appendChild(ligne);
+                        const enfants = document.createElement('div');
+                        enfants.className = 'arbre-enfants';
+                        ajoute(enfants, él[1], ici);
+                        d.appendChild(enfants);
+                        parent.appendChild(d);
+                    } else parent.appendChild(ligne);
+                });
+            };
+            ajoute(o.élément, lisJSON(arbre, []), []);
+            o.lignes = Math.max(1, Math.round(nombre(lignes, 6)));
+            poseObjet(o, nom, x, y, largeurChamp);
+            o.élément.style.height = (o.lignes * 1.45 + 0.4) + 'em';
+        },
+
+        // valeur_objet(clef) : le texte d'une saisie, d'une zone ou d'un bouton, le nombre
+        // d'une glissière, 1 ou 0 pour une case ou un radio (genreObjet dit lequel)
+        valeurObjet(clef) {
+            dernièreErreur = '';
+            const o = champs.get(String(clef).normalize('NFC'));
+            if (!o) { dernièreErreur = 'valeur_objet : il n\'y a pas d\'objet « ' + clef + ' »'; return ''; }
+            // evaljs rend un texte : bibliothèque.lisp le convertit selon le genre de l'objet
+            if (o.genre === 'case' || o.genre === 'radio') return o.entrée.checked ? '1' : '0';
+            if (o.genre === 'glissière') return String(valeurGlissière(o));
+            if (o.genre === 'bouton') return o.élément.textContent;
+            if (o.genre === 'arbre') return JSON.stringify(o.chemin);
+            return o.élément.value.normalize('NFC');
+        },
+        genreObjet(clef) {
+            const o = champs.get(String(clef).normalize('NFC'));
+            return o ? o.genre : '';
+        },
+        // change_objet(clef, valeur) : change la valeur sans appeler la fonction de l'objet
+        changeObjet(clef, valeur) {
+            dernièreErreur = '';
+            const o = champs.get(String(clef).normalize('NFC'));
+            if (!o) { dernièreErreur = 'change_objet : il n\'y a pas d\'objet « ' + clef + ' »'; return; }
+            if (o.genre === 'case' || o.genre === 'radio') o.entrée.checked = !!valeur;
+            else if (o.genre === 'glissière') o.élément.value = nombre(valeur, Number(o.élément.min));
+            else if (o.genre === 'bouton') o.élément.textContent = String(valeur);
+            else if (o.genre === 'arbre') {
+                // valeur : le chemin de l'élément à choisir ; ses branches sont dépliées
+                const chemin = lisJSON(valeur, []).map(v => String(v).normalize('NFC'));
+                // on cherche d'abord : un chemin inconnu ne change rien
+                let niveau = o.élément, trouvé = null;
+                const àOuvrir = [];
+                for (const n of chemin) {
+                    trouvé = [...niveau.children].map(c => c.tagName === 'DETAILS' ? c.firstChild : c).find(c => c && c.textContent === n);
+                    if (!trouvé) break;
+                    if (trouvé.tagName === 'SUMMARY') { àOuvrir.push(trouvé.parentElement); niveau = trouvé.parentElement.lastChild; }
+                }
+                if (trouvé) {
+                    o.élément.querySelectorAll('.arbre-élément.choisi').forEach(x => x.classList.remove('choisi'));
+                    àOuvrir.forEach(d => { d.open = true; });
+                    trouvé.classList.add('choisi');
+                    o.chemin = chemin;
+                }
+                else dernièreErreur = 'change_objet : « ' + chemin.join(' > ') + ' » n\'est pas dans la liste « ' + clef + ' »';
             }
-            champ.fonction = String(nom);
-            champ.x = nombre(x);
-            champ.y = nombre(y);
-            champ.l = largeurChamp;
-            champ.police = état.police;
-            champ.taille = état.taille;
-            placeChamp(champ);
-            if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+            else { o.élément.value = String(valeur); o.envoyé = o.élément.value; }
         },
         // largeur_saisie(l) : la largeur des champs créés ensuite (200 au départ)
         largeurSaisie(l) {

@@ -526,6 +526,44 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
     line-height: 1.2;
 }
 .saisie-canevas:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+/* les autres objets du canevas : bouton, case à cocher, bouton radio, glissière, zone d'édition */
+.objet-canevas { position: absolute; z-index: 2; box-sizing: border-box; margin: 0; }
+.édition-canevas { resize: none; }
+.bouton-canevas {
+    padding: 0.3em 0.8em;
+    border: 1px solid #8a8a8a;
+    border-radius: 6px;
+    background: #f4f4f4;
+    color: #1a1a1a;
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.bouton-canevas:hover { background: #e6e6e6; }
+.bouton-canevas:active { background: #d6d6d6; }
+.coche-canevas { display: flex; align-items: center; gap: 0.35em; white-space: nowrap; line-height: 1.2; cursor: pointer; user-select: none; }
+.coche-canevas input { width: 1em; height: 1em; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.glissière-canevas { height: 1.4em; accent-color: var(--accent); cursor: pointer; }
+.déroulante-canevas { padding: 0.2em 0.3em; border: 1px solid #8a8a8a; border-radius: 4px; background: #ffffff; color: #1a1a1a; cursor: pointer; }
+.arbre-canevas {
+    overflow: auto;
+    padding: 0.2em 0;
+    border: 1px solid #8a8a8a;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.45;
+    user-select: none;
+}
+.arbre-canevas details > summary { list-style: none; }
+.arbre-canevas details > summary::-webkit-details-marker { display: none; }
+.arbre-élément { padding: 0 0.5em; cursor: pointer; white-space: nowrap; }
+.arbre-élément:hover { background: #eeeeee; }
+.arbre-élément.choisi { background: var(--accent); color: #ffffff; }
+.arbre-branche::before { content: '▸'; display: inline-block; width: 1em; }
+details[open] > .arbre-branche::before { content: '▾'; }
+.arbre-canevas > .arbre-élément:not(.arbre-branche), .arbre-enfants > .arbre-élément:not(.arbre-branche) { padding-left: 1.5em; }
+.arbre-enfants { padding-left: 1em; }
 
 /* Plein écran : la scène (barre + canevas) occupe tout l'écran ; le canevas garde ses
    proportions (--ratio, posé par canevas.js) et prend la plus grande taille possible */

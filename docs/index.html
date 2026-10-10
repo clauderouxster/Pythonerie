@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.09.22.44">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.08.30">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.09.22.44</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.08.30</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -390,7 +390,9 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
                         # quand_touche : "gauche", "droite", "haut", "bas", "espace", "entrée", "a"…
                         # dans la fonction d'animer : si touche_enfoncée("gauche"): … ; quand_relâche(f) : f(touche) au relâchement
                         # saisie("nom", 100, 100, f) : un champ de saisie ; Entrée appelle f(clef, valeur)
-                        # active_saisie(clef), saisie_active(), largeur_saisie(l) ; nombre("2,5") donne 2.5</pre>
+                        # active_saisie(clef), saisie_active(), largeur_saisie(l) ; nombre("2,5") donne 2.5
+                        # aussi : bouton, case_à_cocher, bouton_radio, glissière, liste_déroulante,
+                        # liste_hiérarchique, zone_édition ; valeur_objet(clef), change_objet(clef, valeur)</pre>
                 <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
                     écris <code>x =: …</code> pour modifier la variable du programme. <code>x += …</code> modifie
                     directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>
@@ -421,7 +423,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.09.22.44';
+                return répertoire + fichier + '?v=2026.10.10.08.30';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -429,12 +431,12 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.09.22.44"></script>
-    <script src="js/canevas.js?v=2026.10.09.22.44"></script>
-    <script src="js/pythonerie.js?v=2026.10.09.22.44"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.08.30"></script>
+    <script src="js/canevas.js?v=2026.10.10.08.30"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.08.30"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.09.22.44"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.09.22.44"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.08.30"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.08.30"></script>
 </body>
 
 </html>

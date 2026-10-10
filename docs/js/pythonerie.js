@@ -1288,6 +1288,7 @@ const Pythonerie = (function () {
         let propriétaire = null;
         try { propriétaire = localStorage.getItem(CLÉ_PROPRIÉTAIRE); } catch (e) { /* rien */ }
         if (propriétaire && propriétaire !== u) {
+            oubliePressePapiers();
             try {
                 const instant = await instantané();
                 if (nomDuProjet !== SANS_NOM) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, instant);
@@ -1534,6 +1535,7 @@ const Pythonerie = (function () {
         Pyt.réinitialise();
         changeÉlève(null);
         fermeDéroulante();
+        oubliePressePapiers();
         await rafraîchitListeProjets();
         effaceConsole();
         écritConsole('— Au revoir, ' + ancien + ' ! L\'espace a été vidé.', 'info');
@@ -1732,6 +1734,7 @@ const Pythonerie = (function () {
     const SVG_PROGRAMME = '<svg viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5h6l3 3v10h-9z" stroke="currentColor" stroke-width="1.1"/><path d="M9.5 1.5v3h3" stroke="currentColor" stroke-width="1.1"/><path d="M5.5 8.5l-1.5 1.5 1.5 1.5M10.5 8.5l1.5 1.5-1.5 1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const SVG_RENOMMER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M13.23 1h-1.46L3.52 9.25l-.16.22L1 13.59 2.41 15l4.12-2.36.22-.16L15 4.23V2.77L13.23 1zM2.41 13.59l1.51-3 1.45 1.45-2.96 1.55zm3.83-2.06L4.47 9.76l8-8 1.77 1.77-8 8z"/></svg>';
     const SVG_SUPPRIMER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M10 3h3v1h-1v9a1 1 0 01-1 1H5a1 1 0 01-1-1V4H3V3h3V2a1 1 0 011-1h2a1 1 0 011 1v1zM5 4v9h6V4H5zm2-1V2H7v1h2V2H7v1zm-1 2h1v7H6V5zm3 0h1v7H9V5z"/></svg>';
+    const SVG_COPIER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" width="14" height="14"><rect x="5.5" y="5.5" width="8" height="8.5" rx="1.2"/><path d="M10.5 3.5V2.7c0-.7-.5-1.2-1.2-1.2H3.2c-.7 0-1.2.5-1.2 1.2v6.6c0 .7.5 1.2 1.2 1.2h.8"/></svg>';
     const SVG_EXPORTER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 1L4 5h3v5h2V5h3L8 1zM2 12v2h12v-2H2z"/></svg>';
 
     function boutonsActions(liste) {
@@ -1858,6 +1861,7 @@ const Pythonerie = (function () {
                 nomÉl.className = 'programme-nom';
                 nomÉl.textContent = nomF;
                 lf.append(espace, icôneF, nomÉl, boutonsActions([
+                    [SVG_COPIER, 'Copier « ' + nomF + ' », pour le coller dans un autre projet', () => copieFichier(f.chemin)],
                     [SVG_RENOMMER, 'Renommer « ' + nomF + ' »', () => renommeFichier(f.chemin)],
                     [SVG_EXPORTER, 'Exporter « ' + nomF + ' » (le télécharger)', () => exporteFichier(f.chemin)],
                     [SVG_SUPPRIMER, 'Supprimer « ' + nomF + ' »', () => supprimeFichier(f.chemin)]
@@ -1980,6 +1984,10 @@ const Pythonerie = (function () {
             nom.className = 'programme-nom';
             nom.textContent = nomDe(p.chemin);
             li.append(espace, icône, nom, boutonsActions([
+                [SVG_COPIER, 'Copier « ' + nomDe(p.chemin) + ' », pour le coller dans un autre projet', () => {
+                    // l'icône d'un programme choisi copie toute la sélection
+                    copieProgrammes(sélection.size > 1 && sélection.has(p.chemin) ? [...sélection] : [p.chemin]);
+                }],
                 [SVG_RENOMMER, 'Renommer « ' + nomDe(p.chemin) + ' »', () => renomme(p.chemin)],
                 [SVG_EXPORTER, 'Exporter « ' + nomDe(p.chemin) + ' » (télécharger le fichier .pyf)', () => exporte(p.chemin)],
                 [SVG_SUPPRIMER, 'Supprimer « ' + nomDe(p.chemin) + ' »', () => {
@@ -2060,6 +2068,108 @@ const Pythonerie = (function () {
         annuler.title = 'Ne plus choisir ces programmes (touche Échap)';
         annuler.addEventListener('click', annuleSélection);
         bandeau.append(texte, supprimer, annuler);
+    }
+
+    // ------------------------------------------------------------------
+    // Copier-coller entre projets : l'icône ⧉ d'un programme ou d'un fichier du projet (ou
+    // Cmd/Ctrl+C sur des programmes choisis) le met de côté ; le bandeau « Coller » (ou
+    // Cmd/Ctrl+V) le recopie dans le projet ouvert, même après un changement de projet :
+    // les programmes dans le répertoire courant, les fichiers dans leur répertoire. Un nom
+    // déjà pris devient « nom 2 ». Ce qui est copié reste en mémoire le temps de la session,
+    // et il est oublié à la déconnexion (l'élève suivant ne colle pas les fichiers d'un autre).
+    // ------------------------------------------------------------------
+    let pressePapiers = [];     // [{ genre: 'programme', nom, code } | { genre: 'fichier', chemin, blob }]
+
+    const nomCopié = (e) => e.genre === 'programme' ? e.nom : e.chemin.slice(e.chemin.indexOf('/') + 1);
+    const décrisCopie = () => pressePapiers.length === 1 ? '« ' + nomCopié(pressePapiers[0]) + ' »'
+        : pressePapiers.length + ' éléments (' + pressePapiers.slice(0, 3).map(nomCopié).join(', ') + (pressePapiers.length > 3 ? '…' : '') + ')';
+
+    async function copieProgrammes(chemins) {
+        await sauvegarde();
+        const éléments = [];
+        for (const c of chemins) {
+            try { éléments.push({ genre: 'programme', nom: nomDe(c), code: c === courant ? éditeur.getValue() : await stockage.lit(c) }); }
+            catch (e) { écritConsole('Impossible de copier « ' + c + ' » : ' + e.message, 'erreur'); }
+        }
+        metDeCôté(éléments);
+    }
+
+    function copieFichier(chemin) {
+        const blob = FichiersProjet.blob(chemin);
+        if (blob) metDeCôté([{ genre: 'fichier', chemin, blob }]);
+    }
+
+    function metDeCôté(éléments) {
+        if (!éléments.length) return;
+        pressePapiers = éléments;
+        afficheBandeauCollage();
+        écritConsole('— Copié : ' + décrisCopie() + '. Pour le coller dans un autre projet, ouvre-le, puis clique sur « Coller ».', 'info');
+    }
+
+    function oubliePressePapiers() {
+        pressePapiers = [];
+        afficheBandeauCollage();
+    }
+
+    function afficheBandeauCollage() {
+        const bandeau = $('bandeauCollage');
+        bandeau.hidden = !pressePapiers.length;
+        if (!pressePapiers.length) return;
+        bandeau.innerHTML = '';
+        const texte = document.createElement('span');
+        texte.textContent = '📋 ' + décrisCopie();
+        texte.title = 'Copié : ' + pressePapiers.map(nomCopié).join(', ');
+        const coller = document.createElement('button');
+        coller.className = 'btn btn-petit';
+        coller.textContent = 'Coller';
+        coller.title = 'Coller dans le projet ouvert (Cmd/Ctrl+V)';
+        coller.addEventListener('click', colle);
+        const oublier = document.createElement('button');
+        oublier.className = 'btn btn-secondaire btn-petit btn-icône';
+        oublier.textContent = '✕';
+        oublier.title = 'Oublier ce qui a été copié';
+        oublier.setAttribute('aria-label', oublier.title);
+        oublier.addEventListener('click', oubliePressePapiers);
+        bandeau.append(texte, coller, oublier);
+    }
+
+    // Un nom de fichier libre dans un répertoire du projet : « chat.png », « chat 2.png »...
+    function fichierLibre(répertoire, nom) {
+        if (!FichiersProjet.existe(répertoire + '/' + nom)) return nom;
+        const i = nom.lastIndexOf('.');
+        const base = i > 0 ? nom.slice(0, i) : nom, extension = i > 0 ? nom.slice(i) : '';
+        for (let k = 2; ; k++) if (!FichiersProjet.existe(répertoire + '/' + base + ' ' + k + extension)) return base + ' ' + k + extension;
+    }
+
+    async function colle() {
+        if (!pressePapiers.length) return;
+        await sauvegarde();
+        const collés = [];
+        let premierProgramme = null;
+        for (const e of pressePapiers) {
+            try {
+                if (e.genre === 'programme') {
+                    const chemin = cheminLibre(dossierCourant, e.nom);
+                    await stockage.écrit(chemin, e.code);
+                    await rafraichitListe();         // le nom suivant doit voir celui-ci
+                    collés.push(chemin);
+                    if (!premierProgramme) premierProgramme = chemin;
+                } else {
+                    const répertoire = e.chemin.slice(0, e.chemin.indexOf('/'));
+                    const nom = fichierLibre(répertoire, nomCopié(e));
+                    const chemin = await FichiersProjet.ajoute(new File([e.blob], nom, { type: e.blob.type }), répertoire);
+                    ouvertsProjet.add(répertoire);
+                    collés.push(chemin);
+                }
+            } catch (err) {
+                écritConsole('Impossible de coller « ' + nomCopié(e) + ' » : ' + err.message, 'erreur');
+            }
+        }
+        enregistreOuvertsProjet();
+        await rafraichitListe();
+        // un projet vide : on ouvre le programme collé
+        if (!courant && premierProgramme) await ouvre(premierProgramme);
+        if (collés.length) écritConsole('— Collé dans « ' + nomDuProjet + ' » : ' + collés.join(', ') + '.', 'info');
     }
 
     async function supprimeSélection() {
@@ -3103,6 +3213,13 @@ const Pythonerie = (function () {
             const cible = ev.target;
             if (cible && cible.closest && cible.closest('.CodeMirror, input, textarea, select')) return;
             if (sélection.size > 1 && (ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); supprimeSélection(); }
+            // Cmd/Ctrl+C sur des programmes choisis, Cmd/Ctrl+V : copier-coller entre projets
+            // (pas quand du texte de la page est sélectionné : c'est lui qu'on copie)
+            else if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !String(window.getSelection())) {
+                const touche = ev.key.toLowerCase();
+                if (touche === 'c' && sélection.size) { ev.preventDefault(); copieProgrammes([...sélection]); }
+                else if (touche === 'v' && pressePapiers.length) { ev.preventDefault(); colle(); }
+            }
             else if (sélection.size > 1 && ev.key === 'Escape') annuleSélection();
         });
         window.addEventListener('beforeunload', () => { if (modifie) sauvegarde(); });

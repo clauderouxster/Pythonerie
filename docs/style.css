@@ -244,6 +244,7 @@ a.btn { text-decoration: none; display: inline-block; }
     color: var(--text-primary);
 }
 .bandeau-sélection[hidden] { display: none; }
+.bandeau-collage span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bandeau-sélection span { flex: 1; min-width: 100px; }
 .btn.danger { background: var(--danger); border-color: var(--danger); }
 .btn.danger:hover:not(:disabled) { filter: brightness(0.92); background: var(--danger); border-color: var(--danger); }

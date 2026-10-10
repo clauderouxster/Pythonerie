@@ -187,7 +187,7 @@ Deux remarques pour les établissements :
 
 ## Limites connues
 
-- Le programme s'exécute dans la page : une boucle sans fin (`tantque Vrai:` sans `sortir`) bloque l'onglet. Pour une animation, il faut utiliser `animer`.
+- Le programme s'exécute dans la page : pendant qu'il tourne, la page ne réagit plus. Une boucle `tantque` sans fin (`tantque Vrai:` sans `sortir`) est arrêtée au bout de 10 millions de tours (moins d'une seconde), avec un message qui l'explique ; une boucle `tantque` légitime ne dépasse pas cette limite. Pour une animation, il faut utiliser `animer`, qui rend la main à la page entre deux images.
 - Les numéros de ligne des erreurs d'exécution renvoient au code LispE produit, et non au programme de l'élève.
 - `Rien` s'affiche `[]`.
 - Pour échanger deux valeurs, on écrit `a, b = b, a`, et non `[a, b] = [b, a]`.

@@ -99,7 +99,9 @@ const Pythonerie = (function () {
         [/Unknown key/i, 'Clé absente du dictionnaire'],
         [/Wrong type/i, 'Type de valeur inattendu'],
         [/Expecting a list/i, 'Une liste était attendue'],
-        [/No more elements to traverse/i, 'Liste trop courte']
+        [/No more elements to traverse/i, 'Liste trop courte'],
+        // en WebAssembly, LispE arrête un while après 10 millions de tours (sinon la page gèlerait)
+        [/too many iterations in a while/i, 'une boucle « tantque » a fait plus de 10 millions de tours : elle ne s\'arrête sans doute jamais.\n   Vérifie que sa condition finit par devenir fausse (ou ajoute un « sortir »).']
     ];
 
     // Une ligne de la pile d'appels de LispE : "[12] (expression...)" ou "[-] (...)"
@@ -132,6 +134,8 @@ const Pythonerie = (function () {
         const l = m.match(/line:\s*(\d+)/);
         if (l) ligne = l[1];
         m = m.replace(/,?\s*line:\s*\d+(\s*in:\s*[^,\n]*)?/g, '');
+        // une boucle sans fin : l'endroit donné par LispE ne désigne pas la boucle
+        if (/too many iterations in a while/i.test(m)) { ligne = null; pile.length = 0; }
         for (const [motif, français] of TRADUCTIONS) {
             if (motif.test(m)) { m = m.replace(motif, français); break; }
         }

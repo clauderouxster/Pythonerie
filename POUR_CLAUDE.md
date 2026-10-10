@@ -157,7 +157,7 @@ C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul 
 
 1. **Pas d'expression conditionnelle** : `x = a si c sinon b` est refusé. Écris un `si` / `sinon`.
 2. **Pas de `non` juste après une parenthèse ouvrante** : `x = (non (a == 2)) et b == 2` est refusé. Écris `non (a == 2) et b == 2`, qui marche, comme toutes les autres combinaisons de parenthèses, `et`, `ou` et `non`.
-3. **Pas de boucle sans fin** (`tantque Vrai:` sans `sortir`) : elle bloque l'onglet. Pour tout ce qui bouge, utilise `animer`.
+3. **Pas de boucle sans fin** (`tantque Vrai:` sans `sortir`) : la page ne réagit plus pendant qu'elle tourne, et la Pythonerie l'arrête au bout de 10 millions de tours, avec une erreur. Un `tantque` ne doit donc jamais dépasser 10 millions de tours. Pour tout ce qui bouge, utilise `animer`.
 4. **`intervalle` est limité** (quelques centaines de milliers d'éléments au plus) : pour de très grandes boucles, imbrique deux boucles.
 5. **Une seule chose par ligne**, pas de `;`. Pas de `import` de modules Python, pas de `global` / `nonlocal`, pas de décorateurs, de `with`, de `yield`, de `*args` ni d'arguments nommés.
 6. `Rien` s'affiche `[]`.

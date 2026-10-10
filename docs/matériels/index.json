@@ -3,5 +3,10 @@
     "fichier": "quiz_des_capitales.zip",
     "titre": "Le quiz des capitales",
     "description": "Un quiz pour découvrir les projets : deux programmes, des données et des sons. Ouvre « Quiz » et exécute-le."
+  },
+  {
+    "fichier": "zaxxon.zip",
+    "titre": "Zaxxon",
+    "description": "Le jeu d'arcade en perspective : vole au-dessus de la forteresse, passe par les fenêtres des murs, fais le plein en tirant sur les réservoirs. Le plan de la forteresse est dans données/forteresse.txt : change-le !"
   }
 ]

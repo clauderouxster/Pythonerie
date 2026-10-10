@@ -223,6 +223,8 @@ Les exemples du site montrent le style attendu ; lis-les avant d'écrire un prog
 
 `01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas).
 
+Deux **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons) et `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet).
+
 Le mode d'emploi pour les enfants (`docs/guide.html`) contient un glossaire de tous les mots. Environ 180 instructions avancées de LispE portent aussi un nom français ; elles sont décrites dans `docs/basic/français.lisp` (une ligne `(link "nom" 'instruction) ; description` par instruction). Préfère les fonctions de ce guide, plus simples pour un enfant.
 
 ## Avant de rendre le programme, vérifie

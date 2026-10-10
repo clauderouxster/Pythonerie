@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.10.08.30">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.10.10">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.08.30</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.10.10</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -50,7 +50,8 @@
         <aside class="programmes">
             <div class="section">
                 <div id="titreProgrammes" class="section-tête" title="Déposer ici pour ranger à la racine">
-                    <span class="étiquette">Mes programmes</span>
+                    <span class="étiquette">Projet</span>
+                    <button id="nomProjet" class="nom-projet" title="Le nom du projet : cliquer pour le changer">Sans Nom</button>
                 </div>
                 <div class="barre-programmes">
                     <button id="btnNouveau" class="btn btn-petit btn-large" title="Nouveau programme">＋ Nouveau</button>
@@ -62,23 +63,27 @@
                                 <div class="menu-section">Programme ouvert</div>
                                 <button id="btnRenommer" class="menu-item" role="menuitem">✏️ Renommer</button>
                                 <button id="btnDupliquer" class="menu-item" role="menuitem">📄 Copier</button>
-                                <button id="btnExporter" class="menu-item" role="menuitem">⬆️ Exporter (fichier .py)</button>
+                                <button id="btnExporter" class="menu-item" role="menuitem">⬆️ Exporter (fichier .pyf)</button>
                                 <button id="btnSupprimer" class="menu-item danger" role="menuitem">🗑️ Supprimer</button>
                                 <div class="menu-séparateur"></div>
                                 <div class="menu-section">Importer</div>
-                                <button id="btnImporter" class="menu-item" role="menuitem">📂 Importer des fichiers .py…</button>
+                                <button id="btnImporter" class="menu-item" role="menuitem">📂 Importer des fichiers (.pyf, images, sons, données)…</button>
                                 <div class="menu-séparateur"></div>
-                                <div class="menu-section">Partager</div>
-                                <button id="btnCréeArchive" class="menu-item" role="menuitem">📦 Créer une archive de tous mes programmes</button>
-                                <button id="btnChargeArchive" class="menu-item" role="menuitem">📥 Charger une archive…</button>
-                                <button id="btnAnnuleArchive" class="menu-item" role="menuitem" disabled>↶ Annuler le chargement de l'archive</button>
+                                <div class="menu-section">Projet</div>
+                                <button id="btnNouveauProjet" class="menu-item" role="menuitem">🆕 Nouveau projet…</button>
+                                <button id="btnRenommeProjet" class="menu-item" role="menuitem">✏️ Renommer le projet…</button>
+                                <button id="btnExporteProjet" class="menu-item" role="menuitem">📦 Exporter le projet</button>
+                                <button id="btnChargeProjet" class="menu-item" role="menuitem">📥 Charger un projet (.zip, .json)…</button>
+                                <button id="btnColleProjet" class="menu-item" role="menuitem">📋 Coller un projet (JSON)…</button>
+                                <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Annuler le chargement du projet</button>
                                 <div class="menu-séparateur"></div>
                                 <div class="menu-section">Élèves</div>
                                 <button id="btnUtilisateurUnique" class="menu-item" role="menuitemcheckbox" aria-checked="true" title="Décocher pour que chaque élève tape son nom (ordinateur partagé)">☑ Utilisateur unique (sans connexion)</button>
                             </div>
                         </span>
-                    <input type="file" id="fichierImport" accept=".py,.txt" multiple hidden>
-                    <input type="file" id="fichierArchive" accept=".json,application/json" hidden>
+                    <input type="file" id="fichierImport" accept=".pyf,.py,.png,.jpg,.jpeg,.gif,.svg,.webp,.wav,.mp3,.ogg,.txt,.csv,.tsv,.json,.md,.zip" multiple hidden>
+                    <input type="file" id="fichierProjet" accept=".zip,.json,application/zip,application/json" hidden>
+                    <input type="file" id="fichierRépertoire" multiple hidden>
                     <input type="file" id="fichierDonnées" hidden>
                 </div>
                 <!-- Sélection de plusieurs programmes (Cmd/Ctrl+clic, Maj+clic) -->
@@ -102,7 +107,7 @@
                     <span id="étatSauvegarde" class="état-sauvegarde"></span>
                 </div>
                 <div class="barre-droite">
-                    <button id="btnDonnées" class="btn btn-secondaire btn-petit" title="Les données du programme : don0, don1...">▦ Données</button>
+                    <button id="btnDonnées" class="btn btn-secondaire btn-petit" title="Les données du projet : don0, don1...">▦ Données</button>
                     <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
                     <button id="btnArrêter" class="btn btn-secondaire btn-petit" disabled title="Arrêter les animations">■ Arrêter</button>
                     <button id="btnExécuter" class="btn" disabled title="Ctrl+Entrée">▶ Exécuter</button>
@@ -111,7 +116,7 @@
             <div id="conteneurÉditeur" class="conteneur-éditeur">
                 <textarea id="éditeur"></textarea>
             </div>
-            <!-- Les données du programme (bouton « Données ») : des onglets Don0, Don1...
+            <!-- Les données du projet (bouton « Données ») : des onglets Don0, Don1...
                  Chaque onglet non vide devient une variable don0, don1... à l'exécution -->
             <div id="panneauDonnées" class="panneau-données" hidden>
                 <div class="barre-onglets">
@@ -207,13 +212,24 @@
                     le bouton <b>👤</b> montre alors le nom de l'élève (« inconnu » au départ), qu'il faut taper pour exécuter du code.
                     Avec <code>"multi_utilisateur": true</code> dans le fichier <code>config.json</code> du site, ce mode est imposé à tout le monde
                     et la case est désactivée ; chaque nouvel onglet commence alors avec un espace vide.
-                    Un deuxième clic déconnecte l'élève : la Pythonerie vérifie d'abord que ses programmes sont dans une archive,
-                    puis efface tout son espace.
-                    Dans le menu <b>☰</b>, <b>Créer une archive</b> enregistre tous les programmes dans un fichier
-                    <code>nom_aaaa_mm_jj_hh_MM.json</code> (dossier Téléchargements), que l'on peut donner à un autre élève.
+                    Un deuxième clic déconnecte l'élève : la Pythonerie vérifie d'abord que son projet a été exporté,
+                    puis efface tout son espace.</p>
+                <p><b>Le projet</b> réunit les programmes et trois répertoires fixes, en haut de la liste : <b>images</b>, <b>sons</b>
+                    et <b>données</b>. On y glisse des fichiers (ou on clique sur <b>＋</b>) ; un programme les utilise par leur nom :
+                    <code>charge_image("chat.png")</code>, <code>charge_son("bravo.wav")</code>, <code>charge_données("notes.csv")</code>.
+                    <code>importe "outils"</code> ajoute au programme le code du programme « outils » du projet ;
+                    <code>importe "jeux/décor"</code> va le chercher dans un dossier.
+                    Le nom du projet est affiché en haut de la liste (« Sans Nom » au départ) : un clic dessus le change.
+                    Dans le menu <b>☰</b> : <b>Nouveau projet</b> commence un projet vide avec un nom ;
+                    <b>Renommer le projet</b> change son nom ; <b>Exporter le projet</b> l'enregistre dans un fichier
+                    <code>nom_du_projet_aaaa_mm_jj_hh_MM.zip</code> (dossier Téléchargements), avec le nom de l'élève en mode plusieurs élèves
+                    (<code>nom_du_projet_élève_aaaa_mm_jj_hh_MM.zip</code>) ; un projet sans nom en reçoit un avant de partir.
+                    Ce fichier zip contient les programmes, les onglets de données et les répertoires images, sons et données.
                     Avec <code>serveur.py</code>, une copie est aussi conservée sur le serveur, pour l'enseignant.
-                    <b>Charger une archive</b> remplace tous les programmes par ceux de l'archive ; s'il y en avait déjà, l'élève est déconnecté (en mode plusieurs élèves) ;
-                    <b>Annuler le chargement</b> fait revenir les programmes d'avant.</p>
+                    <b>Charger un projet</b> (un .zip, ou un .json) remplace le projet en cours (s'il y en avait un, l'élève est déconnecté en mode plusieurs élèves) ;
+                    <b>Annuler le chargement du projet</b> fait revenir le projet d'avant.
+                    Un projet du répertoire <b>Matériels</b> se charge d'un clic, et son nom peut ensuite être changé.
+                    <b>Coller un projet (JSON)</b> charge un projet écrit d'un seul bloc de texte, comme ceux que prépare Claude.</p>
                 <p>🔒 <b>Protection des données</b> : la Pythonerie est parfaitement compatible avec le RGPD et avec ses équivalents
                     canadiens (LPRPDE, Loi 25 du Québec). Tout s'exécute dans le navigateur : une fois la page chargée, rien ne transite
                     par le réseau. Les programmes et le nom de l'élève restent sur l'ordinateur, aucun serveur ne les reçoit, et il n'y a
@@ -360,16 +376,16 @@ selon (nom):
                 <table class="table-aide">
                     <tr><td><code>t = lit_fichier()</code></td><td>le texte d'un fichier de l'ordinateur, choisi dans une fenêtre à chaque exécution ; <code>lit_fichier("https://…")</code> lit une adresse Internet</td>
                         <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements (scores.txt)</td></tr>
-                    <tr><td><code>t = charge_données("capitales.csv")</code></td><td>le texte d'un fichier du répertoire Matériels (préparé par l'enseignant)</td>
+                    <tr><td><code>t = charge_données("capitales.csv")</code></td><td>le texte d'un fichier du répertoire <b>données</b> du projet</td>
                         <td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)</td></tr>
                     <tr><td><code>range_données("don1", valeur)</code></td><td>écrit la valeur dans l'onglet Don1 (on peut créer l'onglet qui suit le dernier)</td>
                         <td><code>t = prend_données("don1")</code></td><td>le texte actuel de l'onglet Don1</td></tr>
                 </table>
-                <p class="note">Le bouton <b>▦ Données</b>, au-dessus de l'éditeur, montre les onglets de données du programme ; il devient alors <b>✎ Code</b>, pour revenir au programme.
+                <p class="note">Le bouton <b>▦ Données</b>, au-dessus de l'éditeur, montre les onglets de données du projet ; il devient alors <b>✎ Code</b>, pour revenir au programme.
                     On y tape ou colle des données, ou on y charge un fichier (📂). <b>＋</b> ajoute un onglet, <b>−</b> retire l'onglet ouvert (Don0 est seulement vidé), <b>↶</b> annule. À l'exécution, chaque onglet non vide devient
-                    une variable : <code>don0</code>, <code>don1</code>… Les données sont enregistrées avec le programme,
-                    et le suivent dans l'export et les archives.</p>
-                <p class="note">L'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
+                    une variable : <code>don0</code>, <code>don1</code>… Les onglets appartiennent au projet : tous ses programmes
+                    (et ceux qu'ils importent) voient les mêmes <code>don0</code>, <code>don1</code>…, et ils suivent le projet quand on l'exporte.</p>
+                <p class="note">Un nom seul (<code>"chat.png"</code>) désigne un fichier du répertoire images ou sons du projet ; sinon, l'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
                     Une image d'un autre site s'affiche, mais le bouton « Image » ne peut plus enregistrer le dessin.</p>
 
                 <h3>Animation et interaction</h3>
@@ -423,7 +439,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.10.08.30';
+                return répertoire + fichier + '?v=2026.10.10.10.10';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -431,12 +447,14 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.10.08.30"></script>
-    <script src="js/canevas.js?v=2026.10.10.08.30"></script>
-    <script src="js/pythonerie.js?v=2026.10.10.08.30"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.10.10"></script>
+    <script src="js/zip.js?v=2026.10.10.10.10"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.10.10.10"></script>
+    <script src="js/canevas.js?v=2026.10.10.10.10"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.10.10"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.10.08.30"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.10.08.30"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.10.10"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.10.10"></script>
 </body>
 
 </html>

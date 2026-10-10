@@ -310,6 +310,18 @@ const Pyt = (function () {
         champs.forEach(placeChamp);
     }
 
+    // L'adresse d'une image ou d'un son : un simple nom (« chat.png ») désigne un fichier
+    // du répertoire images ou sons du projet ; une adresse avec un « / » (exemples/médias/...)
+    // ou complète (https://...) garde son sens. null : le nom n'est pas dans le projet.
+    function adresseMédia(adresse, répertoire) {
+        const a = String(adresse).normalize('NFC').trim();
+        if (/^[a-z]+:/i.test(a)) return a;
+        const chemin = a.startsWith(répertoire + '/') ? a : (a.includes('/') ? null : répertoire + '/' + a);
+        // (FichiersProjet est une constante de fichiers-projet.js : elle n'est pas dans window)
+        if (chemin && typeof FichiersProjet !== 'undefined' && FichiersProjet.existe(chemin)) return FichiersProjet.url(chemin);
+        return a.includes('/') && !a.startsWith(répertoire + '/') ? a : null;
+    }
+
     function signaleErreur(message) {
         if (window.Pythonerie && window.Pythonerie.erreur) window.Pythonerie.erreur(message);
         else console.error(message);
@@ -898,7 +910,7 @@ const Pyt = (function () {
             return dernièreErreur;
         },
 
-        // charge_données(nom) : un fichier du répertoire Matériels (voir pythonerie.js)
+        // charge_données(nom) : un fichier du répertoire données du projet (voir pythonerie.js)
         chargeDonnées(nom) {
             dernièreErreur = '';
             const r = window.Pythonerie.chargeDonnées(nom);
@@ -911,12 +923,18 @@ const Pyt = (function () {
         chargeImage(adresse) {
             const img = new Image();
             const entrée = { img, adresse: String(adresse), erreur: false };
+            const source = adresseMédia(adresse, 'images');
+            images.push(entrée);
+            if (!source) {
+                entrée.erreur = true;
+                signaleErreur('Erreur : l\'image « ' + entrée.adresse + ' » n\'est pas dans le répertoire images du projet');
+                return images.length - 1;
+            }
             img.onerror = () => {
                 entrée.erreur = true;
                 signaleErreur('Erreur : impossible de charger l\'image « ' + entrée.adresse + ' »');
             };
-            img.src = entrée.adresse;
-            images.push(entrée);
+            img.src = source;
             return images.length - 1;
         },
         // place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) :
@@ -945,14 +963,20 @@ const Pyt = (function () {
         // format inconnu), on se replie sur un lecteur <audio>.
         // charge_son(adresse) : renvoie le numéro du son (0, 1, 2...)
         chargeSon(adresse) {
-            const nom = String(adresse);
-            const entrée = { nom, tampon: null, élément: null };
+            const nom = adresseMédia(adresse, 'sons');
+            const entrée = { nom: String(adresse), tampon: null, élément: null };
+            if (!nom) {
+                entrée.introuvable = true;
+                signaleErreur('Erreur : le son « ' + adresse + ' » n\'est pas dans le répertoire sons du projet');
+                sons.push(entrée);
+                return sons.length - 1;
+            }
             const créeÉlément = () => {
                 const élément = new Audio();
                 élément.preload = 'auto';
                 élément.onerror = () => {
                     entrée.introuvable = true;
-                    signaleErreur('Erreur : impossible de charger le son « ' + nom + ' »');
+                    signaleErreur('Erreur : impossible de charger le son « ' + entrée.nom + ' »');
                 };
                 élément.src = nom;
                 entrée.élément = élément;

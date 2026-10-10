@@ -6,11 +6,12 @@ La Pythonerie fait programmer des enfants (à partir de 7 ans) dans un **Python 
 
 ## Ce que tu dois rendre
 
-- **Un seul programme complet**, dans un bloc de code. L'élève le colle dans l'éditeur (ou l'importe en `.py`) et clique sur « Exécuter ».
+- **Un seul programme complet**, dans un bloc de code. L'élève le colle dans l'éditeur (ou l'importe en `.pyf`, l'extension des programmes de la Pythonerie) et clique sur « Exécuter ».
+- Ou bien, quand il faut plusieurs programmes, des onglets de données ou des fichiers, **un projet complet en JSON**, dans un bloc de code `json` (voir « Un projet en JSON ») : l'élève le colle avec ☰ → « 📋 Coller un projet (JSON)… ».
 - Une première ligne de commentaire avec le titre, puis quelques lignes qui expliquent comment jouer ou utiliser le programme.
 - **Des noms français avec leur orthographe correcte** : `épaisseur`, `état`, `vitesse_balle`. Les accents sont obligatoires dans les noms du langage (`va_à`, `lève_crayon`, `carré`), et souhaités dans les tiens.
 - Des commentaires courts et simples, lisibles par un enfant.
-- Pas de dépendance extérieure : seuls les fichiers du site (voir « Médias ») et les fonctions listées ici existent.
+- Pas de dépendance extérieure : seuls les fichiers du site (voir « Médias »), ceux du projet de l'élève (voir « Projets ») et les fonctions listées ici existent.
 
 ## Le langage
 
@@ -75,7 +76,7 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 - Noms des touches, **en français** : `"gauche"`, `"droite"`, `"haut"`, `"bas"`, `"espace"`, `"entrée"`, `"échap"`, `"retour arrière"`, `"tabulation"`, `"suppr"`, `"début"`, `"fin"`, `"page haut"`, `"page bas"`, `"maj"`, `"ctrl"`, `"alt"` ; une lettre, un chiffre ou un signe reste tel quel (`"a"`, `"z"`, `"7"`). Pense aux claviers AZERTY : Z Q S D plutôt que W A S D.
 - **Pour un mouvement continu, utilise `touche_enfoncée(nom)` dans la fonction d'`animer`** (`si touche_enfoncée("gauche"): x -= 5`), plutôt que `quand_touche`, qui dépend de la répétition automatique du système (un appui, une pause, puis des répétitions : le jeu avance par à-coups). Plusieurs touches peuvent être tenues à la fois. Garde `quand_touche` pour les actions ponctuelles (tirer, lancer, rejouer). `quand_relâche(f)` appelle `f(touche)` au relâchement, avec le même nom qu'à l'appui. Les touches tenues sont relâchées quand la page perd le focus ou à la sortie du plein écran.
 - `saisie(clef, x, y, f)` pose un champ de saisie (une case de texte de 200 points de large, sauf `largeur_saisie`) au point (x, y) du canevas ; `clef` est son nom. Le champ prend la police (`police`) et la taille (`taille_texte`) courantes au moment de sa création : règle-les avant d'appeler `saisie`. Entrée, ou un clic dans un autre champ (si la valeur a changé), appelle `f(clef, valeur)` ; la valeur est toujours un texte (`entier(valeur)` pour un nombre). Un nouvel appel avec la même clef déplace le champ. Les touches tapées dans un champ ne vont pas à `quand_touche`.
-- `active_saisie(clef)` donne la main à un champ (son contenu est sélectionné ; le champ quitté envoie sa valeur si elle a changé) ; `saisie_active()` renvoie la clef du champ actif (`""` sinon) ; `largeur_saisie(l)` règle la largeur des champs créés ensuite (200 au départ). Dans un champ, `haut`, `bas` et `entrée` sont transmis à `quand_touche`, ainsi que `gauche` / `droite` quand le curseur est au bord du texte : c'est ce qui permet de passer de champ en champ (voir `18_tableur.py`). Pour convertir la valeur, `nombre(valeur)` accepte « 2,5 » comme « 2.5 » et donne `0.0` si ce n'est pas un nombre.
+- `active_saisie(clef)` donne la main à un champ (son contenu est sélectionné ; le champ quitté envoie sa valeur si elle a changé) ; `saisie_active()` renvoie la clef du champ actif (`""` sinon) ; `largeur_saisie(l)` règle la largeur des champs créés ensuite (200 au départ). Dans un champ, `haut`, `bas` et `entrée` sont transmis à `quand_touche`, ainsi que `gauche` / `droite` quand le curseur est au bord du texte : c'est ce qui permet de passer de champ en champ (voir `18_tableur.pyf`). Pour convertir la valeur, `nombre(valeur)` accepte « 2,5 » comme « 2.5 » et donne `0.0` si ce n'est pas un nombre.
 - Les autres objets du canevas suivent les mêmes règles que `saisie` (une clef = un objet, un nouvel appel le déplace ; police et taille du moment ; supprimés à chaque exécution) :
   - `bouton(clef, x, y, texte, f)` → `f(clef, texte)` au clic (toutes les fonctions d'objets reçoivent deux valeurs) ;
   - `case_à_cocher(clef, x, y, texte, f)` → `f(clef, Vrai/Faux)` ;
@@ -89,12 +90,12 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 - Le clavier ne marche qu'après un clic dans le canevas (ou en plein écran) : dis-le dans les commentaires.
 
 ### Images et sons
-`img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable.
+`img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable. Un nom seul (`"chat.png"`, `"bravo.wav"`) désigne un fichier des répertoires images ou sons du projet ; un chemin (`exemples/médias/ding.wav`) un fichier du site ; `https://…` une adresse Internet : une image ou un son en ligne s'utilise directement, `charge_image("https://upload.wikimedia.org/…")`, même si le site ne permet pas de télécharger le fichier.
 
 ### Fichiers et données
-- `don0`, `don1`… : le texte des onglets de données du programme (bouton « Données » de l'éditeur). Un onglet vide ne crée pas de variable. À utiliser quand l'élève colle ses propres données.
-- `range_données("don1", valeur)` : écrit la valeur (une liste ou un nombre est écrit comme `affiche` l'écrirait) dans l'onglet Don1, enregistré avec le programme. L'onglet doit exister, ou venir juste après le dernier (on le crée) ; sinon, c'est une erreur. Pendant l'exécution, la variable `don1` garde sa valeur du départ ; `prend_données("don1")` renvoie le texte actuel de l'onglet (y compris ce qu'un `range_données` vient d'y écrire, `""` s'il est vide ; un onglet inexistant est une erreur).
-- `charge_données(nom)` : le texte d'un fichier du répertoire `docs/matériels/` du site (matériel de l'enseignant ; par exemple `charge_données("capitales.csv")`).
+- `don0`, `don1`… : le texte des onglets de données du projet (bouton « Données » de l'éditeur) : tous les programmes du projet, et ceux qu'ils importent, voient les mêmes. Un onglet vide ne crée pas de variable. À utiliser quand l'élève colle ses propres données.
+- `range_données("don1", valeur)` : écrit la valeur (une liste ou un nombre est écrit comme `affiche` l'écrirait) dans l'onglet Don1, enregistré avec le projet. L'onglet doit exister, ou venir juste après le dernier (on le crée) ; sinon, c'est une erreur. Pendant l'exécution, la variable `don1` garde sa valeur du départ ; `prend_données("don1")` renvoie le texte actuel de l'onglet (y compris ce qu'un `range_données` vient d'y écrire, `""` s'il est vide ; un onglet inexistant est une erreur).
+- `charge_données(nom)` : le texte d'un fichier du répertoire **données** du projet (par exemple `charge_données("capitales.csv")`) ; un fichier absent est une erreur. Ce n'est pas un fichier du site : l'élève (ou un projet des Matériels) doit l'avoir mis dans le projet.
 - `lit_fichier()` (sans argument) : un fichier de l'ordinateur, choisi par l'élève dans une fenêtre (le programme repart du début une fois le fichier choisi) ; `lit_fichier("https://…")` : le texte d'une adresse Internet, si le site l'autorise.
 - `écrit_fichier(nom, texte)` : enregistre le texte dans le dossier Téléchargements (`"scores"` devient `scores.txt`).
 
@@ -103,6 +104,54 @@ Chemins à donner tels quels à `charge_image` / `charge_son` :
 - `exemples/médias/étoile.svg`
 - sons : `exemples/médias/ding.wav`, `pop.wav`, `tir.wav` (laser), `explosion.wav`, `boum.wav` (gros choc), `pas_1.wav` à `pas_4.wav` (notes graves brèves)
 - piano, trois octaves : `exemples/médias/piano/do_3.wav` … `si_5.wav`, avec `do_dièse_4.wav`, `ré_dièse_4.wav`, `fa_dièse_4.wav`, `sol_dièse_4.wav`, `la_dièse_4.wav` (octaves 3, 4 et 5)
+
+## Projets
+
+Les programmes de l'élève forment un **projet**, qui a un nom (« Sans Nom » au départ) et trois répertoires fixes : `images` (png, jpg, gif, svg, webp), `sons` (wav, mp3, ogg) et `données` (txt, csv, tsv, json, md), 5 Mo au plus par fichier.
+
+- `importe "outils"`, seul sur sa ligne, ajoute au programme le code du programme « outils » du projet (fonctions, variables). `importe "jeux/outils"` désigne un programme d'un dossier ; le chemin est cherché depuis le dossier du programme qui importe, puis à la racine. Seuls les programmes du projet s'importent (pas de module Python), pas de `comme`, pas de `from … import`. Une fonction définie dans deux programmes importés est une erreur.
+- Si ton programme a besoin de données, d'images ou de sons qui ne sont pas sur le site, dis à l'élève de les glisser dans le bon répertoire du projet, et désigne-les par leur seul nom.
+- Le projet exporté par la Pythonerie est un fichier `.zip` qui contient
+  - `projet.json` : `{"format": "projet-pythonerie", "version": 3, "nom": "Le quiz des capitales", "élève": "", "créé": "2026-10-10T09:00:00Z"}` ;
+  - `programmes/Quiz.pyf`, `programmes/outils.pyf`… (un programme rangé dans un dossier : `programmes/jeux/outils.pyf`) ;
+  - au besoin `onglets/don0.txt`, `onglets/don1.txt`… (les onglets de données, numérotés sans trou) ;
+  - au besoin `images/…`, `sons/…`, `données/…` (un seul niveau, les extensions de chaque répertoire).
+  Exemple à lire : `docs/matériels/quiz_des_capitales.zip`. Si tu peux exécuter du code et produire un fichier, tu peux fabriquer ce zip ; sinon, écris le projet en JSON.
+
+### Un projet en JSON
+
+C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul bloc de texte. L'élève le colle avec ☰ → « 📋 Coller un projet (JSON)… » (ce qui entoure le JSON, comme les ```` ```json ````, est ignoré), ou l'enregistre dans un fichier `.json` et le charge avec « 📥 Charger un projet ». Un enseignant peut aussi déposer le `.json` dans `docs/matériels/`, puis lancer `python3 inventaire.py`. Le projet remplace celui de l'élève, qui peut revenir en arrière avec « ↶ Annuler le chargement du projet ».
+
+```json
+{
+  "format": "projet-pythonerie",
+  "version": 3,
+  "nom": "La fusée",
+  "programmes": {
+    "Décollage": "# La fusée\nimporte \"outils/moteur\"\nfusée = charge_image(\"fusée.svg\")\nbip = charge_son(\"exemples/médias/ding.wav\")\naffiche(poussée(3))\n",
+    "outils/moteur": "fonction poussée(n):\n    retourne n * 10\n"
+  },
+  "dossiers": ["outils"],
+  "onglets": ["Mercure,1\nVénus,2", "Mars"],
+  "fichiers": {
+    "données/planètes.csv": "nom,rang\nMercure,1\nVénus,2\n",
+    "images/fusée.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"80\">…</svg>",
+    "images/lune.png": { "url": "https://upload.wikimedia.org/…/lune.png" },
+    "sons/bravo.wav": { "base64": "UklGR…" }
+  }
+}
+```
+
+- `format` est obligatoire ; `nom` est le nom du projet (sinon « Sans Nom »).
+- `programmes` : le nom de chaque programme (avec son dossier : `"outils/moteur"`, sans extension) et son code, avec des `\n` pour les fins de ligne et des `\"` pour les guillemets.
+- `dossiers` (facultatif) : des dossiers à créer même vides ; ceux des programmes existent d'office.
+- `onglets` (facultatif) : le texte de Don0, Don1… ; `""` pour un onglet vide.
+- `fichiers` (facultatif) : chemin `images/…`, `sons/…` ou `données/…` (un seul niveau, extensions de « Projets »), et contenu :
+  - **du texte**, tel quel, pour les données et les images SVG ;
+  - `{ "url": "https://…" }` : la Pythonerie télécharge le fichier et le range dans le projet, **si le site le permet** (GitHub `raw.githubusercontent.com` et Wikimedia `upload.wikimedia.org` le permettent ; beaucoup d'autres sites non). Sinon le fichier est laissé de côté, et l'élève le voit dans la console : pour une image ou un son en ligne, il est plus sûr d'écrire l'adresse dans le programme, `charge_image("https://…")` ;
+  - `{ "base64": "…" }` pour un autre fichier binaire, quand tu peux le calculer réellement (n'invente jamais du base64).
+- Préfère les médias du site (`exemples/médias/…`, voir plus haut), désignés par leur chemin dans le programme : ils n'ont pas besoin d'être dans le projet.
+- Un fichier mal placé, mal nommé ou mal écrit est laissé de côté, et la console le nomme.
 
 ## Pièges (vérifiés) : à éviter absolument
 
@@ -172,7 +221,7 @@ animer(image, 20)
 
 Les exemples du site montrent le style attendu ; lis-les avant d'écrire un programme du même genre. Ils sont dans `docs/exemples/` (adresse brute : `https://raw.githubusercontent.com/clauderouxster/Pythonerie/main/docs/exemples/<fichier>`), et la liste est dans `docs/exemples/index.json` :
 
-`01_bonjour.py`, `02_conditions.py`, `03_boucles.py`, `04_fonctions.py`, `05_listes.py`, `06_dessin.py`, `07_tortue.py`, `08_animation.py` (balle qui rebondit), `09_interaction.py` (souris et clavier), `10_classes.py` (classes, essaie/sauf), `11_courbe.py` (courbe mathématique), `12_images_sons.py`, `13_dessin_souris.py` (`quand_glisse`), `14_piano.py`, `15_casse_briques.py`, `16_serpent.py`, `17_envahisseurs.py`, `18_tableur.py` (champs de saisie, flèches, totaux), `19_asteroides.py` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.py` (tous les objets du canevas).
+`01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas).
 
 Le mode d'emploi pour les enfants (`docs/guide.html`) contient un glossaire de tous les mots. Environ 180 instructions avancées de LispE portent aussi un nom français ; elles sont décrites dans `docs/basic/français.lisp` (une ligne `(link "nom" 'instruction) ; description` par instruction). Préfère les fonctions de ce guide, plus simples pour un enfant.
 

@@ -110,6 +110,7 @@ const Pythonerie = (function () {
         [/Unbound atom: '([^']*)'/i, '« $1 » est inconnu : variable pas encore définie ou nom mal orthographié ?'],
         [/Unknown function: '?([^'\s]*)'?/i, 'La fonction « $1 » n\'existe pas'],
         [/Division by zero/i, 'Division par zéro'],
+        [/Function '([^']*)' already declared/i, 'La fonction « $1 » est définie deux fois (dans deux programmes importés, peut-être ?)'],
         [/Wrong number of arguments/i, 'Nombre d\'arguments incorrect'],
         [/Wrong parameter description/i, 'Paramètres mal décrits'],
         [/Index out of bounds|out of range/i, 'Indice en dehors de la liste'],
@@ -317,7 +318,11 @@ const Pythonerie = (function () {
         lecture.rang = 0;
         fichierDemandé = false;
         oubliePile();
-        const c = compileConsole(code);
+        // la console peut aussi importer un programme du projet
+        let source = code;
+        try { source = assembleProgramme(code, courant, []).source; }
+        catch (e) { écritConsole('Erreur : ' + e.message, 'erreur'); return; }
+        const c = compileConsole(source);
         if (c.erreur) { écritConsole(c.erreur, 'erreur'); return; }
         try {
             if (idxExécution === null) nouvelInterpréteur();
@@ -327,6 +332,84 @@ const Pythonerie = (function () {
         }
         if (fichierDemandé) choisitFichier(() => exécuteConsole(code, true));
         metAJourBoutons();
+    }
+
+    // ------------------------------------------------------------------
+    // importe "outils" (ou importe "jeux/outils") : le programme « outils » du projet est
+    // placé avant celui qui l'importe, et le tout est compilé d'un bloc : ses fonctions et
+    // ses variables deviennent disponibles. On le cherche à partir du répertoire du
+    // programme qui importe, puis à la racine. Chaque programme n'est importé qu'une fois ;
+    // un import en boucle est une erreur. La ligne importe reste en commentaire, pour
+    // garder les numéros de ligne.
+    // ------------------------------------------------------------------
+    const LIGNE_IMPORTE = /^importe\s+(["'])(.+?)\1\s*(#.*)?$/;
+
+    // le code d'un programme du projet (celui qui est ouvert : tel qu'il est dans l'éditeur)
+    function codeDuProgramme(chemin) {
+        if (chemin === courant) return éditeur.getValue();
+        const tout = StockageNavigateur._tout();
+        return tout[chemin] ? tout[chemin].code : null;
+    }
+
+    function trouveProgramme(nom, depuis) {
+        nom = nfc(nom).trim().replace(/\.pyf?$/i, '').replace(/^\/+|\/+$/g, '');
+        const tout = StockageNavigateur._tout();
+        const existe = (c) => c in tout || c === courant;
+        const ici = depuis ? parentDe(depuis) : '';
+        if (ici && existe(joint(ici, nom))) return joint(ici, nom);
+        return existe(nom) ? nom : null;
+    }
+
+    // les lignes que compte l'analyse : une chaîne longue sur plusieurs lignes en compte une
+    function lignesLogiques(texte) {
+        return texte.replace(/"{3}[\s\S]*?"{3}|'{3}[\s\S]*?'{3}/g, 'X').split('\n').length;
+    }
+
+    // { source, morceaux: [{ nom, lignes }] } ; nom : null pour les données, '' pour le programme
+    function assembleProgramme(code, chemin, défs) {
+        const faits = new Set();
+        const modules = [];
+        const traite = (cheminProg, texte, pile) => {
+            const lignes = texte.split('\n');
+            for (let i = 0; i < lignes.length; i++) {
+                const m = LIGNE_IMPORTE.exec(lignes[i]);
+                if (!m) continue;
+                const où = (cheminProg && cheminProg !== chemin ? ' (dans « ' + cheminProg + ' », ligne ' : ' (ligne ') + (i + 1) + ')';
+                const cible = trouveProgramme(m[2], cheminProg);
+                if (!cible) throw new Error('importe : il n\'y a pas de programme « ' + m[2] + ' » dans le projet' + où);
+                if (pile.includes(cible)) throw new Error('importe : les programmes s\'importent en boucle : ' + [...pile, cible].join(' → '));
+                lignes[i] = '# ' + lignes[i];
+                if (faits.has(cible)) continue;
+                faits.add(cible);
+                // un programme importé est placé après ceux qu'il importe lui-même
+                modules.push({ chemin: cible, texte: traite(cible, codeDuProgramme(cible), [...pile, cible]) });
+            }
+            return lignes.join('\n');
+        };
+        const principal = traite(chemin, code, chemin ? [chemin] : []);
+        const morceaux = [];
+        let source = '';
+        if (défs.length) { source += défs.join('\n') + '\n'; morceaux.push({ nom: null, lignes: défs.length }); }
+        modules.forEach(m => { source += m.texte + '\n'; morceaux.push({ nom: m.chemin, lignes: lignesLogiques(m.texte) }); });
+        source += principal;
+        morceaux.push({ nom: '', lignes: Infinity });
+        return { source, morceaux };
+    }
+
+    // « Erreur ligne 12 » : la ligne dans le programme, ou dans le programme importé
+    function placeLignes(message, morceaux) {
+        if (morceaux.length === 1) return message;
+        return message.replace(/\b(ligne|line:?) (\d+)/g, (tout, mot, n) => {
+            let k = Number(n);
+            for (const m of morceaux) {
+                if (k <= m.lignes) {
+                    if (m.nom === null) return mot + ' ' + k + ' des données';
+                    return m.nom ? mot + ' ' + k + ' de « ' + m.nom + ' »' : mot + ' ' + k;
+                }
+                k -= m.lignes;
+            }
+            return tout;
+        });
     }
 
     // ------------------------------------------------------------------
@@ -536,16 +619,22 @@ const Pythonerie = (function () {
         fichierDemandé = false;
         oubliePile();
 
-        // Les données (onglets non vides) sont ajoutées au début du programme : une ligne
-        // par onglet (une chaîne sur plusieurs lignes compte pour une seule ligne dans
-        // l'analyse) ; les numéros de ligne des erreurs sont donc décalés d'autant.
-        const défs = définitionsDonnées();
-        const c = compile(défs.length ? défs.join('\n') + '\n' + code : code);
+        // Le texte compilé : les données (onglets non vides, une ligne par onglet), les
+        // programmes importés, puis le programme ; les numéros de ligne des erreurs sont
+        // rapportés au bon morceau (voir placeLignes)
+        let assemblé;
+        try { assemblé = assembleProgramme(code, courant, définitionsDonnées()); }
+        catch (e) {
+            dernierLispE = '';
+            afficheLispE();
+            écritConsole('Erreur : ' + e.message, 'erreur');
+            return;
+        }
+        const c = compile(assemblé.source);
         if (c.erreur) {
             dernierLispE = '';
             afficheLispE();
-            écritConsole(défs.length ? c.erreur.replace(/\b(ligne|line:?) (\d+)/g,
-                (m, mot, n) => mot + ' ' + Math.max(1, Number(n) - défs.length)) : c.erreur, 'erreur');
+            écritConsole(placeLignes(c.erreur, assemblé.morceaux), 'erreur');
             return;
         }
         dernierLispE = c.lispe;
@@ -730,7 +819,7 @@ const Pythonerie = (function () {
 
     // ------------------------------------------------------------------
     // L'élève : son nom (le « login ») s'affiche en haut ; « inconnu » tant qu'il ne
-    // l'a pas tapé. Il est demandé pour exécuter du code et pour créer une archive.
+    // l'a pas tapé. Il est demandé pour exécuter du code et pour exporter le projet.
     // Il est gardé pour l'onglet (sessionStorage) : sur un ordinateur partagé,
     // fermer l'onglet déconnecte l'élève.
     // Mode « Utilisateur unique » (par défaut, gardé dans le localStorage) : pas de
@@ -818,22 +907,103 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Archives : tous les programmes (et les répertoires) dans un seul fichier,
-    // pour les partager ou les retrouver sur un autre ordinateur.
+    // Projets : un projet réunit tous les programmes, leurs répertoires et les fichiers
+    // des répertoires images, sons et données (voir fichiers-projet.js), et les onglets
+    // de données. On l'exporte dans un seul fichier .zip, pour le partager ou le retrouver
+    // sur un autre ordinateur :
+    //   projet.json                  { format, version, nom, élève, créé }
+    //   programmes/Quiz.pyf          les programmes, rangés dans leurs répertoires
+    //   programmes/jeux/outils.pyf
+    //   onglets/don0.txt, don1.txt…  les onglets de données (bouton « Données »)
+    //   images/, sons/, données/     les fichiers du projet
+    // Un projet peut aussi être écrit en JSON (par Claude, par exemple : voir lisProjetJSON) ;
+    // on le charge, mais l'export se fait toujours en .zip.
     // ------------------------------------------------------------------
-    const FORMAT_ARCHIVE = 'archive-pythonerie';
-    const CLÉ_SAUVEGARDE = 'pythonerie.sauvegarde';
+    const FORMAT_PROJET = 'projet-pythonerie';
+    const CLÉ_RÉSERVE = 'pythonerie.réserve';   // une sauvegarde temporaire existe (pour « Annuler »)
 
-    // Tous les programmes en cours : { programmes: {chemin: code}, dossiers: [...] }
+    // Le nom du projet : « Sans Nom » au départ ; il est affiché en tête de la colonne des
+    // programmes, demandé à la création d'un projet ou à son premier export, et il est
+    // gardé dans le projet exporté
+    const SANS_NOM = 'Sans Nom';
+    const CLÉ_NOM_PROJET = 'pythonerie.nomProjet';
+    let nomDuProjet = SANS_NOM;
+    try { nomDuProjet = localStorage.getItem(CLÉ_NOM_PROJET) || SANS_NOM; } catch (e) { /* rien */ }
+
+    function changeNomProjet(nom) {
+        nomDuProjet = nfc(nom || '').trim() || SANS_NOM;
+        try { localStorage.setItem(CLÉ_NOM_PROJET, nomDuProjet); } catch (e) { /* rien */ }
+        afficheNomProjet();
+    }
+
+    function afficheNomProjet() {
+        const e = $('nomProjet');
+        e.textContent = nomDuProjet;
+        e.classList.toggle('sans-nom', nomDuProjet === SANS_NOM);
+        e.title = 'Le projet « ' + nomDuProjet + ' » : cliquer pour changer son nom';
+    }
+
+    // Demande un nom de projet ; null si l'on renonce
+    function demandeNomProjet(question, défaut) {
+        const réponse = prompt(question, défaut || '');
+        if (réponse === null) return null;
+        const nom = nfc(réponse).trim().replace(/\s+/g, ' ');
+        if (!nom || nom === SANS_NOM) return null;
+        if (nom.length > 40 || !/^[\p{L}\p{N} _\-'.]+$/u.test(nom)) {
+            alert('Ce nom ne convient pas : utilise des lettres, des chiffres, des espaces, - ou _ (40 caractères au plus).');
+            return demandeNomProjet(question, nom);
+        }
+        return nom;
+    }
+
+    function renommeProjet() {
+        const nom = demandeNomProjet('Nom du projet :', nomDuProjet === SANS_NOM ? '' : nomDuProjet);
+        if (nom) changeNomProjet(nom);
+    }
+
+    // Un nouveau projet, vide, avec un nom ; le projet en cours est mis de côté (pour « Annuler »)
+    async function nouveauProjet() {
+        const nom = demandeNomProjet('Nom du nouveau projet :', '');
+        if (!nom) return;
+        let avant;
+        try { avant = await instantané(); } catch (e) { écritConsole('Impossible de lire le projet en cours : ' + e.message, 'erreur'); return; }
+        if (!espaceVide(avant)) {
+            if (!confirm('Créer le projet « ' + nom + ' » ?\n\nLe projet « ' + nomDuProjet + ' » laisse la place à un projet vide. '
+                + 'Pense à l\'exporter avant si tu veux le garder ; tu pourras aussi revenir en arrière avec « Annuler le chargement du projet ».')) return;
+            try {
+                await FichiersProjet.gardeRéserve({ élève, nom: nomDuProjet, date: new Date().toISOString(), ...avant });
+                localStorage.setItem(CLÉ_RÉSERVE, '1');
+            } catch (e) {
+                écritConsole('Création abandonnée : impossible de mettre de côté le projet en cours (' + e.message + ').', 'erreur');
+                return;
+            }
+        }
+        try {
+            await remplaceTout({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
+        } catch (e) {
+            écritConsole('Impossible de créer le projet : ' + e.message, 'erreur');
+            return;
+        }
+        try { localStorage.removeItem(CLÉ_EXPORTÉ); } catch (e) { /* rien */ }
+        changeNomProjet(nom);
+        metAJourAnnulation();
+        écritConsole('— Le projet « ' + nom + ' » est créé.', 'info');
+    }
+
+    // Un morceau de nom de fichier : lettres, chiffres et tirets ; le reste devient « _ »
+    const pourFichier = (texte) => nfc(texte).replace(/[^\p{L}\p{N}\-]+/gu, '_').replace(/^_+|_+$/g, '');
+
+    // Tout le projet en cours : { programmes: {chemin: code}, dossiers: [...], fichiers: [{chemin, type, blob}],
+    // onglets: [texte de Don0, de Don1...] }
     async function instantané() {
         await sauvegarde();
         const contenu = await stockage.liste();
         const progs = {};
         for (const p of contenu.programmes) progs[p.chemin] = await stockage.lit(p.chemin);
-        return { programmes: progs, dossiers: contenu.dossiers };
+        return { programmes: progs, dossiers: contenu.dossiers, fichiers: FichiersProjet.instantané(), onglets: [...onglets] };
     }
 
-    // Remplace tous les programmes en cours par ceux de l'instantané
+    // Remplace tout le projet en cours par celui de l'instantané
     async function remplaceTout(instant) {
         clearTimeout(minuterieSauvegarde);
         modifie = false;
@@ -842,6 +1012,8 @@ const Pythonerie = (function () {
         Object.entries(instant.programmes).forEach(([c, code]) => { tout[c] = { code, modifie: maintenant }; });
         StockageNavigateur._écrit(CLÉ_PROGRAMMES, tout);
         StockageNavigateur._écrit(CLÉ_DOSSIERS, instant.dossiers);
+        await FichiersProjet.remplace(instant.fichiers || []);
+        remplaceOnglets(instant.onglets || ['']);
         courant = null;
         sélection = new Set();
         dossierCourant = '';
@@ -851,74 +1023,142 @@ const Pythonerie = (function () {
         else await crée('', 'Mon premier programme', PROGRAMME_ACCUEIL);
     }
 
-    // Un chemin d'archive est accepté seulement s'il est fait de noms valides
+    // Un chemin de programme est accepté seulement s'il est fait de noms valides
     function cheminValide(chemin) {
         const morceaux = nfc(String(chemin)).split('/');
         return morceaux.length <= 8 && morceaux.every(m => nomValide(m) === m) ? morceaux.join('/') : null;
     }
 
-    function nomArchive() {
+    // nom_du_projet_login_aaaa_mm_jj_hh_MM ; sans le login pour l'utilisateur « Unique »
+    function nomFichierProjet() {
         const d = new Date();
         const n = (x) => String(x).padStart(2, '0');
-        const identifiant = nomCourant().replace(/[^\p{L}\p{N}\-]+/gu, '_');
-        return identifiant + '_' + d.getFullYear() + '_' + n(d.getMonth() + 1) + '_' + n(d.getDate()) + '_' + n(d.getHours()) + '_' + n(d.getMinutes());
+        const login = nomCourant();
+        return pourFichier(nomDuProjet) + (login && login !== NOM_UNIQUE ? '_' + pourFichier(login) : '')
+            + '_' + d.getFullYear() + '_' + n(d.getMonth() + 1) + '_' + n(d.getDate()) + '_' + n(d.getHours()) + '_' + n(d.getMinutes());
     }
 
-    async function créeArchive() {
-        if (!exigeÉlève('Pour créer une archive, il faut d\'abord dire qui tu es.')) return null;
-        let instant;
-        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return null; }
-        const nom = nomArchive();
-        const archive = {
-            format: FORMAT_ARCHIVE, version: 1, élève: nomCourant(), créée: new Date().toISOString(),
-            programmes: instant.programmes, dossiers: instant.dossiers
-        };
-        const texte = JSON.stringify(archive, null, 1);
-        const blob = new Blob([texte], { type: 'application/json' });
+    // Exporte le projet dans Téléchargements (et en garde une copie sur le serveur de la classe)
+    async function exporteProjet() {
+        if (!exigeÉlève('Pour exporter ton projet, il faut d\'abord dire qui tu es.')) return null;
+        // un projet sans nom en reçoit un avant de partir
+        if (nomDuProjet === SANS_NOM) {
+            const nom = demandeNomProjet('Ton projet n\'a pas encore de nom. Comment s\'appelle-t-il ?', '');
+            if (!nom) { écritConsole('— Export annulé : le projet n\'a pas de nom.', 'info'); return null; }
+            changeNomProjet(nom);
+        }
+        let instant, archive;
+        try {
+            instant = await instantané();
+            archive = await archiveProjet(instant);
+        } catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return null; }
+        const nom = nomFichierProjet();
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = nom + '.json';
+        a.href = URL.createObjectURL(archive);
+        a.download = nom + '.zip';
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        écritConsole('— Archive « ' + nom + '.json » créée (' + Object.keys(instant.programmes).length
-            + ' programmes) : elle est dans le dossier Téléchargements.', 'info');
-        if (serveurArchives) await envoieArchive(nom, texte);
-        mémoriseArchivé(instant);
-        return nom + '.json';
+        const nbF = instant.fichiers.length, nbD = instant.onglets.filter(o => o !== '').length;
+        écritConsole('— Projet « ' + nomDuProjet + ' » exporté dans « ' + nom + '.zip » (' + pluriel(Object.keys(instant.programmes).length, 'programme')
+            + (nbF ? ', ' + pluriel(nbF, 'fichier') : '') + (nbD ? ', ' + pluriel(nbD, 'onglet') + ' de données' : '')
+            + ') : il est dans le dossier Téléchargements.', 'info');
+        if (serveurProjets) await envoieProjet(nom, archive);
+        mémoriseExporté(instant);
+        return nom + '.zip';
+    }
+
+    // Le fichier .zip du projet (voir plus haut)
+    async function archiveProjet(instant) {
+        const enc = new TextEncoder();
+        const fiche = { format: FORMAT_PROJET, version: 3, nom: nomDuProjet, élève: nomCourant(), créé: new Date().toISOString() };
+        const entrées = [{ nom: 'projet.json', octets: enc.encode(JSON.stringify(fiche, null, 1) + '\n') }, { nom: 'programmes/' }];
+        [...instant.dossiers].sort().forEach(d => entrées.push({ nom: 'programmes/' + d + '/' }));
+        Object.keys(instant.programmes).sort().forEach(c => entrées.push({ nom: 'programmes/' + c + '.pyf', octets: enc.encode(instant.programmes[c]) }));
+        if (instant.onglets.some(o => o !== '')) {
+            entrées.push({ nom: 'onglets/' });
+            instant.onglets.forEach((o, i) => entrées.push({ nom: 'onglets/don' + i + '.txt', octets: enc.encode(o) }));
+        }
+        for (const r of Object.keys(FichiersProjet.RÉPERTOIRES)) entrées.push({ nom: r + '/' });
+        for (const f of instant.fichiers) entrées.push({ nom: f.chemin, octets: new Uint8Array(await f.blob.arrayBuffer()) });
+        return Zip.écrit(entrées);
+    }
+
+    // Lit le .zip d'un projet : { nom, élève, instant, ignorés }, ou une erreur. projet.json
+    // est à la racine, ou dans un répertoire (un dossier compressé tel quel par le système).
+    async function lisProjet(tampon) {
+        const caché = (n) => n.split('/').some(m => m.startsWith('.') || m === '__MACOSX');
+        const entrées = (await Zip.lit(tampon, { garde: (n) => !caché(n) })).filter(e => !caché(e.nom));
+        const fiche = entrées.filter(e => e.octets && /(^|\/)projet\.json$/.test(e.nom)).sort((x, y) => x.nom.length - y.nom.length)[0];
+        if (!fiche) throw new Error('il ne contient pas de fichier projet.json');
+        const texte = (octets) => nfc(new TextDecoder().decode(octets)).replace(/\r\n?/g, '\n');
+        let info = null;
+        try { info = JSON.parse(texte(fiche.octets)); } catch (e) { /* info reste null */ }
+        if (!info || info.format !== FORMAT_PROJET) throw new Error('son fichier projet.json ne décrit pas un projet de la Pythonerie');
+        const racine = fiche.nom.slice(0, -'projet.json'.length);
+        const instant = { programmes: {}, dossiers: [], fichiers: [], onglets: [] };
+        const ignorés = [];
+        for (const e of entrées) {
+            if (e === fiche || !e.nom.startsWith(racine)) continue;
+            const nom = e.nom.slice(racine.length);
+            let m;
+            if (!e.octets) {                                        // un répertoire
+                if ((m = /^programmes\/(.+)\/$/.exec(nom))) {
+                    const c = cheminValide(m[1]);
+                    if (c) instant.dossiers.push(c); else ignorés.push(nom);
+                }
+            } else if ((m = /^programmes\/(.+)\.pyf$/i.exec(nom))) {
+                const c = cheminValide(m[1]);
+                if (c) instant.programmes[c] = texte(e.octets); else ignorés.push(nom);
+            } else if ((m = /^onglets\/don(\d+)\.txt$/i.exec(nom)) && Number(m[1]) < ONGLETS_MAX) {
+                instant.onglets[Number(m[1])] = texte(e.octets);
+            } else {
+                try { instant.fichiers.push(FichiersProjet.entrée(nom, e.octets)); } catch (err) { ignorés.push(nom); }
+            }
+        }
+        instant.onglets = Array.from(instant.onglets, o => o || '');   // un onglet absent est vide
+        return {
+            nom: typeof info.nom === 'string' ? nfc(info.nom).trim() : '',
+            élève: typeof info.élève === 'string' ? nfc(info.élève) : '',
+            instant, ignorés
+        };
     }
 
     // ------------------------------------------------------------------
-    // Ce qui a été mis dans une archive : une empreinte des programmes au moment de
-    // l'archive. À la déconnexion, on compare avec les programmes actuels pour savoir
-    // si quelque chose a changé depuis.
+    // Ce qui a été exporté : une empreinte du projet au moment de l'export. À la
+    // déconnexion, on compare avec le projet actuel pour savoir s'il a changé depuis.
     // ------------------------------------------------------------------
-    const CLÉ_ARCHIVÉ = 'pythonerie.archivé';
+    const CLÉ_EXPORTÉ = 'pythonerie.exporté';
 
     function empreinte(instant) {
         const chemins = Object.keys(instant.programmes).sort();
-        const texte = JSON.stringify([chemins.map(c => [c, instant.programmes[c]]), [...instant.dossiers].sort()]);
+        const fichiers = (instant.fichiers || []).map(f => [f.chemin, f.blob.size, f.modifie]).sort();
+        const texte = JSON.stringify([chemins.map(c => [c, instant.programmes[c]]), [...instant.dossiers].sort(), fichiers, instant.onglets || ['']]);
         // empreinte FNV-1a sur 32 bits, plus la longueur du texte
         let h = 0x811c9dc5;
         for (let i = 0; i < texte.length; i++) { h ^= texte.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
         return h.toString(16) + '-' + texte.length;
     }
 
-    function mémoriseArchivé(instant) {
-        try { localStorage.setItem(CLÉ_ARCHIVÉ, empreinte(instant)); } catch (e) { /* rien */ }
+    function mémoriseExporté(instant) {
+        try { localStorage.setItem(CLÉ_EXPORTÉ, empreinte(instant)); } catch (e) { /* rien */ }
     }
 
-    // Rien à sauvegarder : aucun programme, ou seulement le programme d'accueil intact
+    // Rien à garder : aucun fichier, aucune donnée, et aucun programme ou seulement le programme d'accueil intact
     function espaceVide(instant) {
         const codes = Object.values(instant.programmes);
+        if (instant.fichiers && instant.fichiers.length) return false;
+        if ((instant.onglets || []).some(o => o !== '')) return false;
         return codes.length === 0 || (codes.length === 1 && codes[0].trim() === PROGRAMME_ACCUEIL.trim());
     }
 
-    // Fenêtre de dialogue : renvoie la valeur du bouton choisi (null pour Échap)
-    function dialogue(titre, texte, boutons) {
+    // Fenêtre de dialogue : renvoie la valeur du bouton choisi (null pour Échap) ;
+    // contenu : un élément affiché sous le texte (l'aperçu d'une image, par exemple)
+    function dialogue(titre, texte, boutons, contenu) {
         return new Promise(résout => {
             const fond = $('dialogue');
             $('dialogueTitre').textContent = titre;
             $('dialogueTexte').textContent = texte;
+            if (contenu) $('dialogueTexte').appendChild(contenu);
             const zone = $('dialogueBoutons');
             zone.innerHTML = '';
             const ferme = (valeur) => {
@@ -941,45 +1181,44 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Déconnexion : on vérifie que les programmes ont été mis dans une archive,
-    // puis tout l'espace de l'élève est vidé (programmes, répertoires, sauvegarde
-    // temporaire, historique de la console).
+    // Déconnexion : on vérifie que le projet a été exporté, puis tout l'espace de
+    // l'élève est vidé (programmes, répertoires, fichiers, sauvegarde temporaire,
+    // historique de la console).
     // ------------------------------------------------------------------
     async function déconnecte() {
         if (utilisateurUnique || !élève) return;
         let instant;
-        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire les programmes : ' + e.message, 'erreur'); return; }
-        let archivé = null;
-        try { archivé = localStorage.getItem(CLÉ_ARCHIVÉ); } catch (e) { /* rien */ }
-        const nb = Object.keys(instant.programmes).length;
+        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire le projet : ' + e.message, 'erreur'); return; }
+        let exporté = null;
+        try { exporté = localStorage.getItem(CLÉ_EXPORTÉ); } catch (e) { /* rien */ }
         let choix;
         if (espaceVide(instant)) {
-            choix = await dialogue('Te déconnecter, ' + élève + ' ?', 'Il n\'y a pas de programme à garder.',
+            choix = await dialogue('Te déconnecter, ' + élève + ' ?', 'Il n\'y a rien à garder dans ton projet.',
                 [{ texte: 'Me déconnecter', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }]);
-        } else if (empreinte(instant) === archivé) {
+        } else if (empreinte(instant) === exporté) {
             choix = await dialogue('Te déconnecter, ' + élève + ' ?',
-                'Tes ' + nb + ' programmes sont dans ton archive, avec leurs dernières modifications.\n'
-                + 'Une fois déconnecté, ils seront effacés de cet ordinateur.',
-                [{ texte: 'Me déconnecter et effacer mes programmes', valeur: 'oui', genre: 'danger' },
-                 { texte: '📦 Créer une nouvelle archive avant', valeur: 'archive' },
+                'Ton projet est exporté, avec ses dernières modifications.\n'
+                + 'Une fois déconnecté, il sera effacé de cet ordinateur.',
+                [{ texte: 'Me déconnecter et effacer mon projet', valeur: 'oui', genre: 'danger' },
+                 { texte: '📦 Exporter de nouveau avant', valeur: 'projet' },
                  { texte: 'Annuler', valeur: null }]);
         } else {
             choix = await dialogue('Attention, ' + élève + ' !',
-                (archivé ? 'Tu as modifié tes programmes depuis ta dernière archive.'
-                         : 'Tu n\'as pas encore créé d\'archive de tes programmes.')
-                + '\nUne fois déconnecté, tes ' + nb + ' programmes seront effacés de cet ordinateur.',
-                [{ texte: '📦 Créer une archive, puis me déconnecter', valeur: 'archive', genre: 'principal' },
-                 { texte: 'Me déconnecter sans archive (tout sera perdu)', valeur: 'oui', genre: 'danger' },
+                (exporté ? 'Tu as modifié ton projet depuis ton dernier export.'
+                         : 'Tu n\'as pas encore exporté ton projet.')
+                + '\nUne fois déconnecté, il sera effacé de cet ordinateur.',
+                [{ texte: '📦 Exporter le projet, puis me déconnecter', valeur: 'projet', genre: 'principal' },
+                 { texte: 'Me déconnecter sans exporter (tout sera perdu)', valeur: 'oui', genre: 'danger' },
                  { texte: 'Annuler', valeur: null }]);
         }
         if (!choix) return;
-        if (choix === 'archive') {
-            const nom = await créeArchive();
+        if (choix === 'projet') {
+            const nom = await exporteProjet();
             if (!nom) return;
             // on ne peut pas savoir si le navigateur a bien enregistré le fichier : on demande
-            const suite = await dialogue('As-tu bien ton archive ?',
-                'L\'archive « ' + nom + ' » vient d\'être créée.\nVérifie qu\'elle est dans ton dossier Téléchargements avant de te déconnecter.',
-                [{ texte: 'Oui, me déconnecter et effacer mes programmes', valeur: 'oui', genre: 'danger' },
+            const suite = await dialogue('As-tu bien ton projet ?',
+                'Le projet « ' + nom + ' » vient d\'être exporté.\nVérifie qu\'il est dans ton dossier Téléchargements avant de te déconnecter.',
+                [{ texte: 'Oui, me déconnecter et effacer mon projet', valeur: 'oui', genre: 'danger' },
                  { texte: 'Annuler', valeur: null }]);
             if (!suite) return;
         }
@@ -989,14 +1228,16 @@ const Pythonerie = (function () {
     // Efface du navigateur tout ce qu'a laissé l'élève ; renvoie Faux en cas d'échec
     async function effaceDonnées() {
         try {
-            await remplaceTout({ programmes: {}, dossiers: [] });
+            await remplaceTout({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
+            await FichiersProjet.videRéserve();
         } catch (e) {
-            écritConsole('Impossible d\'effacer les programmes : ' + e.message, 'erreur');
+            écritConsole('Impossible d\'effacer le projet : ' + e.message, 'erreur');
             return false;
         }
-        ['pythonerie.sauvegarde', CLÉ_ARCHIVÉ, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
+        [CLÉ_RÉSERVE, CLÉ_EXPORTÉ, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
             try { localStorage.removeItem(clé); } catch (e) { /* rien */ }
         });
+        changeNomProjet(SANS_NOM);
         window.dispatchEvent(new Event('pythonerie-vide'));
         return true;
     }
@@ -1017,106 +1258,192 @@ const Pythonerie = (function () {
         écritConsole('— Au revoir, ' + ancien + ' ! L\'espace a été vidé.', 'info');
     }
 
-    async function chargeArchive(fichier) {
-        let archive;
-        try {
-            archive = JSON.parse(nfc(await fichier.text()));
-            if (!archive || archive.format !== FORMAT_ARCHIVE || typeof archive.programmes !== 'object') throw new Error();
-        } catch (e) {
-            alert('« ' + fichier.name + ' » n\'est pas une archive de la Pythonerie.');
-            return;
+    // Un projet écrit en JSON, d'un seul bloc de texte : les fichiers texte (données, images
+    // SVG) y sont écrits tels quels, les autres en base64, ou par une adresse https:// où la
+    // Pythonerie va les chercher (si le site le permet) pour les ranger dans le projet.
+    //   { "format": "projet-pythonerie", "version": 3, "nom": "Mon jeu",
+    //     "programmes": { "Jeu": "importe \"jeux/outils\"\n…", "jeux/outils": "…" },
+    //     "dossiers": ["jeux"], "onglets": ["pays,capitale\nFrance,Paris"],
+    //     "fichiers": { "données/notes.csv": "…", "images/fusée.svg": "<svg…>", "sons/bravo.wav": { "base64": "…" },
+    //                   "images/chat.png": { "url": "https://…" } } }
+    async function lisProjetJSON(texte) {
+        let p;
+        try { p = JSON.parse(nfc(texte)); } catch (e) { throw new Error('ce n\'est pas du JSON valide (' + e.message + ')'); }
+        if (!p || typeof p !== 'object' || p.format !== FORMAT_PROJET) throw new Error('il y manque "format": "projet-pythonerie"');
+        if (!p.programmes || typeof p.programmes !== 'object' || Array.isArray(p.programmes)) throw new Error('il y manque "programmes"');
+        const instant = { programmes: {}, dossiers: [], fichiers: [], onglets: [] };
+        const ignorés = [];
+        const ligne = (s) => s.replace(/\r\n?/g, '\n');
+        for (const [c, code] of Object.entries(p.programmes)) {
+            const chemin = cheminValide(c.replace(/\.pyf?$/i, ''));
+            if (chemin && typeof code === 'string') instant.programmes[chemin] = ligne(code); else ignorés.push('programmes/' + c);
         }
-        // on ne garde que des chemins valides
-        const instant = { programmes: {}, dossiers: [] };
-        Object.entries(archive.programmes).forEach(([c, code]) => {
-            const chemin = cheminValide(c);
-            if (chemin && typeof code === 'string') instant.programmes[chemin] = nfc(code);
-        });
-        (Array.isArray(archive.dossiers) ? archive.dossiers : []).forEach(d => {
-            const chemin = cheminValide(d);
-            if (chemin) instant.dossiers.push(chemin);
-        });
+        (Array.isArray(p.dossiers) ? p.dossiers : []).forEach(d => { const c = cheminValide(String(d)); if (c) instant.dossiers.push(c); });
+        if (Array.isArray(p.onglets)) instant.onglets = p.onglets.slice(0, ONGLETS_MAX).map(o => typeof o === 'string' ? ligne(o) : '');
+        const fichiers = p.fichiers && typeof p.fichiers === 'object' && !Array.isArray(p.fichiers) ? p.fichiers : {};
+        const àTélécharger = [];
+        for (const [c, v] of Object.entries(fichiers)) {
+            try {
+                let octets;
+                if (v && typeof v.url === 'string') {
+                    if (!/^https:\/\//i.test(v.url)) throw new Error();
+                    àTélécharger.push([c, v.url]);
+                    continue;
+                }
+                if (typeof v === 'string') {
+                    // en texte : des données, ou une image SVG ; une autre image, un son : en base64
+                    if (!c.startsWith('données/') && !/\.svg$/i.test(c)) throw new Error();
+                    octets = new TextEncoder().encode(ligne(v));
+                } else if (v && typeof v.base64 === 'string') {
+                    const binaire = atob(v.base64.replace(/^data:[^,]*,/, '').replace(/\s+/g, ''));
+                    octets = Uint8Array.from(binaire, x => x.charCodeAt(0));
+                } else throw new Error();
+                instant.fichiers.push(FichiersProjet.entrée(c, octets));
+            } catch (e) { ignorés.push(c); }
+        }
+        // les fichiers donnés par une adresse : tous en même temps
+        if (àTélécharger.length) écritConsole('— Téléchargement de ' + pluriel(àTélécharger.length, 'fichier') + ' du projet…', 'info');
+        await Promise.all(àTélécharger.map(async ([c, url]) => {
+            try {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('réponse ' + r.status);
+                instant.fichiers.push(FichiersProjet.entrée(c, new Uint8Array(await r.arrayBuffer())));
+            } catch (e) {
+                // le site refuse souvent qu'une autre page lise ses fichiers : le programme peut
+                // alors utiliser l'adresse elle-même, charge_image("https://…")
+                ignorés.push(c + ' (' + url + ' ne peut pas être téléchargé : ' + (e.message === 'Failed to fetch' ? 'le site ne le permet pas' : e.message) + ')');
+            }
+        }));
+        return {
+            nom: typeof p.nom === 'string' ? p.nom.trim() : '',
+            élève: typeof p.élève === 'string' ? p.élève : '',
+            instant, ignorés
+        };
+    }
+
+    // ☰ → Coller un projet : un projet en JSON, copié depuis une conversation avec Claude
+    async function colleProjet() {
+        const zone = document.createElement('textarea');
+        zone.className = 'collage-projet';
+        zone.spellcheck = false;
+        zone.placeholder = '{ "format": "projet-pythonerie", "nom": "…", "programmes": { … } }';
+        const choix = dialogue('Coller un projet (JSON)', 'Colle ici un projet écrit en JSON (préparé par Claude, par exemple), puis clique sur « Charger le projet ».\n',
+            [{ texte: 'Charger le projet', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }], zone);
+        setTimeout(() => zone.focus(), 0);
+        if (await choix !== 'oui') return;
+        // le JSON est souvent copié avec ce qui l'entoure (```json … ```) : on garde de { à }
+        const texte = zone.value, début = texte.indexOf('{'), fin = texte.lastIndexOf('}');
+        let lu;
+        try { lu = await lisProjetJSON(début < 0 ? texte : texte.slice(début, fin + 1)); }
+        catch (e) { alert('Ce texte n\'est pas un projet de la Pythonerie : ' + e.message + '.'); return; }
+        if (await chargeProjet(lu)) écritConsole('— Le projet « ' + nomDuProjet + ' » est chargé.', 'info');
+    }
+
+    // Charge un projet venu d'un fichier .zip ou .json (menu ☰, glissé dans la liste, ou
+    // répertoire Matériels) ; il remplace tout le projet en cours
+    async function chargeProjetFichier(fichier) {
+        let lu;
+        try { lu = /\.json$/i.test(fichier.name) ? await lisProjetJSON(await fichier.text()) : await lisProjet(await fichier.arrayBuffer()); }
+        catch (e) {
+            alert('« ' + fichier.name + ' » n\'est pas un projet de la Pythonerie : ' + e.message + '.');
+            return false;
+        }
+        return chargeProjet(lu);
+    }
+
+    async function chargeProjet({ nom: nomLu, élève: élèveLu, instant, ignorés }) {
         const nb = Object.keys(instant.programmes).length;
-        const auteur = archive.élève ? ' de ' + archive.élève : '';
+        const auteur = (nomLu ? ' « ' + nomLu + ' »' : '') + (élèveLu && élèveLu !== NOM_UNIQUE ? ' de ' + élèveLu : '');
         let avant;
         try { avant = await instantané(); } catch (e) {
-            écritConsole('Chargement abandonné : impossible de lire les programmes en cours (' + e.message + ').', 'erreur');
-            return;
+            écritConsole('Chargement abandonné : impossible de lire le projet en cours (' + e.message + ').', 'erreur');
+            return false;
         }
-        // Rien à perdre (aucun programme, ou le programme d'accueil intact) :
+        // Rien à perdre (aucun fichier, aucun programme ou le programme d'accueil intact) :
         // ni avertissement, ni sauvegarde temporaire
         const àProtéger = !espaceVide(avant);
         if (àProtéger) {
-            if (!confirm('Charger l\'archive' + auteur + ' (' + nb + ' programmes) ?\n\n'
-                + 'Elle remplace TOUS les programmes en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return;
-            // sauvegarde temporaire des programmes en cours, pour pouvoir annuler
+            if (!confirm('Charger le projet' + auteur + ' (' + pluriel(nb, 'programme')
+                + (instant.fichiers.length ? ', ' + pluriel(instant.fichiers.length, 'fichier') : '') + ') ?\n\n'
+                + 'Il remplace TOUT le projet en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return false;
+            // sauvegarde temporaire du projet en cours, pour pouvoir annuler
             try {
-                localStorage.setItem(CLÉ_SAUVEGARDE, JSON.stringify({ élève, date: new Date().toISOString(), ...avant }));
+                await FichiersProjet.gardeRéserve({ élève, nom: nomDuProjet, date: new Date().toISOString(), ...avant });
+                localStorage.setItem(CLÉ_RÉSERVE, '1');
             } catch (e) {
-                écritConsole('Chargement abandonné : impossible de sauvegarder les programmes en cours (' + e.message + ').', 'erreur');
-                return;
+                écritConsole('Chargement abandonné : impossible de mettre de côté le projet en cours (' + e.message + ').', 'erreur');
+                return false;
             }
         } else {
             // une ancienne sauvegarde ne correspond plus à rien : « Annuler » ne doit pas la ramener
-            try { localStorage.removeItem(CLÉ_SAUVEGARDE); } catch (e) { /* rien */ }
+            try { await FichiersProjet.videRéserve(); localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ }
         }
         try {
             await remplaceTout(instant);
-            mémoriseArchivé(await instantané());
+            changeNomProjet(nomLu || SANS_NOM);
+            mémoriseExporté(await instantané());
         } catch (e) {
-            écritConsole('Erreur pendant le chargement de l\'archive : ' + e.message + '. Utilise « Annuler le chargement ».', 'erreur');
+            écritConsole('Erreur pendant le chargement du projet : ' + e.message + '. Utilise « Annuler le chargement ».', 'erreur');
         }
-        // Des programmes ont été remplacés : l'archive appartient peut-être à un autre élève,
-        // on déconnecte (le nom sera redemandé à la prochaine exécution). Si l'espace était
-        // vide, l'élève connecté vient simplement de charger son archive : il reste connecté.
+        // Un projet a été remplacé : il appartient peut-être à un autre élève, on déconnecte
+        // (le nom sera redemandé à la prochaine exécution). Si l'espace était vide, l'élève
+        // connecté vient simplement de charger son projet : il reste connecté.
         if (àProtéger) changeÉlève(null);
         metAJourAnnulation();
+        if (ignorés.length) {
+            écritConsole('— ' + pluriel(ignorés.length, 'fichier') + ' du projet ' + (ignorés.length > 1 ? 'ont été laissés' : 'a été laissé')
+                + ' de côté (mal placé, mal nommé ou mal écrit) : ' + ignorés.slice(0, 6).join(', ') + (ignorés.length > 6 ? '…' : '') + '.', 'info');
+        }
+        return true;
     }
 
-    function sauvegardeTemporaire() {
-        try { return JSON.parse(localStorage.getItem(CLÉ_SAUVEGARDE) || 'null'); } catch (e) { return null; }
+    function réserveExiste() {
+        try { return localStorage.getItem(CLÉ_RÉSERVE) === '1'; } catch (e) { return false; }
     }
 
-    async function annuleArchive() {
-        const avant = sauvegardeTemporaire();
-        if (!avant) return;
-        if (!confirm('Revenir aux programmes d\'avant le chargement de l\'archive ?\n\nLes programmes actuels seront remplacés.')) return;
+    async function annuleProjet() {
+        if (!réserveExiste()) return;
+        let avant;
+        try { avant = await FichiersProjet.litRéserve(); } catch (e) { avant = null; }
+        if (!avant) { try { localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ } metAJourAnnulation(); return; }
+        if (!confirm('Revenir au projet d\'avant le chargement ?\n\nLe projet actuel sera remplacé.')) return;
         try {
             await remplaceTout(avant);
         } catch (e) {
             écritConsole('Impossible de revenir en arrière : ' + e.message, 'erreur');
             return;
         }
-        try { localStorage.removeItem(CLÉ_SAUVEGARDE); } catch (e) { /* rien */ }
+        try { await FichiersProjet.videRéserve(); localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ }
         changeÉlève(avant.élève || null);
+        changeNomProjet(avant.nom || SANS_NOM);
         metAJourAnnulation();
-        écritConsole('— Les programmes d\'avant le chargement sont revenus.', 'info');
+        écritConsole('— Le projet « ' + nomDuProjet + ' » est revenu.', 'info');
     }
 
     function metAJourAnnulation() {
-        $('btnAnnuleArchive').disabled = !sauvegardeTemporaire();
+        $('btnAnnuleProjet').disabled = !réserveExiste();
     }
 
-    // serveur.py garde une copie des archives des élèves (pour l'enseignant).
+    // serveur.py garde une copie des projets exportés par les élèves (pour l'enseignant).
     // On ne lui envoie rien tant qu'il n'a pas répondu à cette question : en ligne,
-    // aucune archive ne part donc sur le réseau.
-    let serveurArchives = false;
+    // aucun projet ne part donc sur le réseau.
+    let serveurProjets = false;
 
-    async function détecteServeurArchives() {
+    async function détecteServeurProjets() {
         // GitHub Pages ne sert que des fichiers : inutile de chercher serveur.py
         if (location.hostname.endsWith('.github.io')) return false;
         try {
-            const r = await fetch('api/archives', { cache: 'no-cache' });
+            const r = await fetch('api/projets', { cache: 'no-cache' });
             const réponse = r.ok ? await r.json() : null;
-            return !!(réponse && réponse.archives === true);
+            return !!(réponse && réponse.projets === true);
         } catch (e) { return false; }
     }
 
-    // Envoie la copie de l'archive au serveur ; il ne remplace jamais une archive existante
-    async function envoieArchive(nom, texte) {
+    // Envoie la copie du projet au serveur ; il ne remplace jamais un projet existant
+    async function envoieProjet(nom, archive) {
         try {
-            const r = await fetch('api/archives/' + encodeURIComponent(nom), {
-                method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' }, body: texte
+            const r = await fetch('api/projets/' + encodeURIComponent(nom), {
+                method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: archive
             });
             if (!r.ok) throw new Error(await r.text());
             écritConsole('— Une copie est aussi conservée sur le serveur de la classe.', 'info');
@@ -1129,7 +1456,7 @@ const Pythonerie = (function () {
         nom = nfc(nom || '').trim();
         if (!nom) return null;
         if (nom.length > 60 || !/^[\p{L}\p{N} _\-.()]+$/u.test(nom) || nom.startsWith('.')) return null;
-        return nom.replace(/\.py$/i, '');
+        return nom.replace(/\.pyf?$/i, '');
     }
 
     function existe(chemin) {
@@ -1190,12 +1517,14 @@ const Pythonerie = (function () {
         });
         li.addEventListener('dragend', () => li.classList.remove('glisse'));
     }
-    function rendCible(element, dossier) {
+    // répertoire : pour les répertoires images, sons, données du projet (fichiers de l'ordinateur seulement)
+    function rendCible(element, dossier, répertoire = null) {
         element.addEventListener('dragover', (ev) => {
-            if (!ev.dataTransfer.types.includes(TYPE_GLISSE)) return;
+            const fichiers = ev.dataTransfer.types.includes('Files');
+            if (!fichiers && (répertoire || !ev.dataTransfer.types.includes(TYPE_GLISSE))) return;
             ev.preventDefault();
             ev.stopPropagation();
-            ev.dataTransfer.dropEffect = 'move';
+            ev.dataTransfer.dropEffect = fichiers ? 'copy' : 'move';
             element.classList.add('cible');
         });
         element.addEventListener('dragleave', (ev) => {
@@ -1205,10 +1534,146 @@ const Pythonerie = (function () {
             ev.preventDefault();
             ev.stopPropagation();
             element.classList.remove('cible');
+            // des fichiers de l'ordinateur : programmes .pyf (ou .py), images, sons, données
+            if (ev.dataTransfer.files && ev.dataTransfer.files.length) {
+                await importe(ev.dataTransfer.files, dossier, répertoire);
+                return;
+            }
             let objet;
             try { objet = JSON.parse(ev.dataTransfer.getData(TYPE_GLISSE)); } catch (e) { return; }
             await déplace(objet.genre, objet.chemin, dossier);
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Les répertoires du projet : images, sons, données (voir fichiers-projet.js).
+    // Repliés au départ ; on y glisse des fichiers de l'ordinateur, ou on utilise ＋.
+    // ------------------------------------------------------------------
+    let ouvertsProjet = new Set();
+    try { ouvertsProjet = new Set(JSON.parse(localStorage.getItem('pythonerie.ouvertsProjet') || '[]')); } catch (e) { /* rien */ }
+    function enregistreOuvertsProjet() {
+        try { localStorage.setItem('pythonerie.ouvertsProjet', JSON.stringify([...ouvertsProjet])); } catch (e) { /* rien */ }
+    }
+    let répertoireÀRemplir = null;      // le répertoire visé par le bouton ＋
+
+    const SVG_RÉPERTOIRE_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#5b87b8"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#8fb4dc"/></svg>';
+    const SVG_IMAGE = '<svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="1" stroke="currentColor" stroke-width="1.1"/><circle cx="5.5" cy="6" r="1.3" fill="currentColor"/><path d="M2 12l4-4 3 3 2-2 3 3" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+    const SVG_SON = '<svg viewBox="0 0 16 16" fill="none"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M11 5.5c1.2 1.4 1.2 3.6 0 5M12.8 4c2 2.3 2 5.7 0 8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
+    const SVG_AJOUTER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M7.25 2h1.5v5.25H14v1.5H8.75V14h-1.5V8.75H2v-1.5h5.25z"/></svg>';
+    const ICÔNES_FICHIERS = { images: SVG_IMAGE, sons: SVG_SON, données: SVG_DONNÉES };
+    const EXPLICATIONS = {
+        images: 'Glisse des images ici (png, jpg, gif, svg, webp) : charge_image("chat.png")',
+        sons: 'Glisse des sons ici (wav, mp3, ogg) : charge_son("miaou.wav")',
+        données: 'Glisse des données ici (txt, csv, json…) : charge_données("notes.csv")'
+    };
+
+    function afficheRépertoiresProjet(ul) {
+        const tous = FichiersProjet.liste();
+        Object.keys(FichiersProjet.RÉPERTOIRES).forEach(rép => {
+            const contenu = tous.filter(f => f.chemin.startsWith(rép + '/'));
+            const ouvert = ouvertsProjet.has(rép);
+            const li = ligneArbre(0, 'dossier répertoire-projet');
+            li.title = EXPLICATIONS[rép];
+            const chevron = document.createElement('span');
+            chevron.className = 'arbre-chevron' + (ouvert ? ' ouvert' : '');
+            chevron.innerHTML = SVG_CHEVRON;
+            const icône = document.createElement('span');
+            icône.className = 'arbre-icône';
+            icône.innerHTML = SVG_RÉPERTOIRE_PROJET;
+            const nom = document.createElement('span');
+            nom.className = 'programme-nom';
+            nom.textContent = rép;
+            const nombre = document.createElement('span');
+            nombre.className = 'nombre-exemples';
+            nombre.textContent = contenu.length;
+            li.append(chevron, icône, nom, nombre, boutonsActions([
+                [SVG_AJOUTER, 'Ajouter des fichiers dans « ' + rép + ' »', () => { répertoireÀRemplir = rép; $('fichierRépertoire').click(); }]
+            ]));
+            li.addEventListener('click', () => {
+                if (ouvert) ouvertsProjet.delete(rép); else ouvertsProjet.add(rép);
+                enregistreOuvertsProjet();
+                afficheArbre();
+            });
+            rendCible(li, '', rép);
+            ul.appendChild(li);
+            if (!ouvert) return;
+            if (!contenu.length) {
+                const vide = ligneArbre(1, 'liste-vide');
+                vide.textContent = EXPLICATIONS[rép];
+                rendCible(vide, '', rép);
+                ul.appendChild(vide);
+            }
+            contenu.forEach(f => {
+                const nomF = f.chemin.slice(rép.length + 1);
+                const lf = ligneArbre(1, 'programme fichier-projet');
+                lf.title = nomF + ' (' + (f.taille < 1024 ? f.taille + ' octets' : (f.taille / 1024).toFixed(0) + ' Ko') + ')';
+                const espace = document.createElement('span');
+                espace.className = 'arbre-chevron';
+                const icôneF = document.createElement('span');
+                icôneF.className = 'arbre-icône';
+                icôneF.innerHTML = ICÔNES_FICHIERS[rép];
+                const nomÉl = document.createElement('span');
+                nomÉl.className = 'programme-nom';
+                nomÉl.textContent = nomF;
+                lf.append(espace, icôneF, nomÉl, boutonsActions([
+                    [SVG_RENOMMER, 'Renommer « ' + nomF + ' »', () => renommeFichier(f.chemin)],
+                    [SVG_EXPORTER, 'Exporter « ' + nomF + ' » (le télécharger)', () => exporteFichier(f.chemin)],
+                    [SVG_SUPPRIMER, 'Supprimer « ' + nomF + ' »', () => supprimeFichier(f.chemin)]
+                ]));
+                lf.addEventListener('click', () => aperçuFichier(f.chemin));
+                rendCible(lf, '', rép);
+                ul.appendChild(lf);
+            });
+        });
+    }
+
+    // Un clic sur un fichier : l'image en grand, le son joué, ou le début des données
+    function aperçuFichier(chemin) {
+        const nom = chemin.slice(chemin.indexOf('/') + 1);
+        if (chemin.startsWith('sons/')) {
+            const son = new Audio(FichiersProjet.url(chemin));
+            son.play().catch(() => écritConsole('Le navigateur refuse de jouer « ' + nom + ' ».', 'erreur'));
+            return;
+        }
+        let contenu;
+        if (chemin.startsWith('images/')) {
+            contenu = document.createElement('img');
+            contenu.src = FichiersProjet.url(chemin);
+            contenu.className = 'aperçu-image';
+            contenu.alt = nom;
+        } else {
+            const texte = FichiersProjet.texte(chemin) || '';
+            contenu = document.createElement('pre');
+            contenu.className = 'aperçu-données';
+            contenu.textContent = texte.length > 4000 ? texte.slice(0, 4000) + '\n…' : texte;
+        }
+        const appel = chemin.startsWith('images/') ? 'charge_image("' + nom + '")' : 'charge_données("' + nom + '")';
+        dialogue(nom, 'Dans un programme : ' + appel, [{ texte: 'Fermer', valeur: null, genre: 'principal' }], contenu);
+    }
+
+    async function renommeFichier(chemin) {
+        const ancien = chemin.slice(chemin.indexOf('/') + 1);
+        const nouveau = prompt('Nouveau nom pour « ' + ancien + ' » :', ancien);
+        if (!nouveau || nfc(nouveau).trim() === ancien) return;
+        try { await FichiersProjet.renomme(chemin, nouveau); } catch (e) { écritConsole(e.message + '.', 'erreur'); }
+        afficheArbre();
+    }
+
+    async function supprimeFichier(chemin) {
+        const nom = chemin.slice(chemin.indexOf('/') + 1);
+        if (!confirm('Supprimer « ' + nom + ' » du projet ?')) return;
+        try { await FichiersProjet.supprime(chemin); } catch (e) { écritConsole(e.message + '.', 'erreur'); }
+        afficheArbre();
+    }
+
+    function exporteFichier(chemin) {
+        const blob = FichiersProjet.blob(chemin);
+        if (!blob) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = chemin.slice(chemin.indexOf('/') + 1);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
     function ligneArbre(profondeur, genre) {
@@ -1274,7 +1739,7 @@ const Pythonerie = (function () {
             nom.textContent = nomDe(p.chemin);
             li.append(espace, icône, nom, boutonsActions([
                 [SVG_RENOMMER, 'Renommer « ' + nomDe(p.chemin) + ' »', () => renomme(p.chemin)],
-                [SVG_EXPORTER, 'Exporter « ' + nomDe(p.chemin) + ' » (télécharger le fichier .py)', () => exporte(p.chemin)],
+                [SVG_EXPORTER, 'Exporter « ' + nomDe(p.chemin) + ' » (télécharger le fichier .pyf)', () => exporte(p.chemin)],
                 [SVG_SUPPRIMER, 'Supprimer « ' + nomDe(p.chemin) + ' »', () => {
                     // la corbeille d'un programme choisi supprime toute la sélection
                     if (sélection.size > 1 && sélection.has(p.chemin)) supprimeSélection();
@@ -1382,15 +1847,19 @@ const Pythonerie = (function () {
         afficheBandeau();
         const ul = $('listeProgrammes');
         ul.innerHTML = '';
+        afficheRépertoiresProjet(ul);
         if (!programmes.length && !dossiers.length) {
-            ul.innerHTML = '<li class="liste-vide">Aucun programme</li>';
+            const vide = document.createElement('li');
+            vide.className = 'liste-vide';
+            vide.textContent = 'Aucun programme';
+            ul.appendChild(vide);
         }
         afficheDossier(ul, '', 0);
         const ici = dossierCourant ? '« ' + dossierCourant + ' »' : 'la racine';
         $('btnNouveau').title = 'Nouveau programme dans ' + ici;
         $('btnNouveauDossier').title = 'Nouveau répertoire dans ' + ici;
         $('genreStockage').textContent = 'Enregistrés dans ce navigateur'
-            + (serveurArchives ? ' — archives aussi conservées sur le serveur de la classe' : '') + (dossierCourant ? ' — nouveaux programmes dans « ' + dossierCourant + ' »' : '');
+            + (serveurProjets ? ' — projets exportés aussi conservés sur le serveur de la classe' : '') + (dossierCourant ? ' — nouveaux programmes dans « ' + dossierCourant + ' »' : '');
     }
 
     async function rafraichitListe() {
@@ -1433,24 +1902,13 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Les données du programme (bouton « Données ») : des onglets Don0, Don1...
+    // Les données du projet (bouton « Données ») : des onglets Don0, Don1...
     // À l'exécution, chaque onglet non vide devient une variable : don0 = """...""".
-    // Elles sont enregistrées avec le programme, dans une section à part, à la fin du
-    // fichier (en mémoire, à l'export .py et dans les archives) :
-    //
-    //   #=== Données de la Pythonerie : 2 onglets ===
-    //   #=== don0 : 2 lignes ===
-    //   #|pays,capitale
-    //   #|France,Paris
-    //   #=== don1 : 0 ligne ===
-    //   #=== Fin des données ===
-    //
-    // Chaque ligne de données est précédée de « #| » : la section n'est faite que de
-    // commentaires, et le nombre de lignes de chaque onglet permet de les relire exactement.
+    // Ils appartiennent au projet, pas à un programme : tous les programmes (et ceux
+    // qu'ils importent) voient les mêmes don0, don1... Ils sont enregistrés à part dans
+    // le navigateur, et rangés dans le projet exporté (onglets/don0.txt, onglets/don1.txt...).
     // ------------------------------------------------------------------
-    const EN_TÊTE_DONNÉES = /^#=== Données de la Pythonerie : (\d+) onglets? ===$/;
-    const TÊTE_ONGLET = /^#=== don(\d+) : (\d+) lignes? ===$/;
-    const FIN_DONNÉES = '#=== Fin des données ===';
+    const CLÉ_ONGLETS = 'pythonerie.onglets';
     const ONGLETS_MAX = 20;
     let onglets = [''];
     let ongletActif = 0;
@@ -1458,56 +1916,23 @@ const Pythonerie = (function () {
 
     const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
 
-    // Le texte enregistré : le code, puis la section des données (s'il y en a)
-    function assembleDonnées(code, liste) {
-        if (liste.length <= 1 && !liste[0]) return code;
-        const lignes = ['#=== Données de la Pythonerie : ' + pluriel(liste.length, 'onglet') + ' ==='];
-        liste.forEach((t, i) => {
-            const contenu = t === '' ? [] : t.split('\n');
-            lignes.push('#=== don' + i + ' : ' + pluriel(contenu.length, 'ligne') + ' ===');
-            contenu.forEach(l => lignes.push('#|' + l));
-        });
-        lignes.push(FIN_DONNÉES);
-        return code.replace(/\n+$/, '') + '\n\n' + lignes.join('\n') + '\n';
+    // Une liste d'onglets acceptable (au moins Don0, au plus ONGLETS_MAX, des textes)
+    function ongletsValides(liste) {
+        const l = Array.isArray(liste) ? liste.slice(0, ONGLETS_MAX).map(x => typeof x === 'string' ? nfc(x).replace(/\r\n?/g, '\n') : '') : [];
+        return l.length ? l : [''];
     }
 
-    // Sépare le texte enregistré en { code, onglets } ; sans section valide, tout est du code
-    function sépareDonnées(texte) {
-        texte = texte.replace(/\r\n?/g, '\n');
-        const lignes = texte.split('\n');
-        for (let i = 0; i < lignes.length; i++) {
-            const m = EN_TÊTE_DONNÉES.exec(lignes[i]);
-            if (!m) continue;
-            const liste = litSectionDonnées(lignes, i + 1, Number(m[1]));
-            if (!liste) continue;
-            const code = lignes.slice(0, i).join('\n').replace(/\n+$/, '');
-            return { code: code ? code + '\n' : '', onglets: liste };
+    function litOnglets() {
+        try { return ongletsValides(JSON.parse(localStorage.getItem(CLÉ_ONGLETS) || '[""]')); } catch (e) { return ['']; }
+    }
+
+    function enregistreOnglets() {
+        try {
+            if (onglets.length === 1 && onglets[0] === '') localStorage.removeItem(CLÉ_ONGLETS);
+            else localStorage.setItem(CLÉ_ONGLETS, JSON.stringify(onglets));
+        } catch (e) {
+            écritConsole('Les données n\'ont pas pu être enregistrées : ' + e.message, 'erreur');
         }
-        return { code: texte, onglets: [''] };
-    }
-
-    function litSectionDonnées(lignes, j, n) {
-        if (n < 1 || n > ONGLETS_MAX) return null;
-        const liste = [];
-        for (let k = 0; k < n; k++) {
-            const m = TÊTE_ONGLET.exec(lignes[j] || '');
-            if (!m || Number(m[1]) !== k) return null;
-            const nb = Number(m[2]);
-            j++;
-            const contenu = [];
-            for (let x = 0; x < nb; x++, j++) {
-                if (lignes[j] === undefined || !lignes[j].startsWith('#|')) return null;
-                contenu.push(lignes[j].slice(2));
-            }
-            liste.push(contenu.join('\n'));
-        }
-        if (lignes[j] !== FIN_DONNÉES || lignes.slice(j + 1).some(l => l.trim())) return null;
-        return liste;
-    }
-
-    // Le programme complet, tel qu'il est enregistré
-    function texteComplet() {
-        return assembleDonnées(éditeur.getValue(), onglets);
     }
 
     // Écrit un onglet comme une chaîne du programme. Les chaînes """...""" et '''...'''
@@ -1572,10 +1997,12 @@ const Pythonerie = (function () {
             : 'Dans ton programme, ces données s\'appellent <code>' + nom + '</code> (' + pluriel(t.split('\n').length, 'ligne') + ').';
     }
 
-    function changeOngletsChargés(liste) {
+    // Les onglets d'un autre projet (chargé, nouveau, revenu ou effacé)
+    function remplaceOnglets(liste) {
         annulationsOnglets = [];
-        onglets = liste.length ? liste : [''];
+        onglets = ongletsValides(liste);
         ongletActif = 0;
+        enregistreOnglets();
         afficheOnglets();
     }
 
@@ -1583,7 +2010,7 @@ const Pythonerie = (function () {
         modeDonnées = !modeDonnées;
         $('panneauDonnées').hidden = !modeDonnées;
         $('conteneurÉditeur').hidden = modeDonnées;
-        $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'Les données du programme : don0, don1...';
+        $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'Les données du projet : don0, don1...';
         libelléBoutonDonnées();
         if (modeDonnées) $('texteDonnées').focus();
         else { éditeur.refresh(); éditeur.focus(); }
@@ -1593,13 +2020,14 @@ const Pythonerie = (function () {
         if (onglets.length >= ONGLETS_MAX) return;
         onglets.push('');
         ongletActif = onglets.length - 1;
+        enregistreOnglets();
         afficheOnglets();
         $('texteDonnées').focus();
     }
 
     // Annuler : avant chaque retrait, vidage ou remplacement par un fichier, on garde les
     // onglets tels qu'ils étaient ; ↶ les fait revenir (plusieurs fois de suite si besoin).
-    // La pile est oubliée quand on ouvre un autre programme.
+    // La pile est oubliée quand le projet change.
     let annulationsOnglets = [];
 
     function retientOnglets() {
@@ -1623,7 +2051,7 @@ const Pythonerie = (function () {
         if (n === onglets.length) onglets.push('');                         // don3 après don0..don2
         onglets[n] = nfc(String(texte)).replace(/\r\n?/g, '\n');
         afficheOnglets();          // l'onglet est mis à jour à l'écran
-        sauvegardePlusTard();      // et enregistré avec le programme
+        enregistreOnglets();       // et enregistré dans le projet
         return '';
     }
 
@@ -1649,7 +2077,7 @@ const Pythonerie = (function () {
         onglets = avant.onglets;
         ongletActif = avant.actif;
         afficheOnglets();
-        sauvegardePlusTard();
+        enregistreOnglets();
     }
 
     // − retire l'onglet ouvert ; Don0 reste toujours là : il est seulement vidé
@@ -1669,7 +2097,7 @@ const Pythonerie = (function () {
             ongletActif = Math.min(ongletActif, onglets.length - 1);
         }
         afficheOnglets();
-        sauvegardePlusTard();
+        enregistreOnglets();
     }
 
     // Comme dans TamedAgents : le fichier choisi remplit l'onglet affiché
@@ -1685,11 +2113,12 @@ const Pythonerie = (function () {
         if (onglets[ongletActif] !== '') retientOnglets();
         onglets[ongletActif] = texte;
         afficheOnglets();
-        sauvegardePlusTard();
+        enregistreOnglets();
         écritConsole('— « ' + fichier.name + ' » est dans l\'onglet ' + nom + ' : dans ton programme, c\'est la variable don' + ongletActif + '.', 'info');
     }
 
     function installeDonnées() {
+        onglets = litOnglets();
         $('btnDonnées').addEventListener('click', basculeDonnées);
         $('btnAjouteOnglet').addEventListener('click', ajouteOnglet);
         $('btnRetireOnglet').addEventListener('click', retireOnglet);
@@ -1707,7 +2136,7 @@ const Pythonerie = (function () {
             // vide <-> rempli : l'onglet change d'aspect
             if ((était === '') !== (onglets[ongletActif] === '')) afficheOnglets();
             else afficheNoteDonnées();
-            sauvegardePlusTard();
+            enregistreOnglets();
         });
         texte.addEventListener('keydown', (ev) => {
             if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); exécute(); }
@@ -1726,7 +2155,7 @@ const Pythonerie = (function () {
         clearTimeout(minuterieSauvegarde);
         if (!courant || !modifie) return;
         try {
-            await stockage.écrit(courant, texteComplet());
+            await stockage.écrit(courant, éditeur.getValue());
             modifie = false;
             étatSauvegarde('Enregistré', 'ok');
         } catch (e) {
@@ -1747,10 +2176,9 @@ const Pythonerie = (function () {
         if (chemin === courant) return;
         await sauvegarde();
         try {
-            const { code, onglets: données } = sépareDonnées(await stockage.lit(chemin));
+            const code = await stockage.lit(chemin);
             chargementEnCours = true;
             éditeur.setValue(code);
-            changeOngletsChargés(données);
             éditeur.clearHistory();
             chargementEnCours = false;
             courant = chemin;
@@ -1929,13 +2357,13 @@ const Pythonerie = (function () {
 
     async function duplique() {
         if (!courant) return;
-        await crée(parentDe(courant), nomDe(courant) + ' (copie)', texteComplet());
+        await crée(parentDe(courant), nomDe(courant) + ' (copie)', éditeur.getValue());
     }
 
     async function exporte(chemin = courant) {
         let code;
         try {
-            code = chemin === courant ? texteComplet() : await stockage.lit(chemin);
+            code = chemin === courant ? éditeur.getValue() : await stockage.lit(chemin);
         } catch (e) {
             écritConsole('Impossible d\'exporter : ' + e.message, 'erreur');
             return;
@@ -1943,29 +2371,53 @@ const Pythonerie = (function () {
         const blob = new Blob([code], { type: 'text/x-python;charset=utf-8' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = (chemin ? nomDe(chemin) : 'programme') + '.py';
+        a.download = (chemin ? nomDe(chemin) : 'programme') + '.pyf';
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
-    function importe(fichiers) {
-        Array.from(fichiers).forEach(f => {
-            const lecteur = new FileReader();
-            lecteur.onload = async () => {
+    // Des fichiers venus de l'ordinateur (menu ☰ ou glisser-déposer) : un .pyf (ou .py) devient un
+    // programme (dans le répertoire dossier), une image, un son ou des données vont dans
+    // le répertoire du projet qui leur correspond (répertoire : imposé si l'on a déposé
+    // les fichiers sur images, sons ou données)
+    async function importe(fichiers, dossier = dossierCourant, répertoire = null) {
+        let ajoutés = 0;
+        for (const f of Array.from(fichiers)) {
+            // un projet exporté : il remplace le projet en cours (après confirmation)
+            if (/\.zip$/i.test(f.name)) { await chargeProjetFichier(f); continue; }
+            if (/\.json$/i.test(f.name)) {
+                let p = null;
+                try { p = JSON.parse(await f.text()); } catch (e) { /* des données json ordinaires */ }
+                if (p && p.format === FORMAT_PROJET) { await chargeProjetFichier(f); continue; }
+            }
+            if (/\.pyf?$/i.test(f.name) && !répertoire) {
                 const nom = nomValide(f.name.replace(/\.[^.]+$/, '')) || 'Programme importé';
-                await crée(dossierCourant, nom, nfc(lecteur.result));
-            };
-            lecteur.readAsText(f, 'utf-8');
-        });
+                await crée(dossier, nom, nfc(await f.text()));
+                continue;
+            }
+            try {
+                const chemin = await FichiersProjet.ajoute(f, répertoire);
+                ouvertsProjet.add(chemin.slice(0, chemin.indexOf('/')));
+                ajoutés++;
+            } catch (e) {
+                écritConsole(e.message + '.', 'erreur');
+            }
+        }
+        if (ajoutés) {
+            enregistreOuvertsProjet();
+            afficheArbre();
+            écritConsole('— ' + pluriel(ajoutés, 'fichier') + ' ajouté' + (ajoutés > 1 ? 's' : '') + ' au projet.', 'info');
+        }
     }
 
     // ------------------------------------------------------------------
-    // Répertoires du site : « Matériels » (matériels/, le matériel de cours déposé par
-    // l'enseignant) et « Exemples » (exemples/). Chacun a son index.json :
-    // [{ "fichier", "titre", "description" }]. Ils sont repliés par défaut pour ne pas
-    // encombrer la colonne. Un clic sur un programme (.py) en crée une copie ; un clic
-    // sur un autre fichier (des données) explique comment le lire avec charge_données.
+    // Répertoires du site : « Matériels » (matériels/, préparé par l'enseignant) et
+    // « Exemples » (exemples/). Chacun a son index.json : [{ "fichier", "titre", "description" }].
+    // Ils sont repliés par défaut. Un clic sur un programme (.pyf) en crée une copie ;
+    // dans Matériels, un clic sur un projet (.zip ou .json) le charge à la place du projet en cours.
     // ------------------------------------------------------------------
+    const SVG_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 4.5L8 1.5l6 3v7L8 14.5l-6-3z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2 4.5l6 3 6-3M8 7.5v7" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+
     async function chargeRépertoireSite({ idListe, répertoire, nom, clé, masquéSiVide }) {
         const ul = $(idListe);
         let ouvert = false;
@@ -1981,9 +2433,11 @@ const Pythonerie = (function () {
             else ul.innerHTML = '<li class="liste-vide">' + nom + ' indisponibles</li>';
             return;
         }
-        liste = liste.filter(x => x && typeof x.fichier === 'string').map(x => ({ ...x, fichier: nfc(x.fichier) }));
+        liste = liste.filter(x => x && typeof x.fichier === 'string' && /\.(pyf|zip|json)$/i.test(x.fichier))
+            .map(x => ({ ...x, fichier: nfc(x.fichier) }));
         if (!liste.length && masquéSiVide) { ul.hidden = true; return; }
         ul.hidden = false;
+        const adresse = (fichier) => répertoire + '/' + fichier.split('/').map(encodeURIComponent).join('/');
         const affiche = () => {
             ul.innerHTML = '';
             // la ligne du répertoire
@@ -2011,41 +2465,50 @@ const Pythonerie = (function () {
             if (!ouvert) return;
             // le contenu, un cran plus loin, comme les programmes d'un répertoire
             liste.forEach(élément => {
-                const programme = /\.py$/i.test(élément.fichier);
+                const projet = /\.(zip|json)$/i.test(élément.fichier);
                 const titre = élément.titre || élément.fichier;
                 const li = ligneArbre(1, 'programme');
                 li.title = (élément.description ? élément.description + ' — ' : '')
-                    + (programme ? 'un clic crée une copie que tu peux modifier (ou ouvre ta copie, si tu l\'as déjà)' : 'données : un clic montre comment les lire');
+                    + (projet ? 'un projet : un clic le charge à la place de ton projet (tu pourras annuler)'
+                              : 'un clic crée une copie que tu peux modifier (ou ouvre ta copie, si tu l\'as déjà)');
                 const espace = document.createElement('span');
                 espace.className = 'arbre-chevron';
                 const icôneÉl = document.createElement('span');
                 icôneÉl.className = 'arbre-icône';
-                icôneÉl.innerHTML = programme ? SVG_PROGRAMME : SVG_DONNÉES;
+                icôneÉl.innerHTML = projet ? SVG_PROJET : SVG_PROGRAMME;
                 const texte = document.createElement('span');
                 texte.className = 'programme-nom';
                 texte.textContent = titre;
                 li.append(espace, icôneÉl, texte);
                 li.addEventListener('click', async () => {
-                    if (!programme) {
-                        écritConsole('— « ' + élément.fichier + ' »' + (élément.description ? ' : ' + élément.description : '')
-                            + '\n   Pour le lire dans un programme : texte = charge_données("' + élément.fichier + '")', 'info');
+                    if (projet) {
+                        try {
+                            const r = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
+                            if (!r.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
+                            const fichier = new File([await r.blob()], élément.fichier.split('/').pop());
+                            if (await chargeProjetFichier(fichier)) {
+                                écritConsole('— Le projet « ' + titre + ' » est chargé.' + (élément.description ? ' ' + élément.description : ''), 'info');
+                            }
+                        } catch (e) {
+                            écritConsole(e.message, 'erreur');
+                        }
                         return;
                     }
                     // Déjà copié (un programme du même nom, de préférence dans le répertoire
                     // courant) : on l'ouvre, plutôt que d'en créer « 15. Casse-briques 2 »
-                    const nom = titre.replace(/\.py$/i, '');
-                    const copies = programmes.filter(p => nomDe(p.chemin) === nom);
+                    const nomProg = titre.replace(/\.pyf?$/i, '');
+                    const copies = programmes.filter(p => nomDe(p.chemin) === nomProg);
                     if (copies.length) {
                         const copie = copies.find(p => parentDe(p.chemin) === dossierCourant) || copies[0];
                         await ouvre(copie.chemin);
-                        écritConsole('— « ' + nom + ' » est déjà dans tes programmes : le voici. '
+                        écritConsole('— « ' + nomProg + ' » est déjà dans tes programmes : le voici. '
                             + 'Pour repartir de l\'exemple d\'origine, renomme ou supprime ta copie.', 'info');
                         return;
                     }
                     try {
-                        const rc = await fetch(répertoire + '/' + élément.fichier.split('/').map(encodeURIComponent).join('/'), { cache: 'no-cache' });
+                        const rc = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
                         if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
-                        await crée(dossierCourant, nom, nfc(await rc.text()));
+                        await crée(dossierCourant, nomProg, nfc(await rc.text()));
                     } catch (e) {
                         écritConsole(e.message, 'erreur');
                     }
@@ -2063,24 +2526,13 @@ const Pythonerie = (function () {
             clé: 'pythonerie.exemplesOuverts', masquéSiVide: false });
     }
 
-    // charge_données(nom) : un fichier du répertoire matériels/ du site (lecture synchrone :
-    // le programme attend le contenu). { contenu } ou { erreur }
+    // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
+    // { contenu } ou { erreur }
     function chargeDonnées(nom) {
-        nom = nfc(String(nom)).trim().replace(/^matériels\//, '');
-        const morceaux = nom.split('/');
-        if (!nom || /^[a-z]+:/i.test(nom) || morceaux.some(m => !m || m === '.' || m === '..')) {
-            return { erreur: 'nom de données invalide : « ' + nom + ' » (le nom d\'un fichier du répertoire Matériels)' };
-        }
-        const requête = new XMLHttpRequest();
-        try {
-            requête.open('GET', 'matériels/' + morceaux.map(encodeURIComponent).join('/'), false);
-            requête.overrideMimeType('text/plain; charset=utf-8');
-            requête.send();
-        } catch (e) {
-            return { erreur: 'impossible de lire les données « ' + nom + ' »' };
-        }
-        if (requête.status !== 200) return { erreur: 'les données « ' + nom + ' » ne sont pas dans le répertoire Matériels' };
-        return { contenu: nfc(requête.responseText) };
+        nom = nfc(String(nom)).trim().replace(/^données\//, '');
+        const texte = FichiersProjet.texte('données/' + nom);
+        if (texte === null) return { erreur: 'les données « ' + nom + ' » ne sont pas dans le répertoire données du projet' };
+        return { contenu: texte };
     }
 
     // ------------------------------------------------------------------
@@ -2249,16 +2701,25 @@ const Pythonerie = (function () {
         $('btnImporter').addEventListener('click', () => $('fichierImport').click());
         // une première fois pour se connecter, une deuxième fois pour se déconnecter
         $('btnÉlève').addEventListener('click', () => { if (élève) déconnecte(); else demandeÉlève(); });
-        $('btnCréeArchive').addEventListener('click', créeArchive);
-        $('btnChargeArchive').addEventListener('click', () => $('fichierArchive').click());
-        $('fichierArchive').addEventListener('change', (ev) => {
+        $('btnExporteProjet').addEventListener('click', exporteProjet);
+        $('btnNouveauProjet').addEventListener('click', nouveauProjet);
+        $('btnRenommeProjet').addEventListener('click', renommeProjet);
+        $('nomProjet').addEventListener('click', (ev) => { ev.stopPropagation(); renommeProjet(); });
+        $('btnChargeProjet').addEventListener('click', () => $('fichierProjet').click());
+        $('fichierProjet').addEventListener('change', (ev) => {
             const f = ev.target.files[0];
             ev.target.value = '';
-            if (f) chargeArchive(f);
+            if (f) chargeProjetFichier(f);
         });
-        $('btnAnnuleArchive').addEventListener('click', annuleArchive);
+        $('btnColleProjet').addEventListener('click', colleProjet);
+        $('btnAnnuleProjet').addEventListener('click', annuleProjet);
         $('btnUtilisateurUnique').addEventListener('click', basculeUtilisateurUnique);
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
+        $('fichierRépertoire').addEventListener('change', (ev) => {
+            const fichiers = [...ev.target.files];
+            ev.target.value = '';
+            if (fichiers.length && répertoireÀRemplir) importe(fichiers, '', répertoireÀRemplir);
+        });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', téléchargeImage);
@@ -2291,7 +2752,9 @@ const Pythonerie = (function () {
         metAJourBoutons();
 
         stockage = StockageNavigateur;
-        serveurArchives = await détecteServeurArchives();
+        // les fichiers du projet (images, sons, données), rangés dans IndexedDB
+        try { await FichiersProjet.charge(); } catch (e) { écritConsole('Les fichiers du projet ne sont pas disponibles : ' + e.message, 'erreur'); }
+        serveurProjets = await détecteServeurProjets();
         await chargeConfig();
         // Mode plusieurs élèves imposé par config.json : chaque nouvelle session (nouvel
         // onglet, navigateur relancé) commence avec un espace vide, même si l'élève
@@ -2304,6 +2767,7 @@ const Pythonerie = (function () {
         } catch (e) { /* rien */ }
         if (multiImposé && nouvelleSession) await effaceDonnées();
         afficheÉlève();
+        afficheNomProjet();
         metAJourAnnulation();
         await rafraichitListe();
         chargeRépertoiresSite();

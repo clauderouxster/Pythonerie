@@ -1,7 +1,7 @@
 [
   {
-    "fichier": "capitales.csv",
-    "titre": "capitales.csv",
-    "description": "Quelques pays et leur capitale, séparés par une virgule"
+    "fichier": "quiz_des_capitales.zip",
+    "titre": "Le quiz des capitales",
+    "description": "Un quiz pour découvrir les projets : deux programmes, des données et des sons. Ouvre « Quiz » et exécute-le."
   }
 ]

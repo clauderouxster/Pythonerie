@@ -1,101 +1,101 @@
 [
   {
-    "fichier": "01_bonjour.py",
+    "fichier": "01_bonjour.pyf",
     "titre": "1. Bonjour",
     "description": "Afficher, variables, calculs"
   },
   {
-    "fichier": "02_conditions.py",
+    "fichier": "02_conditions.pyf",
     "titre": "2. Conditions",
     "description": "si, sinonsi, sinon, et, ou, non"
   },
   {
-    "fichier": "03_boucles.py",
+    "fichier": "03_boucles.pyf",
     "titre": "3. Boucles",
     "description": "pour, tantque, sortir, continuer"
   },
   {
-    "fichier": "04_fonctions.py",
+    "fichier": "04_fonctions.pyf",
     "titre": "4. Fonctions",
     "description": "fonction, retourne, récursivité"
   },
   {
-    "fichier": "05_listes.py",
+    "fichier": "05_listes.pyf",
     "titre": "5. Listes et dictionnaires",
     "description": "listes, compréhensions, dictionnaires, chaînes"
   },
   {
-    "fichier": "06_dessin.py",
+    "fichier": "06_dessin.pyf",
     "titre": "6. Dessin",
     "description": "formes et couleurs dans le canevas"
   },
   {
-    "fichier": "07_tortue.py",
+    "fichier": "07_tortue.pyf",
     "titre": "7. Tortue",
     "description": "dessiner avec la tortue"
   },
   {
-    "fichier": "08_animation.py",
+    "fichier": "08_animation.pyf",
     "titre": "8. Animation",
     "description": "une balle qui rebondit"
   },
   {
-    "fichier": "09_interaction.py",
+    "fichier": "09_interaction.pyf",
     "titre": "9. Souris et clavier",
     "description": "quand_clic, quand_touche"
   },
   {
-    "fichier": "10_classes.py",
+    "fichier": "10_classes.pyf",
     "titre": "10. Classes",
     "description": "classe, soi, essaie, sauf"
   },
   {
-    "fichier": "11_courbe.py",
+    "fichier": "11_courbe.pyf",
     "titre": "11. Courbe mathématique",
     "description": "les axes x et y, et la courbe de la fonction courbe(x) sur un intervalle"
   },
   {
-    "fichier": "12_images_sons.py",
+    "fichier": "12_images_sons.pyf",
     "titre": "12. Images et sons",
     "description": "charge_image, place_image, charge_son, joue_son"
   },
   {
-    "fichier": "13_dessin_souris.py",
+    "fichier": "13_dessin_souris.pyf",
     "titre": "13. Dessiner à la souris",
     "description": "quand_glisse : dessiner en gardant le bouton appuyé"
   },
   {
-    "fichier": "14_piano.py",
+    "fichier": "14_piano.pyf",
     "titre": "14. Piano",
     "description": "un piano de trois octaves : souris, glissando et clavier de l'ordinateur"
   },
   {
-    "fichier": "15_casse_briques.py",
+    "fichier": "15_casse_briques.pyf",
     "titre": "15. Casse-briques",
     "description": "un jeu complet : animation, souris, clavier, sons, score et vies"
   },
   {
-    "fichier": "16_serpent.py",
+    "fichier": "16_serpent.pyf",
     "titre": "16. Le serpent",
     "description": "le jeu du serpent : grille, listes, clavier ou toucher, score"
   },
   {
-    "fichier": "17_envahisseurs.py",
+    "fichier": "17_envahisseurs.pyf",
     "titre": "17. Les envahisseurs de l'espace",
     "description": "le célèbre jeu de tir : une flotte qui avance, des bombes, des vagues de plus en plus rapides"
   },
   {
-    "fichier": "18_tableur.py",
+    "fichier": "18_tableur.pyf",
     "titre": "18. Un mini tableur",
     "description": "des champs de saisie dans une grille : flèches, Entrée et totaux des colonnes"
   },
   {
-    "fichier": "19_asteroides.py",
+    "fichier": "19_asteroides.pyf",
     "titre": "19. Le jeu astéroïdes",
     "description": "Le jeu astéroïdes: survivre à des astéroïdes en mouvement"
   },
   {
-    "fichier": "20_atelier.py",
+    "fichier": "20_atelier.pyf",
     "titre": "20. L'atelier de formes",
     "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, zone d'édition"
   }

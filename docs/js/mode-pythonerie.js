@@ -127,7 +127,7 @@ const PYTHONERIE_FONCTIONS = {
     'place_image': 'place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) — dessine l\'image',
     'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
     'joue_son': 'joue_son(numéro) — joue le son',
-    'charge_données': 'charge_données(nom) — texte d\'un fichier du répertoire Matériels',
+    'charge_données': 'charge_données(nom) — texte d\'un fichier du répertoire données du projet',
     'range_données': 'range_données("don0", valeur) — range la valeur dans l\'onglet de données don0 (créé s\'il suit le dernier)',
     'prend_données': 'prend_données("don0") — le texte actuel de l\'onglet de données don0',
     'lit_fichier': 'lit_fichier() — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre ; lit_fichier("https://…") — texte d\'une adresse Internet',

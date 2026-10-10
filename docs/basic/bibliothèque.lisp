@@ -271,7 +271,7 @@
    (_erreur_navigateur)
    nil)
 
-; charge_données(nom) : un fichier du répertoire Matériels du site (matériel de cours)
+; charge_données(nom) : un fichier du répertoire données du projet
 (defun charge_données (nom)
    (setq contenu (evaljs (list "Pyt.chargeDonnées" (string nom))))
    (_erreur_navigateur)

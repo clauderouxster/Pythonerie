@@ -259,7 +259,7 @@
                 <a href="#souris">🖱️ Souris et clavier</a>
                 <a href="#medias">🖼️ Images et sons</a>
                 <a href="#donnees-programme">▦ Les données du programme</a>
-                <a href="#ranger">🗂️ Ranger tes programmes</a>
+                <a href="#ranger">🗂️ Ton projet</a>
                 <a href="#donnees">🔒 Tes programmes restent chez toi</a>
                 <a href="#astuces">💡 Astuces</a>
                 <div class="groupe">Glossaire</div>
@@ -780,9 +780,11 @@ quand_glisse(peint)    # appuie, et fais glisser la souris sur le canevas</pre><
             <!-- ================================================================ -->
             <section id="medias">
                 <h2>🖼️ Images et sons</h2>
-                <p>Ton programme peut aussi montrer des images et jouer des sons. Il faut d'abord les <b>charger</b>,
-                    en donnant leur <b>adresse</b>&nbsp;: le nom d'un fichier de la Pythonerie, ou une adresse Internet
-                    qui commence par <code>https://</code>.</p>
+                <p>Ton programme peut aussi montrer des images et jouer des sons. Il faut d'abord les <b>charger</b>.
+                    Le plus simple est de mettre tes images et tes sons dans les répertoires <b>images</b> et <b>sons</b> de ton
+                    projet (voir <a href="#ranger">Ton projet</a>)&nbsp;: tu donnes alors simplement leur nom,
+                    <code>charge_image("chat.png")</code>. Tu peux aussi utiliser les fichiers de la Pythonerie, avec leur
+                    chemin (<code>exemples/médias/étoile.svg</code>), ou une adresse Internet qui commence par <code>https://</code>.</p>
                 <p>Le chargement te donne un <b>numéro</b>. Range-le dans une boîte&nbsp;: c'est grâce à lui
                     que tu retrouves ton image ou ton son.</p>
                 <div class="exemple"><pre data-essai>étoile = charge_image("exemples/médias/étoile.svg")
@@ -824,22 +826,19 @@ pour article dans texte.découpe("\n"):
 
                 <h3>📚 Le matériel de ton enseignant</h3>
                 <p>Au-dessus des <b>Exemples</b>, le répertoire <b>Matériels</b> contient ce que ton enseignant a préparé
-                    pour la classe. Un clic sur un programme en crée une copie (ou ouvre ta copie, si tu l'as déjà), comme pour un exemple. Les autres fichiers
-                    sont des <b>données</b>&nbsp;: une liste de mots, des nombres, des pays… Clique sur l'un d'eux pour savoir
-                    ce qu'il contient, puis lis-le dans ton programme avec <code>charge_données</code>, sans fenêtre à ouvrir&nbsp;:</p>
-                <div class="exemple"><pre data-essai>texte = charge_données("capitales.csv")
-lignes = texte.découpe("\n")
-pour ligne dans lignes[1:]:          # la première ligne donne les titres
-    si ligne:
-        pays, capitale = ligne.découpe(",")
-        affiche("La capitale du pays", pays, "est", capitale)</pre></div>
+                    pour la classe. Un clic sur un <b>projet</b> (son icône est une petite boîte) le charge à la place de ton projet&nbsp;:
+                    tu as tout de suite ses programmes, ses images, ses sons et ses données, et son nom, que tu peux changer en cliquant dessus. Si tu avais déjà commencé quelque chose,
+                    la Pythonerie le met de côté&nbsp;: <b>↶ Annuler le chargement du projet</b>, dans le menu <b>☰</b>, le fait revenir.
+                    Un clic sur un programme seul en crée une copie, comme pour un exemple.</p>
+                <p>Essaie le projet <b>Le quiz des capitales</b>&nbsp;: ouvre le programme <b>Quiz</b> et exécute-le.</p>
             </section>
 
             <!-- ================================================================ -->
             <section id="donnees-programme">
-                <h2>▦ Les données de ton programme</h2>
+                <h2>▦ Les données de ton projet</h2>
                 <p>Ton programme a parfois besoin de beaucoup de données&nbsp;: une liste de mots, des notes, des pays…
-                    Plutôt que de les écrire dans le programme, range-les à côté, dans des <b>onglets</b>.</p>
+                    Plutôt que de les écrire dans le programme, range-les à côté, dans des <b>onglets</b>. Ces onglets appartiennent à ton
+                    <b>projet</b>&nbsp;: tous tes programmes, et ceux qu'ils importent, y trouvent les mêmes données.</p>
                 <ul>
                     <li>Au-dessus de l'éditeur, clique sur <b>▦ Données</b>. Le programme laisse la place aux onglets
                         <b>Don0</b>, <b>Don1</b>, <b>Don2</b>… Le bouton s'appelle alors <b>✎ Code</b>&nbsp;: clique dessus pour revenir à ton programme.</li>
@@ -860,7 +859,7 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                     <p class="titre-encadre">💡 Bon à savoir</p>
                     <p>Un onglet vide ne crée pas de variable&nbsp;: si <b>Don2</b> est vide, <code>don2</code> n'existe pas.</p>
                     <p>Les données restent avec ton programme&nbsp;: elles sont enregistrées avec lui, et elles le suivent
-                        quand tu l'exportes ou que tu crées une archive.</p>
+                        quand tu l'exportes ou que tu exportes ton projet.</p>
                     <p>Si tu retires un onglet du milieu, les suivants changent de numéro&nbsp;: <b>Don2</b> devient <b>Don1</b>.
                         Pense à changer leurs noms dans ton programme, ou clique sur <b>↶</b>.</p>
                 </div>
@@ -873,7 +872,7 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
 range_données("don0", carrés)
 range_données("don1", "Bravo, tu as rangé des données !")
 affiche("Regarde les onglets Don0 et Don1 (bouton ▦ Données).")</pre></div>
-                <p>Les données rangées sont enregistrées avec ton programme. Dans le programme qui tourne, <code>don0</code>
+                <p>Les données rangées sont enregistrées avec ton projet. Dans le programme qui tourne, <code>don0</code>
                     garde sa valeur du départ&nbsp;: il prendra la nouvelle valeur à la prochaine exécution. Si ton programme a
                     écrasé des données par erreur, clique sur <b>↶</b>, dans les onglets&nbsp;: elles reviennent.</p>
                 <p>Pour relire un onglet tel qu'il est maintenant, même juste après l'avoir changé, utilise
@@ -885,7 +884,12 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
 
             <!-- ================================================================ -->
             <section id="ranger">
-                <h2>🗂️ Ranger tes programmes</h2>
+                <h2>🗂️ Ton projet</h2>
+                <p>Tous tes programmes, avec tes images, tes sons et tes données, forment ton <b>projet</b>.</p>
+                <p>Ton projet a un <b>nom</b>, écrit en haut de la liste. Au début, il s'appelle «&nbsp;Sans Nom&nbsp;».
+                    Pour lui donner un nom, ou pour le changer, <b>clique dessus</b> (ou choisis <b>✏️ Renommer le projet…</b>
+                    dans le menu <b>☰</b>). Pour commencer un tout nouveau projet, choisis <b>🆕 Nouveau projet…</b>&nbsp;:
+                    la Pythonerie te demande son nom, et met ton projet d'avant de côté.</p>
                 <ul>
                     <li><b>＋ Nouveau</b> crée un nouveau programme.</li>
                     <li>Le bouton avec un dossier crée un <b>répertoire</b>, comme un tiroir pour ranger tes programmes.</li>
@@ -896,32 +900,58 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                         (ou <b>Ctrl</b>) appuyée et clique sur chacun d'eux, ou clique sur le premier, puis garde la touche
                         <b>Maj</b> appuyée et clique sur le dernier. Clique ensuite sur <b>🗑️ Supprimer</b> dans le bandeau
                         qui apparaît, ou appuie sur la touche <b>Suppr</b>.</li>
-                    <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer un fichier.</li>
+                    <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer des fichiers.</li>
                 </ul>
+                <h3>🖼️ Les images, les sons et les données du projet</h3>
+                <p>En haut de la liste, trois répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b> et
+                    <b>données</b>. Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
+                    Un clic sur un fichier te montre l'image, joue le son ou affiche le début des données.</p>
+                <p>Dans ton programme, tu n'as besoin que du nom du fichier&nbsp;:</p>
+                <div class="exemple"><pre>chat = charge_image("chat.png")        # dans le répertoire images
+miaou = charge_son("miaou.wav")        # dans le répertoire sons
+notes = charge_données("notes.csv")    # dans le répertoire données
+place_image(chat, 100, 100)
+joue_son(miaou)</pre></div>
+                <h3>🧩 Un programme qui en utilise un autre&nbsp;: <code>importe</code></h3>
+                <p>Un programme peut se servir des fonctions d'un autre programme de ton projet. Écris, sur une ligne à part,
+                    <code>importe "outils"</code>&nbsp;: tout ce que le programme <b>outils</b> définit devient disponible.
+                    Si le programme est rangé dans un répertoire, donne son chemin&nbsp;: <code>importe "jeux/outils"</code>.</p>
+                <div class="exemple"><pre># Le programme « outils »
+fonction double(n):
+    retourne n * 2
+
+# Un autre programme du projet
+importe "outils"
+affiche(double(21))       # affiche 42</pre></div>
                 <h3>👤 Dire qui tu es</h3>
                 <p>Au départ, la Pythonerie est en mode <b>Utilisateur unique</b>&nbsp;: le bouton <b>👤</b>, en haut à droite,
                     affiche <i>Unique</i> et tu n'as pas besoin de dire qui tu es. C'est pratique sur ton ordinateur à toi.</p>
                 <p>Si plusieurs élèves se servent du même ordinateur, ouvre le menu <b>☰</b> et décoche
                     <b>☑ Utilisateur unique</b>. Chaque élève doit alors taper son nom. Si la case est grisée,
                     c'est que ton école a choisi le mode plusieurs élèves pour tout le monde. Dans ce cas, la Pythonerie
-                    est vide chaque fois que tu l'ouvres&nbsp;: pense à créer une archive avant de partir&nbsp;!</p>
+                    est vide chaque fois que tu l'ouvres&nbsp;: pense à exporter ton projet avant de partir&nbsp;!</p>
                 <p>Le bouton <b>👤</b> montre ton nom. Au début, il affiche <i>inconnu</i>.
                     Clique dessus et tape ton nom (ou l'identifiant que t'a donné ton enseignant).
                     Il faut l'avoir tapé pour exécuter un programme&nbsp;: sinon, la Pythonerie te le demande.</p>
-                <p>Quand tu as fini, clique de nouveau sur <b>👤</b> pour te <b>déconnecter</b>. Tous tes programmes sont
-                    alors <b>effacés</b> de l'ordinateur, pour laisser la place à l'élève suivant. Avant, la Pythonerie vérifie
-                    que tu as bien créé une archive de tes programmes, et te propose d'en créer une si ce n'est pas le cas.</p>
-                <h3>📦 Partager tes programmes avec une archive</h3>
-                <p>Une <b>archive</b> est un fichier qui contient <b>tous</b> tes programmes et tes répertoires.
-                    Tu peux la donner à un ami, à ton enseignant, ou la garder pour continuer sur un autre ordinateur.</p>
+                <p>Quand tu as fini, clique de nouveau sur <b>👤</b> pour te <b>déconnecter</b>. Tout ton projet est
+                    alors <b>effacé</b> de l'ordinateur, pour laisser la place à l'élève suivant. Avant, la Pythonerie vérifie
+                    que tu as bien exporté ton projet, et te propose de le faire si ce n'est pas le cas.</p>
+                <h3>📦 Exporter et charger ton projet</h3>
+                <p>Ton projet peut tenir dans un seul fichier, avec <b>tout</b> ce qu'il contient&nbsp;: programmes, répertoires,
+                    images, sons et données. Tu peux le donner à un ami, à ton enseignant, ou le garder pour continuer sur un autre ordinateur.</p>
                 <ul>
-                    <li>Dans le menu <b>☰</b>, choisis <b>📦 Créer une archive</b>. Le fichier s'appelle par exemple
-                        <code>Léa_2026_10_08_14_30.json</code>&nbsp;: ton nom, puis l'année, le mois, le jour, l'heure et la minute.
+                    <li>Dans le menu <b>☰</b>, choisis <b>📦 Exporter le projet</b>. Le fichier s'appelle par exemple
+                        <code>Mon_jardin_2026_10_08_14_30.zip</code>&nbsp;: le nom du projet, puis l'année, le mois, le jour, l'heure et la minute.
+                        Si plusieurs élèves partagent l'ordinateur, ton nom s'ajoute après celui du projet&nbsp;: <code>Mon_jardin_Léa_2026_10_08_14_30.zip</code>.
+                        C'est un fichier <b>zip</b>&nbsp;: une boîte qui contient tes programmes, tes onglets de données, tes images, tes sons et tes données.
+                        Si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», la Pythonerie te demande d'abord de lui en donner un.
                         Tu le trouves dans le dossier <b>Téléchargements</b>. Dans certaines classes, une copie est aussi
                         envoyée à ton enseignant&nbsp;: la Pythonerie te le dit dans la console.</li>
-                    <li>Pour ouvrir une archive, choisis <b>📥 Charger une archive…</b>. Attention&nbsp;: elle <b>remplace</b>
-                        tous les programmes qui sont dans la Pythonerie. Si plusieurs élèves partagent l'ordinateur et qu'il y avait déjà des programmes, ton nom est aussi effacé&nbsp;: la Pythonerie te le redemandera quand tu exécuteras un programme.</li>
-                    <li>Tu t'es trompé&nbsp;? Dans le menu <b>☰</b>, choisis <b>↶ Annuler le chargement de l'archive</b>&nbsp;: tes programmes d'avant reviennent.</li>
+                    <li>Pour ouvrir un projet, choisis <b>📥 Charger un projet…</b>. Attention&nbsp;: il <b>remplace</b>
+                        tout ton projet en cours. Si plusieurs élèves partagent l'ordinateur et que ton projet n'était pas vide, ton nom est aussi effacé&nbsp;: la Pythonerie te le redemandera quand tu exécuteras un programme.</li>
+                    <li>Claude (ou ton enseignant) t'a préparé un projet écrit en texte, qui commence par <code>{ "format": "projet-pythonerie"</code>&nbsp;?
+                        Copie-le, puis choisis <b>📋 Coller un projet (JSON)…</b> dans le menu <b>☰</b>, colle-le et clique sur <b>Charger le projet</b>.</li>
+                    <li>Tu t'es trompé&nbsp;? Dans le menu <b>☰</b>, choisis <b>↶ Annuler le chargement du projet</b>&nbsp;: ton projet d'avant revient.</li>
                 </ul>
             </section>
 
@@ -930,7 +960,7 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                 <h2>🔒 Tes programmes restent chez toi</h2>
                 <p>La Pythonerie fonctionne <b>entièrement dans ton navigateur</b>. Une fois la page ouverte, rien ne part
                     sur Internet&nbsp;: tes programmes et ton nom restent sur l'ordinateur. Personne d'autre ne les voit,
-                    sauf si tu donnes toi-même une archive à quelqu'un.</p>
+                    sauf si tu donnes toi-même ton projet à quelqu'un.</p>
                 <p>Il n'y a pas de compte à créer, pas de publicité et pas de cookie qui te suit.</p>
                 <div class="encadre astuce">
                     <p class="titre-encadre">👪 Pour les parents et les enseignants</p>
@@ -938,11 +968,11 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     le RGPD européen et avec ses équivalents canadiens, la LPRPDE et la Loi&nbsp;25 du Québec. Tout s'exécute dans
                     le navigateur&nbsp;: une fois la page chargée, rien ne transite par le réseau. Aucune donnée n'est envoyée à un
                     serveur, il n'y a ni cookie, ni mesure d'audience, ni service tiers (l'éditeur et les polices de caractères sont
-                    fournis par le site lui-même). Le nom de l'élève sert seulement à nommer les archives&nbsp;; il est oublié
+                    fournis par le site lui-même). Le nom de l'élève sert seulement à nommer les projets exportés&nbsp;; il est oublié
                     à la fermeture de l'onglet. Comme pour toute page web, l'hébergeur du site voit l'adresse de l'ordinateur au
                     moment du téléchargement de la page&nbsp;; pour l'éviter, on peut installer la Pythonerie sur une machine de
                     l'établissement (voir le fichier README du projet)&nbsp;: ce petit serveur fournit seulement les fichiers de la Pythonerie
-                    et garde une copie des archives des élèves pour l'enseignant&nbsp;; il n'exécute rien, tout se passe toujours dans le navigateur. Enfin, un programme qui charge une image, un son ou un fichier depuis
+                    et garde une copie des projets exportés par les élèves pour l'enseignant&nbsp;; il n'exécute rien, tout se passe toujours dans le navigateur. Enfin, un programme qui charge une image, un son ou un fichier depuis
                     l'adresse d'un autre site contacte ce site.</p>
                 </div>
             </section>
@@ -998,7 +1028,8 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     <tr><td><code>f"…{x}…"</code></td><td>un texte qui contient la valeur d'une boîte</td><td class="ex"><code>f"J'ai {âge} ans"</code></td></tr>
                     <tr><td><code>#</code></td><td>commence un commentaire, une note pour toi</td><td class="ex"><code># mon jeu</code></td></tr>
                     <tr><td><code>&gt;&gt;&gt;</code></td><td>la ligne de commande sous la console&nbsp;: tape un nom de boîte ou du code, puis Entrée</td><td class="ex"><code>&gt;&gt;&gt; notes</code></td></tr>
-                    <tr><td><code>importe</code>, <code>comme</code>, <code>règle</code>, <code>motif</code>, <code>prolog</code></td><td>mots avancés de LispE, pour les experts</td><td class="ex"></td></tr>
+                    <tr><td><code>importe "nom"</code></td><td>rend disponibles les fonctions et les variables d'un autre programme du projet</td><td class="ex"><code>importe "outils"</code></td></tr>
+                    <tr><td><code>règle</code>, <code>motif</code>, <code>prolog</code></td><td>mots avancés de LispE, pour les experts</td><td class="ex"></td></tr>
                 </table>
 
                 <h3 id="g-ecrire">Écrire et demander</h3>
@@ -1113,10 +1144,10 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                 <h3 id="g-medias">Images et sons</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
-                    <tr><td><code>charge_image(adresse)</code></td><td>charge une image et donne son numéro</td><td class="ex"><code>img = charge_image("exemples/médias/étoile.svg")</code></td></tr>
+                    <tr><td><code>charge_image(nom)</code></td><td>charge une image du répertoire images du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>img = charge_image("chat.png")</code></td></tr>
                     <tr><td><code>place_image(numéro, x, y)</code></td><td>dessine l'image&nbsp;; (x, y) est son coin en haut à gauche</td><td class="ex"><code>place_image(img, 100, 50)</code></td></tr>
                     <tr><td><code>place_image(numéro, x, y, largeur, hauteur)</code></td><td>dessine l'image à la taille choisie</td><td class="ex"><code>place_image(img, 0, 0, 80, 80)</code></td></tr>
-                    <tr><td><code>charge_son(adresse)</code></td><td>charge un son et donne son numéro</td><td class="ex"><code>snd = charge_son("exemples/médias/ding.wav")</code></td></tr>
+                    <tr><td><code>charge_son(nom)</code></td><td>charge un son du répertoire sons du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>snd = charge_son("miaou.wav")</code></td></tr>
                     <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
                 </table>
 
@@ -1129,7 +1160,7 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     <tr><td><code>lit_fichier()</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier()</code></td></tr>
                     <tr><td><code>lit_fichier(adresse)</code></td><td>donne le texte d'une page Internet&nbsp;; l'adresse commence par <code>https://</code></td><td class="ex"><code>t = lit_fichier("https://…")</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
-                    <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire Matériels, préparé par ton enseignant</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>
+                    <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire données du projet</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>
                 </table>
 
                 <h3 id="g-animation">Animation, souris et clavier</h3>

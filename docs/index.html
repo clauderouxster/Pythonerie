@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.10.11.01">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.17.27">
 </head>
 
 <body>
@@ -34,13 +34,13 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.11.01</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.17.27</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
             <button id="btnÉlève" class="btn btn-secondaire élève" disabled>👤 <span id="nomÉlève">Unique</span></button>
-            <a id="lienGuide" class="btn btn-secondaire" href="guide.html" target="_blank" rel="noopener" title="Le mode d'emploi, pour apprendre pas à pas">📖 Mode d'emploi</a>
-            <button id="btnAide" class="btn btn-secondaire">❓ Aide</button>
+            <a id="lienGuide" class="btn btn-secondaire" href="guide.html" target="_blank" rel="noopener" title="Le mode d'emploi, pour apprendre pas à pas">📖 <span class="libellé">Mode d'emploi</span></a>
+            <button id="btnAide" class="btn btn-secondaire" title="Aide">❓ <span class="libellé">Aide</span></button>
             <button id="btnThème" class="btn btn-secondaire" title="Thème clair / sombre">🌓</button>
         </div>
     </header>
@@ -51,7 +51,8 @@
             <div class="section">
                 <div id="titreProgrammes" class="section-tête" title="Déposer ici pour ranger à la racine">
                     <span class="étiquette">Projet</span>
-                    <button id="nomProjet" class="nom-projet" title="Le nom du projet : cliquer pour le changer">Sans Nom</button>
+                    <button id="nomProjet" class="nom-projet" aria-haspopup="true" aria-expanded="false" title="Tes projets">Sans Nom ▾</button>
+                    <button id="btnReplieProgrammes" class="btn btn-secondaire btn-petit btn-icône seulement-étroit" title="Replier la liste" aria-label="Replier la liste" aria-expanded="true">▴</button>
                 </div>
                 <div class="barre-programmes">
                     <button id="btnNouveau" class="btn btn-petit btn-large" title="Nouveau programme">＋ Nouveau</button>
@@ -75,7 +76,8 @@
                                 <button id="btnExporteProjet" class="menu-item" role="menuitem">📦 Exporter le projet</button>
                                 <button id="btnChargeProjet" class="menu-item" role="menuitem">📥 Charger un projet (.zip, .json)…</button>
                                 <button id="btnColleProjet" class="menu-item" role="menuitem">📋 Coller un projet (JSON)…</button>
-                                <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Annuler le chargement du projet</button>
+                                <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Revenir au projet précédent</button>
+                                <button id="btnSupprimeProjet" class="menu-item danger" role="menuitem">🗑️ Supprimer le projet…</button>
                                 <div class="menu-séparateur"></div>
                                 <div class="menu-section">Élèves</div>
                                 <button id="btnUtilisateurUnique" class="menu-item" role="menuitemcheckbox" aria-checked="true" title="Décocher pour que chaque élève tape son nom (ordinateur partagé)">☑ Utilisateur unique (sans connexion)</button>
@@ -91,13 +93,14 @@
                 <ul id="listeProgrammes" class="liste"></ul>
                 <div id="genreStockage" class="note"></div>
             </div>
-            <!-- Les répertoires « Matériels » (déposés par l'enseignant) et « Exemples »,
-                 repliés par défaut (voir chargeRépertoireSite) -->
-            <div class="section">
-                <ul id="listeMatériels" class="liste exemples" hidden></ul>
-                <ul id="listeExemples" class="liste exemples"></ul>
+            <!-- Les répertoires « Matériels » (déposés par l'enseignant) et « Exemples » :
+                 des listes déroulantes (voir chargeRépertoireSite) -->
+            <div class="section répertoires-site">
+                <button id="btnMatériels" class="btn btn-secondaire bouton-déroulant" aria-haspopup="true" aria-expanded="false" hidden>📚 Matériels <span class="nombre-exemples"></span> ▾</button>
+                <button id="btnExemples" class="btn btn-secondaire bouton-déroulant" aria-haspopup="true" aria-expanded="false">🧪 Exemples <span class="nombre-exemples"></span> ▾</button>
             </div>
         </aside>
+        <div id="séparateurProgrammes" class="séparateur" title="Glisser pour changer la largeur"></div>
 
         <!-- ===================== 2. L'éditeur ===================== -->
         <section class="zone-édition">
@@ -222,23 +225,26 @@
                     le bouton <b>👤</b> montre alors le nom de l'élève (« inconnu » au départ), qu'il faut taper pour exécuter du code.
                     Avec <code>"multi_utilisateur": true</code> dans le fichier <code>config.json</code> du site, ce mode est imposé à tout le monde
                     et la case est désactivée ; chaque nouvel onglet commence alors avec un espace vide.
-                    Un deuxième clic déconnecte l'élève : la Pythonerie vérifie d'abord que son projet a été exporté,
-                    puis efface tout son espace.</p>
+                    Un deuxième clic déconnecte l'élève : son projet rejoint sa liste <b>Mes projets</b>, puis l'écran est vidé ;
+                    à la connexion suivante sous le même nom, il retrouve ses projets.</p>
                 <p><b>Le projet</b> réunit les programmes et trois répertoires fixes, en haut de la liste : <b>images</b>, <b>sons</b>
                     et <b>données</b>. On y glisse des fichiers (ou on clique sur <b>＋</b>) ; un programme les utilise par leur nom :
                     <code>charge_image("chat.png")</code>, <code>charge_son("bravo.wav")</code>, <code>charge_données("notes.csv")</code>.
                     <code>importe "outils"</code> ajoute au programme le code du programme « outils » du projet ;
                     <code>importe "jeux/décor"</code> va le chercher dans un dossier.
-                    Le nom du projet est affiché en haut de la liste (« Sans Nom » au départ) : un clic dessus le change.
+                    Le nom du projet est affiché en haut de la liste (« Sans Nom » au départ) : un clic dessus ouvre <b>Mes projets</b>,
+                    les projets gardés dans ce navigateur (par utilisateur, un par nom) : on en ouvre un, on en supprime un (🗑).
+                    Le projet que l'on quitte y est rangé tout seul ; seul un projet sans nom fait poser une question.
                     Dans le menu <b>☰</b> : <b>Nouveau projet</b> commence un projet vide avec un nom ;
-                    <b>Renommer le projet</b> change son nom ; <b>Exporter le projet</b> l'enregistre dans un fichier
+                    <b>Renommer le projet</b> change son nom ; <b>Supprimer le projet</b> l'efface ;
+                    <b>Revenir au projet précédent</b> rouvre le dernier projet quitté ; <b>Exporter le projet</b> l'enregistre dans un fichier
                     <code>nom_du_projet_aaaa_mm_jj_hh_MM.zip</code> (dossier Téléchargements), avec le nom de l'élève en mode plusieurs élèves
                     (<code>nom_du_projet_élève_aaaa_mm_jj_hh_MM.zip</code>) ; un projet sans nom en reçoit un avant de partir.
                     Ce fichier zip contient les programmes, les onglets de données et les répertoires images, sons et données.
                     Avec <code>serveur.py</code>, une copie est aussi conservée sur le serveur, pour l'enseignant.
-                    <b>Charger un projet</b> (un .zip, ou un .json) remplace le projet en cours (s'il y en avait un, l'élève est déconnecté en mode plusieurs élèves) ;
-                    <b>Annuler le chargement du projet</b> fait revenir le projet d'avant.
-                    Un projet du répertoire <b>Matériels</b> se charge d'un clic, et son nom peut ensuite être changé.
+                    <b>Charger un projet</b> (un .zip, ou un .json) l'ouvre à la place du projet en cours.
+                    Les listes <b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne, proposent le matériel de l'enseignant et des exemples ;
+                    un projet des Matériels s'ouvre d'un clic. La colonne s'élargit en faisant glisser son bord droit.
                     <b>Coller un projet (JSON)</b> charge un projet écrit d'un seul bloc de texte, comme ceux que prépare Claude.</p>
                 <p>🔒 <b>Protection des données</b> : la Pythonerie est parfaitement compatible avec le RGPD et avec ses équivalents
                     canadiens (LPRPDE, Loi 25 du Québec). Tout s'exécute dans le navigateur : une fois la page chargée, rien ne transite
@@ -449,7 +455,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.10.11.01';
+                return répertoire + fichier + '?v=2026.10.10.17.27';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -457,14 +463,14 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.10.11.01"></script>
-    <script src="js/zip.js?v=2026.10.10.11.01"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.10.11.01"></script>
-    <script src="js/canevas.js?v=2026.10.10.11.01"></script>
-    <script src="js/pythonerie.js?v=2026.10.10.11.01"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.17.27"></script>
+    <script src="js/zip.js?v=2026.10.10.17.27"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.10.17.27"></script>
+    <script src="js/canevas.js?v=2026.10.10.17.27"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.17.27"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.10.11.01"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.10.11.01"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.17.27"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.17.27"></script>
 </body>
 
 </html>

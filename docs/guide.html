@@ -292,7 +292,8 @@
                 <div class="zones">
                     <div class="zone"><div class="icone">🗂️</div><h4>À gauche : tes programmes</h4>
                         <p>Tous tes programmes sont rangés ici. Clique sur un nom pour l'ouvrir.
-                            En dessous, le répertoire <b>Exemples</b> contient des programmes à essayer&nbsp;: clique dessus pour l'ouvrir.</p></div>
+                            En dessous, la liste <b>🧪 Exemples</b> contient des programmes à essayer&nbsp;: clique dessus pour l'ouvrir.
+                            Pour élargir cette colonne, fais glisser son bord droit. Sur un téléphone, elle est en haut&nbsp;: le bouton <b>▴</b> la replie.</p></div>
                     <div class="zone"><div class="icone">✏️</div><h4>Au milieu : l'éditeur</h4>
                         <p>C'est ici que tu écris ton programme. En dessous, la <b>console</b>
                             affiche les messages de ton programme, et la ligne <code>&gt;&gt;&gt;</code>
@@ -829,10 +830,10 @@ pour article dans texte.découpe("\n"):
                     <code>https://</code>&nbsp;: <code>lit_fichier("https://…")</code> te donne son texte, si le site le permet.</p>
 
                 <h3>📚 Le matériel de ton enseignant</h3>
-                <p>Au-dessus des <b>Exemples</b>, le répertoire <b>Matériels</b> contient ce que ton enseignant a préparé
-                    pour la classe. Un clic sur un <b>projet</b> (son icône est une petite boîte) le charge à la place de ton projet&nbsp;:
-                    tu as tout de suite ses programmes, ses images, ses sons et ses données, et son nom, que tu peux changer en cliquant dessus. Si tu avais déjà commencé quelque chose,
-                    la Pythonerie le met de côté&nbsp;: <b>↶ Annuler le chargement du projet</b>, dans le menu <b>☰</b>, le fait revenir.
+                <p>Au-dessus des <b>Exemples</b>, la liste <b>📚 Matériels</b> contient ce que ton enseignant a préparé
+                    pour la classe. Un clic sur un <b>projet</b> (son icône est une petite boîte) l'ouvre à la place de ton projet&nbsp;:
+                    tu as tout de suite ses programmes, ses images, ses sons et ses données. Ton projet d'avant n'est pas perdu&nbsp;:
+                    il t'attend dans la liste <b>Mes projets</b>. Si tu as déjà ouvert ce projet des Matériels, la Pythonerie te propose de retrouver le tien, avec tes changements.
                     Un clic sur un programme seul en crée une copie, comme pour un exemple.</p>
                 <p>Essaie le projet <b>Le quiz des capitales</b>&nbsp;: ouvre le programme <b>Quiz</b> et exécute-le.</p>
             </section>
@@ -891,9 +892,11 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                 <h2>🗂️ Ton projet</h2>
                 <p>Tous tes programmes, avec tes images, tes sons et tes données, forment ton <b>projet</b>.</p>
                 <p>Ton projet a un <b>nom</b>, écrit en haut de la liste. Au début, il s'appelle «&nbsp;Sans Nom&nbsp;».
-                    Pour lui donner un nom, ou pour le changer, <b>clique dessus</b> (ou choisis <b>✏️ Renommer le projet…</b>
-                    dans le menu <b>☰</b>). Pour commencer un tout nouveau projet, choisis <b>🆕 Nouveau projet…</b>&nbsp;:
-                    la Pythonerie te demande son nom, et met ton projet d'avant de côté.</p>
+                    <b>Clique sur ce nom</b>&nbsp;: la liste <b>Mes projets</b> s'ouvre. Elle montre tous tes projets&nbsp;; clique sur l'un d'eux pour l'ouvrir.
+                    Tu peux aussi y créer un <b>🆕 Nouveau projet</b>, ou <b>✏️ Renommer</b> celui qui est ouvert. La petite corbeille 🗑 supprime un projet.</p>
+                <p>Quand tu passes à un autre projet, celui que tu quittes est gardé tout seul dans la liste, avec ses derniers changements.
+                    La Pythonerie ne te pose qu'une question&nbsp;: si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», elle te propose de lui donner un nom,
+                    pour le garder. Dans le menu <b>☰</b>, <b>↶ Revenir au projet précédent</b> rouvre le projet que tu viens de quitter.</p>
                 <ul>
                     <li><b>＋ Nouveau</b> crée un nouveau programme.</li>
                     <li>Le bouton avec un dossier crée un <b>répertoire</b>, comme un tiroir pour ranger tes programmes.</li>
@@ -937,9 +940,10 @@ affiche(double(21))       # affiche 42</pre></div>
                 <p>Le bouton <b>👤</b> montre ton nom. Au début, il affiche <i>inconnu</i>.
                     Clique dessus et tape ton nom (ou l'identifiant que t'a donné ton enseignant).
                     Il faut l'avoir tapé pour exécuter un programme&nbsp;: sinon, la Pythonerie te le demande.</p>
-                <p>Quand tu as fini, clique de nouveau sur <b>👤</b> pour te <b>déconnecter</b>. Tout ton projet est
-                    alors <b>effacé</b> de l'ordinateur, pour laisser la place à l'élève suivant. Avant, la Pythonerie vérifie
-                    que tu as bien exporté ton projet, et te propose de le faire si ce n'est pas le cas.</p>
+                <p>Quand tu as fini, clique de nouveau sur <b>👤</b> pour te <b>déconnecter</b>. Ton projet rejoint ta liste
+                    <b>Mes projets</b>, et l'écran est vidé pour l'élève suivant, qui ne voit que ses propres projets.
+                    La prochaine fois, tape le même nom&nbsp;: tu retrouves tous tes projets. Ils restent sur cet ordinateur&nbsp;:
+                    pour les emporter ailleurs, exporte-les.</p>
                 <h3>📦 Exporter et charger ton projet</h3>
                 <p>Ton projet peut tenir dans un seul fichier, avec <b>tout</b> ce qu'il contient&nbsp;: programmes, répertoires,
                     images, sons et données. Tu peux le donner à un ami, à ton enseignant, ou le garder pour continuer sur un autre ordinateur.</p>
@@ -951,11 +955,11 @@ affiche(double(21))       # affiche 42</pre></div>
                         Si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», la Pythonerie te demande d'abord de lui en donner un.
                         Tu le trouves dans le dossier <b>Téléchargements</b>. Dans certaines classes, une copie est aussi
                         envoyée à ton enseignant&nbsp;: la Pythonerie te le dit dans la console.</li>
-                    <li>Pour ouvrir un projet, choisis <b>📥 Charger un projet…</b>. Attention&nbsp;: il <b>remplace</b>
-                        tout ton projet en cours. Si plusieurs élèves partagent l'ordinateur et que ton projet n'était pas vide, ton nom est aussi effacé&nbsp;: la Pythonerie te le redemandera quand tu exécuteras un programme.</li>
+                    <li>Pour ouvrir un projet exporté, choisis <b>📥 Charger un projet…</b>. Il prend la place de ton projet en cours,
+                        qui t'attend dans la liste <b>Mes projets</b>.</li>
                     <li>Claude (ou ton enseignant) t'a préparé un projet écrit en texte, qui commence par <code>{ "format": "projet-pythonerie"</code>&nbsp;?
                         Copie-le, puis choisis <b>📋 Coller un projet (JSON)…</b> dans le menu <b>☰</b>, colle-le et clique sur <b>Charger le projet</b>.</li>
-                    <li>Tu t'es trompé&nbsp;? Dans le menu <b>☰</b>, choisis <b>↶ Annuler le chargement du projet</b>&nbsp;: ton projet d'avant revient.</li>
+                    <li>Tu t'es trompé&nbsp;? Dans le menu <b>☰</b>, choisis <b>↶ Revenir au projet précédent</b>&nbsp;: ton projet d'avant revient.</li>
                 </ul>
             </section>
 
@@ -988,8 +992,8 @@ affiche(double(21))       # affiche 42</pre></div>
                     <li><b>Ctrl + Entrée</b> exécute le programme sans prendre la souris.</li>
                     <li>Quand tu commences à taper un mot, la Pythonerie te propose la suite. Appuie sur <b>Entrée</b> pour la choisir.</li>
                     <li>Après une ligne qui se termine par <code>:</code>, la touche Entrée décale tout seul la ligne suivante.</li>
-                    <li>Le répertoire <b>Matériels</b>, s'il y en a un, contient ce que ton enseignant a préparé pour toi.</li>
-                    <li>Le répertoire <b>Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer. Si tu l'as déjà copié, la Pythonerie ouvre ta copie au lieu d'en faire une deuxième&nbsp;; pour repartir de l'exemple d'origine, renomme ou supprime ta copie.</li>
+                    <li>La liste <b>📚 Matériels</b>, s'il y en a une, contient ce que ton enseignant a préparé pour toi.</li>
+                    <li>La liste <b>🧪 Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer. Si tu l'as déjà copié, la Pythonerie ouvre ta copie au lieu d'en faire une deuxième&nbsp;; pour repartir de l'exemple d'origine, renomme ou supprime ta copie.</li>
                     <li>Le bouton <b>⛶ Plein écran</b>, au-dessus du canevas, l'agrandit à tout l'écran&nbsp;: c'est parfait pour jouer au casse-briques&nbsp;! <b>■ Arrêter</b> arrête ton programme, et <b>✕ Quitter le plein écran</b> (ou la touche Échap) te ramène à l'affichage normal.</li>
                     <li>Le bouton 🌓, en haut, passe la Pythonerie en couleurs sombres.</li>
                 </ul>

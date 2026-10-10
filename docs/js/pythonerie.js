@@ -1020,8 +1020,12 @@ const Pythonerie = (function () {
         utilisateurUnique = !utilisateurUnique;
         try { localStorage.setItem(CLÉ_UNIQUE, utilisateurUnique ? 'oui' : 'non'); } catch (e) { /* rien */ }
         // dans les deux sens, on repart sans élève connecté : en mode plusieurs
-        // élèves, le nom sera demandé à la première exécution
+        // élèves, le nom sera demandé à la première exécution. L'espace de travail passe à
+        // « Unique », ou attend le prochain élève (voir prendPossession)
         changeÉlève(null);
+        fermeDéroulante();
+        if (utilisateurUnique) prendPossession(NOM_UNIQUE);
+        else rafraîchitListeProjets();
     }
 
     function changeÉlève(nom) {
@@ -1057,7 +1061,10 @@ const Pythonerie = (function () {
             alert('Ce nom ne convient pas : utilise des lettres, des chiffres, des espaces, - ou _ (40 caractères au plus).');
             return demandeÉlève(raison);
         }
+        const nouveau = nom !== élève;
         changeÉlève(nom);
+        // ses projets apparaissent dans la liste ; un projet laissé par un autre est rangé chez lui
+        if (nouveau) prendPossession(nom);
         return true;
     }
 
@@ -1079,11 +1086,10 @@ const Pythonerie = (function () {
     // on le charge, mais l'export se fait toujours en .zip.
     // ------------------------------------------------------------------
     const FORMAT_PROJET = 'projet-pythonerie';
-    const CLÉ_RÉSERVE = 'pythonerie.réserve';   // une sauvegarde temporaire existe (pour « Annuler »)
 
     // Le nom du projet : « Sans Nom » au départ ; il est affiché en tête de la colonne des
-    // programmes, demandé à la création d'un projet ou à son premier export, et il est
-    // gardé dans le projet exporté
+    // programmes (un clic ouvre la liste « Mes projets »), demandé à la création d'un
+    // projet, à son premier export ou quand on le quitte, et il est gardé dans le projet exporté
     const SANS_NOM = 'Sans Nom';
     const CLÉ_NOM_PROJET = 'pythonerie.nomProjet';
     let nomDuProjet = SANS_NOM;
@@ -1097,56 +1103,226 @@ const Pythonerie = (function () {
 
     function afficheNomProjet() {
         const e = $('nomProjet');
-        e.textContent = nomDuProjet;
+        e.textContent = nomDuProjet + ' ▾';
         e.classList.toggle('sans-nom', nomDuProjet === SANS_NOM);
-        e.title = 'Le projet « ' + nomDuProjet + ' » : cliquer pour changer son nom';
+        e.title = 'Le projet « ' + nomDuProjet + ' » : cliquer pour voir tes projets';
     }
 
-    // Demande un nom de projet ; null si l'on renonce
-    function demandeNomProjet(question, défaut) {
+    // Demande un nom de projet ; null si l'on renonce. Le nom ne doit pas être celui d'un
+    // autre projet de la liste (sauf : le nom actuel, quand on renomme)
+    function demandeNomProjet(question, défaut, sauf) {
         const réponse = prompt(question, défaut || '');
         if (réponse === null) return null;
         const nom = nfc(réponse).trim().replace(/\s+/g, ' ');
         if (!nom || nom === SANS_NOM) return null;
         if (nom.length > 40 || !/^[\p{L}\p{N} _\-'.]+$/u.test(nom)) {
             alert('Ce nom ne convient pas : utilise des lettres, des chiffres, des espaces, - ou _ (40 caractères au plus).');
-            return demandeNomProjet(question, nom);
+            return demandeNomProjet(question, nom, sauf);
+        }
+        if (nom !== sauf && projetExiste(nom)) {
+            alert('Tu as déjà un projet « ' + nom + ' » : choisis un autre nom.');
+            return demandeNomProjet(question, nom, sauf);
         }
         return nom;
     }
 
-    function renommeProjet() {
-        const nom = demandeNomProjet('Nom du projet :', nomDuProjet === SANS_NOM ? '' : nomDuProjet);
-        if (nom) changeNomProjet(nom);
+    // ------------------------------------------------------------------
+    // Mes projets : chaque utilisateur (« Unique », ou le nom de l'élève) a sa liste de
+    // projets, gardés dans le navigateur (IndexedDB, voir fichiers-projet.js), un seul par
+    // nom. Le projet ouvert est l'espace de travail ; quand on en ouvre un autre (liste,
+    // Nouveau projet, Charger, Matériels) ou qu'on se déconnecte, il est rangé dans la
+    // liste sous son nom, à la place de sa version précédente. Un projet sans nom n'y entre
+    // pas : c'est le seul cas où la Pythonerie demande quelque chose avant d'en changer.
+    // L'espace de travail appartient à un utilisateur (CLÉ_PROPRIÉTAIRE) : quand un autre
+    // se connecte, le projet laissé là est rangé chez son propriétaire, et l'espace est vidé.
+    // ------------------------------------------------------------------
+    const CLÉ_PRÉCÉDENT = 'pythonerie.projetPrécédent';    // { utilisateur, nom } : pour « Revenir »
+    const CLÉ_PROPRIÉTAIRE = 'pythonerie.propriétaire';
+    let listeProjets = [];          // [{ nom, modifié }] de l'utilisateur connecté
+
+    const projetExiste = (nom) => listeProjets.some(p => p.nom === nom);
+    const ESPACE_VIDE = () => ({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
+
+    async function rafraîchitListeProjets() {
+        const u = nomCourant();
+        try { listeProjets = u ? await FichiersProjet.projets(u) : []; } catch (e) { listeProjets = []; }
+        metAJourPrécédent();
     }
 
-    // Un nouveau projet, vide, avec un nom ; le projet en cours est mis de côté (pour « Annuler »)
+    // Range le projet ouvert dans la liste, sans rien demander (s'il a un nom et un utilisateur)
+    async function gardeProjetOuvert(instant) {
+        const u = nomCourant();
+        if (!u || nomDuProjet === SANS_NOM) return;
+        await FichiersProjet.gardeProjet(u, nomDuProjet, instant || await instantané());
+        try { localStorage.setItem(CLÉ_PROPRIÉTAIRE, u); } catch (e) { /* rien */ }
+    }
+
+    // Avant de quitter le projet ouvert : il est rangé dans la liste. Renvoie Vrai si l'on
+    // peut continuer (projet rangé, rien à ranger, ou l'élève accepte de le laisser), Faux
+    // s'il renonce. Seul un projet sans nom fait l'objet d'une question.
+    async function rangeProjetOuvert() {
+        let instant;
+        try { instant = await instantané(); } catch (e) {
+            écritConsole('Impossible de lire le projet ouvert : ' + e.message, 'erreur');
+            return false;
+        }
+        if (nomDuProjet === SANS_NOM) {
+            if (espaceVide(instant)) return true;
+            const choix = await dialogue('Ton projet n\'a pas de nom',
+                'Pour le garder dans ta liste de projets, donne-lui un nom. Sinon, il sera effacé.',
+                [{ texte: '✏️ Lui donner un nom…', valeur: 'nom', genre: 'principal' },
+                 { texte: 'Ne pas le garder', valeur: 'effacer', genre: 'danger' },
+                 { texte: 'Annuler', valeur: null }]);
+            if (!choix) return false;
+            if (choix === 'effacer') return true;
+            if (!exigeÉlève('Pour garder ton projet, dis d\'abord qui tu es.')) return false;
+            const nom = demandeNomProjet('Nom du projet :', '');
+            if (!nom) return false;
+            changeNomProjet(nom);
+        }
+        if (!exigeÉlève('Pour garder ton projet « ' + nomDuProjet + ' », dis d\'abord qui tu es.')) return false;
+        try {
+            await gardeProjetOuvert(instant);
+            localStorage.setItem(CLÉ_PRÉCÉDENT, JSON.stringify({ utilisateur: nomCourant(), nom: nomDuProjet }));
+        } catch (e) {
+            écritConsole('Impossible de garder le projet « ' + nomDuProjet + ' » : ' + e.message, 'erreur');
+            return false;
+        }
+        return true;
+    }
+
+    // Ouvre un projet de la liste (le projet ouvert y est d'abord rangé)
+    async function ouvreProjet(nom) {
+        if (nom === nomDuProjet) return;
+        if (!(await rangeProjetOuvert())) return;
+        let p = null;
+        try { p = await FichiersProjet.litProjet(nomCourant(), nom); } catch (e) { /* p reste null */ }
+        if (!p) { écritConsole('Le projet « ' + nom + ' » est introuvable.', 'erreur'); await rafraîchitListeProjets(); return; }
+        try {
+            await remplaceTout({ programmes: p.programmes || {}, dossiers: p.dossiers || [], fichiers: p.fichiers || [], onglets: p.onglets || [''] });
+        } catch (e) {
+            écritConsole('Impossible d\'ouvrir le projet « ' + nom + ' » : ' + e.message, 'erreur');
+            return;
+        }
+        changeNomProjet(nom);
+        await rafraîchitListeProjets();
+        écritConsole('— Le projet « ' + nom + ' » est ouvert.', 'info');
+    }
+
+    function renommeProjet() {
+        const ancien = nomDuProjet;
+        const nom = demandeNomProjet('Nom du projet :', ancien === SANS_NOM ? '' : ancien, ancien);
+        if (!nom || nom === ancien) return;
+        changeNomProjet(nom);
+        // la liste suit : le projet change de nom, il ne se dédouble pas
+        (async () => {
+            try {
+                if (ancien !== SANS_NOM && nomCourant()) await FichiersProjet.supprimeProjet(nomCourant(), ancien);
+                await gardeProjetOuvert();
+            } catch (e) { écritConsole('La liste des projets n\'a pas pu suivre : ' + e.message, 'erreur'); }
+            await rafraîchitListeProjets();
+        })();
+    }
+
+    // Un nouveau projet, vide, avec un nom ; le projet ouvert est rangé dans la liste
     async function nouveauProjet() {
         const nom = demandeNomProjet('Nom du nouveau projet :', '');
         if (!nom) return;
-        let avant;
-        try { avant = await instantané(); } catch (e) { écritConsole('Impossible de lire le projet en cours : ' + e.message, 'erreur'); return; }
-        if (!espaceVide(avant)) {
-            if (!confirm('Créer le projet « ' + nom + ' » ?\n\nLe projet « ' + nomDuProjet + ' » laisse la place à un projet vide. '
-                + 'Pense à l\'exporter avant si tu veux le garder ; tu pourras aussi revenir en arrière avec « Annuler le chargement du projet ».')) return;
-            try {
-                await FichiersProjet.gardeRéserve({ élève, nom: nomDuProjet, date: new Date().toISOString(), ...avant });
-                localStorage.setItem(CLÉ_RÉSERVE, '1');
-            } catch (e) {
-                écritConsole('Création abandonnée : impossible de mettre de côté le projet en cours (' + e.message + ').', 'erreur');
-                return;
-            }
-        }
+        if (!(await rangeProjetOuvert())) return;
         try {
-            await remplaceTout({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
+            await remplaceTout(ESPACE_VIDE());
         } catch (e) {
             écritConsole('Impossible de créer le projet : ' + e.message, 'erreur');
             return;
         }
-        try { localStorage.removeItem(CLÉ_EXPORTÉ); } catch (e) { /* rien */ }
         changeNomProjet(nom);
-        metAJourAnnulation();
+        try { await gardeProjetOuvert(); } catch (e) { /* il sera rangé plus tard */ }
+        await rafraîchitListeProjets();
         écritConsole('— Le projet « ' + nom + ' » est créé.', 'info');
+    }
+
+    // Supprime un projet de la liste ; si c'est le projet ouvert, l'espace est vidé
+    async function supprimeProjet(nom) {
+        const ouvert = nom === nomDuProjet;
+        if (nom === SANS_NOM) {
+            let instant;
+            try { instant = await instantané(); } catch (e) { return; }
+            if (espaceVide(instant)) return;
+            if (!confirm('Effacer ce projet sans nom ?\n\nSes programmes, ses fichiers et ses données seront perdus.')) return;
+        } else if (!confirm('Supprimer définitivement le projet « ' + nom + ' » ?\n\nSes programmes, ses fichiers et ses données seront perdus'
+            + ' (sauf si tu l\'as exporté).')) return;
+        try {
+            if (nom !== SANS_NOM && nomCourant()) await FichiersProjet.supprimeProjet(nomCourant(), nom);
+            if (ouvert) { await remplaceTout(ESPACE_VIDE()); changeNomProjet(SANS_NOM); }
+        } catch (e) {
+            écritConsole('Impossible de supprimer le projet : ' + e.message, 'erreur');
+            return;
+        }
+        await rafraîchitListeProjets();
+        écritConsole('— Le projet « ' + nom + ' » est supprimé.', 'info');
+    }
+
+    // Le projet quitté en dernier, s'il est encore dans la liste
+    function projetPrécédent() {
+        try {
+            const p = JSON.parse(localStorage.getItem(CLÉ_PRÉCÉDENT) || 'null');
+            if (p && p.utilisateur === nomCourant() && p.nom !== nomDuProjet && projetExiste(p.nom)) return p.nom;
+        } catch (e) { /* rien */ }
+        return null;
+    }
+
+    function revientProjetPrécédent() {
+        const p = projetPrécédent();
+        if (p) ouvreProjet(p);
+    }
+
+    function metAJourPrécédent() {
+        const p = projetPrécédent();
+        $('btnAnnuleProjet').disabled = !p;
+        $('btnAnnuleProjet').textContent = '↶ Revenir au projet précédent' + (p ? ' (« ' + p + ' »)' : '');
+    }
+
+    // L'espace de travail passe à l'utilisateur u (connexion, ou changement de mode) : le
+    // projet qu'un autre y a laissé est rangé chez lui, puis l'espace est vidé
+    async function prendPossession(u) {
+        let propriétaire = null;
+        try { propriétaire = localStorage.getItem(CLÉ_PROPRIÉTAIRE); } catch (e) { /* rien */ }
+        if (propriétaire && propriétaire !== u) {
+            try {
+                const instant = await instantané();
+                if (nomDuProjet !== SANS_NOM) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, instant);
+                if (!espaceVide(instant)) {
+                    await remplaceTout(ESPACE_VIDE());
+                    changeNomProjet(SANS_NOM);
+                }
+            } catch (e) { écritConsole('Impossible de ranger le projet précédent : ' + e.message, 'erreur'); }
+        }
+        try { localStorage.setItem(CLÉ_PROPRIÉTAIRE, u); } catch (e) { /* rien */ }
+        await rafraîchitListeProjets();
+    }
+
+    // La liste « Mes projets », sous le nom du projet
+    function ouvreMesProjets() {
+        const u = nomCourant();
+        const éléments = [{ section: 'Mes projets' + (utilisateurUnique ? '' : ' — ' + (u || '?')) }];
+        if (!u) {
+            éléments.push({ texte: 'Dis qui tu es (👤) pour retrouver tes projets', désactivé: true });
+        } else {
+            if (nomDuProjet === SANS_NOM) éléments.push({ texte: SANS_NOM + ' (ouvert)', classe: 'projet courant sans-nom', désactivé: true });
+            listeProjets.forEach(p => éléments.push({
+                texte: p.nom, classe: p.nom === nomDuProjet ? 'projet courant' : 'projet',
+                titre: p.nom === nomDuProjet ? 'Le projet ouvert' : 'Ouvrir « ' + p.nom + ' » (modifié le ' + new Date(p.modifié * 1000).toLocaleString('fr') + ')',
+                action: () => ouvreProjet(p.nom),
+                supprime: () => supprimeProjet(p.nom)
+            }));
+            if (!listeProjets.length && nomDuProjet !== SANS_NOM) éléments.push({ texte: nomDuProjet, classe: 'projet courant', désactivé: true });
+        }
+        éléments.push({ séparateur: true });
+        éléments.push({ texte: '🆕 Nouveau projet…', action: nouveauProjet });
+        éléments.push({ texte: '✏️ Renommer « ' + nomDuProjet + ' »…', action: renommeProjet });
+        const p = projetPrécédent();
+        if (p) éléments.push({ texte: '↶ Revenir à « ' + p + ' »', action: revientProjetPrécédent });
+        ouvreDéroulante($('nomProjet'), éléments);
     }
 
     // Un morceau de nom de fichier : lettres, chiffres et tirets ; le reste devient « _ »
@@ -1222,7 +1398,7 @@ const Pythonerie = (function () {
             + (nbF ? ', ' + pluriel(nbF, 'fichier') : '') + (nbD ? ', ' + pluriel(nbD, 'onglet') + ' de données' : '')
             + ') : il est dans le dossier Téléchargements.', 'info');
         if (serveurProjets) await envoieProjet(nom, archive);
-        mémoriseExporté(instant);
+        try { await gardeProjetOuvert(instant); await rafraîchitListeProjets(); } catch (e) { /* rien */ }
         return nom + '.zip';
     }
 
@@ -1282,26 +1458,6 @@ const Pythonerie = (function () {
         };
     }
 
-    // ------------------------------------------------------------------
-    // Ce qui a été exporté : une empreinte du projet au moment de l'export. À la
-    // déconnexion, on compare avec le projet actuel pour savoir s'il a changé depuis.
-    // ------------------------------------------------------------------
-    const CLÉ_EXPORTÉ = 'pythonerie.exporté';
-
-    function empreinte(instant) {
-        const chemins = Object.keys(instant.programmes).sort();
-        const fichiers = (instant.fichiers || []).map(f => [f.chemin, f.blob.size, f.modifie]).sort();
-        const texte = JSON.stringify([chemins.map(c => [c, instant.programmes[c]]), [...instant.dossiers].sort(), fichiers, instant.onglets || ['']]);
-        // empreinte FNV-1a sur 32 bits, plus la longueur du texte
-        let h = 0x811c9dc5;
-        for (let i = 0; i < texte.length; i++) { h ^= texte.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-        return h.toString(16) + '-' + texte.length;
-    }
-
-    function mémoriseExporté(instant) {
-        try { localStorage.setItem(CLÉ_EXPORTÉ, empreinte(instant)); } catch (e) { /* rien */ }
-    }
-
     // Rien à garder : aucun programme, aucun fichier, aucune donnée
     function espaceVide(instant) {
         const codes = Object.values(instant.programmes);
@@ -1340,60 +1496,26 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Déconnexion : on vérifie que le projet a été exporté, puis tout l'espace de
-    // l'élève est vidé (programmes, répertoires, fichiers, sauvegarde temporaire,
-    // historique de la console).
+    // Déconnexion : le projet ouvert est rangé dans la liste de l'élève, puis l'espace de
+    // travail est vidé (programmes, répertoires, fichiers, historique de la console) ; la
+    // liste « Mes projets » se ferme, jusqu'à la prochaine connexion.
     // ------------------------------------------------------------------
     async function déconnecte() {
         if (utilisateurUnique || !élève) return;
-        let instant;
-        try { instant = await instantané(); } catch (e) { écritConsole('Impossible de lire le projet : ' + e.message, 'erreur'); return; }
-        let exporté = null;
-        try { exporté = localStorage.getItem(CLÉ_EXPORTÉ); } catch (e) { /* rien */ }
-        let choix;
-        if (espaceVide(instant)) {
-            choix = await dialogue('Te déconnecter, ' + élève + ' ?', 'Il n\'y a rien à garder dans ton projet.',
-                [{ texte: 'Me déconnecter', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }]);
-        } else if (empreinte(instant) === exporté) {
-            choix = await dialogue('Te déconnecter, ' + élève + ' ?',
-                'Ton projet est exporté, avec ses dernières modifications.\n'
-                + 'Une fois déconnecté, il sera effacé de cet ordinateur.',
-                [{ texte: 'Me déconnecter et effacer mon projet', valeur: 'oui', genre: 'danger' },
-                 { texte: '📦 Exporter de nouveau avant', valeur: 'projet' },
-                 { texte: 'Annuler', valeur: null }]);
-        } else {
-            choix = await dialogue('Attention, ' + élève + ' !',
-                (exporté ? 'Tu as modifié ton projet depuis ton dernier export.'
-                         : 'Tu n\'as pas encore exporté ton projet.')
-                + '\nUne fois déconnecté, il sera effacé de cet ordinateur.',
-                [{ texte: '📦 Exporter le projet, puis me déconnecter', valeur: 'projet', genre: 'principal' },
-                 { texte: 'Me déconnecter sans exporter (tout sera perdu)', valeur: 'oui', genre: 'danger' },
-                 { texte: 'Annuler', valeur: null }]);
-        }
-        if (!choix) return;
-        if (choix === 'projet') {
-            const nom = await exporteProjet();
-            if (!nom) return;
-            // on ne peut pas savoir si le navigateur a bien enregistré le fichier : on demande
-            const suite = await dialogue('As-tu bien ton projet ?',
-                'Le projet « ' + nom + ' » vient d\'être exporté.\nVérifie qu\'il est dans ton dossier Téléchargements avant de te déconnecter.',
-                [{ texte: 'Oui, me déconnecter et effacer mon projet', valeur: 'oui', genre: 'danger' },
-                 { texte: 'Annuler', valeur: null }]);
-            if (!suite) return;
-        }
+        // le projet ouvert rejoint la liste de l'élève (un projet sans nom : on lui demande)
+        if (!(await rangeProjetOuvert())) return;
         await videEspace();
     }
 
     // Efface du navigateur tout ce qu'a laissé l'élève ; renvoie Faux en cas d'échec
     async function effaceDonnées() {
         try {
-            await remplaceTout({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
-            await FichiersProjet.videRéserve();
+            await remplaceTout(ESPACE_VIDE());
         } catch (e) {
             écritConsole('Impossible d\'effacer le projet : ' + e.message, 'erreur');
             return false;
         }
-        [CLÉ_RÉSERVE, CLÉ_EXPORTÉ, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
+        [CLÉ_PROPRIÉTAIRE, CLÉ_PRÉCÉDENT, 'pythonerie.historique', 'pythonerie.dernier'].forEach(clé => {
             try { localStorage.removeItem(clé); } catch (e) { /* rien */ }
         });
         changeNomProjet(SANS_NOM);
@@ -1412,7 +1534,8 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         Pyt.réinitialise();
         changeÉlève(null);
-        metAJourAnnulation();
+        fermeDéroulante();
+        await rafraîchitListeProjets();
         effaceConsole();
         écritConsole('— Au revoir, ' + ancien + ' ! L\'espace a été vidé.', 'info');
     }
@@ -1510,77 +1633,38 @@ const Pythonerie = (function () {
         return chargeProjet(lu);
     }
 
-    async function chargeProjet({ nom: nomLu, élève: élèveLu, instant, ignorés }) {
-        const nb = Object.keys(instant.programmes).length;
-        const auteur = (nomLu ? ' « ' + nomLu + ' »' : '') + (élèveLu && élèveLu !== NOM_UNIQUE ? ' de ' + élèveLu : '');
-        let avant;
-        try { avant = await instantané(); } catch (e) {
-            écritConsole('Chargement abandonné : impossible de lire le projet en cours (' + e.message + ').', 'erreur');
-            return false;
+    // Le projet lu remplace le projet ouvert, qui est d'abord rangé dans la liste. S'il porte
+    // le nom d'un projet de la liste, on demande : ouvrir celui de la liste (pour un projet
+    // des Matériels déjà chargé, c'est ce qu'on veut), le charger sous un autre nom, ou
+    // remplacer celui de la liste.
+    async function chargeProjet({ nom: nomLu, instant, ignorés }) {
+        let nom = nomLu && nomLu !== SANS_NOM ? nomLu : SANS_NOM;
+        if (nom !== SANS_NOM && (projetExiste(nom) || nom === nomDuProjet)) {
+            let libre = nom;
+            for (let i = 2; projetExiste(libre) || libre === nomDuProjet; i++) libre = nom + ' ' + i;
+            const choix = await dialogue('Tu as déjà un projet « ' + nom + ' »', 'Le projet que tu charges porte le même nom.',
+                [{ texte: 'Ouvrir mon projet « ' + nom + ' »', valeur: 'ouvrir', genre: 'principal' },
+                 { texte: 'Charger le nouveau sous le nom « ' + libre + ' »', valeur: 'autre' },
+                 { texte: 'Remplacer mon projet par le nouveau', valeur: 'remplacer', genre: 'danger' },
+                 { texte: 'Annuler', valeur: null }]);
+            if (!choix) return false;
+            if (choix === 'ouvrir') { await ouvreProjet(nom); return false; }
+            if (choix === 'autre') nom = libre;
         }
-        // Rien à perdre (aucun fichier, aucun programme ou le programme d'accueil intact) :
-        // ni avertissement, ni sauvegarde temporaire
-        const àProtéger = !espaceVide(avant);
-        if (àProtéger) {
-            if (!confirm('Charger le projet' + auteur + ' (' + pluriel(nb, 'programme')
-                + (instant.fichiers.length ? ', ' + pluriel(instant.fichiers.length, 'fichier') : '') + ') ?\n\n'
-                + 'Il remplace TOUT le projet en cours. Tu pourras revenir en arrière avec « Annuler le chargement ».')) return false;
-            // sauvegarde temporaire du projet en cours, pour pouvoir annuler
-            try {
-                await FichiersProjet.gardeRéserve({ élève, nom: nomDuProjet, date: new Date().toISOString(), ...avant });
-                localStorage.setItem(CLÉ_RÉSERVE, '1');
-            } catch (e) {
-                écritConsole('Chargement abandonné : impossible de mettre de côté le projet en cours (' + e.message + ').', 'erreur');
-                return false;
-            }
-        } else {
-            // une ancienne sauvegarde ne correspond plus à rien : « Annuler » ne doit pas la ramener
-            try { await FichiersProjet.videRéserve(); localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ }
-        }
+        if (!(await rangeProjetOuvert())) return false;
         try {
             await remplaceTout(instant);
-            changeNomProjet(nomLu || SANS_NOM);
-            mémoriseExporté(await instantané());
+            changeNomProjet(nom);
+            await gardeProjetOuvert();
         } catch (e) {
-            écritConsole('Erreur pendant le chargement du projet : ' + e.message + '. Utilise « Annuler le chargement ».', 'erreur');
+            écritConsole('Erreur pendant le chargement du projet : ' + e.message, 'erreur');
         }
-        // Un projet a été remplacé : il appartient peut-être à un autre élève, on déconnecte
-        // (le nom sera redemandé à la prochaine exécution). Si l'espace était vide, l'élève
-        // connecté vient simplement de charger son projet : il reste connecté.
-        if (àProtéger) changeÉlève(null);
-        metAJourAnnulation();
+        await rafraîchitListeProjets();
         if (ignorés.length) {
             écritConsole('— ' + pluriel(ignorés.length, 'fichier') + ' du projet ' + (ignorés.length > 1 ? 'ont été laissés' : 'a été laissé')
                 + ' de côté (mal placé, mal nommé ou mal écrit) : ' + ignorés.slice(0, 6).join(', ') + (ignorés.length > 6 ? '…' : '') + '.', 'info');
         }
         return true;
-    }
-
-    function réserveExiste() {
-        try { return localStorage.getItem(CLÉ_RÉSERVE) === '1'; } catch (e) { return false; }
-    }
-
-    async function annuleProjet() {
-        if (!réserveExiste()) return;
-        let avant;
-        try { avant = await FichiersProjet.litRéserve(); } catch (e) { avant = null; }
-        if (!avant) { try { localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ } metAJourAnnulation(); return; }
-        if (!confirm('Revenir au projet d\'avant le chargement ?\n\nLe projet actuel sera remplacé.')) return;
-        try {
-            await remplaceTout(avant);
-        } catch (e) {
-            écritConsole('Impossible de revenir en arrière : ' + e.message, 'erreur');
-            return;
-        }
-        try { await FichiersProjet.videRéserve(); localStorage.removeItem(CLÉ_RÉSERVE); } catch (e) { /* rien */ }
-        changeÉlève(avant.élève || null);
-        changeNomProjet(avant.nom || SANS_NOM);
-        metAJourAnnulation();
-        écritConsole('— Le projet « ' + nomDuProjet + ' » est revenu.', 'info');
-    }
-
-    function metAJourAnnulation() {
-        $('btnAnnuleProjet').disabled = !réserveExiste();
     }
 
     // serveur.py garde une copie des projets exportés par les élèves (pour l'enseignant).
@@ -2591,16 +2675,15 @@ const Pythonerie = (function () {
 
     // ------------------------------------------------------------------
     // Répertoires du site : « Matériels » (matériels/, préparé par l'enseignant) et
-    // « Exemples » (exemples/). Chacun a son index.json : [{ "fichier", "titre", "description" }].
-    // Ils sont repliés par défaut. Un clic sur un programme (.pyf) en crée une copie ;
-    // dans Matériels, un clic sur un projet (.zip ou .json) le charge à la place du projet en cours.
+    // « Exemples » (exemples/). Chacun a son index.json : [{ "fichier", "titre", "description" }],
+    // et s'ouvre en liste déroulante sous son bouton, au bas de la colonne des programmes.
+    // Un clic sur un programme (.pyf) en crée une copie ; dans Matériels, un clic sur un
+    // projet (.zip ou .json) l'ouvre à la place du projet en cours (qui rejoint la liste).
     // ------------------------------------------------------------------
     const SVG_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 4.5L8 1.5l6 3v7L8 14.5l-6-3z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2 4.5l6 3 6-3M8 7.5v7" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
 
-    async function chargeRépertoireSite({ idListe, répertoire, nom, clé, masquéSiVide }) {
-        const ul = $(idListe);
-        let ouvert = false;
-        try { ouvert = localStorage.getItem(clé) === 'oui'; } catch (e) { /* rien */ }
+    async function chargeRépertoireSite({ idBouton, répertoire, nom, masquéSiVide }) {
+        const bouton = $(idBouton);
         let liste;
         try {
             const r = await fetch(répertoire + '/index.json', { cache: 'no-cache' });
@@ -2608,101 +2691,69 @@ const Pythonerie = (function () {
             liste = await r.json();
             if (!Array.isArray(liste)) throw new Error();
         } catch (e) {
-            if (masquéSiVide) ul.hidden = true;
-            else ul.innerHTML = '<li class="liste-vide">' + nom + ' indisponibles</li>';
-            return;
+            liste = [];
         }
         liste = liste.filter(x => x && typeof x.fichier === 'string' && /\.(pyf|zip|json)$/i.test(x.fichier))
             .map(x => ({ ...x, fichier: nfc(x.fichier) }));
-        if (!liste.length && masquéSiVide) { ul.hidden = true; return; }
-        ul.hidden = false;
+        bouton.hidden = !liste.length && masquéSiVide;
+        bouton.disabled = !liste.length;
+        bouton.querySelector('.nombre-exemples').textContent = liste.length || '';
         const adresse = (fichier) => répertoire + '/' + fichier.split('/').map(encodeURIComponent).join('/');
-        const affiche = () => {
-            ul.innerHTML = '';
-            // la ligne du répertoire
-            const dossier = ligneArbre(0, 'dossier');
-            dossier.title = ouvert ? 'Replier « ' + nom + ' »' : 'Voir « ' + nom + ' »';
-            const chevron = document.createElement('span');
-            chevron.className = 'arbre-chevron' + (ouvert ? ' ouvert' : '');
-            chevron.innerHTML = SVG_CHEVRON;
-            const icône = document.createElement('span');
-            icône.className = 'arbre-icône';
-            icône.innerHTML = ouvert ? SVG_DOSSIER_OUVERT : SVG_DOSSIER_FERME;
-            const titreDossier = document.createElement('span');
-            titreDossier.className = 'programme-nom';
-            titreDossier.textContent = nom;
-            const nombre = document.createElement('span');
-            nombre.className = 'nombre-exemples';
-            nombre.textContent = liste.length;
-            dossier.append(chevron, icône, titreDossier, nombre);
-            dossier.addEventListener('click', () => {
-                ouvert = !ouvert;
-                try { localStorage.setItem(clé, ouvert ? 'oui' : 'non'); } catch (e) { /* rien */ }
-                affiche();
-            });
-            ul.appendChild(dossier);
-            if (!ouvert) return;
-            // le contenu, un cran plus loin, comme les programmes d'un répertoire
-            liste.forEach(élément => {
-                const projet = /\.(zip|json)$/i.test(élément.fichier);
-                const titre = élément.titre || élément.fichier;
-                const li = ligneArbre(1, 'programme');
-                li.title = (élément.description ? élément.description + ' — ' : '')
-                    + (projet ? 'un projet : un clic le charge à la place de ton projet (tu pourras annuler)'
-                              : 'un clic crée une copie que tu peux modifier (ou ouvre ta copie, si tu l\'as déjà)');
-                const espace = document.createElement('span');
-                espace.className = 'arbre-chevron';
-                const icôneÉl = document.createElement('span');
-                icôneÉl.className = 'arbre-icône';
-                icôneÉl.innerHTML = projet ? SVG_PROJET : SVG_PROGRAMME;
-                const texte = document.createElement('span');
-                texte.className = 'programme-nom';
-                texte.textContent = titre;
-                li.append(espace, icôneÉl, texte);
-                li.addEventListener('click', async () => {
-                    if (projet) {
-                        try {
-                            const r = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
-                            if (!r.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
-                            const fichier = new File([await r.blob()], élément.fichier.split('/').pop());
-                            if (await chargeProjetFichier(fichier)) {
-                                écritConsole('— Le projet « ' + titre + ' » est chargé.' + (élément.description ? ' ' + élément.description : ''), 'info');
-                            }
-                        } catch (e) {
-                            écritConsole(e.message, 'erreur');
-                        }
-                        return;
+        const prend = async (élément) => {
+            const projet = /\.(zip|json)$/i.test(élément.fichier);
+            const titre = élément.titre || élément.fichier;
+            if (projet) {
+                try {
+                    const r = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
+                    if (!r.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
+                    const fichier = new File([await r.blob()], élément.fichier.split('/').pop());
+                    if (await chargeProjetFichier(fichier)) {
+                        écritConsole('— Le projet « ' + titre + ' » est chargé.' + (élément.description ? ' ' + élément.description : ''), 'info');
                     }
-                    // Déjà copié (un programme du même nom, de préférence dans le répertoire
-                    // courant) : on l'ouvre, plutôt que d'en créer « 15. Casse-briques 2 »
-                    const nomProg = titre.replace(/\.pyf?$/i, '');
-                    const copies = programmes.filter(p => nomDe(p.chemin) === nomProg);
-                    if (copies.length) {
-                        const copie = copies.find(p => parentDe(p.chemin) === dossierCourant) || copies[0];
-                        await ouvre(copie.chemin);
-                        écritConsole('— « ' + nomProg + ' » est déjà dans tes programmes : le voici. '
-                            + 'Pour repartir de l\'exemple d\'origine, renomme ou supprime ta copie.', 'info');
-                        return;
-                    }
-                    try {
-                        const rc = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
-                        if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
-                        await crée(dossierCourant, nomProg, nfc(await rc.text()));
-                    } catch (e) {
-                        écritConsole(e.message, 'erreur');
-                    }
-                });
-                ul.appendChild(li);
-            });
+                } catch (e) {
+                    écritConsole(e.message, 'erreur');
+                }
+                return;
+            }
+            // Déjà copié (un programme du même nom, de préférence dans le répertoire
+            // courant) : on l'ouvre, plutôt que d'en créer « 15. Casse-briques 2 »
+            const nomProg = titre.replace(/\.pyf?$/i, '');
+            const copies = programmes.filter(p => nomDe(p.chemin) === nomProg);
+            if (copies.length) {
+                const copie = copies.find(p => parentDe(p.chemin) === dossierCourant) || copies[0];
+                await ouvre(copie.chemin);
+                écritConsole('— « ' + nomProg + ' » est déjà dans tes programmes : le voici. '
+                    + 'Pour repartir de l\'exemple d\'origine, renomme ou supprime ta copie.', 'info');
+                return;
+            }
+            try {
+                const rc = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
+                if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
+                await crée(dossierCourant, nomProg, nfc(await rc.text()));
+            } catch (e) {
+                écritConsole(e.message, 'erreur');
+            }
         };
-        affiche();
+        bouton.onclick = (ev) => {
+            ev.stopPropagation();
+            basculeDéroulante(bouton, () => ouvreDéroulante(bouton, [{ section: nom }].concat(liste.map(élément => {
+                const projet = /\.(zip|json)$/i.test(élément.fichier);
+                return {
+                    texte: élément.titre || élément.fichier,
+                    détail: élément.description || '',
+                    icône: projet ? SVG_PROJET : SVG_PROGRAMME,
+                    titre: (élément.description ? élément.description + ' — ' : '')
+                        + (projet ? 'un projet : un clic l\'ouvre à la place de ton projet (qui reste dans « Mes projets »)'
+                                  : 'un clic crée une copie que tu peux modifier (ou ouvre ta copie, si tu l\'as déjà)'),
+                    action: () => prend(élément)
+                };
+            }))));
+        };
     }
 
     function chargeRépertoiresSite() {
-        chargeRépertoireSite({ idListe: 'listeMatériels', répertoire: 'matériels', nom: 'Matériels',
-            clé: 'pythonerie.matérielsOuverts', masquéSiVide: true });
-        chargeRépertoireSite({ idListe: 'listeExemples', répertoire: 'exemples', nom: 'Exemples',
-            clé: 'pythonerie.exemplesOuverts', masquéSiVide: false });
+        chargeRépertoireSite({ idBouton: 'btnMatériels', répertoire: 'matériels', nom: 'Matériels de ton enseignant', masquéSiVide: true });
+        chargeRépertoireSite({ idBouton: 'btnExemples', répertoire: 'exemples', nom: 'Exemples', masquéSiVide: false });
     }
 
     // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
@@ -2806,32 +2857,168 @@ const Pythonerie = (function () {
         a.click();
     }
 
-    // Glisser la séparation entre l'éditeur et le canevas
-    function installeSéparateur() {
-        const sep = $('séparateur');
+    // Glisser une séparation (souris, doigt ou stylet) : la largeur est gardée dans le navigateur
+    function glisseSéparation(sep, { variable, clé, largeur, sens, mini, maxi }) {
         const grille = $('espace');
         let départ = null;
-        sep.addEventListener('mousedown', (ev) => {
-            départ = { x: ev.clientX, largeur: $('zoneCanevas').getBoundingClientRect().width };
+        sep.addEventListener('pointerdown', (ev) => {
+            départ = { x: ev.clientX, largeur: largeur() };
+            sep.setPointerCapture(ev.pointerId);
             document.body.classList.add('redimensionne');
             ev.preventDefault();
         });
-        window.addEventListener('mousemove', (ev) => {
+        sep.addEventListener('pointermove', (ev) => {
             if (!départ) return;
-            const l = Math.min(Math.max(départ.largeur - (ev.clientX - départ.x), 260), window.innerWidth * 0.7);
-            grille.style.setProperty('--largeur-canevas', l + 'px');
+            const l = Math.min(Math.max(départ.largeur + sens * (ev.clientX - départ.x), mini), maxi());
+            grille.style.setProperty(variable, l + 'px');
             éditeur.refresh();
         });
-        window.addEventListener('mouseup', () => {
+        const fin = () => {
             if (!départ) return;
             départ = null;
             document.body.classList.remove('redimensionne');
-            try { localStorage.setItem('pythonerie.largeurCanevas', grille.style.getPropertyValue('--largeur-canevas')); } catch (e) { /* rien */ }
-        });
+            try { localStorage.setItem(clé, grille.style.getPropertyValue(variable)); } catch (e) { /* rien */ }
+        };
+        sep.addEventListener('pointerup', fin);
+        sep.addEventListener('pointercancel', fin);
         try {
-            const l = localStorage.getItem('pythonerie.largeurCanevas');
-            if (l) grille.style.setProperty('--largeur-canevas', l);
+            const l = localStorage.getItem(clé);
+            if (l) grille.style.setProperty(variable, l);
         } catch (e) { /* rien */ }
+    }
+
+    // Les deux séparations : programmes | éditeur, et éditeur | canevas
+    function installeSéparateur() {
+        glisseSéparation($('séparateurProgrammes'), {
+            variable: '--largeur-programmes', clé: 'pythonerie.largeurProgrammes', sens: 1, mini: 170,
+            largeur: () => document.querySelector('.programmes').getBoundingClientRect().width,
+            maxi: () => Math.max(170, window.innerWidth * 0.45)
+        });
+        glisseSéparation($('séparateur'), {
+            variable: '--largeur-canevas', clé: 'pythonerie.largeurCanevas', sens: -1, mini: 260,
+            largeur: () => $('zoneCanevas').getBoundingClientRect().width,
+            maxi: () => window.innerWidth * 0.7
+        });
+        // sur un écran étroit, la liste des programmes (au-dessus de l'éditeur) se replie
+        const panneau = document.querySelector('.programmes'), bouton = $('btnReplieProgrammes');
+        const replie = (oui) => {
+            panneau.classList.toggle('replié', oui);
+            bouton.textContent = oui ? '▾' : '▴';
+            bouton.title = oui ? 'Déplier la liste' : 'Replier la liste';
+            bouton.setAttribute('aria-label', bouton.title);
+            bouton.setAttribute('aria-expanded', String(!oui));
+        };
+        try { replie(localStorage.getItem('pythonerie.programmesRepliés') === 'oui'); } catch (e) { /* rien */ }
+        bouton.addEventListener('click', () => {
+            const oui = !panneau.classList.contains('replié');
+            replie(oui);
+            try { localStorage.setItem('pythonerie.programmesRepliés', oui ? 'oui' : 'non'); } catch (e) { /* rien */ }
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Listes déroulantes (Mes projets, Matériels, Exemples) : sous le bouton, ou au-dessus
+    // s'il n'y a pas la place ; elles se ferment sur un choix, un clic ailleurs ou Échap.
+    // éléments : [{ section }, { séparateur }, { texte, détail, icône (svg), titre, classe,
+    // désactivé, action, supprime }] ; supprime ajoute une petite corbeille à la ligne.
+    // ------------------------------------------------------------------
+    let déroulante = null;      // { menu, bouton }
+
+    function fermeDéroulante() {
+        if (!déroulante) return;
+        déroulante.menu.remove();
+        déroulante.bouton.setAttribute('aria-expanded', 'false');
+        déroulante = null;
+    }
+
+    function basculeDéroulante(bouton, ouvre) {
+        if (déroulante && déroulante.bouton === bouton) { fermeDéroulante(); return; }
+        ouvre();
+    }
+
+    function ouvreDéroulante(bouton, éléments) {
+        fermeDéroulante();
+        const menu = document.createElement('div');
+        menu.className = 'menu déroulante';
+        menu.setAttribute('role', 'menu');
+        éléments.forEach(e => {
+            if (e.section) {
+                const s = document.createElement('div');
+                s.className = 'menu-section';
+                s.textContent = e.section;
+                menu.appendChild(s);
+                return;
+            }
+            if (e.séparateur) {
+                const s = document.createElement('div');
+                s.className = 'menu-séparateur';
+                menu.appendChild(s);
+                return;
+            }
+            const ligne = document.createElement('div');
+            ligne.className = 'ligne-déroulante';
+            const b = document.createElement('button');
+            b.className = 'menu-item' + (e.classe ? ' ' + e.classe : '');
+            b.setAttribute('role', 'menuitem');
+            b.disabled = !!e.désactivé;
+            if (e.titre) b.title = e.titre;
+            if (e.icône) {
+                const i = document.createElement('span');
+                i.className = 'arbre-icône';
+                i.innerHTML = e.icône;
+                b.appendChild(i);
+            }
+            const texte = document.createElement('span');
+            texte.className = 'menu-texte';
+            texte.textContent = e.texte;
+            if (e.détail) {
+                const d = document.createElement('span');
+                d.className = 'menu-détail';
+                d.textContent = e.détail;
+                texte.appendChild(d);
+            }
+            b.appendChild(texte);
+            if (e.action) b.addEventListener('click', () => { fermeDéroulante(); e.action(); });
+            ligne.appendChild(b);
+            if (e.supprime) {
+                const x = document.createElement('button');
+                x.className = 'menu-supprime';
+                x.title = 'Supprimer « ' + e.texte + ' »';
+                x.setAttribute('aria-label', x.title);
+                x.textContent = '🗑';
+                x.addEventListener('click', (ev) => { ev.stopPropagation(); fermeDéroulante(); e.supprime(); });
+                ligne.appendChild(x);
+            }
+            menu.appendChild(ligne);
+        });
+        document.body.appendChild(menu);
+        // sous le bouton, ou au-dessus s'il y a plus de place ; jamais hors de la fenêtre
+        const r = bouton.getBoundingClientRect();
+        const dessous = window.innerHeight - r.bottom - 12, dessus = r.top - 12;
+        const enHaut = dessous < 220 && dessus > dessous;
+        menu.style.maxHeight = Math.max(120, enHaut ? dessus : dessous) + 'px';
+        menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+        if (enHaut) menu.style.top = Math.max(8, r.top - 4 - menu.offsetHeight) + 'px';
+        else menu.style.top = (r.bottom + 4) + 'px';
+        déroulante = { menu, bouton, ouverte: performance.now() };
+        bouton.setAttribute('aria-expanded', 'true');
+        const premier = menu.querySelector('.menu-item:not(:disabled)');
+        if (premier) premier.focus({ preventScroll: true });
+    }
+
+    function installeDéroulantes() {
+        document.addEventListener('click', (ev) => {
+            if (déroulante && !déroulante.menu.contains(ev.target) && !déroulante.bouton.contains(ev.target)) fermeDéroulante();
+        });
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && déroulante) { const b = déroulante.bouton; fermeDéroulante(); b.focus(); }
+        });
+        window.addEventListener('resize', fermeDéroulante);
+        // la page défile : la liste ne suivrait pas son bouton (sauf juste après l'ouverture,
+        // quand un toucher fait parfois bouger la page de quelques pixels)
+        document.addEventListener('scroll', (ev) => {
+            if (déroulante && !déroulante.menu.contains(ev.target) && performance.now() - déroulante.ouverte > 400) fermeDéroulante();
+        }, true);
     }
 
     // Menu ☰ : s'ouvre avec le bouton, se ferme sur un choix, un clic ailleurs ou Échap
@@ -2866,6 +3053,7 @@ const Pythonerie = (function () {
         installeDonnées();
         $('btnNouveau').addEventListener('click', nouveau);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
+        installeDéroulantes();
         $('btnNouveauDossier').addEventListener('click', nouveauDossier);
         // Déposer dans la zone vide de l'arbre, ou sur le titre : vers la racine
         rendCible($('listeProgrammes'), '');
@@ -2884,7 +3072,8 @@ const Pythonerie = (function () {
         $('btnExporteProjet').addEventListener('click', exporteProjet);
         $('btnNouveauProjet').addEventListener('click', nouveauProjet);
         $('btnRenommeProjet').addEventListener('click', renommeProjet);
-        $('nomProjet').addEventListener('click', (ev) => { ev.stopPropagation(); renommeProjet(); });
+        $('nomProjet').addEventListener('click', (ev) => { ev.stopPropagation(); basculeDéroulante($('nomProjet'), ouvreMesProjets); });
+        $('btnSupprimeProjet').addEventListener('click', () => supprimeProjet(nomDuProjet));
         $('btnChargeProjet').addEventListener('click', () => $('fichierProjet').click());
         $('fichierProjet').addEventListener('change', (ev) => {
             const f = ev.target.files[0];
@@ -2892,7 +3081,7 @@ const Pythonerie = (function () {
             if (f) chargeProjetFichier(f);
         });
         $('btnColleProjet').addEventListener('click', colleProjet);
-        $('btnAnnuleProjet').addEventListener('click', annuleProjet);
+        $('btnAnnuleProjet').addEventListener('click', revientProjetPrécédent);
         $('btnUtilisateurUnique').addEventListener('click', basculeUtilisateurUnique);
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });
         $('fichierRépertoire').addEventListener('change', (ev) => {
@@ -2946,10 +3135,18 @@ const Pythonerie = (function () {
             nouvelleSession = !sessionStorage.getItem('pythonerie.session');
             sessionStorage.setItem('pythonerie.session', 'oui');
         } catch (e) { /* rien */ }
-        if (multiImposé && nouvelleSession) await effaceDonnées();
+        if (multiImposé && nouvelleSession) {
+            // le projet laissé par l'élève précédent (parti sans se déconnecter) est rangé chez lui
+            try {
+                const propriétaire = localStorage.getItem(CLÉ_PROPRIÉTAIRE);
+                if (propriétaire && nomDuProjet !== SANS_NOM) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, await instantané());
+            } catch (e) { /* rien */ }
+            await effaceDonnées();
+        }
         afficheÉlève();
         afficheNomProjet();
-        metAJourAnnulation();
+        if (nomCourant()) await prendPossession(nomCourant());
+        else await rafraîchitListeProjets();
         await rafraichitListe();
         chargeRépertoiresSite();
 

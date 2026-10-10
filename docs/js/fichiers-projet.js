@@ -24,7 +24,10 @@ const FichiersProjet = (function () {
     const TAILLE_MAX = 5 * 1024 * 1024;     // 5 Mo par fichier
     const NOM_BASE = 'pythonerie';
     const MAGASIN = 'fichiers';             // chemin -> { chemin, type, blob, modifie }
-    const RÉSERVE = 'réserve';              // la sauvegarde temporaire d'un projet (Annuler le chargement)
+    // Les projets gardés dans le navigateur, par utilisateur (« Unique », ou le nom de
+    // l'élève) : [utilisateur, nom] -> { utilisateur, nom, modifié, programmes, dossiers,
+    // onglets, fichiers: [{ chemin, type, blob, modifie }] }
+    const PROJETS = 'projets';
 
     const nfc = (s) => String(s).normalize('NFC');
     const extensionDe = (nom) => { const i = nom.lastIndexOf('.'); return i < 0 ? '' : nom.slice(i + 1).toLowerCase(); };
@@ -36,11 +39,15 @@ const FichiersProjet = (function () {
         if (base) return Promise.resolve(base);
         return new Promise((résout, rejette) => {
             if (!window.indexedDB) { rejette(new Error('ce navigateur ne permet pas de garder les fichiers du projet')); return; }
-            const r = indexedDB.open(NOM_BASE, 1);
+            const r = indexedDB.open(NOM_BASE, 2);
             r.onupgradeneeded = () => {
                 const b = r.result;
                 if (!b.objectStoreNames.contains(MAGASIN)) b.createObjectStore(MAGASIN, { keyPath: 'chemin' });
-                if (!b.objectStoreNames.contains(RÉSERVE)) b.createObjectStore(RÉSERVE);
+                if (!b.objectStoreNames.contains(PROJETS)) {
+                    b.createObjectStore(PROJETS, { keyPath: ['utilisateur', 'nom'] }).createIndex('utilisateur', 'utilisateur');
+                }
+                // (version 1 : une sauvegarde temporaire, remplacée par la liste des projets)
+                if (b.objectStoreNames.contains('réserve')) b.deleteObjectStore('réserve');
             };
             r.onsuccess = () => { base = r.result; résout(base); };
             r.onerror = () => rejette(r.error || new Error('IndexedDB refuse de s\'ouvrir'));
@@ -165,16 +172,38 @@ const FichiersProjet = (function () {
         for (const e of entrées) await enMémoire(e);
     }
 
-    // La sauvegarde temporaire d'un projet entier (programmes et fichiers), pour « Annuler »
-    async function gardeRéserve(projet) { await transaction(RÉSERVE, 'readwrite', m => m.put(projet, 'projet')); }
-    async function litRéserve() { return transaction(RÉSERVE, 'readonly', m => m.get('projet')); }
-    async function videRéserve() { await transaction(RÉSERVE, 'readwrite', m => m.delete('projet')); }
+    // ---------- Les projets gardés dans le navigateur ----------
+    const comparaison = new Intl.Collator('fr', { numeric: true }).compare;
+
+    // Les projets d'un utilisateur : [{ nom, modifié }], par ordre alphabétique
+    async function projets(utilisateur) {
+        const tous = await transaction(PROJETS, 'readonly', m => m.index('utilisateur').getAll(IDBKeyRange.only(nfc(utilisateur))));
+        return (tous || []).map(p => ({ nom: p.nom, modifié: p.modifié })).sort((a, b) => comparaison(a.nom, b.nom));
+    }
+
+    // Garde (ou remplace) le projet nom de cet utilisateur ; instant : { programmes, dossiers, onglets, fichiers }
+    async function gardeProjet(utilisateur, nom, instant) {
+        const projet = {
+            utilisateur: nfc(utilisateur), nom: nfc(nom), modifié: Date.now() / 1000,
+            programmes: instant.programmes, dossiers: instant.dossiers, onglets: instant.onglets || [''],
+            fichiers: (instant.fichiers || []).map(f => ({ chemin: f.chemin, type: f.type, blob: f.blob, modifie: f.modifie }))
+        };
+        await transaction(PROJETS, 'readwrite', m => m.put(projet));
+    }
+
+    async function litProjet(utilisateur, nom) {
+        return (await transaction(PROJETS, 'readonly', m => m.get([nfc(utilisateur), nfc(nom)]))) || null;
+    }
+
+    async function supprimeProjet(utilisateur, nom) {
+        await transaction(PROJETS, 'readwrite', m => m.delete([nfc(utilisateur), nfc(nom)]));
+    }
 
     return {
         RÉPERTOIRES, TAILLE_MAX,
         charge, liste, ajoute, supprime, renomme, répertoireDe,
         entrée, instantané, remplace,
-        gardeRéserve, litRéserve, videRéserve,
+        projets, gardeProjet, litProjet, supprimeProjet,
         existe: (chemin) => fichiers.has(nfc(chemin)),
         // l'adresse blob: d'une image ou d'un son du projet ("" s'il n'y est pas)
         url: (chemin) => { const f = fichiers.get(nfc(chemin)); return f && f.url ? f.url : ''; },

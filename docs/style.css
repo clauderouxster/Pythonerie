@@ -143,10 +143,11 @@ a.btn { text-decoration: none; display: inline-block; }
 /* ---------------- Espace de travail : 3 zones ---------------- */
 .espace {
     --largeur-canevas: clamp(360px, 40vw, 900px);
+    --largeur-programmes: 230px;
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: 230px minmax(320px, 1fr) 6px var(--largeur-canevas);
+    grid-template-columns: var(--largeur-programmes) 6px minmax(320px, 1fr) 6px var(--largeur-canevas);
 }
 
 .étiquette {
@@ -160,9 +161,12 @@ a.btn { text-decoration: none; display: inline-block; }
 .note-dim { text-transform: none; font-weight: 400; margin-left: 4px; }
 
 /* le nom du projet, en tête de la colonne des programmes */
+/* il prend la place libre de la ligne (elle suit la largeur de la colonne), et se coupe
+   avec « … » seulement s'il ne tient pas */
 .nom-projet {
-    max-width: 150px;
-    margin-left: 6px;
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
     padding: 1px 6px;
     border: 1px solid transparent;
     border-radius: 4px;
@@ -334,6 +338,24 @@ a.btn { text-decoration: none; display: inline-block; }
 /* Mode utilisateur unique : le nom reste lisible, mais le bouton ne réagit pas */
 .btn.élève:disabled { opacity: 0.7; }
 .menu-séparateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
+/* Listes déroulantes : Mes projets, Matériels, Exemples */
+.menu.déroulante { max-width: min(380px, calc(100vw - 16px)); overflow-y: auto; }
+.ligne-déroulante { display: flex; align-items: stretch; }
+.ligne-déroulante .menu-item { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 4px; white-space: normal; }
+.menu-texte { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.menu-détail { font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+.menu-item.courant { color: var(--accent); font-weight: 700; }
+/* dans Mes projets, la place de la coche est gardée sur chaque ligne : les noms restent alignés */
+.menu-item.projet::before { content: ''; flex-shrink: 0; width: 1em; }
+.menu-item.projet.courant::before { content: '✓'; }
+.menu-item.sans-nom { font-style: italic; }
+.menu-supprime { flex-shrink: 0; padding: 0 12px; border: none; background: none; font-size: 13px; cursor: pointer; opacity: 0.4; }
+.menu-supprime:hover, .menu-supprime:focus-visible { opacity: 1; background: var(--bg-hover); outline: none; }
+.répertoires-site { display: flex; flex-direction: column; gap: 6px; }
+.bouton-déroulant { width: 100%; text-align: left; }
+.bouton-déroulant[hidden] { display: none; }
+/* seulement sur un écran étroit (téléphone, tablette en hauteur) */
+.seulement-étroit { display: none; }
 
 /* Écrans tactiles : pas de survol, les actions restent visibles */
 @media (hover: none) { .programme-actions { opacity: 1; } }
@@ -515,7 +537,7 @@ body.plein-code .conteneur-éditeur, body.plein-code .panneau-données { flex: 1
 .console-vide { color: var(--console-info); font-style: italic; }
 
 /* Séparateur déplaçable */
-.séparateur { cursor: col-resize; background: transparent; position: relative; }
+.séparateur { cursor: col-resize; background: transparent; position: relative; touch-action: none; }
 .séparateur::after {
     content: '';
     position: absolute;
@@ -695,13 +717,26 @@ pre.exemple {
         grid-template-rows: auto minmax(520px, auto) auto;
     }
     .séparateur { display: none; }
-    .programmes { border-right: none; border-bottom: 1px solid var(--border-color); max-height: 260px; }
+    /* la liste des programmes au-dessus de l'éditeur : à sa taille, sans dépasser la moitié de l'écran */
+    .programmes { border-right: none; border-bottom: 1px solid var(--border-color); height: max-content; max-height: 50vh; }
+    .seulement-étroit { display: inline-block; }
+    .programmes.replié > .section:not(:first-child),
+    .programmes.replié > .section:first-child > :not(.section-tête) { display: none; }
+    .programmes.replié .section-tête { margin-bottom: 0; }
     .zone-canevas { overflow: visible; }
     .sous-titre { display: none; }
 }
-@media (max-width: 600px) {
+@media (max-width: 700px) {
     .table-aide td:nth-child(odd) { white-space: normal; }
     .barre { flex-wrap: wrap; }
+    /* l'en-tête tient sur la largeur d'un téléphone */
+    .en-tête { flex-wrap: wrap; padding: 6px 10px; gap: 6px; }
+    .version, .sous-titre, .libellé { display: none; }
+    .actions-en-tête { flex-wrap: wrap; gap: 6px; margin-left: auto; }
+    .actions-en-tête .btn { padding: 5px 10px; }
+    .btn.élève { max-width: 140px; }
+    .zone-édition { padding: 8px; }
+    .programmes { padding: 10px; }
 }
 .aide-français .table-aide { table-layout: fixed; }
 .aide-français .table-aide td:nth-child(1) { width: 40%; white-space: normal; }

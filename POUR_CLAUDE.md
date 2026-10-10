@@ -120,7 +120,7 @@ Les programmes de l'élève forment un **projet**, qui a un nom (« Sans Nom » 
 
 ### Un projet en JSON
 
-C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul bloc de texte. L'élève le colle avec ☰ → « 📋 Coller un projet (JSON)… » (ce qui entoure le JSON, comme les ```` ```json ````, est ignoré), ou l'enregistre dans un fichier `.json` et le charge avec « 📥 Charger un projet ». Un enseignant peut aussi déposer le `.json` dans `docs/matériels/`, puis lancer `python3 inventaire.py`. Le projet remplace celui de l'élève, qui peut revenir en arrière avec « ↶ Annuler le chargement du projet ».
+C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul bloc de texte. L'élève le colle avec ☰ → « 📋 Coller un projet (JSON)… » (ce qui entoure le JSON, comme les ```` ```json ````, est ignoré), ou l'enregistre dans un fichier `.json` et le charge avec « 📥 Charger un projet ». Un enseignant peut aussi déposer le `.json` dans `docs/matériels/`, puis lancer `python3 inventaire.py`. Le projet prend la place de celui de l'élève, qui reste dans sa liste « Mes projets » (☰ → « ↶ Revenir au projet précédent » le rouvre).
 
 ```json
 {

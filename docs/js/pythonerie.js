@@ -1365,11 +1365,11 @@ const Pythonerie = (function () {
     }
 
     // nom_du_projet_login_aaaa_mm_jj_hh_MM ; sans le login pour l'utilisateur « Unique »
-    function nomFichierProjet() {
+    function nomFichierProjet(base = nomDuProjet) {
         const d = new Date();
         const n = (x) => String(x).padStart(2, '0');
         const login = nomCourant();
-        return pourFichier(nomDuProjet) + (login && login !== NOM_UNIQUE ? '_' + pourFichier(login) : '')
+        return pourFichier(base) + (login && login !== NOM_UNIQUE ? '_' + pourFichier(login) : '')
             + '_' + d.getFullYear() + '_' + n(d.getMonth() + 1) + '_' + n(d.getDate()) + '_' + n(d.getHours()) + '_' + n(d.getMinutes());
     }
 
@@ -1403,9 +1403,9 @@ const Pythonerie = (function () {
     }
 
     // Le fichier .zip du projet (voir plus haut)
-    async function archiveProjet(instant) {
+    async function archiveProjet(instant, nom = nomDuProjet) {
         const enc = new TextEncoder();
-        const fiche = { format: FORMAT_PROJET, version: 3, nom: nomDuProjet, élève: nomCourant(), créé: new Date().toISOString() };
+        const fiche = { format: FORMAT_PROJET, version: 3, nom, élève: nomCourant(), créé: new Date().toISOString() };
         const entrées = [{ nom: 'projet.json', octets: enc.encode(JSON.stringify(fiche, null, 1) + '\n') }, { nom: 'programmes/' }];
         [...instant.dossiers].sort().forEach(d => entrées.push({ nom: 'programmes/' + d + '/' }));
         Object.keys(instant.programmes).sort().forEach(c => entrées.push({ nom: 'programmes/' + c + '.pyf', octets: enc.encode(instant.programmes[c]) }));
@@ -1625,6 +1625,8 @@ const Pythonerie = (function () {
     // Charge un projet venu d'un fichier .zip ou .json (menu ☰, glissé dans la liste, ou
     // répertoire Matériels) ; il remplace tout le projet en cours
     async function chargeProjetFichier(fichier) {
+        // une archive de tous les projets (voir chargeArchive), plutôt qu'un projet
+        if (!/\.json$/i.test(fichier.name) && await estArchive(fichier)) { await chargeArchive(fichier); return false; }
         let lu;
         try { lu = /\.json$/i.test(fichier.name) ? await lisProjetJSON(await fichier.text()) : await lisProjet(await fichier.arrayBuffer()); }
         catch (e) {
@@ -1632,6 +1634,154 @@ const Pythonerie = (function () {
             return false;
         }
         return chargeProjet(lu);
+    }
+
+    // ------------------------------------------------------------------
+    // Archive : tous les projets de l'utilisateur dans un seul fichier .zip
+    //   archive.json         { format: 'archive-pythonerie', version, utilisateur, créé,
+    //                          projets: [{ nom, modifié, fichier }] }
+    //   projets/Jardin.zip   chaque projet, tel que l'exporte « Exporter le projet »
+    // Relire une archive fusionne ses projets avec ceux de la liste : un projet dont le nom
+    // est déjà pris fait l'objet d'une question (garder le mien, prendre celui de
+    // l'archive, ou garder les deux).
+    // ------------------------------------------------------------------
+    const FORMAT_ARCHIVE = 'archive-pythonerie';
+    const dateLisible = (secondes) => secondes ? new Date(secondes * 1000).toLocaleString('fr', { dateStyle: 'long', timeStyle: 'short' }) : 'date inconnue';
+
+    async function exporteArchive() {
+        if (!exigeÉlève('Pour archiver tes projets, dis d\'abord qui tu es.')) return;
+        // le projet ouvert rejoint d'abord la liste, avec ses derniers changements
+        if (!(await rangeProjetOuvert())) return;
+        await rafraîchitListeProjets();
+        if (!listeProjets.length) { écritConsole('— Tu n\'as encore aucun projet à archiver.', 'info'); return; }
+        const u = nomCourant();
+        const fiche = { format: FORMAT_ARCHIVE, version: 1, utilisateur: u, créé: new Date().toISOString(), projets: [] };
+        const entrées = [];
+        const pris = new Set();
+        try {
+            for (const p of listeProjets) {
+                const projet = await FichiersProjet.litProjet(u, p.nom);
+                if (!projet) continue;
+                let fichier = pourFichier(p.nom) || 'projet';
+                while (pris.has(fichier.toLowerCase())) fichier += '_';
+                pris.add(fichier.toLowerCase());
+                const zip = await archiveProjet({ programmes: projet.programmes || {}, dossiers: projet.dossiers || [],
+                    onglets: projet.onglets || [''], fichiers: projet.fichiers || [] }, p.nom);
+                entrées.push({ nom: 'projets/' + fichier + '.zip', octets: new Uint8Array(await zip.arrayBuffer()) });
+                fiche.projets.push({ nom: p.nom, modifié: projet.modifié, fichier: 'projets/' + fichier + '.zip' });
+            }
+        } catch (e) { écritConsole('Impossible de préparer l\'archive : ' + e.message, 'erreur'); return; }
+        const archive = await Zip.écrit([{ nom: 'archive.json', octets: new TextEncoder().encode(JSON.stringify(fiche, null, 1) + '\n') },
+            { nom: 'projets/' }, ...entrées]);
+        const nom = nomFichierProjet('Mes projets') + '.zip';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(archive);
+        a.download = nom;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        écritConsole('— ' + pluriel(fiche.projets.length, 'projet') + ' archivé' + (fiche.projets.length > 1 ? 's' : '') + ' dans « ' + nom
+            + ' » (' + fiche.projets.map(p => p.nom).join(', ') + ') : le fichier est dans le dossier Téléchargements.', 'info');
+    }
+
+    // Vrai si ce fichier .zip est une archive de projets (il contient archive.json)
+    async function estArchive(fichier) {
+        try {
+            const entrées = await Zip.lit(await fichier.arrayBuffer(), { garde: (n) => n === 'archive.json' });
+            return entrées.some(e => e.nom === 'archive.json' && e.octets);
+        } catch (e) { return false; }
+    }
+
+    // Un nom pris : garder le mien, prendre celui de l'archive, ou les deux. Renvoie
+    // { choix: 'mien' | 'archive' | 'deux' | null, pourTous }
+    async function choisitDoublon(nom, mien, archivé, libre, autres) {
+        let caseTous = null;
+        if (autres > 0) {
+            const étiquette = document.createElement('label');
+            étiquette.className = 'case-dialogue';
+            caseTous = document.createElement('input');
+            caseTous.type = 'checkbox';
+            étiquette.append(caseTous, document.createTextNode(' Faire de même pour ' + (autres > 1 ? 'les ' + autres + ' autres projets' : 'l\'autre projet') + ' en double'));
+            caseTous = étiquette;
+        }
+        const plusRécent = (archivé || 0) > (mien || 0) ? ' (le plus récent)' : '';
+        const choix = await dialogue('« ' + nom + ' » est déjà dans tes projets',
+            'Ton projet : modifié le ' + dateLisible(mien) + '\nCelui de l\'archive : modifié le ' + dateLisible(archivé) + plusRécent + '\n',
+            [{ texte: 'Garder le mien', valeur: 'mien', genre: 'principal' },
+             { texte: 'Prendre celui de l\'archive' + plusRécent, valeur: 'archive' },
+             { texte: 'Garder les deux (« ' + libre + ' » pour celui de l\'archive)', valeur: 'deux' },
+             { texte: 'Arrêter là', valeur: null }], caseTous);
+        return { choix, pourTous: !!(caseTous && caseTous.querySelector('input').checked) };
+    }
+
+    async function chargeArchive(fichier) {
+        if (!exigeÉlève('Pour charger une archive, dis d\'abord qui tu es.')) return;
+        let entrées, fiche = null;
+        try {
+            entrées = await Zip.lit(await fichier.arrayBuffer(), { garde: (n) => n === 'archive.json' || /^projets\/[^/]+\.(zip|json)$/i.test(n) });
+            const f = entrées.find(e => e.nom === 'archive.json' && e.octets);
+            if (f) fiche = JSON.parse(nfc(new TextDecoder().decode(f.octets)));
+        } catch (e) { fiche = null; }
+        if (!fiche || fiche.format !== FORMAT_ARCHIVE) {
+            alert('« ' + fichier.name + ' » n\'est pas une archive de projets de la Pythonerie.');
+            return;
+        }
+        // le projet ouvert rejoint d'abord la liste : il est comparé comme les autres
+        if (!(await rangeProjetOuvert())) return;
+        await rafraîchitListeProjets();
+        const u = nomCourant();
+        const infos = new Map((Array.isArray(fiche.projets) ? fiche.projets : []).map(p => [nfc(String(p.fichier || '')), p]));
+        // les projets de l'archive, lus d'abord (pour savoir combien sont en double)
+        const lus = [], erreurs = [];
+        for (const e of entrées) {
+            if (!e.octets || e.nom === 'archive.json') continue;
+            try {
+                const lu = /\.json$/i.test(e.nom) ? await lisProjetJSON(new TextDecoder().decode(e.octets)) : await lisProjet(e.octets);
+                const info = infos.get(e.nom) || {};
+                const nom = nfc(String(info.nom || lu.nom || '')).trim() || e.nom.replace(/^projets\//, '').replace(/\.(zip|json)$/i, '');
+                lus.push({ nom: nom === SANS_NOM ? 'Projet de l\'archive' : nom, modifié: info.modifié, instant: lu.instant });
+            } catch (err) { erreurs.push(e.nom.replace(/^projets\//, '')); }
+        }
+        const pris = new Set(listeProjets.map(p => p.nom));
+        const datesMiennes = new Map(listeProjets.map(p => [p.nom, p.modifié]));
+        let restants = lus.filter(p => pris.has(p.nom)).length;
+        const bilan = { ajoutés: [], remplacés: [], gardés: [], doubles: [] };
+        let pourTous = null, arrêt = false, ouvertRemplacé = null;
+        for (const p of lus) {
+            if (arrêt) break;
+            let nom = p.nom, choix = 'ajouter';
+            if (pris.has(nom)) {
+                restants--;
+                let libre = nom;
+                for (let i = 2; pris.has(libre); i++) libre = nom + ' ' + i;
+                if (pourTous) choix = pourTous;
+                else {
+                    const r = await choisitDoublon(nom, datesMiennes.get(nom), p.modifié, libre, restants);
+                    if (!r.choix) { arrêt = true; break; }
+                    choix = r.choix;
+                    if (r.pourTous) pourTous = r.choix;
+                }
+                if (choix === 'deux') nom = libre;
+            }
+            if (choix === 'mien') { bilan.gardés.push(nom); continue; }
+            try {
+                await FichiersProjet.gardeProjet(u, nom, p.instant);
+                pris.add(nom);
+                (choix === 'archive' ? bilan.remplacés : choix === 'deux' ? bilan.doubles : bilan.ajoutés).push(nom);
+                if (choix === 'archive' && nom === nomDuProjet) ouvertRemplacé = p.instant;
+            } catch (e) { erreurs.push(nom + ' (' + e.message + ')'); }
+        }
+        // le projet ouvert a été remplacé par celui de l'archive : l'écran le montre
+        if (ouvertRemplacé) {
+            try { await remplaceTout(ouvertRemplacé); } catch (e) { écritConsole('Impossible de rouvrir « ' + nomDuProjet + ' » : ' + e.message, 'erreur'); }
+        }
+        await rafraîchitListeProjets();
+        const parties = [];
+        if (bilan.ajoutés.length) parties.push(pluriel(bilan.ajoutés.length, 'projet') + ' ajouté' + (bilan.ajoutés.length > 1 ? 's' : '') + ' (' + bilan.ajoutés.join(', ') + ')');
+        if (bilan.remplacés.length) parties.push(bilan.remplacés.length + ' remplacé' + (bilan.remplacés.length > 1 ? 's' : '') + ' par celui de l\'archive (' + bilan.remplacés.join(', ') + ')');
+        if (bilan.doubles.length) parties.push(bilan.doubles.length + ' gardé' + (bilan.doubles.length > 1 ? 's' : '') + ' en double (' + bilan.doubles.join(', ') + ')');
+        if (bilan.gardés.length) parties.push(bilan.gardés.length + ' laissé' + (bilan.gardés.length > 1 ? 's' : '') + ' tel' + (bilan.gardés.length > 1 ? 's' : '') + ' quel' + (bilan.gardés.length > 1 ? 's' : '') + ' (' + bilan.gardés.join(', ') + ')');
+        écritConsole('— Archive « ' + fichier.name + ' » : ' + (parties.join(' ; ') || 'rien n\'a changé') + (arrêt ? ' ; arrêté avant la fin' : '') + '.', 'info');
+        if (erreurs.length) écritConsole('Illisible' + (erreurs.length > 1 ? 's' : '') + ' dans l\'archive : ' + erreurs.join(', ') + '.', 'erreur');
     }
 
     // Le projet lu remplace le projet ouvert, qui est d'abord rangé dans la liste. S'il porte
@@ -3190,6 +3340,13 @@ const Pythonerie = (function () {
             if (f) chargeProjetFichier(f);
         });
         $('btnColleProjet').addEventListener('click', colleProjet);
+        $('btnExporteArchive').addEventListener('click', exporteArchive);
+        $('btnChargeArchive').addEventListener('click', () => $('fichierArchive').click());
+        $('fichierArchive').addEventListener('change', (ev) => {
+            const f = ev.target.files[0];
+            ev.target.value = '';
+            if (f) chargeArchive(f);
+        });
         $('btnAnnuleProjet').addEventListener('click', revientProjetPrécédent);
         $('btnUtilisateurUnique').addEventListener('click', basculeUtilisateurUnique);
         $('fichierImport').addEventListener('change', (ev) => { importe(ev.target.files); ev.target.value = ''; });

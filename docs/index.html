@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.10.18.09">
+    <link rel="stylesheet" href="style.css?v=2026.10.10.19.29">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.18.09</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.10.19.29</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -79,12 +79,17 @@
                                 <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Revenir au projet précédent</button>
                                 <button id="btnSupprimeProjet" class="menu-item danger" role="menuitem">🗑️ Supprimer le projet…</button>
                                 <div class="menu-séparateur"></div>
+                                <div class="menu-section">Tous mes projets</div>
+                                <button id="btnExporteArchive" class="menu-item" role="menuitem">🗄️ Archiver tous mes projets</button>
+                                <button id="btnChargeArchive" class="menu-item" role="menuitem">🗄️ Charger une archive…</button>
+                                <div class="menu-séparateur"></div>
                                 <div class="menu-section">Élèves</div>
                                 <button id="btnUtilisateurUnique" class="menu-item" role="menuitemcheckbox" aria-checked="true" title="Décocher pour que chaque élève tape son nom (ordinateur partagé)">☑ Utilisateur unique (sans connexion)</button>
                             </div>
                         </span>
                     <input type="file" id="fichierImport" accept=".pyf,.py,.png,.jpg,.jpeg,.gif,.svg,.webp,.wav,.mp3,.ogg,.txt,.csv,.tsv,.json,.md,.zip" multiple hidden>
                     <input type="file" id="fichierProjet" accept=".zip,.json,application/zip,application/json" hidden>
+                    <input type="file" id="fichierArchive" accept=".zip,application/zip" hidden>
                     <input type="file" id="fichierRépertoire" multiple hidden>
                     <input type="file" id="fichierDonnées" hidden>
                 </div>
@@ -238,6 +243,7 @@
                     les projets gardés dans ce navigateur (par utilisateur, un par nom) : on en ouvre un, on en supprime un (🗑).
                     Le projet que l'on quitte y est rangé tout seul ; seul un projet sans nom fait poser une question.
                     L'icône ⧉ d'un programme ou d'un fichier le copie ; dans un autre projet, le bandeau 📋 <b>Coller</b> (ou Cmd/Ctrl+V) le recopie.
+                    <b>Archiver tous mes projets</b> les met dans un seul fichier ; <b>Charger une archive</b> les fusionne avec la liste (pour un nom déjà pris, on choisit lequel garder, ou les deux).
                     Dans le menu <b>☰</b> : <b>Nouveau projet</b> commence un projet vide avec un nom ;
                     <b>Renommer le projet</b> change son nom ; <b>Supprimer le projet</b> l'efface ;
                     <b>Revenir au projet précédent</b> rouvre le dernier projet quitté ; <b>Exporter le projet</b> l'enregistre dans un fichier
@@ -458,7 +464,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.10.18.09';
+                return répertoire + fichier + '?v=2026.10.10.19.29';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -466,14 +472,14 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.10.18.09"></script>
-    <script src="js/zip.js?v=2026.10.10.18.09"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.10.18.09"></script>
-    <script src="js/canevas.js?v=2026.10.10.18.09"></script>
-    <script src="js/pythonerie.js?v=2026.10.10.18.09"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.10.19.29"></script>
+    <script src="js/zip.js?v=2026.10.10.19.29"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.10.19.29"></script>
+    <script src="js/canevas.js?v=2026.10.10.19.29"></script>
+    <script src="js/pythonerie.js?v=2026.10.10.19.29"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.10.18.09"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.10.18.09"></script>
+    <script src="lispe/lispe.js?v=2026.10.10.19.29"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.10.19.29"></script>
 </body>
 
 </html>

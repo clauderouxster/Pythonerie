@@ -4,6 +4,7 @@
 # Sur une tablette : touche l'écran du côté où le serpent doit tourner.
 # (Clique d'abord dans le canevas pour que le clavier fonctionne,
 # ou passe en plein écran.)
+# Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
 # Le terrain : une grille de 20 cases sur 15, chaque case mesure 40 points
 CASE = 40
@@ -19,10 +20,54 @@ direction = [1, 0]        # vers la droite
 prochaine = [1, 0]        # la direction choisie au clavier, prise au pas suivant
 pomme = [12, 7]
 score = 0
-meilleur = 0
 lenteur = 8               # le serpent avance toutes les "lenteur" images
 compteur = 0
 état = "attente"          # "attente", "jeu" ou "perdu"
+
+# --- Le meilleur score ---
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
+# Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
+# le record ne vaut alors que le temps de l'exécution.
+JEU = "Serpent"
+records_rangés = Vrai     # Faux si don0 contient autre chose que les records
+
+# le dictionnaire des records ({} si don0 est vide)
+fonction lit_records():
+    t = prend_données("don0")
+    si t == "":
+        retourne {}
+    d = 0
+    essaie:
+        d = analyse_json(t)
+    sauf(e):
+        d = 0
+    si "dictionary" dans chaîne(type_de(d)):
+        retourne d
+    records_rangés =: Faux
+    retourne {}
+
+fonction record_du_jeu():
+    d = lit_records()
+    si JEU dans d:
+        retourne d[JEU]
+    retourne 0
+
+fonction range_record(valeur):
+    d = lit_records()
+    si records_rangés:
+        d[JEU] = valeur
+        range_données("don0", en_json(d))
+
+record = record_du_jeu()
+nouveau_record = Faux
+
+# Appelée quand la partie est finie : un meilleur score devient le record
+fonction fin_de_partie():
+    si score > record:
+        record =: score
+        nouveau_record =: Vrai
+        range_record(score)
 
 fonction sur_le_serpent(x, y):
     pour morceau dans serpent:
@@ -45,6 +90,7 @@ fonction recommence():
     prochaine =: [1, 0]
     score =: 0
     lenteur =: 8
+    nouveau_record =: Faux
     état =: "jeu"
     place_pomme()
 
@@ -91,7 +137,7 @@ fonction avance():
     # Le bord, ou la queue : c'est perdu
     si x < 0 ou x >= COLONNES ou y < 0 ou y >= LIGNES ou sur_le_serpent(x, y):
         état =: "perdu"
-        meilleur =: maximum(meilleur, score)
+        fin_de_partie()
         joue_son(perdu)
         retourne Rien
     serpent.ajoute([x, y])
@@ -134,7 +180,7 @@ fonction dessine():
     couleur("blanc")
     taille_texte(18)
     texte(10, 20, f"Pommes : {score}")
-    texte(largeur() - 170, 20, f"Meilleur : {meilleur}")
+    texte(largeur() - 170, 20, f"Meilleur : {record}")
     taille_texte(26)
     si état == "attente":
         texte(150, 400, "Une flèche ou Espace pour commencer")
@@ -145,6 +191,9 @@ fonction dessine():
             mot = "pomme"
         texte(200, 260, f"Perdu ! Tu as mangé {score} {mot}.")
         texte(210, 310, "Une flèche ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 360, "Nouveau record !")
 
 fonction image():
     si état == "jeu":

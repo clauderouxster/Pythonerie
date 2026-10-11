@@ -85,6 +85,9 @@ const PYTHONERIE_FONCTIONS = {
     'canevas': 'canevas(largeur, hauteur) — change la taille du canevas (800 × 600 sinon)',
     'largeur': 'largeur() — largeur du canevas (800 au départ)',
     'hauteur': 'hauteur() — hauteur du canevas (600 au départ)',
+    'couleur_pixel': 'couleur_pixel(x, y) — [rouge, vert, bleu, opacité] du point (0 à 255)',
+    'pixels': 'pixels(x, y, largeur, hauteur) — les points d\'un rectangle, 4 valeurs par point',
+    'pose_pixels': 'pose_pixels(x, y, largeur, hauteur, valeurs) — redessine les points',
     // Tortue
     'avance': 'avance(distance) — la tortue avance',
     'recule': 'recule(distance) — la tortue recule',
@@ -99,6 +102,7 @@ const PYTHONERIE_FONCTIONS = {
     'cache_tortue': 'cache_tortue()',
     'position_x': 'position_x() — abscisse de la tortue',
     'position_y': 'position_y() — ordonnée de la tortue',
+    'position': 'position() — [x, y] de la tortue',
     'cap': 'cap() — direction de la tortue en degrés',
     // Animation
     'animer': 'animer(fonction, délai) — appelle la fonction toutes les "délai" millisecondes',

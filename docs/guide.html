@@ -888,6 +888,14 @@ affiche("Regarde les onglets Don0 et Don1 (bouton ▦ Données).")</pre></div>
                 <div class="exemple"><pre data-essai>range_données("don0", "pomme")
 fruit = prend_données("don0")
 affiche("Dans Don0, il y a :", fruit)</pre></div>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">🏆 Le meilleur score des jeux</p>
+                    <p>Les quatre jeux des exemples (casse-briques, serpent, envahisseurs, astéroïdes) gardent leur record dans
+                        <b>Don0</b>, avec <code>prend_données</code> et <code>range_données</code>. Ils y écrivent un dictionnaire en JSON,
+                        qui donne le record de chaque jeu&nbsp;: <code>{"Astéroïdes": 1250, "Serpent": 18}</code>. Plusieurs jeux peuvent ainsi
+                        partager le même projet. Si Don0 contient déjà autre chose (tes propres données), les jeux n'y touchent pas&nbsp;:
+                        leur record ne dure alors que le temps de la partie. Regarde la partie «&nbsp;Le meilleur score&nbsp;» au début de chaque jeu.</p>
+                </div>
             </section>
 
             <!-- ================================================================ -->
@@ -969,6 +977,23 @@ affiche(double(21))       # affiche 42</pre></div>
                         dans un seul fichier. Sur un autre ordinateur, <b>🗄️ Charger une archive…</b> les remet dans ta liste. Si tu as déjà un projet
                         du même nom, la Pythonerie te demande lequel garder&nbsp;: le tien, celui de l'archive, ou les deux.</li>
                 </ul>
+                <h3>🌐 Créer une application Web</h3>
+                <p>Ton jeu est prêt et tu veux le montrer à tout le monde, même à quelqu'un qui ne connaît pas la Pythonerie&nbsp;?
+                    Dans le menu <b>☰</b> (ou sous le nom du projet), choisis <b>🌐 Créer une application Web…</b>.
+                    Si ton projet a plusieurs programmes, la Pythonerie te demande lequel est le <b>programme principal</b>&nbsp;:
+                    celui qui se lance. Les programmes qu'il importe, tes images, tes sons et tes données partent avec lui.</p>
+                <p>Tu reçois un fichier comme <code>Mon_jeu_application_web.zip</code>, dans le dossier <b>Téléchargements</b>.
+                    Une fois décompressé, c'est un petit site&nbsp;: une page avec ton canevas, un bouton <b>▶ Lancer</b>,
+                    et la console si ton programme y écrit ou pose des questions. Il n'y a ni éditeur ni code à voir&nbsp;:
+                    seulement ton programme qui tourne.</p>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Pour l'ouvrir</p>
+                    <p>Un navigateur refuse d'ouvrir la page d'un double-clic&nbsp;: elle doit être sur un site Web.
+                        Demande à ton enseignant de la mettre sur le site de l'école, ou lis le fichier <code>LISEZMOI.txt</code>
+                        du dossier, qui explique comment faire sur ton ordinateur.</p>
+                    <p>Ton programme contient une erreur&nbsp;? La Pythonerie te la montre dans la console et ne crée pas l'application&nbsp;:
+                        corrige-la d'abord.</p>
+                </div>
             </section>
 
             <!-- ================================================================ -->
@@ -1139,6 +1164,38 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur et la hauteur du canevas (800 et 600 au départ)</td><td class="ex"><code>largeur()</code></td></tr>
                 </table>
 
+                <h3 id="g-pixels">Les pixels</h3>
+                <p>Le dessin est fait de petits points, les <em>pixels</em>. Chaque point a quatre valeurs, de 0 à 255&nbsp;:
+                    le rouge, le vert, le bleu et l'opacité (255 = bien visible, 0 = transparent). On peut lire ces valeurs,
+                    les changer, puis redessiner les points.</p>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>couleur_pixel(x, y)</code></td><td>la couleur du point (x, y), en liste [rouge, vert, bleu, opacité]&nbsp;; un point hors du canevas donne [0, 0, 0, 0]</td><td class="ex"><code>couleur_pixel(100, 50)</code></td></tr>
+                    <tr><td><code>pixels(x, y, largeur, hauteur)</code></td><td>les points d'un rectangle, ligne après ligne, quatre valeurs par point&nbsp;: une liste de largeur × hauteur × 4 nombres</td><td class="ex"><code>pixels(0, 0, 100, 100)</code></td></tr>
+                    <tr><td><code>pose_pixels(x, y, largeur, hauteur, valeurs)</code></td><td>redessine un rectangle avec ces valeurs (même rangement que <code>pixels</code>)</td><td class="ex"><code>pose_pixels(200, 0, 100, 100, p)</code></td></tr>
+                </table>
+                <p>Dans la liste rendue par <code>pixels</code>, le point qui est à la colonne <code>c</code> et à la ligne <code>l</code>
+                    du rectangle commence à la position <code>(l * largeur + c) * 4</code>. Ce programme copie un carré en noir et blanc
+                    à côté de l'original&nbsp;:</p>
+                <div class="exemple"><pre data-essai>couleur("rouge")
+disque(50, 50, 40)
+p = pixels(0, 0, 100, 100)
+pour i dans intervalle(0, longueur(p), 4):
+    gris = (p[i] + p[i + 1] + p[i + 2]) / 3
+    p[i] = gris
+    p[i + 1] = gris
+    p[i + 2] = gris
+pose_pixels(120, 0, 100, 100, p)</pre></div>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Astuce</p>
+                    <p>Pour savoir si un point est d'une certaine couleur (un mur dans un labyrinthe, par exemple), compare
+                        <code>couleur_pixel(x, y)</code> avec la couleur lue sur un point que tu as dessiné toi-même&nbsp;: les noms
+                        de couleur ne donnent pas toujours 0 ou 255 (le <code>"rouge"</code> de la Pythonerie vaut [229, 57, 53, 255]).
+                        Avec <code>rgb(255, 0, 0)</code>, tu sais exactement ce que tu obtiens.</p>
+                    <p>Lire des pixels est rapide. Les reposer l'est moins&nbsp;: tout le canevas d'un coup prend presque une seconde.
+                        Travaille plutôt sur des rectangles de taille moyenne, et pas à chaque image d'une animation.</p>
+                </div>
+
                 <h3 id="g-tortue">La tortue</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
@@ -1154,6 +1211,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>cache_tortue()</code></td><td>rend la tortue invisible</td><td class="ex"><code>cache_tortue()</code></td></tr>
                     <tr><td><code>montre_tortue()</code></td><td>rend la tortue visible</td><td class="ex"><code>montre_tortue()</code></td></tr>
                     <tr><td><code>position_x()</code>, <code>position_y()</code></td><td>où se trouve la tortue</td><td class="ex"><code>position_x()</code></td></tr>
+                    <tr><td><code>position()</code></td><td>où se trouve la tortue, en liste [x, y]</td><td class="ex"><code>position()[0]</code></td></tr>
                     <tr><td><code>cap()</code></td><td>dans quelle direction regarde la tortue (en degrés)</td><td class="ex"><code>cap()</code></td></tr>
                 </table>
 

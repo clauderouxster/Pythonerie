@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!-- Application Web créée par la Pythonerie (menu ☰ : « Créer une application Web »).
+     Pour l'ouvrir, la page doit être servie par un serveur Web : voir LISEZMOI.txt. -->
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITRE}}</title>
+    <link rel="stylesheet" href="polices/polices.css">
+    <link rel="stylesheet" href="appli.css">
+</head>
+
+<body>
+    <header class="entête">
+        <h1>{{TITRE}}</h1>
+        <div class="boutons">
+            <button id="btnRecommencer" class="btn" disabled>↻ Recommencer</button>
+            <button id="btnArrêter" class="btn secondaire" disabled>■ Arrêter</button>
+            <button id="btnPleinÉcran" class="btn secondaire" title="Échap pour revenir">⛶ Plein écran</button>
+        </div>
+    </header>
+
+    <main class="page">
+        <div id="scène" class="scène">
+            <div class="cadre-canevas">
+                <canvas id="canevas"></canvas>
+                <canvas id="coucheTortue"></canvas>
+                <!-- le premier clic autorise le son et donne le clavier au programme -->
+                <button id="btnLancer" class="lancer" disabled>Chargement…</button>
+            </div>
+        </div>
+        <div id="zoneConsole" class="zone-console" hidden>
+            <div id="console" class="console"></div>
+            <div id="saisieQuestion" class="saisie-console" hidden>
+                <span class="invite" aria-hidden="true">?</span>
+                <input id="réponse" type="text" autocomplete="off" spellcheck="false"
+                    placeholder="Ta réponse, puis Entrée (Échap : arrêter le programme)">
+            </div>
+        </div>
+        <input type="file" id="fichierDonnées" hidden>
+    </main>
+
+    <footer class="pied">Créé avec la Pythonerie</footer>
+
+    <script>
+        // Module de LispE (Emscripten) : la sortie de affiche() arrive dans la console
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function (texte) {
+                if (arguments.length > 1) texte = Array.prototype.slice.call(arguments).join(' ');
+                if (window.Pythonerie) window.Pythonerie.sortie(texte); else console.log(texte);
+            },
+            printErr: function (texte) {
+                if (arguments.length > 1) texte = Array.prototype.slice.call(arguments).join(' ');
+                console.error(texte);
+            },
+            onRuntimeInitialized: function () {
+                if (window.Pythonerie) window.Pythonerie.lispePrêt();
+                else window.addEventListener('load', function () { window.Pythonerie.lispePrêt(); });
+            }
+        };
+    </script>
+    <script src="js/erreurs.js"></script>
+    <script src="programme.js"></script>
+    <script src="js/canevas.js"></script>
+    <script src="appli.js"></script>
+    <script src="lispe/lispe.js"></script>
+    <script src="lispe/lispe_functions.js"></script>
+</body>
+
+</html>

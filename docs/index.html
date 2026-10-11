@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.11.13.28">
+    <link rel="stylesheet" href="style.css?v=2026.10.11.17.28">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.11.13.28</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.11.17.28</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -74,6 +74,7 @@
                                 <button id="btnNouveauProjet" class="menu-item" role="menuitem">🆕 Nouveau projet…</button>
                                 <button id="btnRenommeProjet" class="menu-item" role="menuitem">✏️ Renommer le projet…</button>
                                 <button id="btnExporteProjet" class="menu-item" role="menuitem">📦 Exporter le projet</button>
+                                <button id="btnApplicationWeb" class="menu-item" role="menuitem" title="Un dossier qui fait tourner un programme du projet sans la Pythonerie, à mettre sur un site Web">🌐 Créer une application Web…</button>
                                 <button id="btnChargeProjet" class="menu-item" role="menuitem">📥 Charger un projet (.zip, .json)…</button>
                                 <button id="btnColleProjet" class="menu-item" role="menuitem">📋 Coller un projet (JSON)…</button>
                                 <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Revenir au projet précédent</button>
@@ -250,6 +251,8 @@
                     <code>nom_du_projet_aaaa_mm_jj_hh_MM.zip</code> (dossier Téléchargements), avec le nom de l'élève en mode plusieurs élèves
                     (<code>nom_du_projet_élève_aaaa_mm_jj_hh_MM.zip</code>) ; un projet sans nom en reçoit un avant de partir.
                     Ce fichier zip contient les programmes, les onglets de données et les répertoires images, sons et données.
+                    <b>Créer une application Web</b> fait d'un programme du projet (on choisit le principal s'il y en a plusieurs) un petit site
+                    autonome, sans éditeur&nbsp;: un zip à décompresser, puis à mettre sur un site Web (voir son <code>LISEZMOI.txt</code>).
                     Avec <code>serveur.py</code>, une copie est aussi conservée sur le serveur, pour l'enseignant.
                     <b>Charger un projet</b> (un .zip, ou un .json) l'ouvre à la place du projet en cours.
                     Les listes <b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne, proposent le matériel de l'enseignant et des exemples ;
@@ -464,7 +467,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.11.13.28';
+                return répertoire + fichier + '?v=2026.10.11.17.28';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -472,14 +475,15 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.11.13.28"></script>
-    <script src="js/zip.js?v=2026.10.11.13.28"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.11.13.28"></script>
-    <script src="js/canevas.js?v=2026.10.11.13.28"></script>
-    <script src="js/pythonerie.js?v=2026.10.11.13.28"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.11.17.28"></script>
+    <script src="js/zip.js?v=2026.10.11.17.28"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.11.17.28"></script>
+    <script src="js/erreurs.js?v=2026.10.11.17.28"></script>
+    <script src="js/canevas.js?v=2026.10.11.17.28"></script>
+    <script src="js/pythonerie.js?v=2026.10.11.17.28"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.11.13.28"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.11.13.28"></script>
+    <script src="lispe/lispe.js?v=2026.10.11.17.28"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.11.17.28"></script>
 </body>
 
 </html>

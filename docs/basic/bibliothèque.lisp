@@ -149,6 +149,25 @@
 (defun polygone (points) (evaljs (list "Pyt.polygone" (json points) false)) nil)
 (defun polygone_plein (points) (evaljs (list "Pyt.polygone" (json points) true)) nil)
 
+; Pixels : chaque point du dessin a quatre valeurs de 0 à 255 (rouge, vert, bleu, opacité).
+; couleur_pixel(x, y) : la couleur du point (x, y), en liste [rouge, vert, bleu, opacité]
+; pixels(x, y, l, h) : les points d'un rectangle, ligne après ligne, quatre valeurs par point
+; (une liste de l * h * 4 entiers) ; pose_pixels(x, y, l, h, valeurs) les redessine.
+; evaljs_li rend directement une liste d'entiers (integers_), sans passer par du texte.
+(defun couleur_pixel (x y)
+   (setq v (evaljs_li (list "Pyt.couleurPixel" x y)))
+   (_erreur_navigateur)
+   v)
+(defun pixels (x y l h)
+   (setq v (evaljs_li (list "Pyt.pixels" x y l h)))
+   (_erreur_navigateur)
+   v)
+; les valeurs sont passées en JSON, comme les points d'un polygone
+(defun pose_pixels (x y l h valeurs)
+   (evaljs (list "Pyt.posePixels" x y l h (json valeurs)))
+   (_erreur_navigateur)
+   nil)
+
 ; Texte
 (defun texte (x y message) (evaljs (list "Pyt.texte" x y (string message))) nil)
 (defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) nil)
@@ -176,6 +195,8 @@
 (defun position_x () (evaljs_d "Pyt.tortueX()"))
 (defun position_y () (evaljs_d "Pyt.tortueY()"))
 (defun cap () (evaljs_d "Pyt.tortueCap()"))
+; position() : [x, y], où se trouve la tortue (une liste de deux réels)
+(defun position () (evaljs_ld "[Pyt.tortueX(), Pyt.tortueY()]"))
 
 ;------------------------------------------------------------------
 ; Animation et événements
@@ -211,15 +232,11 @@
 (defmacro liste_hiérarchique (clef x y lignes arbre fonction) (block (evaljs (list "Pyt.listeHiérarchique" (string clef) x y lignes (json arbre) (string (quote fonction)))) nil))
 ; valeur_objet(clef) : la valeur actuelle d'un objet (texte, nombre, Vrai / Faux pour une case ou
 ; un radio, le chemin choisi pour une liste hiérarchique)
+; evaljs_j rend directement la valeur JavaScript : booléen, nombre, texte ou liste
 (defun valeur_objet (clef)
-   (setq v (evaljs (list "Pyt.valeurObjet" (string clef))))
+   (setq v (evaljs_j (list "Pyt.valeurObjet" (string clef))))
    (_erreur_navigateur)
-   (setq g (evaljs (list "Pyt.genreObjet" (string clef))))
-   (cond
-      ((or (= g "case") (= g "radio")) (= v "1"))
-      ((= g "glissière") (if (in v ".") (float v) (integer v)))
-      ((= g "arbre") (json_parse v))
-      (true v)))
+   v)
 ; change_objet(clef, valeur) : change la valeur d'un objet, sans appeler sa fonction
 (defun change_objet (clef valeur)
    (evaljs (list "Pyt.changeObjet" (string clef) (if (consp valeur) (json valeur) valeur)))

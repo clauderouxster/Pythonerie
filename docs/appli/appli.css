@@ -1,0 +1,215 @@
+/* =====================================================================
+   Application Web créée par la Pythonerie : le canevas et sa console.
+   Les règles des objets du canevas (saisie, bouton, case...) et de la console
+   sont reprises de style.css.
+   ===================================================================== */
+* { box-sizing: border-box; }
+
+:root {
+    --bg-primary: #f5f0e8;
+    --text-primary: #1a1a1a;
+    --text-muted: #8c8c8c;
+    --border-color: #d9d2c7;
+    --accent: #b35c2a;
+    --accent-hover: #9a4e23;
+    --console-bg: #1e1e2e;
+    --console-fg: #e5e7eb;
+    --console-erreur: #f87171;
+    --console-info: #9ca3af;
+    --console-commande: #fbbf24;
+    --radius-md: 8px;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.entête {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: min(100% - 32px, 900px);
+    margin: 12px auto 8px;
+}
+.entête h1 { margin: 0; font-size: 20px; }
+.boutons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    cursor: pointer;
+}
+.btn:hover:not(:disabled) { background: var(--accent-hover); }
+.btn.secondaire { background: #ffffff; color: var(--text-primary); border-color: var(--border-color); }
+.btn.secondaire:hover:not(:disabled) { background: #eeeeee; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(100% - 32px, 900px);
+    margin: 0 auto;
+    flex: 1;
+}
+
+/* Le canevas : canevas.js lui donne ses proportions (aspect-ratio et --ratio) */
+.cadre-canevas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    container-type: inline-size;
+}
+.cadre-canevas canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#coucheTortue { cursor: crosshair; touch-action: none; }
+
+.lancer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.lancer:hover:not(:disabled) { background: var(--accent-hover); }
+.lancer:disabled { background: #9a9a9a; cursor: default; }
+.lancer[hidden] { display: none; }
+
+/* Plein écran : le canevas garde ses proportions et prend la plus grande taille possible */
+.scène:fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: #101010;
+}
+.scène:fullscreen .cadre-canevas {
+    flex: none;
+    width: min(100%, calc((100vh - 24px) * var(--ratio, 1.3333)));
+    border-color: #333;
+}
+
+/* Les objets du canevas (repris de style.css) */
+.saisie-canevas {
+    position: absolute;
+    z-index: 2;
+    box-sizing: border-box;
+    padding: 0.25em 0.45em;
+    border: 1px solid #8a8a8a;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.2;
+}
+.saisie-canevas:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+.objet-canevas { position: absolute; z-index: 2; box-sizing: border-box; margin: 0; }
+.édition-canevas { resize: none; }
+.bouton-canevas {
+    padding: 0.3em 0.8em;
+    border: 1px solid #8a8a8a;
+    border-radius: 6px;
+    background: #f4f4f4;
+    color: #1a1a1a;
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.bouton-canevas:hover { background: #e6e6e6; }
+.bouton-canevas:active { background: #d6d6d6; }
+.coche-canevas { display: flex; align-items: center; gap: 0.35em; white-space: nowrap; line-height: 1.2; cursor: pointer; user-select: none; }
+.coche-canevas input { width: 1em; height: 1em; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.glissière-canevas { height: 1.4em; accent-color: var(--accent); cursor: pointer; }
+.déroulante-canevas { padding: 0.2em 0.3em; border: 1px solid #8a8a8a; border-radius: 4px; background: #ffffff; color: #1a1a1a; cursor: pointer; }
+.arbre-canevas {
+    overflow: auto;
+    padding: 0.2em 0;
+    border: 1px solid #8a8a8a;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #1a1a1a;
+    line-height: 1.45;
+    user-select: none;
+}
+.arbre-canevas details > summary { list-style: none; }
+.arbre-canevas details > summary::-webkit-details-marker { display: none; }
+.arbre-élément { padding: 0 0.5em; cursor: pointer; white-space: nowrap; }
+.arbre-élément:hover { background: #eeeeee; }
+.arbre-élément.choisi { background: var(--accent); color: #ffffff; }
+.arbre-branche::before { content: '▸'; display: inline-block; width: 1em; }
+details[open] > .arbre-branche::before { content: '▾'; }
+.arbre-canevas > .arbre-élément:not(.arbre-branche), .arbre-enfants > .arbre-élément:not(.arbre-branche) { padding-left: 1.5em; }
+.arbre-enfants { padding-left: 1em; }
+
+/* La console : elle n'apparaît que si le programme y écrit */
+.zone-console[hidden] { display: none; }
+.console {
+    max-height: 40vh;
+    overflow: auto;
+    padding: 10px 12px;
+    background: var(--console-bg);
+    color: var(--console-fg);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.zone-console:has(.saisie-console:not([hidden])) .console { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.console-ligne { white-space: pre-wrap; word-break: break-word; }
+.console-ligne.question { color: var(--console-fg); }
+.console-ligne .réponse-élève { color: var(--console-commande); }
+.console-ligne.erreur { color: var(--console-erreur); }
+.console-ligne.info { color: var(--console-info); font-style: italic; }
+.console-ligne .btn { margin-left: 8px; padding: 2px 10px; font-style: normal; font-family: 'Inter', sans-serif; }
+.saisie-console {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 8px;
+    background: var(--console-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+.saisie-console[hidden] { display: none; }
+.saisie-console .invite { color: var(--console-commande); font-weight: 700; user-select: none; }
+.saisie-console input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--console-fg);
+    font: inherit;
+}
+.saisie-console input::placeholder { color: var(--console-info); }
+.saisie-console:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
+
+.pied { margin: 16px auto 12px; color: var(--text-muted); font-size: 12px; }

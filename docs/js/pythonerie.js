@@ -87,63 +87,8 @@ const Pythonerie = (function () {
         $('console').innerHTML = '<div class="console-vide">Les messages de ton programme s\'afficheront ici.</div>';
     }
 
-    // Traduit et simplifie les messages d'erreur de LispE
-    const TRADUCTIONS = [
-        [/Unbound atom: '([^']*)'/i, '« $1 » est inconnu : variable pas encore définie ou nom mal orthographié ?'],
-        [/Unknown function: '?([^'\s]*)'?/i, 'La fonction « $1 » n\'existe pas'],
-        [/Division by zero/i, 'Division par zéro'],
-        [/Function '([^']*)' already declared/i, 'La fonction « $1 » est définie deux fois (dans deux programmes importés, peut-être ?)'],
-        [/Wrong number of arguments/i, 'Nombre d\'arguments incorrect'],
-        [/Wrong parameter description/i, 'Paramètres mal décrits'],
-        [/Index out of bounds|out of range/i, 'Indice en dehors de la liste'],
-        [/Unknown key/i, 'Clé absente du dictionnaire'],
-        [/Wrong type/i, 'Type de valeur inattendu'],
-        [/Expecting a list/i, 'Une liste était attendue'],
-        [/No more elements to traverse/i, 'Liste trop courte'],
-        // en WebAssembly, LispE arrête un while après 10 millions de tours (sinon la page gèlerait)
-        [/too many iterations in a while/i, 'une boucle « tantque » a fait plus de 10 millions de tours : elle ne s\'arrête sans doute jamais.\n   Vérifie que sa condition finit par devenir fausse (ou ajoute un « sortir »).']
-    ];
-
-    // Une ligne de la pile d'appels de LispE : "[12] (expression...)" ou "[-] (...)"
-    const LIGNE_PILE = /^\[(\d+|-)\] \(/;
-
-    function nettoieErreur(message) {
-        let m = String(message && message.message ? message.message : message);
-        // Dans le WebAssembly, le message est précédé de la pile d'appels : "[12] (expression...)"
-        // Pour une erreur levée exprès (lever, ou lit_fichier...), le haut de la pile est
-        // le « throw » lui-même, et parfois un « if » et les fonctions internes de la bibliothèque (_...) :
-        // inutile de les montrer, l'endroit utile est l'appel de l'élève qui suit.
-        // Le message brut : la pile, une ligne vide, puis le message. Une entrée de la pile
-        // peut contenir des sauts de ligne (une chaîne de données, par exemple) : on coupe
-        // à la dernière ligne vide.
-        let avant = m;
-        if (LIGNE_PILE.test(m.trim()) && m.includes('\n\n')) {
-            const coupure = m.lastIndexOf('\n\n');
-            avant = m.slice(0, coupure);
-            m = avant.split('\n').filter(l => LIGNE_PILE.test(l)).join('\n') + '\n' + m.slice(coupure + 2);
-        }
-        // l'entrée __root__ (tout le programme) n'indique pas d'endroit utile
-        const pile = avant.split('\n').filter(l => LIGNE_PILE.test(l) && !/^\[(\d+|-)\] \(__root__\b/.test(l));
-        const levée = pile.length > 0 && /^\[(\d+|-)\] \(throw\b/.test(pile[0]);
-        if (levée) {
-            while (pile.length && /^\[(\d+|-)\] \((throw\b|if\b|_)/.test(pile[0])) pile.shift();
-        }
-        m = m.split('\n').filter(l => l.trim() && !LIGNE_PILE.test(l)).join('\n');
-        m = m.replace(/^\s*(Error|Erreur)\s*:\s*/i, '');
-        let ligne = null;
-        const l = m.match(/line:\s*(\d+)/);
-        if (l) ligne = l[1];
-        m = m.replace(/,?\s*line:\s*\d+(\s*in:\s*[^,\n]*)?/g, '');
-        // une boucle sans fin : l'endroit donné par LispE ne désigne pas la boucle
-        if (/too many iterations in a while/i.test(m)) { ligne = null; pile.length = 0; }
-        for (const [motif, français] of TRADUCTIONS) {
-            if (motif.test(m)) { m = m.replace(motif, français); break; }
-        }
-        let texte = /^Erreur/.test(m.trim()) ? m.trim() : 'Erreur : ' + m.trim();
-        if (pile.length) texte += '\n   dans le code LispE : ' + pile[0].replace(LIGNE_PILE, '');
-        else if (ligne && !levée && !/ligne \d/.test(m)) texte += '\n   (ligne ' + ligne + ' du code LispE)';
-        return texte;
-    }
+    // Les messages d'erreur de LispE, traduits et simplifiés : voir js/erreurs.js
+    const { nettoieErreur, LIGNE_PILE } = ErreursLispE;
 
     // ------------------------------------------------------------------
     // LispE : chargement, compilation, exécution
@@ -1330,6 +1275,7 @@ const Pythonerie = (function () {
         éléments.push({ texte: '🆕 Nouveau projet…', action: nouveauProjet });
         éléments.push({ texte: '✏️ Renommer « ' + nomDuProjet + ' »…', action: renommeProjet });
         éléments.push({ texte: '📦 Exporter le projet', action: exporteProjet });
+        éléments.push({ texte: '🌐 Créer une application Web…', action: créeApplicationWeb });
         ouvreDéroulante($('nomProjet'), éléments);
     }
 
@@ -1408,6 +1354,136 @@ const Pythonerie = (function () {
         if (serveurProjets) await envoieProjet(nom, archive);
         try { await gardeProjetOuvert(instant); await rafraîchitListeProjets(); } catch (e) { /* rien */ }
         return nom + '.zip';
+    }
+
+    // ------------------------------------------------------------------
+    // Créer une application Web : un .zip avec tout ce qu'il faut pour faire tourner un
+    // programme du projet sans la Pythonerie. Le programme principal (choisi s'il y en a
+    // plusieurs) est assemblé comme pour ▶ Exécuter (programmes importés, onglets de données)
+    // et traduit en LispE dès maintenant : l'application n'a besoin ni du transpileur ni de
+    // l'éditeur, seulement de LispE, de bibliothèque.lisp, de canevas.js et d'appli/appli.js,
+    // qui joue le rôle de ce fichier. Les fichiers images, sons et données du projet suivent.
+    // ------------------------------------------------------------------
+    // Les polices du site (le texte du canevas est en Inter, comme dans la Pythonerie)
+    const POLICES = ['polices.css', 'Inter-400-latin.woff2', 'Inter-400-latin-ext.woff2',
+        'JetBrainsMono-400-latin.woff2', 'JetBrainsMono-400-latin-ext.woff2', 'OFL-Inter.txt', 'OFL-JetBrainsMono.txt'];
+
+    // Le programme principal : celui qui est ouvert s'il est le seul, sinon on le demande
+    async function choisitProgrammePrincipal() {
+        const liste = programmes.map(p => p.chemin).sort((a, b) => a.localeCompare(b, 'fr'));
+        if (liste.length === 1) return liste[0];
+        const choix = document.createElement('select');
+        choix.className = 'choix-programme';
+        liste.forEach(c => {
+            const o = document.createElement('option');
+            o.value = o.textContent = c;
+            if (c === courant) o.selected = true;
+            choix.appendChild(o);
+        });
+        const zone = document.createElement('div');
+        zone.style.marginTop = '10px';
+        zone.appendChild(choix);
+        const ok = await dialogue('Créer une application Web',
+            'Le projet a ' + liste.length + ' programmes. Lequel est le programme principal, celui que l\'application lancera ? '
+            + 'Les programmes qu\'il importe l\'accompagnent.',
+            [{ texte: '🌐 Créer l\'application', valeur: true, genre: 'principal' }, { texte: 'Annuler', valeur: null }], zone);
+        return ok ? choix.value : null;
+    }
+
+    async function créeApplicationWeb() {
+        if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return null; }
+        if (!exigeÉlève('Pour créer une application Web, il faut d\'abord dire qui tu es.')) return null;
+        if (!programmes.length) { écritConsole('— Ton projet est vide : il n\'y a pas de programme à transformer en application.', 'info'); return null; }
+        await sauvegarde();
+        const principal = await choisitProgrammePrincipal();
+        if (!principal) return null;
+
+        // le programme, comme pour ▶ Exécuter : programmes importés et onglets de données
+        let assemblé;
+        try { assemblé = assembleProgramme(codeDuProgramme(principal), principal, définitionsDonnées()); }
+        catch (e) { écritConsole('Impossible de créer l\'application : ' + e.message, 'erreur'); return null; }
+        const c = compile(assemblé.source);
+        if (c.erreur) {
+            écritConsole('Impossible de créer l\'application : le programme « ' + principal + ' » contient une erreur.', 'erreur');
+            écritConsole(placeLignes(c.erreur, assemblé.morceaux), 'erreur');
+            return null;
+        }
+
+        const titre = nomDuProjet !== SANS_NOM ? nomDuProjet : nomDe(principal);
+        const dossier = pourFichier(titre) || 'application';
+        const enc = new TextEncoder();
+        const lit = async (chemin, binaire) => {
+            const r = await fetch(chemin, { cache: 'no-cache' });
+            if (!r.ok) throw new Error('impossible de lire ' + chemin + ' (erreur ' + r.status + ')');
+            return binaire ? new Uint8Array(await r.arrayBuffer()) : nfc(await r.text());
+        };
+        const remplit = (modèle, valeurs) => modèle.replace(/\{\{(\w+)\}\}/g, (tout, clé) => clé in valeurs ? valeurs[clé] : tout);
+        const html = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        let archive, nbFichiers;
+        try {
+            const fichiers = FichiersProjet.liste();
+            const données = {};
+            fichiers.filter(f => f.chemin.startsWith('données/')).forEach(f => { données[f.chemin] = FichiersProjet.texte(f.chemin); });
+            const appli = {
+                titre, programme: principal,
+                lispe: c.lispe,
+                bibliothèque: sources.bibliothèque,
+                // les sons cités dans le code sont décodés avant de commencer (voir exécute)
+                sons: [...new Set([...assemblé.source.matchAll(/charge_son\s*\(\s*(["'])([^"'\n]+)\1\s*\)/g)].map(m => m[2]))],
+                fichiers: fichiers.map(f => f.chemin),
+                données,
+                onglets: onglets.slice()
+            };
+            const quand = new Date().toLocaleString('fr');
+            const programme = '// Le programme « ' + principal + ' » du projet « ' + titre + ' », traduit en LispE par la Pythonerie le '
+                + quand + '\nconst APPLI = ' + JSON.stringify(appli, null, 1) + ';\n';
+            const [page, style, moteur, lisezmoi, canevasJs, erreursJs, lispeJs, lispeFonctions, wasm, ...polices] = await Promise.all([
+                lit('appli/index.html'), lit('appli/appli.css'), lit('appli/appli.js'), lit('appli/LISEZMOI.txt'),
+                lit('js/canevas.js'), lit('js/erreurs.js'),
+                lit('lispe/lispe.js'), lit('lispe/lispe_functions.js'), lit('lispe/lispe.wasm', true),
+                ...POLICES.map(p => lit('vendor/fonts/' + p, true))
+            ]);
+            const d = dossier + '/';
+            const entrées = [
+                { nom: d },
+                { nom: d + 'index.html', octets: enc.encode(remplit(page, { TITRE: html(titre) })) },
+                { nom: d + 'appli.css', octets: enc.encode(style) },
+                { nom: d + 'appli.js', octets: enc.encode(moteur) },
+                { nom: d + 'programme.js', octets: enc.encode(programme) },
+                { nom: d + 'LISEZMOI.txt', octets: enc.encode(remplit(lisezmoi, { TITRE: titre, PROGRAMME: principal, DATE: quand })) },
+                { nom: d + 'js/' },
+                { nom: d + 'js/canevas.js', octets: enc.encode(canevasJs) },
+                { nom: d + 'js/erreurs.js', octets: enc.encode(erreursJs) },
+                { nom: d + 'lispe/' },
+                { nom: d + 'lispe/lispe.js', octets: enc.encode(lispeJs) },
+                { nom: d + 'lispe/lispe_functions.js', octets: enc.encode(lispeFonctions) },
+                { nom: d + 'lispe/lispe.wasm', octets: wasm },
+                { nom: d + 'polices/' }
+            ];
+            POLICES.forEach((p, i) => entrées.push({ nom: d + 'polices/' + p, octets: polices[i] }));
+            const répertoires = [...new Set(fichiers.map(f => f.chemin.split('/')[0]))].sort();
+            répertoires.forEach(r => entrées.push({ nom: d + r + '/' }));
+            for (const f of fichiers) entrées.push({ nom: d + f.chemin, octets: new Uint8Array(await f.blob.arrayBuffer()) });
+            nbFichiers = fichiers.length;
+            archive = await Zip.écrit(entrées);
+        } catch (e) {
+            écritConsole('Impossible de créer l\'application : ' + e.message, 'erreur');
+            return null;
+        }
+        const nom = dossier + '_application_web.zip';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(archive);
+        a.download = nom;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        const importés = assemblé.morceaux.filter(m => m.nom).length;
+        écritConsole('— Application Web « ' + titre + ' » créée dans « ' + nom + ' » (dossier Téléchargements) : le programme « ' + principal + ' »'
+            + (importés ? ' et ' + pluriel(importés, 'programme') + ' importé' + (importés > 1 ? 's' : '') : '')
+            + (nbFichiers ? ', ' + pluriel(nbFichiers, 'fichier') + ' du projet' : '') + '. '
+            + 'Décompresse-la et mets le dossier sur un site Web, ou lance un petit serveur dans le dossier (voir LISEZMOI.txt) : '
+            + 'un navigateur refuse d\'ouvrir index.html d\'un double-clic.', 'info');
+        return nom;
     }
 
     // Le fichier .zip du projet (voir plus haut)
@@ -3337,6 +3413,7 @@ const Pythonerie = (function () {
         // une première fois pour se connecter, une deuxième fois pour se déconnecter
         $('btnÉlève').addEventListener('click', () => { if (élève) déconnecte(); else demandeÉlève(); });
         $('btnExporteProjet').addEventListener('click', exporteProjet);
+        $('btnApplicationWeb').addEventListener('click', créeApplicationWeb);
         $('btnNouveauProjet').addEventListener('click', nouveauProjet);
         $('btnRenommeProjet').addEventListener('click', renommeProjet);
         $('nomProjet').addEventListener('click', (ev) => { ev.stopPropagation(); basculeDéroulante($('nomProjet'), ouvreMesProjets); });

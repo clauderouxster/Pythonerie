@@ -8,6 +8,7 @@
 # avancer, tant que la touche est tenue ; Espace pour tirer.
 # (Clique d'abord dans le canevas pour que le clavier fonctionne,
 # ou passe en plein écran.)
+# Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
 son_tir = charge_son("exemples/médias/tir.wav")
 son_explosion = charge_son("exemples/médias/explosion.wav")
@@ -44,6 +45,51 @@ tempo = 50
 attente_battement = 0
 note = 0
 état = "attente"      # "attente", "jeu" ou "perdu"
+
+# --- Le meilleur score ---
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
+# Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
+# le record ne vaut alors que le temps de l'exécution.
+JEU = "Astéroïdes"
+records_rangés = Vrai     # Faux si don0 contient autre chose que les records
+
+# le dictionnaire des records ({} si don0 est vide)
+fonction lit_records():
+    t = prend_données("don0")
+    si t == "":
+        retourne {}
+    d = 0
+    essaie:
+        d = analyse_json(t)
+    sauf(e):
+        d = 0
+    si "dictionary" dans chaîne(type_de(d)):
+        retourne d
+    records_rangés =: Faux
+    retourne {}
+
+fonction record_du_jeu():
+    d = lit_records()
+    si JEU dans d:
+        retourne d[JEU]
+    retourne 0
+
+fonction range_record(valeur):
+    d = lit_records()
+    si records_rangés:
+        d[JEU] = valeur
+        range_données("don0", en_json(d))
+
+record = record_du_jeu()
+nouveau_record = Faux
+
+# Appelée quand la partie est finie : un meilleur score devient le record
+fonction fin_de_partie():
+    si score > record:
+        record =: score
+        nouveau_record =: Vrai
+        range_record(score)
 
 # Ce qui sort d'un côté de l'écran revient de l'autre
 fonction enveloppe(v, maxi):
@@ -87,6 +133,7 @@ fonction commence():
     place_au_centre()
     invincible =: 120
     nouvelle_vague()
+    nouveau_record =: Faux
     état =: "jeu"
 
 # Tourner le nez du vaisseau d'un angle (en degrés, vers la droite)
@@ -212,6 +259,7 @@ fonction perd_une_vie():
     joue_son(son_boum)
     si vies <= 0:
         état =: "perdu"
+        fin_de_partie()
     sinon:
         place_au_centre()
         invincible =: 150
@@ -288,6 +336,8 @@ fonction dessine():
         texte(largeur() / 2 - 150, hauteur() / 2 - 80, "ASTÉROÏDES")
         taille_texte(22)
         texte(largeur() / 2 - 165, hauteur() / 2, "Clic ou Espace : commencer")
+        si record > 0:
+            texte(largeur() / 2 - 110, hauteur() / 2 + 50, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         taille_texte(30)
         couleur("rouge clair")
@@ -296,6 +346,11 @@ fonction dessine():
         taille_texte(22)
         texte(largeur() / 2 - 130, hauteur() / 2, f"Score : {score}, vague {vague}")
         texte(largeur() / 2 - 140, hauteur() / 2 + 40, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(largeur() / 2 - 95, hauteur() / 2 + 90, "Nouveau record !")
+        sinon:
+            texte(largeur() / 2 - 110, hauteur() / 2 + 90, f"Meilleur score : {record}")
 
 # --- La boucle du jeu ---
 

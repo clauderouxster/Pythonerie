@@ -1,0 +1,37 @@
+{{TITRE}} — une application Web créée avec la Pythonerie
+========================================================
+
+Ce dossier contient tout ce qu'il faut pour faire tourner le programme
+« {{PROGRAMME}} » sans la Pythonerie, dans n'importe quel navigateur récent.
+
+Pourquoi un serveur Web ?
+-------------------------
+Le programme tourne avec LispE, compilé en WebAssembly (lispe/lispe.wasm).
+Par sécurité, un navigateur refuse de charger ce fichier quand on ouvre
+index.html d'un double-clic : la page doit être servie par un serveur Web.
+
+Sur son ordinateur
+------------------
+Dans un terminal, placez-vous dans ce dossier, puis tapez :
+
+    python3 -m http.server 8000
+
+et ouvrez http://localhost:8000 dans le navigateur.
+(Sous Windows : « py -m http.server 8000 ».)
+
+Sur Internet
+------------
+Copiez le dossier tel quel sur n'importe quel hébergement de pages Web
+(GitHub Pages, l'espace Web de l'école...) : l'adresse de index.html suffit.
+
+Ce que contient le dossier
+--------------------------
+- index.html, appli.js, appli.css : la page de l'application ;
+- programme.js : le programme, déjà traduit en LispE, avec la bibliothèque
+  de la Pythonerie et les données du projet ;
+- js/canevas.js, js/erreurs.js : le dessin, les objets et les messages d'erreur ;
+- lispe/ : LispE en WebAssembly ;
+- polices/ : les polices Inter et JetBrains Mono (licence SIL Open Font License) ;
+- images/, sons/, données/ : les fichiers du projet, s'il en a.
+
+Créé le {{DATE}}.

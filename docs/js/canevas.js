@@ -303,6 +303,26 @@ const Pyt = (function () {
         try { return JSON.parse(v); } catch (e) { return v; }
     }
 
+    // Les pixels d'une zone du dessin : quatre valeurs par point (rouge, vert, bleu, opacité, de 0 à
+    // 255), ligne après ligne. evaljs_li en fait une liste d'entiers, sans passer par du texte.
+    // Une zone qui déborde du canevas y lit des points transparents (0, 0, 0, 0).
+    // Une image venue d'un autre site interdit au navigateur de lire le dessin : l'erreur est
+    // signalée au programme (voir _erreur_navigateur dans bibliothèque.lisp).
+    function lisPixels(fonction, x, y, l, h) {
+        dernièreErreur = '';
+        l = Math.round(l); h = Math.round(h);
+        if (!(l > 0 && h > 0)) {
+            dernièreErreur = fonction + ' : la largeur et la hauteur doivent être plus grandes que 0';
+            return new Uint8ClampedArray(0);
+        }
+        try {
+            return ctx.getImageData(Math.round(x), Math.round(y), l, h).data;
+        } catch (e) {
+            dernièreErreur = fonction + ' : le dessin contient une image venue d\'un autre site, le navigateur interdit d\'en lire les pixels';
+            return new Uint8ClampedArray(0);
+        }
+    }
+
     function valeurGlissière(o) {
         const v = Number(o.élément.value);
         return o.entiers ? Math.round(v) : Math.round(v * 1e6) / 1e6;
@@ -542,6 +562,27 @@ const Pyt = (function () {
             });
             ctx.closePath();
             traceForme(plein);
+        },
+
+        // ---------- Pixels (voir lisPixels) ----------
+        couleurPixel(x, y) { return lisPixels('couleur_pixel', nombre(x), nombre(y), 1, 1); },
+        pixels(x, y, l, h) { return lisPixels('pixels', nombre(x), nombre(y), nombre(l), nombre(h)); },
+        // pose_pixels : les valeurs arrivent en JSON ; Uint8ClampedArray arrondit et ramène
+        // chaque valeur entre 0 et 255 (une moyenne comme 127.5 devient 128)
+        posePixels(x, y, l, h, valeurs) {
+            dernièreErreur = '';
+            l = Math.round(nombre(l)); h = Math.round(nombre(h));
+            if (!(l > 0 && h > 0)) {
+                dernièreErreur = 'pose_pixels : la largeur et la hauteur doivent être plus grandes que 0';
+                return;
+            }
+            const v = lisJSON(valeurs, []);
+            const attendu = l * h * 4;
+            if (!Array.isArray(v) || v.length !== attendu) {
+                dernièreErreur = 'pose_pixels : il faut ' + attendu + ' valeurs (' + l + ' × ' + h + ' points, 4 valeurs par point), la liste en a ' + (Array.isArray(v) ? v.length : 0);
+                return;
+            }
+            ctx.putImageData(new ImageData(Uint8ClampedArray.from(v, n => Number(n)), l, h), Math.round(nombre(x)), Math.round(nombre(y)));
         },
 
         // ---------- Texte ----------
@@ -825,16 +866,16 @@ const Pyt = (function () {
         },
 
         // valeur_objet(clef) : le texte d'une saisie, d'une zone ou d'un bouton, le nombre
-        // d'une glissière, 1 ou 0 pour une case ou un radio (genreObjet dit lequel)
+        // d'une glissière, Vrai / Faux pour une case ou un radio, le chemin d'une liste hiérarchique
         valeurObjet(clef) {
             dernièreErreur = '';
             const o = champs.get(String(clef).normalize('NFC'));
             if (!o) { dernièreErreur = 'valeur_objet : il n\'y a pas d\'objet « ' + clef + ' »'; return ''; }
-            // evaljs rend un texte : bibliothèque.lisp le convertit selon le genre de l'objet
-            if (o.genre === 'case' || o.genre === 'radio') return o.entrée.checked ? '1' : '0';
-            if (o.genre === 'glissière') return String(valeurGlissière(o));
+            // evaljs_j rend la valeur telle quelle à LispE : booléen, nombre, texte ou liste
+            if (o.genre === 'case' || o.genre === 'radio') return o.entrée.checked;
+            if (o.genre === 'glissière') return valeurGlissière(o);
             if (o.genre === 'bouton') return o.élément.textContent;
-            if (o.genre === 'arbre') return JSON.stringify(o.chemin);
+            if (o.genre === 'arbre') return o.chemin;
             return o.élément.value.normalize('NFC');
         },
         genreObjet(clef) {

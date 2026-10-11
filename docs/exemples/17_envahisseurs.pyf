@@ -4,6 +4,7 @@
 # tu as 3 vies ! À chaque vague détruite, la suivante va plus vite.
 # (Clique d'abord dans le canevas pour que le clavier fonctionne,
 # ou passe en plein écran.)
+# Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
 # La flotte : 5 rangées de 10 envahisseurs
 COLONNES = 10
@@ -43,6 +44,51 @@ vague = 1
 clignote = 0          # le vaisseau clignote après avoir été touché
 état = "attente"      # "attente", "jeu" ou "perdu"
 
+# --- Le meilleur score ---
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
+# Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
+# le record ne vaut alors que le temps de l'exécution.
+JEU = "Envahisseurs"
+records_rangés = Vrai     # Faux si don0 contient autre chose que les records
+
+# le dictionnaire des records ({} si don0 est vide)
+fonction lit_records():
+    t = prend_données("don0")
+    si t == "":
+        retourne {}
+    d = 0
+    essaie:
+        d = analyse_json(t)
+    sauf(e):
+        d = 0
+    si "dictionary" dans chaîne(type_de(d)):
+        retourne d
+    records_rangés =: Faux
+    retourne {}
+
+fonction record_du_jeu():
+    d = lit_records()
+    si JEU dans d:
+        retourne d[JEU]
+    retourne 0
+
+fonction range_record(valeur):
+    d = lit_records()
+    si records_rangés:
+        d[JEU] = valeur
+        range_données("don0", en_json(d))
+
+record = record_du_jeu()
+nouveau_record = Faux
+
+# Appelée quand la partie est finie : un meilleur score devient le record
+fonction fin_de_partie():
+    si score > record:
+        record =: score
+        nouveau_record =: Vrai
+        range_record(score)
+
 fonction env_x(i):
     retourne flotte_x + (i % COLONNES) * PAS_X
 
@@ -66,6 +112,7 @@ fonction recommence():
     score =: 0
     vague =: 1
     nouvelle_vague()
+    nouveau_record =: Faux
     état =: "jeu"
 
 fonction tire():
@@ -171,6 +218,7 @@ fonction touché():
     joue_son(son_boum)
     si vies == 0:
         état =: "perdu"
+        fin_de_partie()
 
 fonction vérifie_vague():
     si restants() == 0:
@@ -183,6 +231,7 @@ fonction vérifie_vague():
         si vivants[i] et env_y(i) + HAUTEUR_ENV > VAISSEAU_Y - 20:
             vies =: 0
             état =: "perdu"
+            fin_de_partie()
             joue_son(son_boum)
             sortir
 
@@ -240,12 +289,19 @@ fonction dessine():
     taille_texte(26)
     si état == "attente":
         texte(165, 330, "Clic ou Espace : défendre la Terre !")
+        si record > 0:
+            texte(270, 380, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         couleur("rouge clair")
         texte(240, 300, f"La Terre est envahie !")
         couleur("blanc")
         texte(270, 345, f"Score : {score}, vague {vague}")
         texte(255, 390, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 440, "Nouveau record !")
+        sinon:
+            texte(270, 440, f"Meilleur score : {record}")
 
 fonction image():
     si état == "jeu":

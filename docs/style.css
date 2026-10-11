@@ -743,3 +743,6 @@ pre.exemple {
 .aide-français .table-aide { table-layout: fixed; }
 .aide-français .table-aide td:nth-child(1) { width: 40%; white-space: normal; }
 .aide-français .table-aide td:nth-child(3) { width: 24%; }
+
+/* Créer une application Web : le choix du programme principal, dans le dialogue */
+.choix-programme { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-primary); font: inherit; }

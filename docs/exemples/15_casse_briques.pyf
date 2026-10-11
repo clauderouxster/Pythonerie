@@ -3,6 +3,7 @@
 # Clic ou Espace : lancer la balle. Casse toutes les briques sans laisser
 # tomber la balle : tu as 3 vies ! (Clique d'abord dans le canevas pour
 # que le clavier fonctionne.)
+# Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
 # Le mur de briques : 5 rangées de 10 briques
 COLONNES = 10
@@ -34,6 +35,51 @@ vies = 3
 score = 0
 état = "attente"      # "attente", "jeu", "perdu" ou "gagné"
 
+# --- Le meilleur score ---
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
+# Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
+# le record ne vaut alors que le temps de l'exécution.
+JEU = "Casse-briques"
+records_rangés = Vrai     # Faux si don0 contient autre chose que les records
+
+# le dictionnaire des records ({} si don0 est vide)
+fonction lit_records():
+    t = prend_données("don0")
+    si t == "":
+        retourne {}
+    d = 0
+    essaie:
+        d = analyse_json(t)
+    sauf(e):
+        d = 0
+    si "dictionary" dans chaîne(type_de(d)):
+        retourne d
+    records_rangés =: Faux
+    retourne {}
+
+fonction record_du_jeu():
+    d = lit_records()
+    si JEU dans d:
+        retourne d[JEU]
+    retourne 0
+
+fonction range_record(valeur):
+    d = lit_records()
+    si records_rangés:
+        d[JEU] = valeur
+        range_données("don0", en_json(d))
+
+record = record_du_jeu()
+nouveau_record = Faux
+
+# Appelée quand la partie est finie : un meilleur score devient le record
+fonction fin_de_partie():
+    si score > record:
+        record =: score
+        nouveau_record =: Vrai
+        range_record(score)
+
 # La position d'une brique se calcule à partir de son numéro
 fonction brique_x(i):
     retourne 5 + (i % COLONNES) * (LARGEUR_BRIQUE + ÉCART)
@@ -53,6 +99,7 @@ fonction recommence():
     vies =: 3
     score =: 0
     vitesse =: 6.0
+    nouveau_record =: Faux
     état =: "attente"
     pose_balle()
 
@@ -112,6 +159,7 @@ fonction casse_brique():
                 joue_son(ding)
                 si restantes == 0:
                     état =: "gagné"
+                    fin_de_partie()
                 sortir
 
 fonction avance_balle():
@@ -143,6 +191,7 @@ fonction avance_balle():
         vies -= 1
         si vies == 0:
             état =: "perdu"
+            fin_de_partie()
         sinon:
             état =: "attente"
             pose_balle()
@@ -164,13 +213,25 @@ fonction dessine():
     taille_texte(26)
     si état == "attente":
         texte(215, 380, "Clic ou Espace : lancer la balle")
+        si record > 0:
+            texte(270, 430, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         texte(240, 340, f"Perdu ! Score : {score}")
         texte(255, 390, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 440, "Nouveau record !")
+        sinon:
+            texte(270, 440, f"Meilleur score : {record}")
     sinonsi état == "gagné":
         couleur("jaune")
         texte(195, 340, f"Bravo, tout est cassé ! Score : {score}")
         texte(255, 390, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 440, "Nouveau record !")
+        sinon:
+            texte(270, 440, f"Meilleur score : {record}")
 
 fonction image():
     pilote_clavier()

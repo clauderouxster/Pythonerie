@@ -301,6 +301,14 @@
 (defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
 (defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
 
+; liste_sons(), liste_images(), liste_données() : les noms des fichiers du projet, triés,
+; à donner tels quels à charge_son, charge_image ou charge_données ; liste_sons() et
+; liste_images() y ajoutent les sons et les images des médias du site (« exemples/médias/ding.wav »,
+; « exemples/médias/étoile.svg »). evaljs_j rend une liste de textes.
+(defun liste_sons () (evaljs_j "Pyt.listeFichiers('sons', true)"))
+(defun liste_images () (evaljs_j "Pyt.listeFichiers('images', true)"))
+(defun liste_données () (evaljs_j "Pyt.listeFichiers('données', false)"))
+
 ;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
 ; lit_fichier() : contenu d'un fichier du disque, que l'élève choisit dans une fenêtre

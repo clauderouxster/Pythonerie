@@ -984,6 +984,24 @@ const Pyt = (function () {
             return dernièreErreur;
         },
 
+        // liste_sons(), liste_images(), liste_données() : les noms des fichiers d'un répertoire
+        // du projet, triés, tels qu'on les donne à charge_son, charge_image ou charge_données
+        // (« ding.wav », ou « sons/bruits/ding.wav » dans un sous-répertoire). avecMédias : on
+        // ajoute ceux des médias du site (« exemples/médias/ding.wav »). evaljs_j en fait une liste.
+        listeFichiers(répertoire, avecMédias) {
+            répertoire = String(répertoire).normalize('NFC');
+            const début = répertoire + '/';
+            const extensions = typeof FichiersProjet !== 'undefined' && FichiersProjet.RÉPERTOIRES && FichiersProjet.RÉPERTOIRES[répertoire]
+                ? FichiersProjet.RÉPERTOIRES[répertoire].extensions : null;
+            const projet = (typeof FichiersProjet !== 'undefined' ? FichiersProjet.liste() : [])
+                .map(f => f.chemin).filter(c => c.startsWith(début))
+                .map(c => c.slice(début.length).includes('/') ? c : c.slice(début.length))
+                .sort((a, b) => a.localeCompare(b, 'fr'));
+            if (!avecMédias || !window.Pythonerie || !window.Pythonerie.médias) return projet;
+            const bonne = (c) => !extensions || extensions.includes(c.slice(c.lastIndexOf('.') + 1).toLowerCase());
+            return projet.concat(window.Pythonerie.médias().filter(bonne));
+        },
+
         // charge_données(nom) : un fichier du répertoire données du projet (voir pythonerie.js)
         chargeDonnées(nom) {
             dernièreErreur = '';

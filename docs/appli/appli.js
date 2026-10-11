@@ -14,7 +14,9 @@ const FichiersProjet = (function () {
     const présents = new Set(APPLI.fichiers);
     return {
         existe: (chemin) => présents.has(String(chemin).normalize('NFC')),
-        url: (chemin) => encodeURI(String(chemin).normalize('NFC'))
+        url: (chemin) => encodeURI(String(chemin).normalize('NFC')),
+        // pour liste_sons, liste_images et liste_données
+        liste: () => APPLI.fichiers.map(chemin => ({ chemin }))
     };
 })();
 
@@ -374,7 +376,9 @@ const Pythonerie = (function () {
         chargeDonnées, rangeDonnées, prendDonnées,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
-        signaleAnimation: () => metAJourBoutons()
+        signaleAnimation: () => metAJourBoutons(),
+        // les médias du site emportés avec l'application (exemples/médias/...)
+        médias: () => APPLI.médias
     };
 })();
 

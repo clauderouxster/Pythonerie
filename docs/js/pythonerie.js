@@ -114,7 +114,14 @@ const Pythonerie = (function () {
             lit('basic/français.lisp')
         ]);
         ajouteNomsFrançais(sources.français);
+        // les médias du site (exemples/médias/...), pour liste_sons() et les applications Web ;
+        // la liste est écrite par version.py
+        try {
+            const r = await fetch('exemples/médias/index.json', { cache: 'no-cache' });
+            médiasSite = r.ok ? (await r.json()).map(nfc) : [];
+        } catch (e) { médiasSite = []; }
     }
+    let médiasSite = [];
 
     // Les noms français de français.lisp : (link "nom" 'instruction)   ; description
     // Ils rejoignent la coloration, la complétion et l'aide.
@@ -713,8 +720,20 @@ const Pythonerie = (function () {
         metAJourBoutons();
     }
 
+    // Le code LispE, une ligne par <span> : la numérotation vient d'un compteur CSS (::before),
+    // qui ne part pas avec un copier-coller ; les erreurs citent ces numéros (« ligne 12 du code LispE »)
     function afficheLispE() {
-        $('codeLispE').textContent = dernierLispE || '(pas encore de code LispE : exécute le programme)';
+        const zone = $('codeLispE');
+        zone.textContent = '';
+        zone.classList.toggle('numéroté', !!dernierLispE);
+        if (!dernierLispE) { zone.textContent = '(pas encore de code LispE : exécute le programme)'; return; }
+        dernierLispE.split('\n').forEach((ligne, i) => {
+            if (i) zone.appendChild(document.createTextNode('\n'));
+            const span = document.createElement('span');
+            span.className = 'ligne-lispe';
+            span.textContent = ligne;
+            zone.appendChild(span);
+        });
     }
 
     function metAJourBoutons() {
@@ -1432,6 +1451,10 @@ const Pythonerie = (function () {
                 // les sons cités dans le code sont décodés avant de commencer (voir exécute)
                 sons: [...new Set([...assemblé.source.matchAll(/charge_son\s*\(\s*(["'])([^"'\n]+)\1\s*\)/g)].map(m => m[2]))],
                 fichiers: fichiers.map(f => f.chemin),
+                // les médias du site (exemples/médias/...) partent tous si le programme s'en sert :
+                // le piano compose leurs noms (f"exemples/médias/piano/{note}.wav"), et liste_sons()
+                // ou liste_images() les citent
+                médias: /exemples\/médias\/|liste_(sons|images)\s*\(/.test(assemblé.source) ? médiasSite.slice() : [],
                 données,
                 onglets: onglets.slice()
             };
@@ -1462,6 +1485,17 @@ const Pythonerie = (function () {
                 { nom: d + 'polices/' }
             ];
             POLICES.forEach((p, i) => entrées.push({ nom: d + 'polices/' + p, octets: polices[i] }));
+            if (appli.médias.length) {
+                const octetsMédias = await Promise.all(appli.médias.map(m => lit(encodeURI(m), true)));
+                // les répertoires : exemples/, exemples/médias/, exemples/médias/piano/...
+                const répertoiresMédias = new Set();
+                appli.médias.forEach(m => {
+                    const morceaux = m.split('/').slice(0, -1);
+                    morceaux.forEach((_, i) => répertoiresMédias.add(morceaux.slice(0, i + 1).join('/') + '/'));
+                });
+                [...répertoiresMédias].sort().forEach(r => entrées.push({ nom: d + r }));
+                appli.médias.forEach((m, i) => entrées.push({ nom: d + m, octets: octetsMédias[i] }));
+            }
             const répertoires = [...new Set(fichiers.map(f => f.chemin.split('/')[0]))].sort();
             répertoires.forEach(r => entrées.push({ nom: d + r + '/' }));
             for (const f of fichiers) entrées.push({ nom: d + f.chemin, octets: new Uint8Array(await f.blob.arrayBuffer()) });
@@ -3563,6 +3597,7 @@ const Pythonerie = (function () {
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
+        médias: () => médiasSite,
         compile // utile pour les tests depuis la console du navigateur
     };
 })();

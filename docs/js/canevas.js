@@ -159,7 +159,50 @@ const Pyt = (function () {
     function appelle(nom, args) {
         if (!nom || !rappel) return;
         const code = '(' + nom + (args.length ? ' ' + args.join(' ') : '') + ')';
+        // un nouvel événement : les réponses d'une question posée pendant le précédent sont oubliées
+        événement = { code, réponses: [], rang: 0 };
         rappel(code);
+    }
+
+    // ---------- demande() pendant un événement, en plein écran ----------
+    // window.prompt ne peut pas s'ouvrir quand le canevas est en plein écran : Chrome quitte le
+    // plein écran pour montrer la fenêtre, mais prompt bloque la page et l'écran reste blanc.
+    // La question est alors posée dans un cadre sur le canevas ; l'événement (un clic, une
+    // touche...) s'arrête, puis il est rejoué avec la réponse, comme le programme l'est pour
+    // une demande() hors événement. Échap répond "", comme Annuler dans la fenêtre du navigateur.
+    let événement = { code: null, réponses: [], rang: 0 };
+    let questionÉvénement = null;      // le cadre de la question en attente, ou null
+
+    function poseQuestionSurCanevas(question) {
+        // l'événement qui pose la question, et ses réponses déjà données : une animation qui
+        // tourne pendant que l'élève répond lance d'autres événements, qui ne doivent pas le remplacer
+        const code = événement.code, réponses = événement.réponses.slice();
+        const cadre = document.createElement('form');
+        cadre.className = 'question-canevas';
+        const texte = document.createElement('div');
+        texte.textContent = question || 'Ta réponse :';
+        const champ = document.createElement('input');
+        champ.type = 'text';
+        champ.spellcheck = false;
+        const aide = document.createElement('div');
+        aide.className = 'question-canevas-aide';
+        aide.textContent = 'Entrée : répondre — Échap : annuler';
+        cadre.append(texte, champ, aide);
+        cadre.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+        const répond = (réponse) => {
+            cadre.remove();
+            questionÉvénement = null;
+            événement = { code, réponses: [...réponses, réponse.normalize('NFC')], rang: 0 };
+            if (rappel) rappel(code);
+        };
+        cadre.addEventListener('submit', (ev) => { ev.preventDefault(); répond(champ.value); });
+        champ.addEventListener('keydown', (ev) => {
+            ev.stopPropagation();
+            if (ev.key === 'Escape') { ev.preventDefault(); répond(''); }
+        });
+        canevas.parentElement.appendChild(cadre);
+        questionÉvénement = cadre;
+        champ.focus();
     }
 
     // une chaîne "..." de LispE : les sauts de ligne s'écrivent \n (un vrai saut de ligne
@@ -481,6 +524,14 @@ const Pyt = (function () {
             const r = window.Pythonerie ? window.Pythonerie.réponseÀ(String(question)) : null;
             if (r && r.manque) { dernièreErreur = 'le programme attend une réponse'; return ''; }
             if (r) return r.réponse;
+            // pendant un événement : une réponse déjà donnée (l'événement est rejoué), ou, en plein
+            // écran, la question sur le canevas (voir poseQuestionSurCanevas)
+            if (événement.rang < événement.réponses.length) return événement.réponses[événement.rang++];
+            if (document.fullscreenElement && événement.code) {
+                if (!questionÉvénement) poseQuestionSurCanevas(String(question));
+                dernièreErreur = 'le programme attend une réponse';
+                return '';
+            }
             const réponse = window.prompt(String(question || ''), '');
             return réponse === null ? '' : réponse.normalize('NFC');
         },
@@ -684,7 +735,11 @@ const Pyt = (function () {
         },
         // gardeSons : le programme s'arrête sur une question (demande) ; le son qu'il vient
         // de lancer (« bravo ! ») continue pendant que l'élève lit la question
+        // Vrai pendant qu'une question posée sur le canevas attend sa réponse : l'événement s'est
+        // arrêté exprès, ce n'est pas une erreur à montrer
+        questionEnAttente() { return questionÉvénement !== null; },
         stoppeTout(gardeSons) {
+            if (questionÉvénement) { questionÉvénement.remove(); questionÉvénement = null; }
             retireChamps();
             relâcheTout(false);
             this.arrête();

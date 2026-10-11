@@ -601,7 +601,7 @@ const Pythonerie = (function () {
         try {
             évalue(idxExécution, code);
         } catch (e) {
-            if (!fichierDemandé) {
+            if (!fichierDemandé && !Pyt.questionEnAttente()) {
                 Pyt.stoppeTout();
                 écritConsole(nettoieErreur(e), 'erreur');
                 metAJourBoutons();

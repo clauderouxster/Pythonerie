@@ -242,10 +242,12 @@
 )
 
 (defpat parsing ( ['catching kw $ inst])
-   (setq v (list 'lambda (list 'e_)))
+(ife (= (size inst) 1)
+   (list . parsing inst)
+   (setq v '(block))
    (loop c inst
       (push v (parsing c)))
-  (list v)
+  (list v))
 )
 
 (defpat parsing(['amaybe $ ct])

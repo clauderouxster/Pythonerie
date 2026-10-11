@@ -30,7 +30,8 @@ const PYTHONERIE_FONCTIONS = {
     'réel': 'réel(x) — convertit en nombre à virgule',
     'nombre': 'nombre(texte) — un nombre à virgule (« 2,5 » ou « 2.5 ») ; 0.0 si ce n\'est pas un nombre',
     'chaîne': 'chaîne(x) — convertit en texte',
-    'type_de': 'type_de(x) — le type d\'une valeur',
+    'type_de': 'type_de(x) — le type d\'une valeur (nom LispE, en anglais)',
+    'typede': 'typede(x) — le genre de x en français : "entier", "texte", "liste", "dictionnaire"…',
     'intervalle': 'intervalle(fin) ou intervalle(début, fin, pas) — liste de nombres',
     'range': 'range(fin) ou range(début, fin, pas) — liste de nombres',
     // Mathématiques

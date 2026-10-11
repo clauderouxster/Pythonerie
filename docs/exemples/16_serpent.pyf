@@ -37,14 +37,14 @@ fonction lit_records():
     t = prend_données("don0")
     si t == "":
         retourne {}
-    d = 0
     essaie:
         d = analyse_json(t)
-    sauf(e):
-        d = 0
-    si "dictionary" dans chaîne(type_de(d)):
+    sauf:
+        records_rangés =: Faux     # don0 contient un texte qui n'est pas du JSON
+        retourne {}
+    si typede(d) == "dictionnaire":
         retourne d
-    records_rangés =: Faux
+    records_rangés =: Faux         # du JSON, mais pas un dictionnaire
     retourne {}
 
 fonction record_du_jeu():

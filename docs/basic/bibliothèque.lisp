@@ -64,6 +64,42 @@
 (defun chaine (x) (_texte x))
 (defun type_de (x) (type x))
 
+; typede(x) : le genre de x en français, sous forme de texte, que l'on peut comparer :
+; si typede(d) == "dictionnaire": ...  (type_de donne le nom de LispE, un atome anglais).
+; Les noms de LispE sont ceux de code_to_string (lispe.cxx, Delegation::initialisation).
+; Rien, Vrai et Faux sont tous trois des atomes pour LispE : on les reconnaît d'abord.
+(setq _types_français {
+   "integer_":"entier" "short_":"entier"
+   "number_":"réel" "float_":"réel" "complex_":"complexe"
+   "string_":"texte" "longstring_":"texte" "stringbyte_":"texte"
+   "list_":"liste" "llist_":"liste" "integers_":"liste" "numbers_":"liste" "floats_":"liste"
+   "shorts_":"liste" "strings_":"liste" "stringbytes_":"liste"
+   "matrix_number_":"matrice" "matrix_float_":"matrice" "matrix_integer_":"matrice"
+   "matrix_short_":"matrice" "matrix_string_":"matrice" "matrix_stringbyte_":"matrice"
+   "tensor_number_":"tenseur" "tensor_float_":"tenseur" "tensor_integer_":"tenseur"
+   "tensor_short_":"tenseur" "tensor_string_":"tenseur" "tensor_stringbyte_":"tenseur"
+   "dictionary_":"dictionnaire" "dictionaryjson_":"dictionnaire" "dictionary_n_":"dictionnaire"
+   "dictionary_i_":"dictionnaire" "dictionarytree_":"dictionnaire" "dictionarytree_n_":"dictionnaire"
+   "dictionarytree_i_":"dictionnaire"
+   "set_":"ensemble" "set_s_":"ensemble" "set_n_":"ensemble" "set_i_":"ensemble"
+   "heap_":"tas" "atom_":"atome" "error_":"erreur" "file_element_":"fichier"
+   "function_":"fonction" "library_function_":"fonction" "pattern_":"fonction"
+   "predicate_":"fonction" "lambda_":"fonction" "thread_":"fonction"
+   "data_":"donnée" "maybe_":"erreur"
+})
+(defun typede (x)
+   (cond
+      ((eq x nil) "rien")
+      ((or (eq x true) (eq x false)) "booléen")
+      (true
+         (setq _t (string (type x)))
+         ; un nom absent de la table est rendu sans le « _ » final de LispE :
+         ; l'objet d'une classe Chat donne "Chat"
+         (cond
+            ((in_it _types_français _t) (@ _types_français _t))
+            ((= (@ _t -1) "_") (@@ _t 0 -1))
+            (true _t)))))
+
 ; intervalle(5) -> [0,1,2,3,4] ; intervalle(2, 5) -> [2,3,4] ; intervalle(0, 10, 2)
 (defun intervalle (a (b nil) (pas 1))
    (if (nullp b)

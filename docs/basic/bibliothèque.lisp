@@ -72,11 +72,11 @@
 
 ; Nombre entier au hasard entre a et b (inclus)
 (defun aléatoire (a b)
-   (integer (evaljs (list "Pyt.aléatoire" a b))))
+   (evaljs_i (list "Pyt.aléatoire" a b)))
 
 ; Nombre réel au hasard entre 0 et 1
 (defun hasard ()
-   (float (evaljs "Pyt.hasard()")))
+   (evaljs_d "Pyt.hasard()"))
 
 ; Choisit un élément au hasard dans une liste
 (defun choisis (liste)
@@ -156,8 +156,8 @@
 
 ; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)
 ; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
-(defun largeur () (float (evaljs "Pyt.largeur()")))
-(defun hauteur () (float (evaljs "Pyt.hauteur()")))
+(defun largeur () (evaljs_d "Pyt.largeur()"))
+(defun hauteur () (evaljs_d "Pyt.hauteur()"))
 
 ;------------------------------------------------------------------
 ; La tortue
@@ -173,9 +173,9 @@
 (defun origine () (evaljs "Pyt.origine()") nil)
 (defun montre_tortue () (evaljs (list "Pyt.montreTortue" true)) nil)
 (defun cache_tortue () (evaljs (list "Pyt.montreTortue" false)) nil)
-(defun position_x () (float (evaljs "Pyt.tortueX()")))
-(defun position_y () (float (evaljs "Pyt.tortueY()")))
-(defun cap () (float (evaljs "Pyt.tortueCap()")))
+(defun position_x () (evaljs_d "Pyt.tortueX()"))
+(defun position_y () (evaljs_d "Pyt.tortueY()"))
+(defun cap () (evaljs_d "Pyt.tortueCap()"))
 
 ;------------------------------------------------------------------
 ; Animation et événements
@@ -188,7 +188,7 @@
 ; quand_relâche(f) : f(touche) quand on relâche une touche (même nom qu'à l'appui)
 (defmacro quand_relâche (fonction) (block (evaljs (list "Pyt.quandRelâche" (string (quote fonction)))) nil))
 ; touche_enfoncée(nom) : Vrai tant que la touche est tenue (à appeler dans la fonction d'animer)
-(defun touche_enfoncée (nom) (> (evaljs (list "Pyt.toucheEnfoncée" (string nom))) 0))
+(defun touche_enfoncée (nom) (evaljs_b (list "Pyt.toucheEnfoncée" (string nom))))
 (defmacro quand_glisse (fonction) (block (evaljs (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
 ; saisie(clef, x, y, fonction) : un champ de saisie dans le canevas ; Entrée (ou un clic
 ; dans un autre champ) appelle fonction(clef, valeur), la valeur étant un texte
@@ -242,10 +242,10 @@
 ; L'adresse est celle d'un fichier du site (exemples/médias/étoile.svg) ou une adresse
 ; complète (https://...).
 ;------------------------------------------------------------------
-(defun charge_image (adresse) (integer (evaljs (list "Pyt.chargeImage" (string adresse)))))
+(defun charge_image (adresse) (evaljs_i (list "Pyt.chargeImage" (string adresse))))
 ; place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur)
 (defun place_image (image x y (l nil) (h nil)) (evaljs (list "Pyt.placeImage" image x y l h)) nil)
-(defun charge_son (adresse) (integer (evaljs (list "Pyt.chargeSon" (string adresse)))))
+(defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
 (defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
 
 ;------------------------------------------------------------------

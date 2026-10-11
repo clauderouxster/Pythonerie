@@ -97,6 +97,6 @@
   {
     "fichier": "20_atelier.pyf",
     "titre": "20. L'atelier de formes",
-    "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, zone d'édition"
+    "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, boutons-images dessinés (capture_image), zone d'édition, et une pipette (couleur_pixel)"
   }
 ]

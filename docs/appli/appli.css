@@ -144,6 +144,12 @@ body {
 }
 .bouton-canevas:hover { background: #e6e6e6; }
 .bouton-canevas:active { background: #d6d6d6; }
+/* bouton_image : le bouton a la forme de son image ; sans second aspect, il s'enfonce un peu */
+.bouton-image-canevas { padding: 0; border: none; background: transparent; cursor: pointer; line-height: 0; }
+.bouton-image-canevas img { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; }
+.bouton-image-canevas:hover img { filter: brightness(1.08); }
+.bouton-image-canevas.enfoncé img { filter: brightness(0.85); transform: translateY(1px); }
+.bouton-image-canevas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .coche-canevas { display: flex; align-items: center; gap: 0.35em; white-space: nowrap; line-height: 1.2; cursor: pointer; user-select: none; }
 .coche-canevas input { width: 1em; height: 1em; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .glissière-canevas { height: 1.4em; accent-color: var(--accent); cursor: pointer; }

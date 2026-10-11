@@ -255,6 +255,11 @@
 (defmacro bouton (clef x y texte fonction) (block (evaljs (list "Pyt.bouton" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
 ; case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) quand on la coche ou la décoche
 (defmacro case_à_cocher (clef x y texte fonction) (block (evaljs (list "Pyt.caseÀCocher" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+; bouton_image(clef, x, y, image, f) : un bouton qui a l'aspect de l'image (numéro rendu par
+; charge_image ou capture_image) ; bouton_image(clef, x, y, image, image_appuyée, f) lui donne un
+; second aspect tant qu'on appuie. Un clic appelle f(clef, image). (deux macros : 5 ou 6 arguments)
+(defmacro bouton_image (clef x y image fonction) (block (evaljs (list "Pyt.boutonImage" (string clef) x y image nil (string (quote fonction)))) (_erreur_navigateur) nil))
+(defmacro bouton_image (clef x y image appuyée fonction) (block (evaljs (list "Pyt.boutonImage" (string clef) x y image appuyée (string (quote fonction)))) (_erreur_navigateur) nil))
 ; bouton_radio(clef, groupe, x, y, texte, f) : un seul coché par groupe ; f(groupe, clef) quand on le choisit
 (defmacro bouton_radio (clef groupe x y texte fonction) (block (evaljs (list "Pyt.boutonRadio" (string clef) (string groupe) x y (_texte texte) (string (quote fonction)))) nil))
 ; glissière(clef, x, y, mini, maxi, valeur, f) : f(clef, valeur) pendant qu'on la déplace
@@ -297,9 +302,14 @@
 ;------------------------------------------------------------------
 (defun charge_image (adresse) (evaljs_i (list "Pyt.chargeImage" (string adresse))))
 ; place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur)
-(defun place_image (image x y (l nil) (h nil)) (evaljs (list "Pyt.placeImage" image x y l h)) nil)
+(defun place_image (image x y (l nil) (h nil)) (evaljs (list "Pyt.placeImage" image x y l h)) (_erreur_navigateur) nil)
 (defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
 (defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
+; capture_image(x, y, l, h) : un rectangle du dessin devient une image (son numéro)
+(defun capture_image (x y l h)
+   (setq _n (evaljs_i (list "Pyt.captureImage" x y l h)))
+   (_erreur_navigateur)
+   _n)
 
 ; liste_sons(), liste_images(), liste_données() : les noms des fichiers du projet, triés,
 ; à donner tels quels à charge_son, charge_image ou charge_données ; liste_sons() et

@@ -733,6 +733,47 @@ const Pyt = (function () {
             poseObjet(o, nom, x, y, null);
         },
 
+        // bouton_image(clef, x, y, image, image_appuyée, f) : un bouton qui a l'aspect d'une image
+        // (numéro rendu par charge_image ou capture_image), à sa taille ; image_appuyée (ou null) est
+        // montrée tant qu'on appuie, sinon le bouton s'enfonce un peu. Un clic appelle f(clef, image).
+        // Une image transparente (png, svg) donne un bouton de n'importe quelle forme.
+        boutonImage(clef, x, y, numéro, appuyée, nom) {
+            dernièreErreur = '';
+            clef = String(clef).normalize('NFC');
+            const inconnue = (n) => { dernièreErreur = 'bouton_image : image inconnue : ' + n + ' (utilise le numéro renvoyé par charge_image ou capture_image)'; };
+            const normale = images[numéro];
+            if (!normale) { inconnue(numéro); return; }
+            const enfoncée = (appuyée === null || appuyée === undefined) ? null : images[appuyée];
+            if (appuyée !== null && appuyée !== undefined && !enfoncée) { inconnue(appuyée); return; }
+            const o = objetDe(clef, 'bouton_image', (o) => {
+                const e = document.createElement('button');
+                e.type = 'button';
+                e.className = 'objet-canevas bouton-image-canevas';
+                const img = document.createElement('img');
+                img.alt = '';
+                img.draggable = false;
+                e.appendChild(img);
+                o.montre = (bas) => {
+                    img.src = (bas && o.appuyée ? o.appuyée : o.normale).img.src;
+                    e.classList.toggle('enfoncé', bas && !o.appuyée);
+                };
+                e.addEventListener('pointerdown', () => o.montre(true));
+                ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => e.addEventListener(t, () => o.montre(false)));
+                // le bouton rend le focus : la barre d'espace d'un jeu ne le recliquera pas
+                e.addEventListener('click', () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), o.numéro]); });
+                return e;
+            });
+            o.normale = normale;
+            o.appuyée = enfoncée;
+            o.numéro = numéro;
+            o.montre(false);
+            poseObjet(o, nom, x, y, null);
+            // la largeur de l'image, en points du canevas : le bouton suit ensuite l'échelle du canevas
+            const àLaTaille = () => { o.l = normale.img.naturalWidth || normale.img.width; placeChamp(o); };
+            if (normale.img.complete && normale.img.naturalWidth) àLaTaille();
+            else normale.img.addEventListener('load', àLaTaille, { once: true });
+        },
+
         // case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) à chaque changement
         caseÀCocher(clef, x, y, texte, nom) {
             clef = String(clef).normalize('NFC');
@@ -875,6 +916,7 @@ const Pyt = (function () {
             if (o.genre === 'case' || o.genre === 'radio') return o.entrée.checked;
             if (o.genre === 'glissière') return valeurGlissière(o);
             if (o.genre === 'bouton') return o.élément.textContent;
+            if (o.genre === 'bouton_image') return o.numéro;
             if (o.genre === 'arbre') return o.chemin;
             return o.élément.value.normalize('NFC');
         },
@@ -890,6 +932,11 @@ const Pyt = (function () {
             if (o.genre === 'case' || o.genre === 'radio') o.entrée.checked = !!valeur;
             else if (o.genre === 'glissière') o.élément.value = nombre(valeur, Number(o.élément.min));
             else if (o.genre === 'bouton') o.élément.textContent = String(valeur);
+            else if (o.genre === 'bouton_image') {
+                // valeur : le numéro d'une autre image, qui devient l'aspect du bouton
+                if (!images[valeur]) dernièreErreur = 'change_objet : l\'image ' + valeur + ' n\'existe pas';
+                else { o.normale = images[valeur]; o.numéro = valeur; o.montre(false); }
+            }
             else if (o.genre === 'arbre') {
                 // valeur : le chemin de l'élément à choisir ; ses branches sont dépliées
                 const chemin = lisJSON(valeur, []).map(v => String(v).normalize('NFC'));
@@ -1011,6 +1058,33 @@ const Pyt = (function () {
         },
 
         // ---------- Images ----------
+        // capture_image(x, y, l, h) : un rectangle du dessin devient une nouvelle image (son numéro),
+        // à placer avec place_image ou à donner à bouton_image ; -1 et une erreur si le navigateur
+        // interdit de lire le dessin (une image venue d'un autre site)
+        captureImage(x, y, l, h) {
+            dernièreErreur = '';
+            x = Math.round(nombre(x)); y = Math.round(nombre(y));
+            l = Math.round(nombre(l)); h = Math.round(nombre(h));
+            if (!(l > 0 && h > 0)) {
+                dernièreErreur = 'capture_image : la largeur et la hauteur doivent être plus grandes que 0';
+                return -1;
+            }
+            const copie = document.createElement('canvas');
+            copie.width = l;
+            copie.height = h;
+            let source;
+            try {
+                copie.getContext('2d').putImageData(ctx.getImageData(x, y, l, h), 0, 0);
+                source = copie.toDataURL('image/png');
+            } catch (e) {
+                dernièreErreur = 'capture_image : le dessin contient une image venue d\'un autre site, le navigateur interdit de le copier';
+                return -1;
+            }
+            const img = new Image();
+            img.src = source;
+            images.push({ img, adresse: 'capture_image', erreur: false });
+            return images.length - 1;
+        },
         // charge_image(adresse) : renvoie le numéro de l'image (0, 1, 2...)
         chargeImage(adresse) {
             const img = new Image();
@@ -1032,8 +1106,9 @@ const Pyt = (function () {
         // place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) :
         // (x, y) est le coin en haut à gauche de l'image
         placeImage(numéro, x, y, l, h) {
+            dernièreErreur = '';
             const entrée = images[numéro];
-            if (!entrée) throw new Error('Image inconnue : ' + numéro + ' (utilise le numéro renvoyé par charge_image)');
+            if (!entrée) { dernièreErreur = 'place_image : image inconnue : ' + numéro + ' (utilise le numéro renvoyé par charge_image)'; return; }
             const dessine = () => {
                 const lg = (l === null || l === undefined) ? entrée.img.naturalWidth : nombre(l);
                 const ht = (h === null || h === undefined) ? entrée.img.naturalHeight * (lg / (entrée.img.naturalWidth || 1)) : nombre(h);

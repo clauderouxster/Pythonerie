@@ -115,6 +115,7 @@ const PYTHONERIE_FONCTIONS = {
     'active_saisie': 'active_saisie(clef) — donne la main au champ (son contenu est sélectionné)',
     'saisie_active': 'saisie_active() — la clef du champ qui a la main ("" sinon)',
     'bouton': 'bouton(clef, x, y, texte, fonction) — un bouton ; un clic appelle fonction(clef, texte)',
+    'bouton_image': 'bouton_image(clef, x, y, image, [image_appuyée,] fonction) — un bouton qui a l\'aspect d\'une image ; un clic appelle fonction(clef, image)',
     'case_à_cocher': 'case_à_cocher(clef, x, y, texte, fonction) — fonction(clef, Vrai ou Faux) à chaque changement',
     'bouton_radio': 'bouton_radio(clef, groupe, x, y, texte, fonction) — un seul choisi par groupe ; fonction(groupe, clef)',
     'glissière': 'glissière(clef, x, y, mini, maxi, valeur, fonction) — fonction(clef, valeur) pendant qu\'on la déplace',
@@ -130,6 +131,7 @@ const PYTHONERIE_FONCTIONS = {
     // Images et sons
     'charge_image': 'charge_image(adresse) — charge une image, renvoie son numéro',
     'place_image': 'place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur) — dessine l\'image',
+    'capture_image': 'capture_image(x, y, largeur, hauteur) — un rectangle du dessin devient une image (son numéro)',
     'charge_son': 'charge_son(adresse) — charge un son, renvoie son numéro',
     'joue_son': 'joue_son(numéro) — joue le son',
     'liste_sons': 'liste_sons() — les noms des sons du projet et du site, pour charge_son',

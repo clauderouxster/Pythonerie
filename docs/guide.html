@@ -732,6 +732,10 @@ saisie("âge", 100, 180, reçu)</pre></div>
                     une même fonction peut donc servir à plusieurs objets.</p>
                 <ul>
                     <li><code>bouton(clef, x, y, texte, f)</code>&nbsp;: un bouton&nbsp;; un clic appelle <code>f(clef, texte)</code>.</li>
+                    <li><code>bouton_image(clef, x, y, image, f)</code>&nbsp;: un bouton qui a l'aspect d'une image, à sa taille&nbsp;;
+                        un clic appelle <code>f(clef, image)</code>. Avec <code>bouton_image(clef, x, y, image, image_appuyée, f)</code>,
+                        il prend un second aspect tant qu'on appuie dessus. Une image transparente (png, svg) donne un bouton
+                        de n'importe quelle forme.</li>
                     <li><code>case_à_cocher(clef, x, y, texte, f)</code>&nbsp;: une case&nbsp;; <code>f(clef, coché)</code> reçoit
                         <code>Vrai</code> ou <code>Faux</code>.</li>
                     <li><code>bouton_radio(clef, groupe, x, y, texte, f)</code>&nbsp;: dans un même <b>groupe</b>, un seul bouton est
@@ -761,7 +765,7 @@ bouton_radio("grand", "taille", 20, 140, "Grand", choisi)
 glissière("vitesse", 20, 180, 1, 10, 5, choisi)
 liste_déroulante("animal", 20, 220, ["chat", "chien", "lapin"], choisi)
 liste_hiérarchique("aliments", 300, 20, 6, [["Fruits", ["pomme", "poire"]], ["Légumes", ["carotte", "salade"]], "Pain"], choisi)</pre></div>
-                <p>L'exemple <b>20. L'atelier de formes</b> se sert de tous ces objets à la fois.</p>
+                <p>L'exemple <b>20. L'atelier de formes</b> se sert de tous ces objets à la fois. Ses boutons de formes sont des <code>bouton_image</code>&nbsp;: le programme dessine chaque icône, la copie avec <code>capture_image</code>, et sa pipette lit la couleur d'un point avec <code>couleur_pixel</code>.</p>
 
                 <h3>Dessiner en faisant glisser la souris</h3>
                 <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris
@@ -1222,6 +1226,7 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>charge_image(nom)</code></td><td>charge une image du répertoire images du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>img = charge_image("chat.png")</code></td></tr>
                     <tr><td><code>place_image(numéro, x, y)</code></td><td>dessine l'image&nbsp;; (x, y) est son coin en haut à gauche</td><td class="ex"><code>place_image(img, 100, 50)</code></td></tr>
                     <tr><td><code>place_image(numéro, x, y, largeur, hauteur)</code></td><td>dessine l'image à la taille choisie</td><td class="ex"><code>place_image(img, 0, 0, 80, 80)</code></td></tr>
+                    <tr><td><code>capture_image(x, y, largeur, hauteur)</code></td><td>copie un rectangle du dessin en une nouvelle image et donne son numéro&nbsp;: pour dessiner soi-même les aspects d'un <code>bouton_image</code></td><td class="ex"><code>normal = capture_image(0, 0, 80, 80)</code></td></tr>
                     <tr><td><code>charge_son(nom)</code></td><td>charge un son du répertoire sons du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>snd = charge_son("miaou.wav")</code></td></tr>
                     <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
                     <tr><td><code>liste_sons()</code></td><td>la liste des noms des sons du projet, puis de ceux du site (<code>"exemples/médias/ding.wav"</code>…)&nbsp;: chaque nom se donne tel quel à <code>charge_son</code></td><td class="ex"><code>charge_son(liste_sons()[0])</code></td></tr>
@@ -1257,6 +1262,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>saisie_active()</code></td><td>la clef du champ qui a le curseur (<code>""</code> s'il n'y en a pas)</td><td class="ex"><code>clef = saisie_active()</code></td></tr>
                     <tr><td><code>largeur_saisie(l)</code></td><td>la largeur des champs créés ensuite (200 au départ)</td><td class="ex"><code>largeur_saisie(100)</code></td></tr>
                     <tr><td><code>bouton(clef, x, y, texte, f)</code></td><td>un bouton&nbsp;; un clic appelle f(clef, texte)</td><td class="ex"><code>bouton("ok", 20, 20, "Valider", clic)</code></td></tr>
+                    <tr><td><code>bouton_image(clef, x, y, image, f)</code></td><td>un bouton qui a l'aspect de l'image (numéro de <code>charge_image</code> ou <code>capture_image</code>)&nbsp;; un clic appelle f(clef, image)</td><td class="ex"><code>bouton_image("go", 300, 200, img, clic)</code></td></tr>
+                    <tr><td><code>bouton_image(clef, x, y, image, image_appuyée, f)</code></td><td>le même, avec un second aspect tant qu'on appuie</td><td class="ex"><code>bouton_image("go", 300, 200, normal, appuyé, clic)</code></td></tr>
                     <tr><td><code>case_à_cocher(clef, x, y, texte, f)</code></td><td>une case à cocher&nbsp;; f(clef, Vrai ou Faux)</td><td class="ex"><code>case_à_cocher("son", 20, 60, "Son", f)</code></td></tr>
                     <tr><td><code>bouton_radio(clef, groupe, x, y, texte, f)</code></td><td>un seul choisi par groupe&nbsp;; f(groupe, clef)</td><td class="ex"><code>bouton_radio("rouge", "couleur", 20, 100, "Rouge", f)</code></td></tr>
                     <tr><td><code>glissière(clef, x, y, mini, maxi, valeur, f)</code></td><td>une réglette&nbsp;; f(clef, valeur) quand on la déplace</td><td class="ex"><code>glissière("taille", 20, 140, 10, 80, 30, f)</code></td></tr>

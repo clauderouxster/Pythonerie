@@ -1,10 +1,12 @@
 # 20. L'atelier de formes
 # Le panneau de gauche réunit tous les objets qu'on peut poser dans le canevas :
 # un champ de saisie, une liste déroulante, une glissière, une liste hiérarchique,
-# des cases à cocher, des boutons radio, des boutons et une zone d'édition.
-# Choisis une forme, une taille et une couleur, puis clique dans le dessin.
+# des cases à cocher, des boutons radio, des boutons, des boutons-images et une
+# zone d'édition. Choisis une forme, une taille et une couleur, puis clique dans le dessin.
+# Les boutons-images des formes sont dessinés par le programme, puis copiés en images
+# avec capture_image ; la pipette lit la couleur d'un point avec couleur_pixel.
 
-canevas(1000, 640)
+canevas(1000, 720)
 cache_tortue()
 
 PANNEAU = 260         # la largeur du panneau de commandes
@@ -17,7 +19,7 @@ COULEURS = [["Chaudes", ["rouge", "rouge clair", "orange", "jaune", "rose"]],
 forme_actuelle = "disque"
 couleur_actuelle = "rouge"
 taille_actuelle = 30
-mode = "poser"        # un clic dans le dessin pose ou efface une forme
+mode = "poser"        # un clic dans le dessin pose ou efface une forme, ou prend sa couleur
 contour = Faux
 grille = Faux
 titre = ""
@@ -66,10 +68,14 @@ fonction dessine():
     taille_texte(15)
     texte(12, 10, "Titre du dessin")
     texte(12, 66, "Forme")
-    texte(12, 120, f"Taille : {taille_actuelle}")
-    texte(12, 170, f"Couleur : {couleur_actuelle}")
-    texte(12, 392, "Un clic dans le dessin :")
-    texte(12, 550, "Légende")
+    texte(12, 168, f"Taille : {taille_actuelle}")
+    texte(12, 218, f"Couleur : {couleur_actuelle}")
+    # la couleur choisie, en vrai (après la pipette, son nom est un rgb(...))
+    couleur(couleur_actuelle)
+    disque(PANNEAU - 24, 226, 9)
+    couleur("noir")
+    texte(12, 440, "Un clic dans le dessin :")
+    texte(12, 616, "Légende")
     # la feuille de dessin, à droite
     si grille:
         couleur("gris clair")
@@ -99,7 +105,22 @@ fonction titre_changé(clef, valeur):
     dessine()
 
 fonction forme_choisie(clef, valeur):
-    forme_actuelle =: valeur
+    choisit_forme(valeur)
+
+# Les boutons-images des formes : chacun a deux images, l'une ordinaire, l'autre (fond blanc,
+# forme bleue) pour la forme choisie, qui sert aussi d'aspect « appuyé »
+fonction choisit_forme(f):
+    forme_actuelle =: f
+    change_objet("forme", f)
+    pour g dans FORMES:
+        si g == f:
+            change_objet(f"icône_{g}", icônes[g][1])
+        sinon:
+            change_objet(f"icône_{g}", icônes[g][0])
+
+# clef vaut "icône_disque", "icône_carré"... : la forme est ce qui suit « icône_ »
+fonction icône_choisie(clef, image):
+    choisit_forme(clef[6:])
 
 fonction taille_changée(clef, valeur):
     taille_actuelle =: valeur
@@ -120,6 +141,14 @@ fonction option(clef, cochée):
 
 fonction mode_choisi(groupe, clef):
     mode =: clef
+
+# La pipette : la couleur du point cliqué devient la couleur des formes, puis on repasse
+# en mode « pose une forme ». couleur_pixel donne [rouge, vert, bleu, opacité].
+fonction pipette(x, y):
+    p = couleur_pixel(x, y)
+    couleur_actuelle =: rgb(p[0], p[1], p[2])
+    mode =: "poser"
+    change_objet("poser", Vrai)
 
 fonction légende_changée(clef, valeur):
     légende =: valeur
@@ -162,7 +191,7 @@ fonction recommence():
     grille =: Faux
     mode =: "poser"
     change_objet("titre", "")
-    change_objet("forme", "disque")
+    choisit_forme("disque")
     change_objet("taille", 30)
     change_objet("couleurs", ["Chaudes", "rouge"])
     change_objet("contour", Faux)
@@ -170,12 +199,14 @@ fonction recommence():
     change_objet("poser", Vrai)
     change_objet("légende", "")
 
-# Un clic dans le dessin pose une forme, ou efface la plus proche
+# Un clic dans le dessin pose une forme, efface la plus proche, ou prend une couleur
 fonction clic(x, y):
     si x < PANNEAU:
         retourne Rien
     si mode == "poser":
         dessin.ajoute([x, y, forme_actuelle, couleur_actuelle, taille_actuelle])
+    sinonsi mode == "pipette":
+        pipette(x, y)
     sinon:
         plus_proche = -1
         distance = 100000
@@ -189,24 +220,47 @@ fonction clic(x, y):
             dessin =: [dessin[i] pour i dans intervalle(longueur(dessin)) si i != plus_proche]
     dessine()
 
-# --- On pose les objets du panneau ---
-# ils prennent la police et la taille du texte du moment
+# --- Les images des boutons-formes ---
+# On dessine chaque icône dans le coin du canevas, puis capture_image en fait une image ;
+# dessine() recouvrira ensuite ce coin. La capture garde le fond de l'icône.
 
+fonction icône(f, couleur_fond, couleur_forme):
+    couleur(couleur_fond)
+    rectangle_plein(0, 0, 36, 36)
+    épaisseur(1)
+    couleur("gris")
+    rectangle(0, 0, 36, 36)
+    trace(f, 18, 18, couleur_forme, 12, Vrai)
+    retourne capture_image(0, 0, 36, 36)
+
+icônes = {}           # forme -> [image ordinaire, image de la forme choisie]
+pour f dans FORMES:
+    icônes[f] = [icône(f, "gris clair", "gris foncé"), icône(f, "blanc", "bleu")]
+
+# --- On pose les objets du panneau ---
+# ils prennent la police, la taille du texte et la couleur du moment (le texte des cases)
+
+couleur("noir")
 taille_texte(12)
 largeur_saisie(PANNEAU - 24)
 saisie("titre", 12, 28, titre_changé)
 liste_déroulante("forme", 12, 84, FORMES, forme_choisie)
-glissière("taille", 12, 140, 10, 80, 30, taille_changée)
-liste_hiérarchique("couleurs", 12, 190, 6, COULEURS, couleur_choisie)
-case_à_cocher("contour", 12, 334, "Contour noir", option)
-case_à_cocher("grille", 12, 360, "Afficher la grille", option)
-bouton_radio("poser", "clic", 12, 412, "pose une forme", mode_choisi)
-bouton_radio("effacer", "clic", 12, 436, "efface une forme", mode_choisi)
-bouton("hasard", 12, 470, "Au hasard", action)
-bouton("annuler", 130, 470, "Annuler", action)
-bouton("vider", 12, 508, "Tout effacer", action)
-bouton("recommencer", 130, 508, "Recommencer", action)
-zone_édition("légende", 12, 568, 2, légende_changée)
+# bouton_image(clef, x, y, image, image_appuyée, fonction) : l'image change pendant l'appui
+pour i dans intervalle(longueur(FORMES)):
+    f = FORMES[i]
+    bouton_image(f"icône_{f}", 12 + i * 46, 116, icônes[f][0], icônes[f][1], icône_choisie)
+glissière("taille", 12, 188, 10, 80, 30, taille_changée)
+liste_hiérarchique("couleurs", 12, 238, 6, COULEURS, couleur_choisie)
+case_à_cocher("contour", 12, 382, "Contour noir", option)
+case_à_cocher("grille", 12, 408, "Afficher la grille", option)
+bouton_radio("poser", "clic", 12, 460, "pose une forme", mode_choisi)
+bouton_radio("effacer", "clic", 12, 484, "efface une forme", mode_choisi)
+bouton_radio("pipette", "clic", 12, 508, "prend une couleur (pipette)", mode_choisi)
+bouton("hasard", 12, 540, "Au hasard", action)
+bouton("annuler", 130, 540, "Annuler", action)
+bouton("vider", 12, 578, "Tout effacer", action)
+bouton("recommencer", 130, 578, "Recommencer", action)
+zone_édition("légende", 12, 634, 2, légende_changée)
 
 recommence()
 dessine()

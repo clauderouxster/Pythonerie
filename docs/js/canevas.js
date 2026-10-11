@@ -692,6 +692,14 @@ const Pyt = (function () {
             gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
         },
 
+        // retire_objet(clef) : enlève un objet du canevas (rien s'il n'existe pas) ;
+        // retire_objets() les enlève tous
+        retireObjet(clef) {
+            const o = champs.get(String(clef).normalize('NFC'));
+            if (o) { o.élément.remove(); champs.delete(o.clef); }
+        },
+        retireObjets() { retireChamps(); },
+
         // ---------- Champs de saisie ----------
         // saisie(clef, x, y, fonction) : crée le champ « clef », ou le déplace s'il existe déjà
         saisie(clef, x, y, nom) {
@@ -1049,6 +1057,10 @@ const Pyt = (function () {
             return projet.concat(window.Pythonerie.médias().filter(bonne));
         },
 
+        // sauve_données(nom, texte) : écrit le fichier dans le répertoire données du projet
+        sauveDonnées(nom, texte) {
+            dernièreErreur = window.Pythonerie.sauveDonnées(String(nom), String(texte));
+        },
         // charge_données(nom) : un fichier du répertoire données du projet (voir pythonerie.js)
         chargeDonnées(nom) {
             dernièreErreur = '';

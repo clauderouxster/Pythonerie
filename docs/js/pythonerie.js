@@ -1453,8 +1453,8 @@ const Pythonerie = (function () {
                 fichiers: fichiers.map(f => f.chemin),
                 // les médias du site (exemples/médias/...) partent tous si le programme s'en sert :
                 // le piano compose leurs noms (f"exemples/médias/piano/{note}.wav"), et liste_sons()
-                // ou liste_images() les citent
-                médias: /exemples\/médias\/|liste_(sons|images)\s*\(/.test(assemblé.source) ? médiasSite.slice() : [],
+                // ou liste_images() les citent ; ou les données du projet (une pile de cartes qui montre étoile.svg)
+                médias: /exemples\/médias\/|liste_(sons|images)\s*\(/.test(assemblé.source + '\n' + Object.values(données).join('\n')) ? médiasSite.slice() : [],
                 données,
                 onglets: onglets.slice()
             };
@@ -3135,6 +3135,22 @@ const Pythonerie = (function () {
 
     // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
     // { contenu } ou { erreur }
+    // sauve_données(nom, valeur) : écrit (ou remplace) le fichier nom dans le répertoire données
+    // du projet ; '' si tout va bien, sinon le message d'erreur
+    function sauveDonnées(nom, texte) {
+        nom = nfc(String(nom)).trim().replace(/^données\//, '');
+        if (!nom || /[\\/:*?"<>|]/.test(nom) || nom.startsWith('.')) return 'sauve_données : nom de fichier invalide : « ' + nom + ' » (un simple nom, sans répertoire)';
+        if (!nom.includes('.')) nom += '.txt';
+        if (FichiersProjet.répertoireDe(nom) !== 'données') return 'sauve_données : « ' + nom + ' » doit finir par ' + FichiersProjet.RÉPERTOIRES.données.extensions.map(e => '.' + e).join(', ');
+        texte = nfc(String(texte));
+        if (new Blob([texte]).size > FichiersProjet.TAILLE_MAX) return 'sauve_données : « ' + nom + ' » est trop gros (5 Mo au plus)';
+        const chemin = 'données/' + nom;
+        const nouveau = !FichiersProjet.existe(chemin);
+        FichiersProjet.écritTexte(chemin, texte).catch(e => écritConsole('sauve_données : « ' + nom + ' » n\'a pas pu être gardé : ' + e.message, 'erreur'));
+        if (nouveau) { ouvertsProjet.add('données'); enregistreOuvertsProjet(); afficheArbre(); }
+        return '';
+    }
+
     function chargeDonnées(nom) {
         nom = nfc(String(nom)).trim().replace(/^données\//, '');
         const texte = FichiersProjet.texte('données/' + nom);
@@ -3593,7 +3609,7 @@ const Pythonerie = (function () {
     function oubliePile() { aprèsPile = false; }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, rangeDonnées, prendDonnées, réponseÀ,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, sauveDonnées, rangeDonnées, prendDonnées, réponseÀ,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },

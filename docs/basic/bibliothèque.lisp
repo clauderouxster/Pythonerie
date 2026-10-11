@@ -255,6 +255,9 @@
 (defmacro bouton (clef x y texte fonction) (block (evaljs (list "Pyt.bouton" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
 ; case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) quand on la coche ou la décoche
 (defmacro case_à_cocher (clef x y texte fonction) (block (evaljs (list "Pyt.caseÀCocher" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+; retire_objet(clef) : enlève un objet du canevas ; retire_objets() les enlève tous
+(defun retire_objet (clef) (evaljs (list "Pyt.retireObjet" (string clef))) nil)
+(defun retire_objets () (evaljs "Pyt.retireObjets()") nil)
 ; bouton_image(clef, x, y, image, f) : un bouton qui a l'aspect de l'image (numéro rendu par
 ; charge_image ou capture_image) ; bouton_image(clef, x, y, image, image_appuyée, f) lui donne un
 ; second aspect tant qu'on appuie. Un clic appelle f(clef, image). (deux macros : 5 ou 6 arguments)
@@ -351,6 +354,14 @@
    (setq contenu (evaljs (list "Pyt.chargeDonnées" (string nom))))
    (_erreur_navigateur)
    contenu)
+
+; sauve_données(nom, valeur) : écrit (ou remplace) le fichier nom dans le répertoire données du
+; projet : un texte tel quel, une autre valeur comme affiche l'écrirait (en_json(x) pour du JSON).
+; charge_données(nom) le relit aussitôt ; sans extension, le nom reçoit « .txt ».
+(defun sauve_données (nom valeur)
+   (evaljs (list "Pyt.sauveDonnées" (string nom) (_texte valeur)))
+   (_erreur_navigateur)
+   nil)
 
 ; range_données("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
 ; l'onglet don0 de la section Données ; l'onglet est créé s'il vient juste après le dernier

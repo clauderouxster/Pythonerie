@@ -753,7 +753,8 @@ saisie("âge", 100, 180, reçu)</pre></div>
                 </ul>
                 <p><code>valeur_objet(clef)</code> lit la valeur d'un objet à tout moment, et <code>change_objet(clef, valeur)</code>
                     la change (sans appeler sa fonction)&nbsp;: <code>change_objet("taille", 30)</code>,
-                    <code>change_objet("grille", Vrai)</code>…</p>
+                    <code>change_objet("grille", Vrai)</code>… <code>retire_objet(clef)</code> enlève un objet du canevas,
+                    et <code>retire_objets()</code> les enlève tous (pour passer d'un écran à un autre, par exemple).</p>
                 <div class="exemple"><pre data-essai>fonction choisi(clef, valeur):
     affiche(clef, ":", valeur)
 
@@ -1243,6 +1244,7 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>lit_fichier(adresse)</code></td><td>donne le texte d'une page Internet&nbsp;; l'adresse commence par <code>https://</code></td><td class="ex"><code>t = lit_fichier("https://…")</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
                     <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire données du projet</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>
+                    <tr><td><code>sauve_données(nom, valeur)</code></td><td>écrit (ou remplace) le fichier nom dans le répertoire données du projet&nbsp;: un texte tel quel, une autre valeur comme <code>affiche</code> l'écrirait (<code>en_json(x)</code> pour du JSON)&nbsp;; <code>charge_données</code> le relit aussitôt</td><td class="ex"><code>sauve_données("pile.json", en_json(pile))</code></td></tr>
                     <tr><td><code>liste_données()</code></td><td>la liste des noms des fichiers du répertoire données du projet</td><td class="ex"><code>liste_données()</code></td></tr>
                 </table>
 

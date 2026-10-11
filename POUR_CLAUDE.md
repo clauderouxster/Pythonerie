@@ -87,7 +87,7 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
   - `liste_déroulante(clef, x, y, éléments, f)` → `f(clef, choix)` ;
   - `liste_hiérarchique(clef, x, y, lignes, arbre, f)` → un élément est un texte ou `[nom, [enfants…]]` ; `f(clef, chemin)`, chemin étant la liste des noms depuis la racine (`chemin[-1]` est l'élément cliqué ; un groupe donne un chemin plus court) ;
   - `zone_édition(clef, x, y, lignes, f)` → texte sur plusieurs lignes, `f(clef, texte)` quand on la quitte ou avec Ctrl+Entrée.
-  - `valeur_objet(clef)` lit la valeur de n'importe quel objet (texte, nombre, Vrai/Faux, chemin) ; `change_objet(clef, valeur)` la change sans appeler `f`. Les fonctions sont données par leur nom, sans parenthèses.
+  - `valeur_objet(clef)` lit la valeur de n'importe quel objet (texte, nombre, Vrai/Faux, chemin) ; `change_objet(clef, valeur)` la change sans appeler `f` ; `retire_objet(clef)` enlève un objet, `retire_objets()` les enlève tous (pour changer d'écran). Les fonctions sont données par leur nom, sans parenthèses.
 - `arrête()` arrête les animations. L'élève a aussi un bouton « Arrêter » et un mode plein écran.
 - Le clavier ne marche qu'après un clic dans le canevas (ou en plein écran) : dis-le dans les commentaires.
 
@@ -98,6 +98,7 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 - `don0`, `don1`… : le texte des onglets de données du projet (bouton « Données » de l'éditeur) : tous les programmes du projet, et ceux qu'ils importent, voient les mêmes. Un onglet vide ne crée pas de variable. À utiliser quand l'élève colle ses propres données.
 - `range_données("don1", valeur)` : écrit la valeur (une liste ou un nombre est écrit comme `affiche` l'écrirait) dans l'onglet Don1, enregistré avec le projet. L'onglet doit exister, ou venir juste après le dernier (on le crée) ; sinon, c'est une erreur. Pendant l'exécution, la variable `don1` garde sa valeur du départ ; `prend_données("don1")` renvoie le texte actuel de l'onglet (y compris ce qu'un `range_données` vient d'y écrire, `""` s'il est vide ; un onglet inexistant est une erreur).
 - `charge_données(nom)` : le texte d'un fichier du répertoire **données** du projet (par exemple `charge_données("capitales.csv")`) ; un fichier absent est une erreur. Ce n'est pas un fichier du site : l'élève (ou un projet des Matériels) doit l'avoir mis dans le projet.
+- `sauve_données(nom, valeur)` : écrit (ou remplace) le fichier `nom` dans le répertoire **données** du projet (`.txt`, `.csv`, `.tsv`, `.json` ou `.md` ; sans extension, `.txt`) ; une valeur qui n'est pas un texte est écrite comme `affiche` l'écrirait : pour du JSON, `sauve_données("pile.json", en_json(d))`, relu par `analyse_json(charge_données("pile.json"))`. Le fichier apparaît dans le projet et part avec lui (export, application Web). Dans une application Web, il ne vit que le temps de la visite.
 - `lit_fichier()` (sans argument) : un fichier de l'ordinateur, choisi par l'élève dans une fenêtre (le programme repart du début une fois le fichier choisi) ; `lit_fichier("https://…")` : le texte d'une adresse Internet, si le site l'autorise.
 - `écrit_fichier(nom, texte)` : enregistre le texte dans le dossier Téléchargements (`"scores"` devient `scores.txt`).
 

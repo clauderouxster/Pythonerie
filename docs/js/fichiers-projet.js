@@ -83,6 +83,17 @@ const FichiersProjet = (function () {
         fichiers.delete(chemin);
     }
 
+    // sauve_données : un texte écrit par le programme dans le répertoire données. Il est en
+    // mémoire tout de suite (charge_données le relit aussitôt) ; IndexedDB suit, sans attendre
+    function écritTexte(chemin, texte) {
+        const type = TYPES[extensionDe(chemin)] || 'text/plain';
+        const entrée = { chemin, type, blob: new Blob([texte], { type }), modifie: Date.now() / 1000 };
+        const ancien = fichiers.get(chemin);
+        if (ancien && ancien.url) URL.revokeObjectURL(ancien.url);
+        fichiers.set(chemin, { chemin, type, taille: entrée.blob.size, blob: entrée.blob, modifie: entrée.modifie, url: null, texte: nfc(texte).replace(/\r\n?/g, '\n') });
+        return transaction(MAGASIN, 'readwrite', m => m.put(entrée));
+    }
+
     // Au démarrage : tous les fichiers du projet, en mémoire
     async function charge() {
         const tous = await transaction(MAGASIN, 'readonly', m => m.getAll());
@@ -201,7 +212,7 @@ const FichiersProjet = (function () {
 
     return {
         RÉPERTOIRES, TAILLE_MAX,
-        charge, liste, ajoute, supprime, renomme, répertoireDe,
+        charge, liste, ajoute, supprime, renomme, répertoireDe, écritTexte,
         entrée, instantané, remplace,
         projets, gardeProjet, litProjet, supprimeProjet,
         existe: (chemin) => fichiers.has(nfc(chemin)),

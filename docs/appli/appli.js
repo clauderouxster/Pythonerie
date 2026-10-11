@@ -215,6 +215,18 @@ const Pythonerie = (function () {
         return { contenu: texte };
     }
 
+    // sauve_données : le fichier vit le temps de la visite (une page ne peut pas écrire sur le site)
+    function sauveDonnées(nom, texte) {
+        nom = nfc(nom).trim().replace(/^données\//, '');
+        if (!nom || /[\\/:*?"<>|]/.test(nom) || nom.startsWith('.')) return 'sauve_données : nom de fichier invalide : « ' + nom + ' » (un simple nom, sans répertoire)';
+        if (!nom.includes('.')) nom += '.txt';
+        if (!/\.(txt|csv|tsv|json|md)$/i.test(nom)) return 'sauve_données : « ' + nom + ' » doit finir par .txt, .csv, .tsv, .json ou .md';
+        const chemin = 'données/' + nom;
+        APPLI.données[chemin] = nfc(texte).replace(/\r\n?/g, '\n');
+        if (!APPLI.fichiers.includes(chemin)) APPLI.fichiers.push(chemin);
+        return '';
+    }
+
     function rangeDonnées(nom, texte) {
         const m = /^don(\d+)$/i.exec(nfc(nom).trim());
         if (!m) return 'range_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
@@ -373,7 +385,7 @@ const Pythonerie = (function () {
 
     return {
         lispePrêt, sortie, effaceConsole, écrisPartiel, réponseÀ, litFichierLocal, déjàÉcrit,
-        chargeDonnées, rangeDonnées, prendDonnées,
+        chargeDonnées, sauveDonnées, rangeDonnées, prendDonnées,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => metAJourBoutons(),

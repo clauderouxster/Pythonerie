@@ -1087,6 +1087,25 @@ const Pyt = (function () {
             }
             return requête.responseText.normalize('NFC');
         },
+        // ouvre_page(adresse) : la page https://... s'ouvre dans un nouvel onglet. Le navigateur ne
+        // l'autorise que juste après un geste de l'élève (un clic, une touche, ▶ Exécuter) : sinon,
+        // l'erreur le dit. Quand le programme est rejoué après une demande(), la partie déjà jouée
+        // (muette, comme pour les sons) ne rouvre pas la page.
+        ouvrePage(adresse) {
+            dernièreErreur = '';
+            const a = String(adresse).normalize('NFC').trim();
+            if (!/^https:\/\/[^\s]+$/i.test(a)) {
+                dernièreErreur = 'ouvre_page : « ' + a + ' » n\'est pas une adresse qui commence par https://';
+                return;
+            }
+            if (sonsCoupés) return;
+            const onglet = window.open(a, '_blank');
+            if (!onglet) {
+                dernièreErreur = 'ouvre_page : le navigateur a bloqué l\'ouverture de « ' + a + ' » ; appelle ouvre_page juste après un clic (un bouton, quand_clic) ou une touche';
+                return;
+            }
+            onglet.opener = null;      // la page ouverte ne peut pas agir sur la Pythonerie
+        },
         // écrit_fichier(nom, texte) : téléchargé dans le dossier Téléchargements,
         // ce qui fonctionne partout (en ligne, avec serveur.py, sur une tablette)
         écritFichier(nom, texte) {
@@ -1127,6 +1146,22 @@ const Pyt = (function () {
             return projet.concat(window.Pythonerie.médias().filter(bonne));
         },
 
+        // charge_programme, sauve_programme, vérifie_code : voir pythonerie.js ; une application Web
+        // n'a ni programmes ni transpileur (son programme est déjà traduit en LispE)
+        chargeProgramme(nom) {
+            dernièreErreur = '';
+            if (!window.Pythonerie.chargeProgramme) { dernièreErreur = 'charge_programme n\'est pas disponible dans une application Web'; return ''; }
+            const r = window.Pythonerie.chargeProgramme(String(nom));
+            if (r.erreur) { dernièreErreur = r.erreur; return ''; }
+            return r.contenu;
+        },
+        sauveProgramme(nom, code) {
+            dernièreErreur = window.Pythonerie.sauveProgramme ? window.Pythonerie.sauveProgramme(String(nom), String(code))
+                : 'sauve_programme n\'est pas disponible dans une application Web';
+        },
+        vérifieCode(code) {
+            return window.Pythonerie.vérifieCode ? window.Pythonerie.vérifieCode(String(code)) : '';
+        },
         // sauve_données(nom, texte) : écrit le fichier dans le répertoire données du projet
         sauveDonnées(nom, texte) {
             dernièreErreur = window.Pythonerie.sauveDonnées(String(nom), String(texte));

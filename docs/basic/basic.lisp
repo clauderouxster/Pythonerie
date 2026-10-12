@@ -1,4 +1,4 @@
-;Date: 2026/10/12 14:07:07
+;Date: 2026/10/12 14:41:38
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -2765,7 +2765,7 @@
    )
 )
 
-;!acase := $cas astring expressions+ $fincas
+;!acase := $cas [astring^anumber] expressions+ $fincas
 (defun C_acase (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2773,7 +2773,10 @@
             (setq i1 (clone i0))
             (setq v1 ())
             (compare tokens "cas" i1 v1 nil)
-            (C_astring tokens i1 v1)
+            (or
+               (C_astring tokens i1 v1)
+               (C_anumber tokens i1 v1)
+            )
             (P_acase_0 tokens i1 v1)
             (compare tokens "fincas" i1 v1 nil)
             (set@ i0 0 (car i1))

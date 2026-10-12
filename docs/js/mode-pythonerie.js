@@ -142,11 +142,15 @@ const PYTHONERIE_FONCTIONS = {
     'liste_images': 'liste_images() — les noms des images du projet et du site, pour charge_image',
     'liste_données': 'liste_données() — les noms des fichiers de données du projet',
     'charge_données': 'charge_données(nom) — texte d\'un fichier du répertoire données du projet',
+    'charge_programme': 'charge_programme(nom) — le code d\'un programme du projet',
+    'sauve_programme': 'sauve_programme(nom, code) — écrit (ou crée) un programme du projet',
+    'vérifie_code': 'vérifie_code(code) — "" si le code est juste, sinon le message d\'erreur',
     'sauve_données': 'sauve_données(nom, valeur) — écrit le fichier nom dans le répertoire données du projet',
     'range_données': 'range_données("don0", valeur) — range la valeur dans l\'onglet de données don0 (créé s\'il suit le dernier)',
     'prend_données': 'prend_données("don0") — le texte actuel de l\'onglet de données don0',
     'lit_fichier': 'lit_fichier() — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre ; lit_fichier("https://…") — texte d\'une adresse Internet',
-    'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements'
+    'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements',
+    'ouvre_page': 'ouvre_page(adresse) — ouvre la page https://... dans un nouvel onglet (après un clic)'
 };
 
 // Pour la complétion seulement : taper « mel » propose « mélange »

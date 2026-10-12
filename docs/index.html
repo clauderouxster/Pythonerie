@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b35c2a'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3EP%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" href="images/logo-64.png">
+    <link rel="apple-touch-icon" href="images/logo-180.png">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -24,17 +25,17 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.12.14.20">
+    <link rel="stylesheet" href="style.css?v=2026.10.12.15.33">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <span class="logo">P</span>
+            <img class="logo" src="images/logo-96.png" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.14.20</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.15.33</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -215,57 +216,50 @@
     <div id="aide" class="fond-modal">
         <div class="modal">
             <div class="modal-tête">
-                <h2>Aide de la Pythonerie</h2>
+                <div class="aide-marque">
+                    <img class="aide-logo" src="images/logo-96.png" alt="" width="44" height="44">
+                    <div>
+                        <h2>Aide de la Pythonerie</h2>
+                        <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
+                    </div>
+                </div>
                 <button id="fermeAide" class="btn btn-secondaire btn-petit">Fermer</button>
             </div>
             <div class="modal-corps">
-                <p class="lien-guide">📖 Pour apprendre pas à pas, lis le <a href="guide.html" target="_blank" rel="noopener">mode d'emploi</a>&nbsp;: il explique tout simplement et contient le glossaire de tous les mots.</p>
-                <p>Pythonerie est un Python en français. Les blocs se reconnaissent à
-                    l'<b>indentation</b> (4 espaces) et la ligne qui ouvre un bloc se termine par <code>:</code>.
-                    <b>Ctrl+Entrée</b> exécute, <b>Ctrl+Espace</b> propose des mots, <b>Ctrl+/</b> met une ligne en commentaire.
-                    Les boutons <b>⛶</b> de l'éditeur et de la console les mettent en plein écran (<b>✕</b> ou Échap pour revenir ; <b>▶ Exécuter</b> quitte le plein écran de l'éditeur).
-                    Sous la console, la ligne <code>&gt;&gt;&gt;</code> exécute du code tout de suite, comme l'invite de Python :
-                    tape <code>notes</code> pour voir le contenu de la variable, <code>longueur(notes)</code>, <code>x = 5</code>…
-                    Elle utilise les variables et les fonctions du dernier programme exécuté. <b>Maj+Entrée</b> passe à la ligne
-                    (pour un <code>pour</code> ou un <code>si</code>), les flèches <b>↑ ↓</b> rappellent les commandes déjà tapées.
-                    Les noms du langage s'écrivent avec leur orthographe : <code>épaisseur</code>,
-                    <code>carré</code>, <code>va_à</code>, <code>règle</code>.</p>
-                <p>Par défaut, la Pythonerie est en mode <b>Utilisateur unique</b> : pas de connexion, l'utilisateur s'appelle « Unique »
-                    et le bouton <b>👤</b> est désactivé. Pour un ordinateur partagé, décoche <b>Utilisateur unique</b> dans le menu <b>☰</b> :
-                    le bouton <b>👤</b> montre alors le nom de l'élève (« inconnu » au départ), qu'il faut taper pour exécuter du code.
-                    Avec <code>"multi_utilisateur": true</code> dans le fichier <code>config.json</code> du site, ce mode est imposé à tout le monde
-                    et la case est désactivée ; chaque nouvel onglet commence alors avec un espace vide.
-                    Un deuxième clic déconnecte l'élève : son projet rejoint sa liste <b>Mes projets</b>, puis l'écran est vidé ;
-                    à la connexion suivante sous le même nom, il retrouve ses projets.</p>
-                <p><b>Le projet</b> réunit les programmes et trois répertoires fixes, en haut de la liste : <b>images</b>, <b>sons</b>
-                    et <b>données</b>. On y glisse des fichiers (ou on clique sur <b>＋</b>) ; un programme les utilise par leur nom :
-                    <code>charge_image("chat.png")</code>, <code>charge_son("bravo.wav")</code>, <code>charge_données("notes.csv")</code>.
-                    <code>importe "outils"</code> ajoute au programme le code du programme « outils » du projet ;
-                    <code>importe "jeux/décor"</code> va le chercher dans un dossier.
-                    Le nom du projet est affiché en haut de la liste (« Sans Nom » au départ) : un clic dessus ouvre <b>Mes projets</b>,
-                    les projets gardés dans ce navigateur (par utilisateur, un par nom) : on en ouvre un, on en supprime un (🗑).
-                    Le projet que l'on quitte y est rangé tout seul ; seul un projet sans nom fait poser une question.
-                    L'icône ⧉ d'un programme ou d'un fichier le copie ; dans un autre projet, le bandeau 📋 <b>Coller</b> (ou Cmd/Ctrl+V) le recopie.
-                    <b>Archiver tous mes projets</b> les met dans un seul fichier ; <b>Charger une archive</b> les fusionne avec la liste (pour un nom déjà pris, on choisit lequel garder, ou les deux).
-                    Dans le menu <b>☰</b> : <b>Nouveau projet</b> commence un projet vide avec un nom ;
-                    <b>Renommer le projet</b> change son nom ; <b>Supprimer le projet</b> l'efface ;
-                    <b>Revenir au projet précédent</b> rouvre le dernier projet quitté ; <b>Exporter le projet</b> l'enregistre dans un fichier
-                    <code>nom_du_projet_aaaa_mm_jj_hh_MM.zip</code> (dossier Téléchargements), avec le nom de l'élève en mode plusieurs élèves
-                    (<code>nom_du_projet_élève_aaaa_mm_jj_hh_MM.zip</code>) ; un projet sans nom en reçoit un avant de partir.
-                    Ce fichier zip contient les programmes, les onglets de données et les répertoires images, sons et données.
-                    <b>Créer une application Web</b> fait d'un programme du projet (on choisit le principal s'il y en a plusieurs) un petit site
-                    autonome, sans éditeur&nbsp;: un zip à décompresser, puis à mettre sur un site Web (voir son <code>LISEZMOI.txt</code>).
-                    Avec <code>serveur.py</code>, une copie est aussi conservée sur le serveur, pour l'enseignant.
-                    <b>Charger un projet</b> (un .zip, ou un .json) l'ouvre à la place du projet en cours.
-                    Les listes <b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne, proposent le matériel de l'enseignant et des exemples ;
-                    un projet des Matériels s'ouvre d'un clic. La colonne s'élargit en faisant glisser son bord droit.
-                    <b>Coller un projet (JSON)</b> charge un projet écrit d'un seul bloc de texte, comme ceux que prépare Claude.</p>
-                <p>🔒 <b>Protection des données</b> : la Pythonerie est parfaitement compatible avec le RGPD et avec ses équivalents
-                    canadiens (LPRPDE, Loi 25 du Québec). Tout s'exécute dans le navigateur : une fois la page chargée, rien ne transite
-                    par le réseau. Les programmes et le nom de l'élève restent sur l'ordinateur, aucun serveur ne les reçoit, et il n'y a
-                    ni cookie, ni mesure d'audience, ni service tiers (l'éditeur et les polices sont fournis par le site lui-même).</p>
+                <p class="lien-guide">📖 Pour apprendre pas à pas, lis le <a href="guide.html" target="_blank" rel="noopener">mode d'emploi</a> :
+                    il explique tout simplement, avec des exemples à essayer, et contient le glossaire de tous les mots.</p>
 
-                <h3>Les mots du langage</h3>
+                <nav class="aide-sommaire" aria-label="Sommaire de l'aide">
+                    <a href="#aide-écran">L'écran</a>
+                    <a href="#aide-langage">Le langage</a>
+                    <a href="#aide-fonctions">Fonctions utiles</a>
+                    <a href="#aide-dessin">Dessin</a>
+                    <a href="#aide-tortue">Tortue</a>
+                    <a href="#aide-animation">Animation et objets</a>
+                    <a href="#aide-médias">Images, sons, pages</a>
+                    <a href="#aide-données">Fichiers et données</a>
+                    <a href="#aide-projet">Le projet</a>
+                </nav>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-écran">L'écran et les raccourcis</h3>
+                <table class="table-aide raccourcis">
+                    <tr><td><kbd>Ctrl</kbd>+<kbd>Entrée</kbd></td><td>exécute le programme (comme ▶ Exécuter)</td>
+                        <td><kbd>Ctrl</kbd>+<kbd>Espace</kbd></td><td>propose des mots</td></tr>
+                    <tr><td><kbd>Ctrl</kbd>+<kbd>/</kbd></td><td>met une ligne en commentaire, ou l'en sort</td>
+                        <td><b>⛶</b></td><td>met l'éditeur, la console ou le canevas en plein écran (<b>✕</b> ou <kbd>Échap</kbd> pour revenir)</td></tr>
+                    <tr><td><code>&gt;&gt;&gt;</code></td><td>sous la console : exécute tout de suite une ligne, avec les variables du dernier programme (<code>notes</code>, <code>longueur(notes)</code>…)</td>
+                        <td><kbd>Maj</kbd>+<kbd>Entrée</kbd> · <kbd>↑</kbd> <kbd>↓</kbd></td><td>dans la ligne <code>&gt;&gt;&gt;</code> : passe à la ligne · rappelle les commandes déjà tapées</td></tr>
+                    <tr><td><b>▦ Données</b></td><td>montre les onglets de données du projet (puis <b>✎ Code</b> pour revenir)</td>
+                        <td><b>λ LispE</b></td><td>montre le code LispE produit, avec ses numéros de ligne</td></tr>
+                    <tr><td><b>▤ Console</b></td><td>en plein écran du canevas : fait venir la console dessous</td>
+                        <td><b>■ Arrêter</b></td><td>arrête une animation (ou <code>arrête()</code> dans le programme)</td></tr>
+                </table>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-langage">Le langage</h3>
+                <p class="aide-règle">Un bloc est <b>décalé de 4 espaces</b>. La ligne qui l'ouvre se termine par <code>:</code>, et l'on
+                    <b>va toujours à la ligne</b> après : rien ne s'écrit à droite du <code>:</code>.</p>
                 <div class="grille-aide">
 <pre class="exemple"># Un commentaire
 âge = 12
@@ -320,22 +314,34 @@ rex.aboie()
 ok = Vrai     # Vrai, Faux, Rien
 nom = "Tom"
 selon (nom):
-    cas "Léa": affiche("Salut Léa")
-    cas "Tom": affiche("Salut Tom")</pre>
+    cas "Léa":
+        affiche("Salut Léa")
+    cas "Tom":
+        affiche("Salut Tom")
+    défaut:
+        affiche("Bonjour", nom)</pre>
                 </div>
-                <p class="note">Opérateurs : <code>+ - * / // % **</code>, comparaisons : <code>== != &lt; &lt;= &gt; &gt;=</code>,
-                    logique : <code>et ou non</code>, appartenance : <code>dans</code>, <code>non dans</code>.
-                    Mots-clefs : si, sinonsi, sinon, tantque, pour, dans, fonction/def, retourne, sortir, continuer,
-                    classe, soi, essaie, sauf, lever, selon, cas, lambda.</p>
-
-                <h3>Fonctions utiles</h3>
                 <table class="table-aide">
-                    <tr><td><code>affiche(a, b…)</code></td><td>écrit dans la console</td>
-                        <td><code>demande("Question ?")</code></td><td>demande un texte à l'utilisateur : la réponse se tape sous la console (Entrée ; Échap arrête)</td></tr>
-                    <tr><td><code>demande_nombre("…")</code></td><td>demande un nombre (synonymes : <code>lire</code>, <code>lire_nombre</code>, <code>input</code>)</td>
+                    <tr><td>Opérateurs</td><td><code>+ - * / // % **</code> · <code>+= -= *= /=</code></td>
+                        <td>Comparaisons</td><td><code>== != &lt; &lt;= &gt; &gt;=</code></td></tr>
+                    <tr><td>Logique</td><td><code>et ou non</code> · <code>dans</code>, <code>non dans</code></td>
+                        <td>Erreurs</td><td><code>essaie:</code> … <code>sauf:</code> (ou <code>sauf(e):</code> pour lire le message) · <code>lever "…"</code></td></tr>
+                    <tr><td>Dans une fonction</td><td><code>x = …</code> crée une variable locale ; <code>x =: …</code> change celle du programme</td>
+                        <td>Copier</td><td><code>clone(l)</code> : une vraie copie d'une liste ou d'un dictionnaire</td></tr>
+                </table>
+                <p class="note">Les noms gardent leurs accents : <code>épaisseur</code>, <code>carré</code>, <code>va_à</code>.
+                    Une boucle <code>tantque</code> qui ne s'arrête jamais est stoppée après 10 millions de tours, avec un message :
+                    pour un jeu, utilise <code>animer</code>.</p>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-fonctions">Fonctions utiles</h3>
+                <table class="table-aide">
+                    <tr><td><code>affiche(a, b…)</code></td><td>écrit dans la console (<code>écris</code> : sans aller à la ligne)</td>
+                        <td><code>demande("Question ?")</code></td><td>demande un texte : on répond sous la console (Entrée ; Échap arrête)</td></tr>
+                    <tr><td><code>demande_nombre("…")</code></td><td>demande un nombre</td>
                         <td><code>longueur(x)</code></td><td>taille d'une liste ou d'un texte</td></tr>
-                    <tr><td><code>intervalle(a, b, pas)</code></td><td>nombres de a à b (exclu)</td>
-                        <td><code>aléatoire(a, b)</code></td><td>entier au hasard entre a et b</td></tr>
+                    <tr><td><code>intervalle(a, b, pas)</code></td><td>les nombres de a à b (b exclu)</td>
+                        <td><code>aléatoire(a, b)</code> · <code>hasard()</code></td><td>un entier entre a et b · un réel entre 0 et 1</td></tr>
                     <tr><td><code>entier(x) réel(x) chaîne(x)</code></td><td>conversions</td>
                         <td><code>arrondi(x, n)</code></td><td>arrondi à n décimales</td></tr>
                     <tr><td><code>racine(x) absolu(x)</code></td><td>mathématiques</td>
@@ -344,8 +350,9 @@ selon (nom):
                         <td><code>trie(l) inverse(l) choisis(l)</code></td><td>listes</td></tr>
                     <tr><td><code>majuscules(t) minuscules(t)</code></td><td>texte</td>
                         <td><code>découpe(t, " ") remplace(t, a, b)</code></td><td>texte</td></tr>
+                    <tr><td><code>typede(x)</code></td><td>le genre de x, en français : <code>"entier"</code>, <code>"texte"</code>, <code>"liste"</code>, <code>"dictionnaire"</code>…</td>
+                        <td><code>en_json(x)</code> · <code>analyse_json(t)</code></td><td>une valeur en JSON, et l'inverse</td></tr>
                 </table>
-
                 <details class="aide-français">
                     <summary>Les instructions de LispE en français (<span id="nbFrançais">…</span>)</summary>
                     <p class="note">Ces noms sont d'autres noms des instructions de LispE (voir <code>basic/français.lisp</code>).
@@ -354,36 +361,29 @@ selon (nom):
                     <div id="aideFrançais"></div>
                 </details>
 
-                <h3>Dessiner dans le canevas</h3>
-                <p>Le canevas mesure 800 × 600. Le point (0, 0) est <b>en haut à gauche</b>, y augmente vers le bas.
-                    Survole le canevas pour voir les coordonnées. <b>⛶ Plein écran</b> l'agrandit à tout l'écran, avec <b>■ Arrêter</b>
-                    et <b>✕ Quitter le plein écran</b> (ou Échap). <code>canevas(400, 400)</code>, au début du programme, change
-                    sa taille (le dessin est effacé) ; <code>largeur()</code> et <code>hauteur()</code> donnent la taille actuelle.
-                    À chaque exécution, il reprend sa taille de 800 × 600.</p>
+                <!-- ============================================================ -->
+                <h3 id="aide-dessin">Le dessin</h3>
+                <p class="note">Le canevas mesure 800 × 600 ; (0, 0) est <b>en haut à gauche</b> et y descend. Survole-le pour voir les coordonnées.
+                    <code>canevas(400, 400)</code> change sa taille ; <code>largeur()</code>, <code>hauteur()</code> la donnent.</p>
                 <table class="table-aide">
-                    <tr><td><code>efface()</code></td><td>page blanche</td>
-                        <td><code>fond("bleu clair")</code></td><td>peint tout le fond</td></tr>
-                    <tr><td><code>couleur("rouge")</code></td><td>couleur des formes</td>
-                        <td><code>couleur(rgb(255, 128, 0))</code></td><td>couleur sur mesure</td></tr>
-                    <tr><td><code>épaisseur(4)</code></td><td>épaisseur du trait</td>
-                        <td><code>point(x, y)</code></td><td>un point</td></tr>
-                    <tr><td><code>ligne(x1, y1, x2, y2)</code></td><td>un segment</td>
-                        <td><code>rectangle(x, y, l, h)</code></td><td>contour (<code>rectangle_plein</code>)</td></tr>
-                    <tr><td><code>cercle(x, y, r)</code></td><td>contour d'un cercle</td>
-                        <td><code>disque(x, y, r)</code></td><td>cercle plein</td></tr>
-                    <tr><td><code>carré(x, y, c)</code></td><td>(<code>carré_plein</code>)</td>
-                        <td><code>ellipse(x, y, rx, ry)</code></td><td>(<code>ellipse_pleine</code>)</td></tr>
-                    <tr><td><code>triangle(x1, y1, x2, y2, x3, y3)</code></td><td>(<code>triangle_plein</code>)</td>
+                    <tr><td><code>efface()</code> · <code>fond("bleu clair")</code></td><td>page blanche · peint tout le fond</td>
+                        <td><code>couleur("rouge")</code> · <code>rgb(255, 128, 0)</code></td><td>couleur des formes · couleur sur mesure</td></tr>
+                    <tr><td><code>épaisseur(4)</code> · <code>point(x, y)</code></td><td>épaisseur du trait · un point</td>
+                        <td><code>ligne(x1, y1, x2, y2)</code></td><td>un segment</td></tr>
+                    <tr><td><code>rectangle(x, y, l, h)</code> · <code>carré(x, y, c)</code></td><td>contours (<code>_plein</code> : coloriés)</td>
+                        <td><code>cercle(x, y, r)</code> · <code>disque(x, y, r)</code></td><td>contour · rond colorié</td></tr>
+                    <tr><td><code>ellipse(x, y, rx, ry)</code> · <code>triangle(…)</code></td><td>(<code>ellipse_pleine</code>, <code>triangle_plein</code>)</td>
                         <td><code>polygone([[x, y], …])</code></td><td>(<code>polygone_plein</code>)</td></tr>
                     <tr><td><code>texte(x, y, "Bonjour")</code></td><td>écrit dans le canevas</td>
-                        <td><code>taille_texte(30) police("serif")</code></td><td>style du texte</td></tr>
+                        <td><code>taille_texte(30)</code> · <code>police("serif")</code></td><td>style du texte</td></tr>
+                    <tr><td><code>couleur_pixel(x, y)</code></td><td>la couleur d'un point : [rouge, vert, bleu, opacité]</td>
+                        <td><code>pixels(x, y, l, h)</code> · <code>pose_pixels(…)</code></td><td>lit les points d'un rectangle · les redessine</td></tr>
                 </table>
-                <p class="note">Couleurs : rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris,
-                    cyan, magenta, turquoise, beige, or, argent, bleu marine, et leurs nuances « clair » et « foncé »
-                    (rouge foncé, vert foncé, bleu clair, gris clair…) —
-                    ou n'importe quelle couleur CSS (<code>"#ff8800"</code>).</p>
+                <p class="note">Couleurs : rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris, cyan, magenta, turquoise,
+                    beige, or, argent, bleu marine, et leurs nuances « clair » et « foncé » — ou une couleur CSS (<code>"#ff8800"</code>).</p>
 
-                <h3>La tortue</h3>
+                <!-- ============================================================ -->
+                <h3 id="aide-tortue">La tortue</h3>
                 <table class="table-aide">
                     <tr><td><code>avance(100) recule(50)</code></td><td>se déplace en dessinant</td>
                         <td><code>gauche(90) droite(45)</code></td><td>tourne (degrés)</td></tr>
@@ -391,60 +391,102 @@ selon (nom):
                         <td><code>va_à(x, y) oriente(angle)</code></td><td>position et direction</td></tr>
                     <tr><td><code>origine()</code></td><td>retour au centre</td>
                         <td><code>cache_tortue() montre_tortue()</code></td><td>visibilité</td></tr>
+                    <tr><td><code>position()</code></td><td>[x, y] de la tortue</td>
+                        <td><code>cap()</code></td><td>sa direction, en degrés</td></tr>
                 </table>
 
-                <h3>Images et sons</h3>
-                <table class="table-aide">
-                    <tr><td><code>img = charge_image("exemples/médias/étoile.svg")</code></td><td>charge une image et renvoie son numéro</td>
-                        <td><code>place_image(img, x, y)</code></td><td>dessine l'image, (x, y) est son coin en haut à gauche</td></tr>
-                    <tr><td><code>place_image(img, x, y, l, h)</code></td><td>en choisissant sa largeur et sa hauteur</td>
-                        <td><code>snd = charge_son("exemples/médias/ding.wav")</code></td><td>charge un son et renvoie son numéro</td></tr>
-                    <tr><td><code>joue_son(snd)</code></td><td>joue le son</td>
-                        <td></td><td></td></tr>
-                </table>
-                <h3>Fichiers</h3>
-                <table class="table-aide">
-                    <tr><td><code>t = lit_fichier()</code></td><td>le texte d'un fichier de l'ordinateur, choisi dans une fenêtre à chaque exécution ; <code>lit_fichier("https://…")</code> lit une adresse Internet</td>
-                        <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements (scores.txt)</td></tr>
-                    <tr><td><code>t = charge_données("capitales.csv")</code></td><td>le texte d'un fichier du répertoire <b>données</b> du projet</td>
-                        <td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)</td></tr>
-                    <tr><td><code>range_données("don1", valeur)</code></td><td>écrit la valeur dans l'onglet Don1 (on peut créer l'onglet qui suit le dernier)</td>
-                        <td><code>t = prend_données("don1")</code></td><td>le texte actuel de l'onglet Don1</td></tr>
-                </table>
-                <p class="note">Le bouton <b>▦ Données</b>, au-dessus de l'éditeur, montre les onglets de données du projet ; il devient alors <b>✎ Code</b>, pour revenir au programme.
-                    On y tape ou colle des données, ou on y charge un fichier (📂). <b>＋</b> ajoute un onglet, <b>−</b> retire l'onglet ouvert (Don0 est seulement vidé), <b>↶</b> annule. À l'exécution, chaque onglet non vide devient
-                    une variable : <code>don0</code>, <code>don1</code>… Les onglets appartiennent au projet : tous ses programmes
-                    (et ceux qu'ils importent) voient les mêmes <code>don0</code>, <code>don1</code>…, et ils suivent le projet quand on l'exporte.</p>
-                <p class="note">Un nom seul (<code>"chat.png"</code>) désigne un fichier du répertoire images ou sons du projet ; sinon, l'adresse est celle d'un fichier du site (<code>exemples/médias/…</code>) ou une adresse complète (<code>https://…</code>).
-                    Une image d'un autre site s'affiche, mais le bouton « Image » ne peut plus enregistrer le dessin.</p>
-
-                <h3>Animation et interaction</h3>
+                <!-- ============================================================ -->
+                <h3 id="aide-animation">Animation, souris, clavier et objets</h3>
 <pre class="exemple">x = 0
 couleur_balle = "rouge"
 
 fonction bouge():
-    x += 5              # += modifie la variable x du programme
+    x =: x + 5          # =: change la variable x du programme
     efface()
     couleur(couleur_balle)
     disque(x % 800, 300, 30)
 
-animer(bouge, 30)       # toutes les 30 millisecondes
-
 fonction clic(cx, cy):
-    couleur_balle =: choisis(["rouge", "vert", "bleu"])   # =: modifie la variable du programme
-quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche(f)
-                        # quand_touche : "gauche", "droite", "haut", "bas", "espace", "entrée", "a"…
-                        # dans la fonction d'animer : si touche_enfoncée("gauche"): … ; quand_relâche(f) : f(touche) au relâchement
-                        # saisie("nom", 100, 100, f) : un champ de saisie ; Entrée appelle f(clef, valeur)
-                        # active_saisie(clef), saisie_active(), largeur_saisie(l) ; nombre("2,5") donne 2.5
-                        # aussi : bouton, case_à_cocher, bouton_radio, glissière, liste_déroulante,
-                        # liste_hiérarchique, zone_édition ; valeur_objet(clef), change_objet(clef, valeur)</pre>
-                <p class="note">Dans une fonction, <code>x = …</code> crée une variable locale (comme en Python) :
-                    écris <code>x =: …</code> pour modifier la variable du programme. <code>x += …</code> modifie
-                    directement la variable du programme si la fonction n'a pas de variable locale <code>x</code>.</p>
-                <p class="note">Le bouton « Arrêter » (ou <code>arrête()</code>) stoppe l'animation.
-                    Attention : une boucle <code>tantque Vrai:</code> sans fin bloque la page — utilise plutôt <code>animer</code>.
-                    Le bouton « λ LispE » montre le code LispE produit par le transpileur.</p>
+    couleur_balle =: choisis(["rouge", "vert", "bleu"])
+
+animer(bouge, 30)       # toutes les 30 millisecondes
+quand_clic(clic)</pre>
+                <table class="table-aide">
+                    <tr><td><code>quand_clic(f)</code> · <code>quand_souris(f)</code> · <code>quand_glisse(f)</code></td><td><code>f(x, y)</code> au clic, quand la souris bouge, quand on la fait glisser</td>
+                        <td><code>quand_touche(f)</code> · <code>quand_relâche(f)</code></td><td><code>f(touche)</code> : "gauche", "droite", "haut", "bas", "espace", "entrée", "a"…</td></tr>
+                    <tr><td><code>touche_enfoncée("gauche")</code></td><td>Vrai tant que la touche est tenue : à tester dans la fonction d'<code>animer</code></td>
+                        <td><code>arrête()</code></td><td>arrête les animations</td></tr>
+                    <tr><td><code>bouton(clef, x, y, texte, f)</code></td><td>un bouton ; un clic appelle <code>f(clef, texte)</code></td>
+                        <td><code>bouton_image(clef, x, y, image, f)</code></td><td>un bouton qui a l'aspect d'une image (une seconde image : son aspect appuyé)</td></tr>
+                    <tr><td><code>saisie(clef, x, y, f)</code></td><td>un champ de saisie ; Entrée appelle <code>f(clef, valeur)</code></td>
+                        <td>aussi</td><td><code>case_à_cocher</code>, <code>bouton_radio</code>, <code>glissière</code>, <code>liste_déroulante</code>, <code>liste_hiérarchique</code>, <code>zone_édition</code></td></tr>
+                    <tr><td><code>valeur_objet(clef)</code> · <code>change_objet(clef, v)</code></td><td>lit ou change la valeur d'un objet</td>
+                        <td><code>retire_objet(clef)</code> · <code>retire_objets()</code></td><td>enlève un objet, ou tous</td></tr>
+                    <tr><td><code>affiche_console()</code> · <code>cache_console()</code></td><td>montre la console, même en plein écran du canevas · la renvoie</td>
+                        <td><code>efface_console()</code></td><td>vide la console</td></tr>
+                </table>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-médias">Images, sons et pages</h3>
+                <table class="table-aide">
+                    <tr><td><code>img = charge_image("chat.png")</code></td><td>charge une image et donne son numéro</td>
+                        <td><code>place_image(img, x, y)</code></td><td>la dessine (coin en haut à gauche) ; avec <code>l, h</code> : à cette taille</td></tr>
+                    <tr><td><code>snd = charge_son("bravo.wav")</code></td><td>charge un son et donne son numéro</td>
+                        <td><code>joue_son(snd)</code></td><td>joue le son</td></tr>
+                    <tr><td><code>liste_images()</code> · <code>liste_sons()</code></td><td>les noms des images, des sons du projet et du site</td>
+                        <td><code>capture_image(x, y, l, h)</code></td><td>un rectangle du dessin devient une image</td></tr>
+                    <tr><td><code>ouvre_page("https://…")</code></td><td>ouvre une page dans un nouvel onglet (depuis un clic)</td>
+                        <td></td><td></td></tr>
+                </table>
+                <p class="note">Un nom seul (<code>"chat.png"</code>) désigne un fichier des répertoires images ou sons du projet ; un chemin,
+                    un fichier du site (<code>exemples/médias/ding.wav</code>) ; <code>https://…</code>, une adresse Internet.</p>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-données">Fichiers et données</h3>
+                <table class="table-aide">
+                    <tr><td><code>t = charge_données("notes.csv")</code></td><td>le texte d'un fichier du répertoire <b>données</b></td>
+                        <td><code>sauve_données("notes.csv", t)</code></td><td>l'écrit (ou le remplace) dans ce répertoire</td></tr>
+                    <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets de données (bouton <b>▦ Données</b>)</td>
+                        <td><code>range_données("don1", v)</code> · <code>prend_données("don1")</code></td><td>écrit dans un onglet · le relit</td></tr>
+                    <tr><td><code>t = lit_fichier()</code></td><td>un fichier de l'ordinateur, choisi dans une fenêtre (ou <code>lit_fichier("https://…")</code>)</td>
+                        <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements</td></tr>
+                    <tr><td><code>importe "outils"</code></td><td>ajoute le code du programme « outils » du projet</td>
+                        <td><code>charge_programme</code> · <code>sauve_programme</code></td><td>lit ou écrit un programme du projet</td></tr>
+                </table>
+
+                <!-- ============================================================ -->
+                <h3 id="aide-projet">Le projet</h3>
+                <ul class="aide-liste">
+                    <li>Le <b>projet</b> réunit les programmes et trois répertoires : <b>images</b>, <b>sons</b> et <b>données</b>. On y glisse des fichiers, ou on clique sur <b>＋</b>.</li>
+                    <li>Un clic sur le <b>nom du projet</b> ouvre <b>Mes projets</b> : les projets gardés dans ce navigateur. Le projet que l'on quitte y est rangé tout seul.</li>
+                    <li><b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne : le matériel de l'enseignant, et vingt exemples à copier d'un clic.</li>
+                    <li>L'icône <b>⧉</b> copie un programme ou un fichier ; dans un autre projet, <b>📋 Coller</b> (ou Cmd/Ctrl+V) le recopie.</li>
+                </ul>
+                <details class="aide-détails">
+                    <summary>Les actions du menu ☰</summary>
+                    <table class="table-aide">
+                        <tr><td><b>Nouveau projet</b> · <b>Renommer</b> · <b>Supprimer</b></td><td>un projet vide avec un nom · change son nom · l'efface</td></tr>
+                        <tr><td><b>Exporter le projet</b></td><td>un fichier <code>.zip</code> dans Téléchargements, avec les programmes, les données, les images et les sons (un projet sans nom en reçoit un d'abord)</td></tr>
+                        <tr><td><b>Charger un projet</b> · <b>Coller un projet (JSON)</b></td><td>ouvre un <code>.zip</code> ou un <code>.json</code> à la place du projet en cours · un projet écrit en texte, comme ceux que prépare Claude</td></tr>
+                        <tr><td><b>Créer une application Web</b></td><td>fait d'un programme (le principal, s'il y en a plusieurs) un petit site autonome : un zip à décompresser et à mettre sur un site Web (voir son <code>LISEZMOI.txt</code>)</td></tr>
+                        <tr><td><b>Revenir au projet précédent</b></td><td>rouvre le dernier projet quitté</td></tr>
+                        <tr><td><b>Archiver tous mes projets</b> · <b>Charger une archive</b></td><td>tous les projets dans un seul fichier · les fusionne avec la liste (pour un nom déjà pris, on choisit)</td></tr>
+                    </table>
+                </details>
+                <details class="aide-détails">
+                    <summary>Plusieurs élèves sur le même ordinateur</summary>
+                    <p class="note">Par défaut, la Pythonerie est en mode <b>Utilisateur unique</b> : pas de connexion, l'utilisateur s'appelle « Unique ».
+                        Pour un ordinateur partagé, décoche <b>Utilisateur unique</b> dans le menu <b>☰</b> : chaque élève tape son nom (bouton <b>👤</b>)
+                        avant d'exécuter du code, et ne voit que ses projets. Un deuxième clic sur <b>👤</b> le déconnecte : son projet rejoint sa liste,
+                        et l'écran est vidé pour l'élève suivant. Avec <code>"multi_utilisateur": true</code> dans <code>config.json</code>, ce mode est imposé
+                        à tout le monde. Avec <code>serveur.py</code>, une copie des projets exportés est gardée pour l'enseignant.</p>
+                </details>
+                <details class="aide-détails">
+                    <summary>🔒 Protection des données</summary>
+                    <p class="note">La Pythonerie est compatible avec le RGPD et ses équivalents canadiens (LPRPDE, Loi 25 du Québec) : tout s'exécute
+                        dans le navigateur. Une fois la page chargée, rien ne transite par le réseau ; les programmes et le nom de l'élève restent
+                        sur l'ordinateur. Il n'y a ni cookie, ni mesure d'audience, ni service tiers (l'éditeur et les polices sont fournis par le site).</p>
+                </details>
             </div>
         </div>
     </div>
@@ -469,7 +511,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.12.14.20';
+                return répertoire + fichier + '?v=2026.10.12.15.33';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -477,15 +519,15 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.12.14.20"></script>
-    <script src="js/zip.js?v=2026.10.12.14.20"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.12.14.20"></script>
-    <script src="js/erreurs.js?v=2026.10.12.14.20"></script>
-    <script src="js/canevas.js?v=2026.10.12.14.20"></script>
-    <script src="js/pythonerie.js?v=2026.10.12.14.20"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.12.15.33"></script>
+    <script src="js/zip.js?v=2026.10.12.15.33"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.12.15.33"></script>
+    <script src="js/erreurs.js?v=2026.10.12.15.33"></script>
+    <script src="js/canevas.js?v=2026.10.12.15.33"></script>
+    <script src="js/pythonerie.js?v=2026.10.12.15.33"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.12.14.20"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.12.14.20"></script>
+    <script src="lispe/lispe.js?v=2026.10.12.15.33"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.12.15.33"></script>
 </body>
 
 </html>

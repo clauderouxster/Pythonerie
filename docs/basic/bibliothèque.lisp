@@ -367,6 +367,19 @@
    (_erreur_navigateur)
    nil)
 
+; charge_programme(nom) : le code d'un programme du projet ; sauve_programme(nom, code) l'écrit
+; (ou le crée), sans l'ouvrir ; vérifie_code(code) : "" si le code se compile, sinon le message
+; d'erreur (rien n'est exécuté). L'Éditeur des cartes s'en sert pour écrire biblios.pyf.
+(defun charge_programme (nom)
+   (setq _c (evaljs (list "Pyt.chargeProgramme" (string nom))))
+   (_erreur_navigateur)
+   _c)
+(defun sauve_programme (nom code)
+   (evaljs (list "Pyt.sauveProgramme" (string nom) (string code)))
+   (_erreur_navigateur)
+   nil)
+(defun vérifie_code (code) (evaljs (list "Pyt.vérifieCode" (string code))))
+
 ; range_données("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
 ; l'onglet don0 de la section Données ; l'onglet est créé s'il vient juste après le dernier
 (defun range_données (nom valeur)
@@ -380,6 +393,13 @@
    (setq e (evaljs "Pythonerie.erreurDonnées()"))
    (if (!= e "") (throw e))
    contenu)
+
+; ouvre_page(adresse) : ouvre la page https://... dans un nouvel onglet ; le navigateur ne
+; l'accepte que juste après un clic ou une touche (sinon, une erreur le dit)
+(defun ouvre_page (adresse)
+   (evaljs (list "Pyt.ouvrePage" (string adresse)))
+   (_erreur_navigateur)
+   nil)
 
 (defun écrit_fichier (nom texte)
    (evaljs (list "Pyt.écritFichier" (string nom) (_texte texte)))

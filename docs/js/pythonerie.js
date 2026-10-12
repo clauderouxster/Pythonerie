@@ -3162,6 +3162,33 @@ const Pythonerie = (function () {
 
     // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
     // { contenu } ou { erreur }
+    // charge_programme(nom) / sauve_programme(nom, code) : un programme du projet, lu ou écrit
+    // par un programme (l'Éditeur des cartes écrit ainsi biblios.pyf, que le Lecteur importe).
+    // sauve_programme n'ouvre pas le programme écrit ; s'il est ouvert, l'éditeur le montre.
+    function chargeProgramme(nom) {
+        const chemin = trouveProgramme(String(nom), courant);
+        if (!chemin) return { erreur: 'charge_programme : il n\'y a pas de programme « ' + nom + ' » dans le projet' };
+        return { contenu: nfc(codeDuProgramme(chemin)) };
+    }
+
+    function sauveProgramme(nom, code) {
+        nom = nfc(String(nom)).trim().replace(/\.pyf?$/i, '');
+        const chemin = trouveProgramme(nom, courant) || cheminValide(nom);
+        if (!chemin) return 'sauve_programme : nom de programme invalide : « ' + nom + ' »';
+        code = nfc(String(code));
+        if (chemin === courant) { éditeur.setValue(code); return ''; }
+        const nouveau = !programmes.some(p => p.chemin === chemin);
+        stockage.écrit(chemin, code).catch(e => écritConsole('sauve_programme : « ' + chemin + ' » n\'a pas pu être enregistré : ' + e.message, 'erreur'));
+        if (nouveau) rafraichitListe();
+        return '';
+    }
+
+    // vérifie_code(code) : '' si le code se compile, sinon le message d'erreur (rien n'est exécuté)
+    function vérifieCode(code) {
+        const c = compile(String(code));
+        return c.erreur || '';
+    }
+
     // sauve_données(nom, valeur) : écrit (ou remplace) le fichier nom dans le répertoire données
     // du projet ; '' si tout va bien, sinon le message d'erreur
     function sauveDonnées(nom, texte) {
@@ -3636,7 +3663,7 @@ const Pythonerie = (function () {
     function oubliePile() { aprèsPile = false; }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, sauveDonnées, rangeDonnées, prendDonnées, réponseÀ,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, sauveDonnées, chargeProgramme, sauveProgramme, vérifieCode, rangeDonnées, prendDonnées, réponseÀ,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },

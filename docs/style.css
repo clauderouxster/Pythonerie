@@ -122,16 +122,8 @@ a.btn { text-decoration: none; display: inline-block; }
     flex-shrink: 0;
 }
 .marque { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.logo {
-    width: 30px; height: 30px;
-    display: grid; place-items: center;
-    background: var(--accent);
-    color: var(--on-accent);
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 17px;
-    flex-shrink: 0;
-}
+/* le logo est un disque sur fond blanc : le cercle retire les coins blancs */
+.logo { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: block; }
 .titre { font-weight: 700; font-size: 17px; }
 .sous-titre { color: var(--text-muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .version { color: var(--text-muted); font-size: 11px; font-family: var(--font-mono); white-space: nowrap; }
@@ -744,6 +736,23 @@ pre.exemple {
 .table-aide td { padding: 5px 8px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
 .table-aide td:nth-child(odd) { white-space: nowrap; }
 .table-aide td:nth-child(even) { color: var(--text-secondary); }
+/* L'aide : un aide-mémoire, avec le logo, un sommaire et des parties repliables */
+.aide-marque { display: flex; align-items: center; gap: 12px; }
+.aide-logo { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; }
+.aide-sous-titre { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
+.aide-sommaire { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.aide-sommaire a { padding: 3px 10px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-surface); color: var(--text-primary); font-size: 12px; text-decoration: none; }
+.aide-sommaire a:hover { border-color: var(--accent); color: var(--accent); }
+.modal-corps h3 { scroll-margin-top: 8px; }
+.aide-règle { background: var(--accent-subtle); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; }
+.aide-liste { margin: 6px 0; padding-left: 20px; font-size: 13px; }
+.aide-liste li { margin: 3px 0; }
+.aide-détails { margin-top: 8px; }
+.aide-détails summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 13px; }
+/* dans l'aide, la colonne du code peut passer à la ligne entre deux fonctions (jamais au milieu d'une) */
+#aide .table-aide td:nth-child(odd) { white-space: normal; width: 25%; }
+#aide .table-aide code { white-space: nowrap; }
+.raccourcis kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--border-color); border-bottom-width: 2px; border-radius: 4px; background: var(--bg-surface); }
 .aide-français { margin-top: 16px; }
 .aide-français summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 15px; }
 .aide-français h4 { font-size: 13px; margin: 14px 0 4px; color: var(--text-secondary); }

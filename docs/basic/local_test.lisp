@@ -34,5 +34,12 @@ selon(a):
 
 
 
+(setq a 23)
 
+(switch
+   a
+   (1 (block (println "Test") (println "Truc")))
+   (23 (println "Test"))
+   (true (block (println "Yooo") (println "Fin")))
+)
 

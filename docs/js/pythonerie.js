@@ -1097,8 +1097,42 @@ const Pythonerie = (function () {
     function changeNomProjet(nom) {
         nomDuProjet = nfc(nom || '').trim() || SANS_NOM;
         try { localStorage.setItem(CLÉ_NOM_PROJET, nomDuProjet); } catch (e) { /* rien */ }
+        // un exemple qui change de nom devient un projet comme les autres
+        const ex = exempleMarqué();
+        if (ex && ex.nom !== nomDuProjet) marqueExemple(null);
         afficheNomProjet();
     }
+
+    // Un exemple ouvert (voir chargeRépertoireSite) est un projet de passage : il n'entre pas
+    // dans « Mes projets » tant qu'il garde son nom ; on le garde en le renommant. On retient
+    // { nom, signature } : la signature de ses programmes et de ses fichiers au chargement,
+    // pour savoir, quand on le quitte, s'il a changé. Ses onglets de données (le meilleur
+    // score d'un jeu, dans don0) sont gardés à part, pour chaque exemple et chaque utilisateur.
+    const CLÉ_EXEMPLE = 'pythonerie.exemple';
+    const CLÉ_ONGLETS_EXEMPLES = 'pythonerie.ongletsExemples';
+    function exempleMarqué() {
+        try { return JSON.parse(localStorage.getItem(CLÉ_EXEMPLE) || 'null'); } catch (e) { return null; }
+    }
+    function marqueExemple(e) {
+        try { if (e) localStorage.setItem(CLÉ_EXEMPLE, JSON.stringify(e)); else localStorage.removeItem(CLÉ_EXEMPLE); } catch (x) { /* rien */ }
+    }
+    // l'exemple ouvert, ou null si le projet ouvert n'est pas un exemple
+    function exempleOuvert() {
+        const e = exempleMarqué();
+        return e && e.nom === nomDuProjet ? e : null;
+    }
+    const signatureExemple = (instant) => JSON.stringify([instant.programmes, instant.dossiers, (instant.fichiers || []).map(f => f.chemin)]);
+    function ongletsExemples() {
+        try { return JSON.parse(localStorage.getItem(CLÉ_ONGLETS_EXEMPLES) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function gardeOngletsExemple(nom, liste) {
+        const tous = ongletsExemples();
+        const u = nomCourant() || '';
+        tous[u] = tous[u] || {};
+        if (liste.some(o => o !== '')) tous[u][nom] = liste; else delete tous[u][nom];
+        try { localStorage.setItem(CLÉ_ONGLETS_EXEMPLES, JSON.stringify(tous)); } catch (e) { /* rien */ }
+    }
+    const ongletsDeLExemple = (nom) => (ongletsExemples()[nomCourant() || ''] || {})[nom] || null;
 
     function afficheNomProjet() {
         const e = $('nomProjet');
@@ -1152,6 +1186,8 @@ const Pythonerie = (function () {
     async function gardeProjetOuvert(instant) {
         const u = nomCourant();
         if (!u || nomDuProjet === SANS_NOM) return;
+        // un exemple n'entre pas dans la liste : seuls ses onglets de données sont gardés
+        if (exempleOuvert()) { gardeOngletsExemple(nomDuProjet, (instant || { onglets }).onglets); return; }
         await FichiersProjet.gardeProjet(u, nomDuProjet, instant || await instantané());
         try { localStorage.setItem(CLÉ_PROPRIÉTAIRE, u); } catch (e) { /* rien */ }
     }
@@ -1174,6 +1210,23 @@ const Pythonerie = (function () {
                  { texte: 'Annuler', valeur: null }]);
             if (!choix) return false;
             if (choix === 'effacer') return true;
+            if (!exigeÉlève('Pour garder ton projet, dis d\'abord qui tu es.')) return false;
+            const nom = demandeNomProjet('Nom du projet :', '');
+            if (!nom) return false;
+            changeNomProjet(nom);
+        }
+        // un exemple : on l'oublie, sauf s'il a changé et que l'élève lui donne un nom
+        const ex = exempleOuvert();
+        if (ex) {
+            gardeOngletsExemple(ex.nom, instant.onglets);
+            if (signatureExemple(instant) === ex.signature) { marqueExemple(null); return true; }
+            const choix = await dialogue('Tu as changé l\'exemple « ' + ex.nom + ' »',
+                'Un exemple n\'entre pas dans ta liste de projets. Pour garder tes changements, donne-lui un nom. Sinon, ils seront effacés.',
+                [{ texte: '✏️ Lui donner un nom…', valeur: 'nom', genre: 'principal' },
+                 { texte: 'Ne pas le garder', valeur: 'effacer', genre: 'danger' },
+                 { texte: 'Annuler', valeur: null }]);
+            if (!choix) return false;
+            if (choix === 'effacer') { marqueExemple(null); return true; }
             if (!exigeÉlève('Pour garder ton projet, dis d\'abord qui tu es.')) return false;
             const nom = demandeNomProjet('Nom du projet :', '');
             if (!nom) return false;
@@ -1210,13 +1263,15 @@ const Pythonerie = (function () {
 
     function renommeProjet() {
         const ancien = nomDuProjet;
+        const exemple = !!exempleOuvert();
         const nom = demandeNomProjet('Nom du projet :', ancien === SANS_NOM ? '' : ancien, ancien);
         if (!nom || nom === ancien) return;
+        // un exemple renommé devient un projet de la liste (changeNomProjet oublie qu'il était un exemple)
         changeNomProjet(nom);
         // la liste suit : le projet change de nom, il ne se dédouble pas
         (async () => {
             try {
-                if (ancien !== SANS_NOM && nomCourant()) await FichiersProjet.supprimeProjet(nomCourant(), ancien);
+                if (ancien !== SANS_NOM && !exemple && nomCourant()) await FichiersProjet.supprimeProjet(nomCourant(), ancien);
                 await gardeProjetOuvert();
             } catch (e) { écritConsole('La liste des projets n\'a pas pu suivre : ' + e.message, 'erreur'); }
             await rafraîchitListeProjets();
@@ -1290,7 +1345,7 @@ const Pythonerie = (function () {
             oubliePressePapiers();
             try {
                 const instant = await instantané();
-                if (nomDuProjet !== SANS_NOM) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, instant);
+                if (nomDuProjet !== SANS_NOM && !exempleOuvert()) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, instant);
                 if (!espaceVide(instant)) {
                     await remplaceTout(ESPACE_VIDE());
                     changeNomProjet(SANS_NOM);
@@ -1309,13 +1364,14 @@ const Pythonerie = (function () {
             éléments.push({ texte: 'Dis qui tu es (👤) pour retrouver tes projets', désactivé: true });
         } else {
             if (nomDuProjet === SANS_NOM) éléments.push({ texte: SANS_NOM + ' (ouvert)', classe: 'projet courant sans-nom', désactivé: true });
+            if (exempleOuvert()) éléments.push({ texte: nomDuProjet + ' (exemple ouvert : renomme-le pour le garder)', classe: 'projet courant sans-nom', désactivé: true });
             listeProjets.forEach(p => éléments.push({
                 texte: p.nom, classe: p.nom === nomDuProjet ? 'projet courant' : 'projet',
                 titre: p.nom === nomDuProjet ? 'Le projet ouvert' : 'Ouvrir « ' + p.nom + ' » (modifié le ' + new Date(p.modifié * 1000).toLocaleString('fr') + ')',
                 action: () => ouvreProjet(p.nom),
                 supprime: () => supprimeProjet(p.nom)
             }));
-            if (!listeProjets.length && nomDuProjet !== SANS_NOM) éléments.push({ texte: nomDuProjet, classe: 'projet courant', désactivé: true });
+            if (!listeProjets.length && nomDuProjet !== SANS_NOM && !exempleOuvert()) éléments.push({ texte: nomDuProjet, classe: 'projet courant', désactivé: true });
         }
         éléments.push({ séparateur: true });
         éléments.push({ texte: '🆕 Nouveau projet…', action: nouveauProjet });
@@ -1936,9 +1992,12 @@ const Pythonerie = (function () {
     // le nom d'un projet de la liste, on demande : ouvrir celui de la liste (pour un projet
     // des Matériels déjà chargé, c'est ce qu'on veut), le charger sous un autre nom, ou
     // remplacer celui de la liste.
-    async function chargeProjet({ nom: nomLu, instant, ignorés }) {
+    // exemple : le projet est un exemple (voir exempleOuvert), qui n'entre pas dans la liste
+    async function chargeProjet({ nom: nomLu, instant, ignorés }, { exemple = false } = {}) {
         let nom = nomLu && nomLu !== SANS_NOM ? nomLu : SANS_NOM;
-        if (nom !== SANS_NOM && (projetExiste(nom) || nom === nomDuProjet)) {
+        // le même exemple, déjà ouvert : on le recharge (rangeProjetOuvert demande s'il a changé)
+        const mêmeExemple = exemple && nom === nomDuProjet && exempleOuvert() && !projetExiste(nom);
+        if (nom !== SANS_NOM && !mêmeExemple && (projetExiste(nom) || nom === nomDuProjet)) {
             let libre = nom;
             for (let i = 2; projetExiste(libre) || libre === nomDuProjet; i++) libre = nom + ' ' + i;
             const choix = await dialogue('Tu as déjà un projet « ' + nom + ' »', 'Le projet que tu charges porte le même nom.',
@@ -1951,10 +2010,14 @@ const Pythonerie = (function () {
             if (choix === 'autre') nom = libre;
         }
         if (!(await rangeProjetOuvert())) return false;
+        // un exemple chargé sous son nom reste un exemple ; il retrouve ses onglets de données
+        const enExemple = exemple && nom === nomLu;
+        if (enExemple && ongletsDeLExemple(nom)) instant = { ...instant, onglets: ongletsDeLExemple(nom) };
         try {
             await remplaceTout(instant);
             changeNomProjet(nom);
-            await gardeProjetOuvert();
+            if (enExemple) marqueExemple({ nom, signature: signatureExemple(await instantané()) });
+            else await gardeProjetOuvert();
         } catch (e) {
             écritConsole('Erreur pendant le chargement du projet : ' + e.message, 'erreur');
         }
@@ -3084,12 +3147,16 @@ const Pythonerie = (function () {
     // Répertoires du site : « Matériels » (matériels/, préparé par l'enseignant) et
     // « Exemples » (exemples/). Chacun a son index.json : [{ "fichier", "titre", "description" }],
     // et s'ouvre en liste déroulante sous son bouton, au bas de la colonne des programmes.
-    // Un clic sur un programme (.pyf) en crée une copie ; dans Matériels, un clic sur un
-    // projet (.zip ou .json) l'ouvre à la place du projet en cours (qui rejoint la liste).
+    // Un clic sur un projet (.zip ou .json) l'ouvre à la place du projet en cours (qui rejoint
+    // la liste). Dans Matériels, un clic sur un programme (.pyf) en crée une copie ; dans
+    // Exemples (enProjet), chaque programme est un projet à lui seul, qui porte son nom
+    // (« 15. Casse-briques » : le projet et le programme « Casse-briques » ; le champ "programme"
+    // de index.json nomme le programme quand le titre ne convient pas) ; ses images et
+    // ses sons restent dans exemples/médias, où il les désigne par leur chemin.
     // ------------------------------------------------------------------
     const SVG_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 4.5L8 1.5l6 3v7L8 14.5l-6-3z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2 4.5l6 3 6-3M8 7.5v7" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
 
-    async function chargeRépertoireSite({ idBouton, répertoire, nom, masquéSiVide }) {
+    async function chargeRépertoireSite({ idBouton, répertoire, nom, masquéSiVide, enProjet = false }) {
         const bouton = $(idBouton);
         let liste;
         try {
@@ -3122,6 +3189,29 @@ const Pythonerie = (function () {
                 }
                 return;
             }
+            if (enProjet) {
+                try {
+                    const rc = await fetch(adresse(élément.fichier), { cache: 'no-cache' });
+                    if (!rc.ok) throw new Error('« ' + élément.fichier + ' » est introuvable');
+                    const nomProjet = titre.replace(/\.pyf?$/i, '').replace(/^\d+\.\s*/, '');
+                    // le nom du programme : "programme" dans index.json, sinon le titre sans les
+                    // signes refusés dans un nom de programme (l'apostrophe de « L'atelier »...)
+                    const nomProg = nomValide(élément.programme || '')
+                        || nomValide(nomProjet.replace(/[^\p{L}\p{N} _\-.()]+/gu, ' ').replace(/\s+/g, ' '));
+                    if (!nomProg) throw new Error('L\'exemple « ' + titre + ' » n\'a pas de nom de programme valide (champ "programme" de exemples/index.json)');
+                    const lu = await lisProjetJSON(JSON.stringify({ format: FORMAT_PROJET, version: 3, nom: nomProjet,
+                        programmes: { [nomProg]: await rc.text() } }));
+                    const avant = nomDuProjet !== SANS_NOM && !exempleOuvert() ? nomDuProjet : null;
+                    if (await chargeProjet(lu, { exemple: true })) {
+                        écritConsole('— L\'exemple « ' + nomProjet + ' » est ouvert, dans un projet à son nom : change-le comme tu veux. '
+                            + 'Il n\'entre pas dans « Mes projets » : pour garder tes changements, renomme le projet.'
+                            + (avant ? ' Ton projet « ' + avant + ' » t\'attend dans « Mes projets ».' : ''), 'info');
+                    }
+                } catch (e) {
+                    écritConsole(e.message, 'erreur');
+                }
+                return;
+            }
             // Déjà copié (un programme du même nom, de préférence dans le répertoire
             // courant) : on l'ouvre, plutôt que d'en créer « 15. Casse-briques 2 »
             const nomProg = titre.replace(/\.pyf?$/i, '');
@@ -3144,7 +3234,7 @@ const Pythonerie = (function () {
         bouton.onclick = (ev) => {
             ev.stopPropagation();
             basculeDéroulante(bouton, () => ouvreDéroulante(bouton, [{ section: nom }].concat(liste.map(élément => {
-                const projet = /\.(zip|json)$/i.test(élément.fichier);
+                const projet = enProjet || /\.(zip|json)$/i.test(élément.fichier);
                 return {
                     texte: élément.titre || élément.fichier,
                     détail: élément.description || '',
@@ -3160,7 +3250,7 @@ const Pythonerie = (function () {
 
     function chargeRépertoiresSite() {
         chargeRépertoireSite({ idBouton: 'btnMatériels', répertoire: 'matériels', nom: 'Matériels de ton enseignant', masquéSiVide: true });
-        chargeRépertoireSite({ idBouton: 'btnExemples', répertoire: 'exemples', nom: 'Exemples', masquéSiVide: false });
+        chargeRépertoireSite({ idBouton: 'btnExemples', répertoire: 'exemples', nom: 'Exemples', masquéSiVide: false, enProjet: true });
     }
 
     // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
@@ -3718,7 +3808,7 @@ const Pythonerie = (function () {
             // le projet laissé par l'élève précédent (parti sans se déconnecter) est rangé chez lui
             try {
                 const propriétaire = localStorage.getItem(CLÉ_PROPRIÉTAIRE);
-                if (propriétaire && nomDuProjet !== SANS_NOM) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, await instantané());
+                if (propriétaire && nomDuProjet !== SANS_NOM && !exempleOuvert()) await FichiersProjet.gardeProjet(propriétaire, nomDuProjet, await instantané());
             } catch (e) { /* rien */ }
             await effaceDonnées();
         }

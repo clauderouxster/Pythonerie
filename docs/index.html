@@ -25,7 +25,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.12.20.23">
+    <link rel="stylesheet" href="style.css?v=2026.10.12.21.11">
 </head>
 
 <body>
@@ -35,7 +35,7 @@
             <img class="logo" src="images/logo-96.png" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.20.23</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.21.11</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -464,7 +464,7 @@ quand_clic(clic)</pre>
                 <ul class="aide-liste">
                     <li>Le <b>projet</b> réunit les programmes et trois répertoires : <b>images</b>, <b>sons</b> et <b>données</b>. On y glisse des fichiers, ou on clique sur <b>＋</b>.</li>
                     <li>Un clic sur le <b>nom du projet</b> ouvre <b>Mes projets</b> : les projets gardés dans ce navigateur. Le projet que l'on quitte y est rangé tout seul.</li>
-                    <li><b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne : le matériel de l'enseignant, et vingt exemples à copier d'un clic.</li>
+                    <li><b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne : le matériel de l'enseignant, et vingt exemples : un clic en ouvre un, dans un projet à son nom, qui n'entre dans Mes projets que si tu le renommes.</li>
                     <li>L'icône <b>⧉</b> copie un programme ou un fichier ; dans un autre projet, <b>📋 Coller</b> (ou Cmd/Ctrl+V) le recopie.</li>
                 </ul>
                 <details class="aide-détails">
@@ -516,7 +516,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.12.20.23';
+                return répertoire + fichier + '?v=2026.10.12.21.11';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -524,15 +524,15 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.12.20.23"></script>
-    <script src="js/zip.js?v=2026.10.12.20.23"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.12.20.23"></script>
-    <script src="js/erreurs.js?v=2026.10.12.20.23"></script>
-    <script src="js/canevas.js?v=2026.10.12.20.23"></script>
-    <script src="js/pythonerie.js?v=2026.10.12.20.23"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.12.21.11"></script>
+    <script src="js/zip.js?v=2026.10.12.21.11"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.12.21.11"></script>
+    <script src="js/erreurs.js?v=2026.10.12.21.11"></script>
+    <script src="js/canevas.js?v=2026.10.12.21.11"></script>
+    <script src="js/pythonerie.js?v=2026.10.12.21.11"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.12.20.23"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.12.20.23"></script>
+    <script src="lispe/lispe.js?v=2026.10.12.21.11"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.12.21.11"></script>
 </body>
 
 </html>

@@ -82,7 +82,8 @@
   {
     "fichier": "17_envahisseurs.pyf",
     "titre": "17. Les envahisseurs de l'espace",
-    "description": "le célèbre jeu de tir : une flotte qui avance, des bombes, des vagues de plus en plus rapides"
+    "description": "le célèbre jeu de tir : une flotte qui avance, des bombes, des vagues de plus en plus rapides",
+    "programme": "Envahisseurs"
   },
   {
     "fichier": "18_tableur.pyf",
@@ -97,6 +98,7 @@
   {
     "fichier": "20_atelier.pyf",
     "titre": "20. L'atelier de formes",
-    "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, boutons-images dessinés (capture_image), zone d'édition, et une pipette (couleur_pixel)"
+    "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, boutons-images dessinés (capture_image), zone d'édition, et une pipette (couleur_pixel)",
+    "programme": "Atelier de formes"
   }
 ]

@@ -160,6 +160,78 @@ C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul 
 - Préfère les médias du site (`exemples/médias/…`, voir plus haut), désignés par leur chemin dans le programme : ils n'ont pas besoin d'être dans le projet.
 - Un fichier mal placé, mal nommé ou mal écrit est laissé de côté, et la console le nomme.
 
+## Des piles de cartes (à la HyperCard)
+
+Le projet **« Les cartes (à la HyperCard) »** des Matériels (`docs/matériels/cartes.zip`) refait HyperCard : l'**Éditeur** dessine des cartes, le **Lecteur** les montre. Une **pile** est un fichier JSON du répertoire `données` du projet ; le Lecteur propose, dans sa liste déroulante, tous les `.json` de `données` qui ont des `"cartes"`, sous leur `"titre"`. Trois piles y sont déjà, à lire comme modèles : `apprendre.json` (un cours de Pythonerie, avec des encadrés de code et des boutons « ▶ Exécute »), `pile.json` (le système solaire) et `latin.json` (les déclinaisons latines, avec des images et une carte de crédits).
+
+**Ce que tu rends** quand on te demande une pile : **le seul fichier JSON de la pile**, dans un bloc `json`, et son nom de fichier (court, sans espace : `latin.json`). Tu n'écris aucun programme : le Lecteur et l'Éditeur existent déjà. L'élève ouvre le projet (bouton Matériels → « Les cartes »), enregistre ton JSON sous ce nom et le fait glisser dans le répertoire `données` (ou clique sur le petit ＋ du répertoire), puis exécute le Lecteur et choisit la pile dans la liste. Il pourra ensuite la retoucher dans l'Éditeur (on y fait glisser les éléments).
+
+### Le format
+
+```json
+{
+  "titre": "Les déclinaisons latines",
+  "largeur": 720, "hauteur": 540,
+  "cartes": [
+    {"nom": "Accueil", "fond": "beige", "son": "exemples/médias/ding.wav", "éléments": [
+      {"genre": "texte", "x": 40, "y": 26, "couleur": "rouge foncé", "taille": 40, "texte": "Les déclinaisons latines"},
+      {"genre": "texte", "x": 40, "y": 88, "couleur": "noir", "taille": 18, "texte": "Première ligne,\net la deuxième."},
+      {"genre": "bouton", "x": 520, "y": 480, "couleur": "noir", "taille": 24, "texte": "Commencer ▶", "action": "suivante"}]},
+    {"nom": "Rosa", "fond": "beige", "éléments": [
+      {"genre": "image", "x": 470, "y": 100, "couleur": "noir", "taille": 40, "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/…/500px-….jpg"},
+      {"genre": "rectangle", "x": 40, "y": 100, "couleur": "marron foncé", "taille": 24, "l": 350, "h": 181},
+      {"genre": "texte", "x": 58, "y": 112, "couleur": "beige", "taille": 18, "police": "Menlo, Consolas, 'DejaVu Sans Mono', monospace", "texte": "Nom.  rosa       rosae\nAcc.  rosam      rosās"},
+      {"genre": "disque", "x": 600, "y": 400, "couleur": "jaune", "taille": 30},
+      {"genre": "bouton", "x": 40, "y": 480, "couleur": "noir", "taille": 24, "texte": "◀ Retour", "action": "précédente"}]}]
+}
+```
+
+- **La pile** : `"titre"` (le nom dans la liste du Lecteur), `"largeur"` et `"hauteur"` (720 × 540 d'habitude ; une autre taille marche : le canevas s'y adapte), `"cartes"`.
+- **Une carte** : `"nom"` (unique : les boutons s'en servent), `"fond"` (une couleur), `"éléments"` (dessinés dans l'ordre de la liste : un rectangle de fond vient avant le texte qu'il porte), et au besoin `"son"` (joué quand la carte s'ouvre) et `"script"` (voir plus bas).
+- **Un élément** a toujours `"genre"`, `"x"`, `"y"`, `"couleur"` et `"taille"` ; `(x, y)` est son coin en haut à gauche (le centre pour un disque). Les couleurs sont celles du langage (`"bleu marine"`, `"rouge foncé"`, `"gris clair"`…, ou `"#rrggbb"`).
+- **Les genres** :
+  - `"texte"` : les lignes de `"texte"`, séparées par `\n`, en lettres de `taille` points ; `"police"` (facultatif) pour du code ou un tableau aligné : `"Menlo, Consolas, 'DejaVu Sans Mono', monospace"` (pas JetBrains Mono, qui dessine `>=` comme `≥`). Une ligne vide garde sa place.
+  - `"rectangle"` : plein, de `"l"` sur `"h"` (sinon 3 × taille sur 2 × taille).
+  - `"disque"` : plein, de rayon `taille`.
+  - `"image"` : large de **4 × taille**, la hauteur suit les proportions de l'image. `"image"` est le nom d'un fichier du répertoire `images` du projet (`"rosa.jpg"`), un média du site (`"exemples/médias/étoile.svg"`) ou une adresse `https://…`.
+  - `"bouton"` : un vrai bouton, qui porte `"texte"` ; `"action"` dit où il mène : `"suivante"`, `"précédente"`, `"première"`, `"dernière"`, le nom d'une carte, `"pile : apprendre.json"` (la première carte d'une autre pile du projet), ou `"aucune"` (on reste : pour un bouton qui n'a qu'un script). `"son"` (facultatif) est joué au clic.
+- Les flèches gauche et droite du clavier passent à la carte précédente ou suivante ; la suivante de la dernière est la première.
+- Le JSON doit être valide : guillemets doubles, pas de commentaire, `\n` pour aller à la ligne dans un texte, pas de virgule après le dernier élément d'une liste.
+
+### Placer les éléments sans les voir
+
+Le texte ne passe jamais à la ligne tout seul : coupe toi-même les lignes, et calcule les places.
+
+- **Texte** : `y` est le haut de la première ligne ; chaque ligne prend **1,25 × taille** en hauteur. Une lettre fait en moyenne **0,5 × taille** de large (0,6 × taille en police à chasse fixe) : à 18 points, une ligne de 70 lettres fait 630 points, juste ce qui tient entre les marges d'une carte de 720.
+- **Bouton** : il mesure **(nombre de lettres × 0,45 + 1,2) × taille** de large et **1,35 × taille** de haut. Pour qu'un bouton finisse à 40 points du bord droit : `x = largeur − 40 − (lettres × 0,45 + 1,2) × taille`.
+- **Image** : choisis `taille` d'après les proportions de l'image (largeur l, hauteur h) pour qu'elle tienne dans sa zone : largeur affichée = 4 × taille, hauteur affichée = 4 × taille × h / l.
+- **Encadré de code ou tableau** : un rectangle (`"bleu marine"`, `"marron foncé"`), puis un texte en police à chasse fixe, décalé de 18 points à droite et de 12 vers le bas ; pour n lignes de taille t, le rectangle a une hauteur de n × 1,25 × t + 24. Dans une police à chasse fixe, évite les exposants (`1ʳᵉ`), qui ne s'alignent pas : écris `1re`.
+- Un modèle qui marche : marges de 40 points ; un titre de 30 à 40 points en haut (y ≈ 22) ; le texte entre 17 et 22 points ; les boutons « ◀ Retour » (à gauche) et « Suite ▶ » (à droite) à la même place sur toutes les cartes (y ≈ 480 pour une hauteur de 540), avec, entre eux, un numéro de carte « 3 / 9 » en gris ; une seule idée par carte.
+
+### Images et sons
+
+- Une image en ligne s'utilise directement par son adresse. Les vignettes de Wikimedia Commons marchent : l'adresse que Commons donne pour une vignette de 500 points (`https://thumb.wikimedia.org/wikipedia/commons/thumb/…/500px-….jpg`, vérifié) : choisis des images à **licence libre** (domaine public, CC0, CC BY, CC BY-SA) et ajoute une dernière carte « Crédits » qui donne, pour chacune, l'auteur, la licence et le nom du fichier sur Commons (CC BY et CC BY-SA l'exigent). Une image en ligne doit rester en ligne : pour une pile qui marche sans Internet, l'élève met les fichiers dans `images/` et la pile les désigne par leur seul nom.
+- Les sons : un son du projet (`"bravo.wav"`, répertoire `sons`) ou du site (`"exemples/médias/ding.wav"`, `"pop.wav"`… voir « Médias »).
+
+### Les scripts
+
+Une carte (à son ouverture) ou un bouton (au clic) peut lancer un **script** : `"script": 3` désigne le `cas 3:` du `selon` de la fonction `extensions(id)`, dans le programme `biblios.pyf` du projet. Le Lecteur montre la console, puis appelle `extensions(3)`. N'emploie que les numéros qui existent dans ce `selon`. Si la pile a besoin d'un nouveau script, donne à part ce que l'élève ajoutera lui-même dans `biblios.pyf` : une fonction sans paramètre, écrite au premier niveau (jamais une fonction dans une autre), puis un nouveau `cas` avec le numéro suivant ; l'Éditeur relit ce `selon` et vérifie que `biblios` se compile toujours, mais ne l'écrit jamais.
+
+```
+fonction carpe_diem():
+    affiche("Carpe diem : cueille le jour (Horace).")
+
+fonction extensions(id):
+    selon(id):
+        …
+        cas 11:
+            carpe_diem()
+        défaut:
+            affiche("— Il n'y a pas de script", id, "dans biblios")
+```
+
+Dans un script, `va_vers_carte("Rosa")` montre une autre carte de la pile.
+
 ## Pièges (vérifiés) : à éviter absolument
 
 1. **Pas d'expression conditionnelle** : `x = a si c sinon b` est refusé. Écris un `si` / `sinon`.
@@ -226,11 +298,11 @@ animer(image, 20)
 
 ## Exemples complets à lire
 
-Les exemples du site montrent le style attendu ; lis-les avant d'écrire un programme du même genre. Ils sont dans `docs/exemples/` (adresse brute : `https://raw.githubusercontent.com/clauderouxster/Pythonerie/main/docs/exemples/<fichier>`), et la liste est dans `docs/exemples/index.json` :
+Les exemples du site montrent le style attendu ; lis-les avant d'écrire un programme du même genre. Ils sont dans `docs/exemples/` (adresse brute : `https://raw.githubusercontent.com/clauderouxster/Pythonerie/main/docs/exemples/<fichier>`), et la liste est dans `docs/exemples/index.json` ; dans la Pythonerie, un clic sur un exemple l'ouvre dans un projet à son nom, ses images et ses sons restant dans `exemples/médias/` :
 
 `01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas).
 
-Deux **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons) et `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet).
+Trois **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons), `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet) et `cartes.zip` (les piles de cartes à la HyperCard : voir « Des piles de cartes »).
 
 Le mode d'emploi pour les enfants (`docs/guide.html`) contient un glossaire de tous les mots. Environ 180 instructions avancées de LispE portent aussi un nom français ; elles sont décrites dans `docs/basic/français.lisp` (une ligne `(link "nom" 'instruction) ; description` par instruction). Préfère les fonctions de ce guide, plus simples pour un enfant.
 

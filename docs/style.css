@@ -344,6 +344,10 @@ a.btn { text-decoration: none; display: inline-block; }
 .menu-item.sans-nom { font-style: italic; }
 .menu-supprime { flex-shrink: 0; padding: 0 12px; border: none; background: none; font-size: 13px; cursor: pointer; opacity: 0.4; }
 .menu-supprime:hover, .menu-supprime:focus-visible { opacity: 1; background: var(--bg-hover); outline: none; }
+/* Mes projets : les projets au-delà des dix derniers ouverts, dans une zone qui défile */
+.menu-groupe-titre { color: var(--text-muted); }
+.menu-groupe { max-height: 240px; overflow-y: auto; margin: 0 8px 4px; border-left: 2px solid var(--border-color); }
+.menu-groupe[hidden] { display: none; }
 .répertoires-site { display: flex; flex-direction: column; gap: 6px; }
 .bouton-déroulant { width: 100%; text-align: left; }
 .bouton-déroulant[hidden] { display: none; }
@@ -428,6 +432,8 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 .éditeur-vide p { margin: 0; }
 .éditeur-vide .btn { padding: 9px 18px; font-size: 14px; }
 .éditeur-vide-note { font-size: 13px; color: var(--text-muted); max-width: 340px; }
+/* le grand logo, au-dessus ; plus petit si l'éditeur est bas */
+.éditeur-vide-logo { width: min(200px, 32vh); height: auto; border-radius: 50%; }
 .barre-onglets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .espace-barre { flex: 1; }
 .onglets { display: flex; gap: 2px; flex-wrap: wrap; }

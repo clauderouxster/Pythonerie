@@ -25,7 +25,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.12.21.11">
+    <link rel="stylesheet" href="style.css?v=2026.10.12.21.27">
 </head>
 
 <body>
@@ -35,7 +35,7 @@
             <img class="logo" src="images/logo-96.png" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.21.11</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.21.27</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -79,6 +79,7 @@
                                 <button id="btnChargeProjet" class="menu-item" role="menuitem">📥 Charger un projet (.zip, .json)…</button>
                                 <button id="btnColleProjet" class="menu-item" role="menuitem">📋 Coller un projet (JSON)…</button>
                                 <button id="btnAnnuleProjet" class="menu-item" role="menuitem" disabled>↶ Revenir au projet précédent</button>
+                                <button id="btnFermeProjet" class="menu-item" role="menuitem" title="Le projet est rangé dans Mes projets, et l'espace de travail est vidé">✖ Fermer le projet</button>
                                 <button id="btnSupprimeProjet" class="menu-item danger" role="menuitem">🗑️ Supprimer le projet…</button>
                                 <div class="menu-séparateur"></div>
                                 <div class="menu-section">Tous mes projets</div>
@@ -133,9 +134,10 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
+                    <img class="éditeur-vide-logo" src="images/logo-320.png" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
-                    <p class="éditeur-vide-note">ou copie un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
+                    <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
                 </div>
             </div>
             <!-- Les données du projet (bouton « Données ») : des onglets Don0, Don1...
@@ -516,7 +518,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.12.21.11';
+                return répertoire + fichier + '?v=2026.10.12.21.27';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -524,15 +526,15 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.12.21.11"></script>
-    <script src="js/zip.js?v=2026.10.12.21.11"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.12.21.11"></script>
-    <script src="js/erreurs.js?v=2026.10.12.21.11"></script>
-    <script src="js/canevas.js?v=2026.10.12.21.11"></script>
-    <script src="js/pythonerie.js?v=2026.10.12.21.11"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.12.21.27"></script>
+    <script src="js/zip.js?v=2026.10.12.21.27"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.12.21.27"></script>
+    <script src="js/erreurs.js?v=2026.10.12.21.27"></script>
+    <script src="js/canevas.js?v=2026.10.12.21.27"></script>
+    <script src="js/pythonerie.js?v=2026.10.12.21.27"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.12.21.11"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.12.21.11"></script>
+    <script src="lispe/lispe.js?v=2026.10.12.21.27"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.12.21.27"></script>
 </body>
 
 </html>

@@ -1174,6 +1174,7 @@ const Pythonerie = (function () {
     let listeProjets = [];          // [{ nom, modifié }] de l'utilisateur connecté
 
     const projetExiste = (nom) => listeProjets.some(p => p.nom === nom);
+    const PROJETS_RÉCENTS = 10;     // au-delà, Mes projets replie les plus anciens (voir ouvreMesProjets)
     const ESPACE_VIDE = () => ({ programmes: {}, dossiers: [], fichiers: [], onglets: [''] });
 
     async function rafraîchitListeProjets() {
@@ -1295,6 +1296,28 @@ const Pythonerie = (function () {
         écritConsole('— Le projet « ' + nom + ' » est créé.', 'info');
     }
 
+    // Ferme le projet ouvert : il est rangé dans la liste comme quand on en change (un projet
+    // sans nom ou un exemple modifié font l'objet d'une question, un exemple intact est
+    // oublié), puis l'espace est vidé : « Sans Nom », sans programme
+    async function fermeProjet() {
+        let instant;
+        try { instant = await instantané(); } catch (e) { return; }
+        if (nomDuProjet === SANS_NOM && espaceVide(instant)) { écritConsole('— Il n\'y a pas de projet ouvert à fermer.', 'info'); return; }
+        const nom = nomDuProjet;
+        if (!(await rangeProjetOuvert())) return;
+        const rangé = nomDuProjet !== SANS_NOM && !exempleOuvert() ? nomDuProjet : null;
+        try {
+            await remplaceTout(ESPACE_VIDE());
+            changeNomProjet(SANS_NOM);
+        } catch (e) {
+            écritConsole('Impossible de fermer le projet : ' + e.message, 'erreur');
+            return;
+        }
+        await rafraîchitListeProjets();
+        écritConsole('— Le projet « ' + nom + ' » est fermé.'
+            + (rangé && projetExiste(rangé) ? ' Il t\'attend dans « Mes projets »' + (rangé !== nom ? ', sous le nom « ' + rangé + ' »' : '') + '.' : ''), 'info');
+    }
+
     // Supprime un projet de la liste ; si c'est le projet ouvert, l'espace est vidé
     async function supprimeProjet(nom) {
         const ouvert = nom === nomDuProjet;
@@ -1365,17 +1388,31 @@ const Pythonerie = (function () {
         } else {
             if (nomDuProjet === SANS_NOM) éléments.push({ texte: SANS_NOM + ' (ouvert)', classe: 'projet courant sans-nom', désactivé: true });
             if (exempleOuvert()) éléments.push({ texte: nomDuProjet + ' (exemple ouvert : renomme-le pour le garder)', classe: 'projet courant sans-nom', désactivé: true });
-            listeProjets.forEach(p => éléments.push({
+            const ligneProjet = (p) => ({
                 texte: p.nom, classe: p.nom === nomDuProjet ? 'projet courant' : 'projet',
                 titre: p.nom === nomDuProjet ? 'Le projet ouvert' : 'Ouvrir « ' + p.nom + ' » (modifié le ' + new Date(p.modifié * 1000).toLocaleString('fr') + ')',
                 action: () => ouvreProjet(p.nom),
                 supprime: () => supprimeProjet(p.nom)
-            }));
+            });
+            if (listeProjets.length <= PROJETS_RÉCENTS) listeProjets.forEach(p => éléments.push(ligneProjet(p)));
+            else {
+                // les derniers ouverts (un projet est rangé, donc daté, quand on le quitte),
+                // le projet ouvert en tête ; les autres, par ordre alphabétique, dans un groupe replié
+                const ouvert = listeProjets.find(p => p.nom === nomDuProjet);
+                const récents = listeProjets.filter(p => p !== ouvert).sort((a, b) => b.modifié - a.modifié)
+                    .slice(0, PROJETS_RÉCENTS - (ouvert ? 1 : 0));
+                if (ouvert) récents.unshift(ouvert);
+                const autres = listeProjets.filter(p => !récents.includes(p));
+                récents.forEach(p => éléments.push(ligneProjet(p)));
+                éléments.push({ groupe: autres.length === 1 ? 'L\'autre projet' : 'Les ' + autres.length + ' autres projets',
+                    éléments: autres.map(ligneProjet) });
+            }
             if (!listeProjets.length && nomDuProjet !== SANS_NOM && !exempleOuvert()) éléments.push({ texte: nomDuProjet, classe: 'projet courant', désactivé: true });
         }
         éléments.push({ séparateur: true });
         éléments.push({ texte: '🆕 Nouveau projet…', action: nouveauProjet });
         éléments.push({ texte: '✏️ Renommer « ' + nomDuProjet + ' »…', action: renommeProjet });
+        if (nomDuProjet !== SANS_NOM) éléments.push({ texte: '✖ Fermer « ' + nomDuProjet + ' »', action: fermeProjet });
         éléments.push({ texte: '📦 Exporter le projet', action: exporteProjet });
         éléments.push({ texte: '🌐 Créer une application Web…', action: créeApplicationWeb });
         ouvreDéroulante($('nomProjet'), éléments);
@@ -3590,23 +3627,55 @@ const Pythonerie = (function () {
         ouvre();
     }
 
+    // Un élément { groupe: texte, éléments: [...] } est un groupe replié : sa ligne « ▸ texte »
+    // le déroule, dans une zone de hauteur limitée qui défile (les projets au-delà des derniers ouverts)
     function ouvreDéroulante(bouton, éléments) {
         fermeDéroulante();
         const menu = document.createElement('div');
         menu.className = 'menu déroulante';
         menu.setAttribute('role', 'menu');
-        éléments.forEach(e => {
+        let place = () => {};
+        const ajoute = (parent, e) => {
+            if (e.groupe) {
+                const ligne = document.createElement('div');
+                ligne.className = 'ligne-déroulante';
+                const b = document.createElement('button');
+                b.className = 'menu-item menu-groupe-titre';
+                b.setAttribute('role', 'menuitem');
+                b.setAttribute('aria-expanded', 'false');
+                b.textContent = '▸ ' + e.groupe;
+                ligne.appendChild(b);
+                parent.appendChild(ligne);
+                const zone = document.createElement('div');
+                zone.className = 'menu-groupe';
+                zone.hidden = true;
+                e.éléments.forEach(x => ajoute(zone, x));
+                parent.appendChild(zone);
+                b.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    zone.hidden = !zone.hidden;
+                    b.textContent = (zone.hidden ? '▸ ' : '▾ ') + e.groupe;
+                    b.setAttribute('aria-expanded', String(!zone.hidden));
+                    place();
+                    // le groupe déroulé reste visible : la liste défile jusqu'à lui (pas la page)
+                    if (!zone.hidden) {
+                        const bas = zone.offsetTop + zone.offsetHeight - menu.clientHeight;
+                        if (bas > menu.scrollTop) menu.scrollTop = Math.min(bas, zone.offsetTop - b.offsetHeight);
+                    }
+                });
+                return;
+            }
             if (e.section) {
                 const s = document.createElement('div');
                 s.className = 'menu-section';
                 s.textContent = e.section;
-                menu.appendChild(s);
+                parent.appendChild(s);
                 return;
             }
             if (e.séparateur) {
                 const s = document.createElement('div');
                 s.className = 'menu-séparateur';
-                menu.appendChild(s);
+                parent.appendChild(s);
                 return;
             }
             const ligne = document.createElement('div');
@@ -3643,17 +3712,21 @@ const Pythonerie = (function () {
                 x.addEventListener('click', (ev) => { ev.stopPropagation(); fermeDéroulante(); e.supprime(); });
                 ligne.appendChild(x);
             }
-            menu.appendChild(ligne);
-        });
+            parent.appendChild(ligne);
+        };
+        éléments.forEach(e => ajoute(menu, e));
         document.body.appendChild(menu);
         // sous le bouton, ou au-dessus s'il y a plus de place ; jamais hors de la fenêtre
         const r = bouton.getBoundingClientRect();
         const dessous = window.innerHeight - r.bottom - 12, dessus = r.top - 12;
         const enHaut = dessous < 220 && dessus > dessous;
         menu.style.maxHeight = Math.max(120, enHaut ? dessus : dessous) + 'px';
-        menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
-        if (enHaut) menu.style.top = Math.max(8, r.top - 4 - menu.offsetHeight) + 'px';
-        else menu.style.top = (r.bottom + 4) + 'px';
+        place = () => {
+            menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+            if (enHaut) menu.style.top = Math.max(8, r.top - 4 - menu.offsetHeight) + 'px';
+            else menu.style.top = (r.bottom + 4) + 'px';
+        };
+        place();
         déroulante = { menu, bouton, ouverte: performance.now() };
         bouton.setAttribute('aria-expanded', 'true');
         const premier = menu.querySelector('.menu-item:not(:disabled)');
@@ -3728,6 +3801,7 @@ const Pythonerie = (function () {
         $('btnNouveauProjet').addEventListener('click', nouveauProjet);
         $('btnRenommeProjet').addEventListener('click', renommeProjet);
         $('nomProjet').addEventListener('click', (ev) => { ev.stopPropagation(); basculeDéroulante($('nomProjet'), ouvreMesProjets); });
+        $('btnFermeProjet').addEventListener('click', fermeProjet);
         $('btnSupprimeProjet').addEventListener('click', () => supprimeProjet(nomDuProjet));
         $('btnChargeProjet').addEventListener('click', () => $('fichierProjet').click());
         $('fichierProjet').addEventListener('change', (ev) => {

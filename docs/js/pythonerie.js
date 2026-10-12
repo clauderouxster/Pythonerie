@@ -1340,6 +1340,9 @@ const Pythonerie = (function () {
 
     // Remplace tout le projet en cours par celui de l'instantané
     async function remplaceTout(instant) {
+        // un autre projet : les sauts de ↩ Retour menaient à l'ancien
+        sauts = [];
+        afficheRetour();
         clearTimeout(minuterieSauvegarde);
         modifie = false;
         const tout = {};
@@ -3265,6 +3268,9 @@ const Pythonerie = (function () {
             }
         });
         éditeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); });
+        éditeur.on('cursorActivity', montreSignature);
+        éditeur.getWrapperElement().addEventListener('contextmenu', allerÀLaDéfinition);
+        $('btnRetourDéfinition').addEventListener('click', revientDuSaut);
         éditeur.on('inputRead', (cm, ev) => {
             if (ev.origin !== '+input' || !/^[\wÀ-ÿ]$/.test(ev.text[0])) return;
             const cur = cm.getCursor();
@@ -3273,6 +3279,117 @@ const Pythonerie = (function () {
                 cm.showHint({ hint: pythonerieComplétion, completeSingle: false });
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // La signature de la fonction sélectionnée : quand la sélection est un nom de fonction,
+    // une ligne sous l'éditeur montre ses arguments. Fonctions de la Pythonerie et noms
+    // français de LispE (PYTHONERIE_FONCTIONS), ou fonctions de l'élève : celles du programme
+    // ouvert, puis celles des autres programmes du projet (ceux qu'il peut importer).
+    // ------------------------------------------------------------------
+    const DÉFINITION = /^([ \t]*)(?:fonction|def)[ \t]+([A-Za-zÀ-ÖØ-öø-ÿ_λ][\wÀ-ÖØ-öø-ÿ]*)[ \t]*\(([^)]*)\)/gm;
+
+    function définitionDans(code, nom) {
+        DÉFINITION.lastIndex = 0;
+        let m;
+        while ((m = DÉFINITION.exec(code))) {
+            if (m[2] === nom) return { signature: nom + '(' + m[3].trim().replace(/\s*,\s*/g, ', ') + ')', méthode: m[1].length > 0 };
+        }
+        return null;
+    }
+
+    function montreSignature() {
+        const zone = $('signature');
+        const choisi = éditeur.getSelection();
+        const nom = /^[A-Za-zÀ-ÖØ-öø-ÿ_λ][\wÀ-ÖØ-öø-ÿ]*$/.test(choisi) ? nfc(choisi) : '';
+        let texte = '';
+        if (nom) {
+            const ici = définitionDans(éditeur.getValue(), nom);
+            if (ici) texte = (ici.méthode ? 'méthode ' : 'fonction ') + ici.signature + ' — définie dans ce programme';
+            else if (PYTHONERIE_FONCTIONS[nom]) texte = PYTHONERIE_FONCTIONS[nom].replace(/  \[LispE : ([^\]]+)\]$/, '   (LispE : $1)');
+            else {
+                const tout = StockageNavigateur._tout();
+                for (const chemin of Object.keys(tout).sort()) {
+                    if (chemin === courant) continue;
+                    const ailleurs = définitionDans(tout[chemin].code || '', nom);
+                    if (ailleurs) { texte = (ailleurs.méthode ? 'méthode ' : 'fonction ') + ailleurs.signature + ' — définie dans « ' + chemin + ' »'; break; }
+                }
+            }
+        }
+        zone.textContent = texte;
+        zone.hidden = !texte;
+    }
+
+    // ------------------------------------------------------------------
+    // Clic droit sur le nom d'une fonction (ou d'une classe) : on va à sa définition, dans le
+    // programme ouvert, sinon dans un autre programme du projet, qui s'ouvre. Une fonction
+    // prédéfinie (Pythonerie, noms français de LispE), ou un mot qui n'est pas défini : rien,
+    // le menu habituel du clic droit apparaît.
+    // ------------------------------------------------------------------
+    // la position du nom défini : { début, fin } (indices dans le code), ou null
+    function positionDéfinition(code, nom) {
+        const échappé = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const m = new RegExp('^[ \\t]*(?:fonction|def|classe)[ \\t]+(' + échappé + ')(?![\\wÀ-ÖØ-öø-ÿ])', 'm').exec(code);
+        if (!m) return null;
+        const début = m.index + m[0].length - nom.length;
+        return { début, fin: début + nom.length };
+    }
+
+    function montreDéfinition(code, p) {
+        const a = éditeur.posFromIndex(p.début), b = éditeur.posFromIndex(p.fin);
+        éditeur.focus();
+        éditeur.setSelection(a, b);
+        éditeur.scrollIntoView({ from: a, to: b }, Math.round(éditeur.getScrollInfo().clientHeight / 2));
+    }
+
+    // Les sauts déjà faits, pour ↩ Retour : [{ chemin, curseur, haut }], le dernier à la fin
+    let sauts = [];
+
+    function retiensOùOnEst() {
+        sauts.push({ chemin: courant, curseur: éditeur.getCursor(), haut: éditeur.getScrollInfo().top });
+        if (sauts.length > 50) sauts.shift();
+        afficheRetour();
+    }
+
+    function afficheRetour() {
+        $('btnRetourDéfinition').hidden = sauts.length === 0;
+    }
+
+    // ↩ Retour : là où l'on était avant le dernier saut (un programme disparu entre-temps est sauté)
+    async function revientDuSaut() {
+        while (sauts.length) {
+            const s = sauts.pop();
+            if (s.chemin !== courant && !programmes.some(p => p.chemin === s.chemin)) continue;
+            if (s.chemin !== courant) await ouvre(s.chemin);
+            éditeur.focus();
+            éditeur.setCursor(s.curseur);
+            éditeur.scrollTo(null, s.haut);
+            break;
+        }
+        afficheRetour();
+    }
+
+    async function allerÀLaDéfinition(ev) {
+        const pos = éditeur.coordsChar({ left: ev.clientX, top: ev.clientY }, 'window');
+        const mot = éditeur.findWordAt(pos);
+        const nom = nfc(éditeur.getRange(mot.anchor, mot.head));
+        if (!/^[A-Za-zÀ-ÖØ-öø-ÿ_λ][\wÀ-ÖØ-öø-ÿ]*$/.test(nom)) return;
+        // dans le programme ouvert (une fonction de l'élève passe avant celle de la bibliothèque)
+        const ici = positionDéfinition(éditeur.getValue(), nom);
+        if (ici) { ev.preventDefault(); retiensOùOnEst(); montreDéfinition(éditeur.getValue(), ici); return; }
+        if (PYTHONERIE_FONCTIONS[nom]) return;          // prédéfinie : le menu habituel
+        const tout = StockageNavigateur._tout();
+        for (const chemin of Object.keys(tout).sort(compareNoms)) {
+            if (chemin === courant) continue;
+            const ailleurs = positionDéfinition(tout[chemin].code || '', nom);
+            if (!ailleurs) continue;
+            ev.preventDefault();
+            retiensOùOnEst();
+            await ouvre(chemin);
+            const p = positionDéfinition(éditeur.getValue(), nom);
+            if (p) montreDéfinition(éditeur.getValue(), p);
+            return;
+        }
     }
 
     // ------------------------------------------------------------------

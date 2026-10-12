@@ -392,6 +392,14 @@ a.btn { text-decoration: none; display: inline-block; }
     overflow: hidden;
     background: var(--bg-elevated);
 }
+/* la signature de la fonction sélectionnée, en bas de l'éditeur */
+.signature {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    padding: 4px 12px; font-family: var(--font-mono); font-size: 12px;
+    background: var(--bg-surface); color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
 .conteneur-éditeur .CodeMirror {
     height: 100%;
     font-family: var(--font-mono);

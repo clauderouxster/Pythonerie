@@ -232,6 +232,27 @@ CodeMirror.defineMode('pythonerie', function () {
 CodeMirror.defineMIME('text/x-pythonerie', 'pythonerie');
 
 // Complétion : mots-clefs, fonctions de la bibliothèque et mots déjà présents dans le programme
+// La signature d'une fonction, d'après sa description : « rectangle(x, y, largeur, hauteur) —
+// … » donne « rectangle(x, y, largeur, hauteur) » ; un argument facultatif noté « [a,] » est
+// laissé de côté. Sans parenthèses, le nom seul.
+function signatureDe(nom, desc) {
+    const m = String(desc || '').match(/^([^\s(]+\([^)]*\))/);
+    if (!m || !m[1].startsWith(nom + '(')) return nom;
+    return m[1].replace(/\s*\[[^\]]*,\]\s*/g, ' ').replace(/\(\s+/, '(').replace(/,\s+/g, ', ');
+}
+
+// Choisir une fonction insère sa signature, puis sélectionne son premier argument :
+// il n'y a plus qu'à taper la valeur à sa place
+function insèreSignature(cm, données, choix) {
+    cm.replaceRange(choix.text, données.from, données.to, 'complete');
+    const ouvre = choix.text.indexOf('(');
+    if (ouvre < 0) return;
+    const premier = choix.text.slice(ouvre + 1).split(/[,)]/)[0];
+    const ligne = données.from.line, début = données.from.ch + ouvre + 1;
+    if (premier.trim()) cm.setSelection(CodeMirror.Pos(ligne, début), CodeMirror.Pos(ligne, début + premier.length));
+    else cm.setCursor(CodeMirror.Pos(ligne, début));
+}
+
 function pythonerieComplétion(cm) {
     const cur = cm.getCursor();
     const ligne = cm.getLine(cur.line);
@@ -241,16 +262,27 @@ function pythonerieComplétion(cm) {
     const préfixe = sansAccents(ligne.slice(début, cur.ch).toLowerCase());
     if (!préfixe) return null;
 
+    // une parenthèse suit déjà le mot : on ne remplace que le nom
+    const parenthèseAprès = ligne.charAt(fin) === '(';
+
     const vus = new Set();
     const liste = [];
-    function ajoute(texte, affichage) {
+    function ajoute(texte, affichage, signature) {
         const t = sansAccents(texte.toLowerCase());
         if (vus.has(texte) || !t.startsWith(préfixe) || t === préfixe) return;
         vus.add(texte);
-        liste.push({ text: texte, displayText: affichage || texte });
+        if (signature && signature !== texte && !parenthèseAprès) liste.push({ text: signature, displayText: affichage || signature, hint: insèreSignature });
+        else liste.push({ text: texte, displayText: affichage || texte });
     }
     PYTHONERIE_MOTS_CLEFS.forEach(m => ajoute(m, m + '  (mot-clef)'));
-    Object.entries(PYTHONERIE_FONCTIONS).forEach(([nom, desc]) => ajoute(nom, desc));
+    // les fonctions du programme, avec leurs arguments
+    const définition = /^[ \t]*(?:fonction|def)[ \t]+([A-Za-zÀ-ÖØ-öø-ÿ_][\wÀ-ÖØ-öø-ÿ]*)[ \t]*\(([^)]*)\)/gm;
+    let d;
+    while ((d = définition.exec(cm.getValue()))) {
+        const sig = d[1] + '(' + d[2].trim().replace(/\s*,\s*/g, ', ') + ')';
+        ajoute(d[1], sig + '  (ton programme)', sig);
+    }
+    Object.entries(PYTHONERIE_FONCTIONS).forEach(([nom, desc]) => ajoute(nom, desc, signatureDe(nom, desc)));
     PYTHONERIE_CONSTANTES.forEach(m => ajoute(m));
     const mots = cm.getValue().match(/[A-Za-zÀ-ÿ_][\wÀ-ÿ]*/g) || [];
     mots.forEach(m => ajoute(m));

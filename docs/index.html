@@ -25,7 +25,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.12.16.30">
+    <link rel="stylesheet" href="style.css?v=2026.10.12.20.23">
 </head>
 
 <body>
@@ -35,7 +35,7 @@
             <img class="logo" src="images/logo-96.png" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.16.30</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.20.23</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -119,6 +119,7 @@
                     <span id="étatSauvegarde" class="état-sauvegarde"></span>
                 </div>
                 <div class="barre-droite">
+                    <button id="btnRetourDéfinition" class="btn btn-secondaire btn-petit" title="Revenir là où tu étais avant d'aller à une définition (clic droit sur une fonction)" hidden>↩ Retour</button>
                     <button id="btnPleinCode" class="btn btn-secondaire btn-petit btn-icône" title="Le code en plein écran" aria-label="Le code en plein écran">⛶</button>
                     <button id="btnDonnées" class="btn btn-secondaire btn-petit" title="Les données du projet : don0, don1...">▦ Données</button>
                     <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
@@ -128,6 +129,8 @@
             </div>
             <div id="conteneurÉditeur" class="conteneur-éditeur">
                 <textarea id="éditeur"></textarea>
+                <!-- La signature de la fonction sélectionnée (voir montreSignature) -->
+                <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
                     <p>Ton projet est vide.</p>
@@ -245,7 +248,9 @@
                 <h3 id="aide-écran">L'écran et les raccourcis</h3>
                 <table class="table-aide raccourcis">
                     <tr><td><kbd>Ctrl</kbd>+<kbd>Entrée</kbd></td><td>exécute le programme (comme ▶ Exécuter)</td>
-                        <td><kbd>Ctrl</kbd>+<kbd>Espace</kbd></td><td>propose des mots</td></tr>
+                        <td><kbd>Ctrl</kbd>+<kbd>Espace</kbd></td><td>propose des mots ; une fonction choisie arrive avec ses arguments, le premier sélectionné</td></tr>
+                    <tr><td>clic droit sur une fonction</td><td>va à sa définition, dans ce programme ou dans un autre programme du projet (pas pour une fonction prédéfinie) ; <b>↩ Retour</b> ramène là où tu étais</td>
+                        <td>sélectionner une fonction</td><td>montre ses arguments en bas de l'éditeur</td></tr>
                     <tr><td><kbd>Ctrl</kbd>+<kbd>/</kbd></td><td>met une ligne en commentaire, ou l'en sort</td>
                         <td><b>⛶</b></td><td>met l'éditeur, la console ou le canevas en plein écran (<b>✕</b> ou <kbd>Échap</kbd> pour revenir)</td></tr>
                     <tr><td><code>&gt;&gt;&gt;</code></td><td>sous la console : exécute tout de suite une ligne, avec les variables du dernier programme (<code>notes</code>, <code>longueur(notes)</code>…)</td>
@@ -511,7 +516,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.12.16.30';
+                return répertoire + fichier + '?v=2026.10.12.20.23';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -519,15 +524,15 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.12.16.30"></script>
-    <script src="js/zip.js?v=2026.10.12.16.30"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.12.16.30"></script>
-    <script src="js/erreurs.js?v=2026.10.12.16.30"></script>
-    <script src="js/canevas.js?v=2026.10.12.16.30"></script>
-    <script src="js/pythonerie.js?v=2026.10.12.16.30"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.12.20.23"></script>
+    <script src="js/zip.js?v=2026.10.12.20.23"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.12.20.23"></script>
+    <script src="js/erreurs.js?v=2026.10.12.20.23"></script>
+    <script src="js/canevas.js?v=2026.10.12.20.23"></script>
+    <script src="js/pythonerie.js?v=2026.10.12.20.23"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.12.16.30"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.12.16.30"></script>
+    <script src="lispe/lispe.js?v=2026.10.12.20.23"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.12.20.23"></script>
 </body>
 
 </html>

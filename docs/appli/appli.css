@@ -111,6 +111,11 @@ body {
     padding: 12px;
     background: #101010;
 }
+/* en plein écran, la console (si le programme y écrit, ou après affiche_console()) est sous le canevas */
+.scène:fullscreen { flex-direction: column; gap: 10px; }
+.scène:fullscreen > .zone-console { flex: none; width: min(100%, 1100px); height: 30vh; display: flex; flex-direction: column; }
+.scène:fullscreen > .zone-console .console { flex: 1; max-height: none; }
+.scène:fullscreen:has(> .zone-console:not([hidden])) .cadre-canevas { width: min(100%, calc((100vh - 34px - 30vh) * var(--ratio, 1.3333))) !important; }
 .scène:fullscreen .cadre-canevas {
     flex: none;
     width: min(100%, calc((100vh - 24px) * var(--ratio, 1.3333)));

@@ -8,22 +8,30 @@
 
 
 (setq code `
+pour f dans dessin:
+    trace(f[2], f[0], f[1], f[3], f[4], Vrai)
 
-a = """ ceci
-est un test
-"""
+selon(a):
+    cas "ab":
+           affiche("Test")
+           affiche("Truc")
+    cas "bc":
+           affiche("Test")
+    défaut:
+           affiche("Yooo")
+	     affiche("Fin")
+ 
 `)
  
 
 (setq pythonmode true)
-(println . prettify  . abstract_tree code)
+(setq ic (injecte_labels code))
+(println ic)
+;(println (prettify . abstract_tree ic))
 (prettify . compilepython code) ; -> (setq a (* (/ 8 2) 4)) (setq a (+ 8 (* 2 9) 5)) (setq a (+ 8 (* a 2)))
 
 
-(setq a `ceci est 
-un test`)
 
-(setq l (list a))
 
 
 

@@ -1,5 +1,5 @@
 # 1. Bonjour !
-# affiche() écrit dans la console, en bas de l'éditeur.
+# affiche() écrit dans la console, sous le canevas.
 
 affiche("Bonjour tout le monde !")
 

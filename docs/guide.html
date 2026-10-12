@@ -295,12 +295,11 @@
                             En dessous, la liste <b>🧪 Exemples</b> contient des programmes à essayer&nbsp;: clique dessus pour l'ouvrir.
                             Pour élargir cette colonne, fais glisser son bord droit. Sur un téléphone, elle est en haut&nbsp;: le bouton <b>▴</b> la replie.</p></div>
                     <div class="zone"><div class="icone">✏️</div><h4>Au milieu : l'éditeur</h4>
-                        <p>C'est ici que tu écris ton programme. En dessous, la <b>console</b>
-                            affiche les messages de ton programme, et la ligne <code>&gt;&gt;&gt;</code>
-                            exécute tout de suite ce que tu tapes.</p></div>
-                    <div class="zone"><div class="icone">🎨</div><h4>À droite : le canevas</h4>
-                        <p>C'est une feuille de dessin. Ton programme peut y dessiner des formes,
-                            écrire et faire avancer une tortue.</p></div>
+                        <p>C'est ici que tu écris ton programme.</p></div>
+                    <div class="zone"><div class="icone">🎨</div><h4>À droite : le canevas et la console</h4>
+                        <p>Le canevas est une feuille de dessin. Ton programme peut y dessiner des formes,
+                            écrire et faire avancer une tortue. En dessous, la <b>console</b> affiche les messages
+                            de ton programme, et la ligne <code>&gt;&gt;&gt;</code> exécute tout de suite ce que tu tapes.</p></div>
                 </div>
                 <p>En haut, le bouton <b>▶ Exécuter</b> lance ton programme. Le bouton <b>■ Arrêter</b> arrête une animation.
                     Le bouton <b>❓ Aide</b> montre un résumé de tous les mots.</p>
@@ -1032,7 +1031,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <li>Après une ligne qui se termine par <code>:</code>, la touche Entrée décale tout seul la ligne suivante.</li>
                     <li>La liste <b>📚 Matériels</b>, s'il y en a une, contient ce que ton enseignant a préparé pour toi.</li>
                     <li>La liste <b>🧪 Exemples</b>, à gauche, contient des idées de programmes. Clique dessus pour l'ouvrir&nbsp;: un clic sur un exemple en crée une copie que tu peux changer. Si tu l'as déjà copié, la Pythonerie ouvre ta copie au lieu d'en faire une deuxième&nbsp;; pour repartir de l'exemple d'origine, renomme ou supprime ta copie.</li>
-                    <li>Le bouton <b>⛶ Plein écran</b>, au-dessus du canevas, l'agrandit à tout l'écran&nbsp;: c'est parfait pour jouer au casse-briques&nbsp;! <b>■ Arrêter</b> arrête ton programme, et <b>✕ Quitter le plein écran</b> (ou la touche Échap) te ramène à l'affichage normal.</li>
+                    <li>Le bouton <b>⛶ Plein écran</b>, au-dessus du canevas, l'agrandit à tout l'écran&nbsp;: c'est parfait pour jouer au casse-briques&nbsp;! <b>▤ Console</b> fait venir la console sous le canevas (et la renvoie), <b>■ Arrêter</b> arrête ton programme, et <b>✕ Quitter le plein écran</b> (ou la touche Échap) te ramène à l'affichage normal. Dans ton programme, <code>affiche_console()</code> fait de même que <b>▤ Console</b>, et <code>cache_console()</code> la renvoie.</li>
                     <li>Le bouton 🌓, en haut, passe la Pythonerie en couleurs sombres.</li>
                 </ul>
             </section>
@@ -1084,6 +1083,8 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>affiche(a, b, …)</code></td><td>écrit dans la console, puis passe à la ligne</td><td class="ex"><code>affiche("Bonjour")</code></td></tr>
                     <tr><td><code>écris(a, b, …)</code></td><td>écrit dans la console sans passer à la ligne</td><td class="ex"><code>écris("Bon")</code></td></tr>
                     <tr><td><code>efface_console()</code></td><td>vide la console</td><td class="ex"><code>efface_console()</code></td></tr>
+                    <tr><td><code>affiche_console()</code></td><td>montre la console, même quand le canevas est en plein écran (elle vient alors dessous)</td><td class="ex"><code>affiche_console()</code></td></tr>
+                    <tr><td><code>cache_console()</code></td><td>en plein écran, renvoie la console</td><td class="ex"><code>cache_console()</code></td></tr>
                     <tr><td><code>demande(question)</code></td><td>pose une question et donne la réponse (un texte)</td><td class="ex"><code>nom = demande("Ton nom ?")</code></td></tr>
                     <tr><td><code>demande_nombre(question)</code></td><td>pose une question et donne la réponse (un nombre)</td><td class="ex"><code>n = demande_nombre("Un nombre ?")</code></td></tr>
                     <tr><td><code>lire(question)</code></td><td>comme <code>demande</code></td><td class="ex"><code>lire("Ton nom ?")</code></td></tr>
@@ -1297,7 +1298,7 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
         // ---------- Coloration simple des exemples et bouton « Copier » ----------
         const MOTS = new Set(['si', 'sinonsi', 'sinon', 'tantque', 'pour', 'dans', 'fonction', 'def', 'retourne',
             'renvoie', 'sortir', 'continuer', 'et', 'ou', 'non', 'classe', 'soi', 'essaie', 'sauf',
-            'lever', 'selon', 'cas', 'Vrai', 'Faux', 'Rien']);
+            'lever', 'selon', 'cas', 'défaut', 'Vrai', 'Faux', 'Rien']);
         const echappe = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         function colore(code) {
             return code.split('\n').map(ligne => {

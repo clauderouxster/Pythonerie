@@ -15,6 +15,10 @@
 ; Console
 ;------------------------------------------------------------------
 (defun efface_console () (evaljs "Pyt.effaceConsole()") nil)
+; affiche_console() : rend la console visible, même quand le canevas est en plein écran (elle
+; vient alors dessous) ; cache_console() la retire du plein écran
+(defun affiche_console () (evaljs "Pyt.afficheConsole()") nil)
+(defun cache_console () (evaljs "Pyt.cacheConsole()") nil)
 
 ; écris(a, b, ...) écrit sans passer à la ligne. Dans le WebAssembly, chaque print de
 ; LispE arrive comme une ligne complète : on passe donc par la console JavaScript.

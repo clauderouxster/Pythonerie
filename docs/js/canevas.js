@@ -169,9 +169,18 @@ const Pyt = (function () {
     // plein écran pour montrer la fenêtre, mais prompt bloque la page et l'écran reste blanc.
     // La question est alors posée dans un cadre sur le canevas ; l'événement (un clic, une
     // touche...) s'arrête, puis il est rejoué avec la réponse, comme le programme l'est pour
-    // une demande() hors événement. Échap répond "", comme Annuler dans la fenêtre du navigateur.
+    // une demande() hors événement. Échap abandonne la question : en plein écran, le navigateur
+    // s'en sert aussi pour sortir du plein écran, et rejouer l'événement pendant cette sortie
+    // bloquerait la page. Sortir du plein écran abandonne de même une question en attente.
     let événement = { code: null, réponses: [], rang: 0 };
     let questionÉvénement = null;      // le cadre de la question en attente, ou null
+
+    // la question est abandonnée : rien n'est rejoué
+    function abandonneQuestionSurCanevas() {
+        if (!questionÉvénement) return;
+        questionÉvénement.remove();
+        questionÉvénement = null;
+    }
 
     function poseQuestionSurCanevas(question) {
         // l'événement qui pose la question, et ses réponses déjà données : une animation qui
@@ -186,7 +195,7 @@ const Pyt = (function () {
         champ.spellcheck = false;
         const aide = document.createElement('div');
         aide.className = 'question-canevas-aide';
-        aide.textContent = 'Entrée : répondre — Échap : annuler';
+        aide.textContent = 'Entrée : répondre — Échap : abandonner';
         cadre.append(texte, champ, aide);
         cadre.addEventListener('pointerdown', (ev) => ev.stopPropagation());
         const répond = (réponse) => {
@@ -198,7 +207,7 @@ const Pyt = (function () {
         cadre.addEventListener('submit', (ev) => { ev.preventDefault(); répond(champ.value); });
         champ.addEventListener('keydown', (ev) => {
             ev.stopPropagation();
-            if (ev.key === 'Escape') { ev.preventDefault(); répond(''); }
+            if (ev.key === 'Escape') { ev.preventDefault(); abandonneQuestionSurCanevas(); }
         });
         canevas.parentElement.appendChild(cadre);
         questionÉvénement = cadre;
@@ -456,6 +465,9 @@ const Pyt = (function () {
         // Une touche relâchée pendant que la page n'a pas le focus n'envoie pas de keyup :
         // on relâche tout quand la fenêtre perd le focus ou que l'onglet est caché
         window.addEventListener('blur', () => relâcheTout(true));
+        // sortie du plein écran (Échap, ou le navigateur) : une question posée sur le canevas
+        // est abandonnée
+        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) abandonneQuestionSurCanevas(); });
         document.addEventListener('visibilitychange', () => { if (document.hidden) relâcheTout(true); });
     }
 
@@ -508,6 +520,9 @@ const Pyt = (function () {
         },
 
         // ---------- Console ----------
+        // affiche_console() / cache_console() : voir pythonerie.js (ou appli.js)
+        afficheConsole() { if (window.Pythonerie && window.Pythonerie.afficheConsole) window.Pythonerie.afficheConsole(); },
+        cacheConsole() { if (window.Pythonerie && window.Pythonerie.cacheConsole) window.Pythonerie.cacheConsole(); },
         effaceConsole() {
             if (window.Pythonerie) window.Pythonerie.effaceConsole();
         },

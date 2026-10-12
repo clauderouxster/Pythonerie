@@ -493,6 +493,8 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 }
 
 .zone-console { flex: 1.3 1 0; min-height: 90px; display: flex; flex-direction: column; }
+/* la console est sous le canevas : elle prend la hauteur qui reste */
+.zone-canevas > .zone-console { flex: 1 1 auto; min-height: 160px; }
 /* Plein écran du code ou de la console : la zone occupe toute la fenêtre, au-dessus du
    reste (les propositions de l'éditeur et les fenêtres de dialogue passent devant) ;
    la taille de la police ne change pas */
@@ -676,6 +678,11 @@ details[open] > .arbre-branche::before { content: '▾'; }
 }
 .scène-canevas.plein.secours { position: fixed; inset: 0; z-index: 1000; }
 .scène-canevas.plein .barre-plein-écran { display: flex; gap: 8px; align-self: flex-end; }
+/* ▤ Console (ou affiche_console()) : en plein écran, la console vient sous le canevas */
+.scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100vh - 70px - 32vh) * var(--ratio, 1.3333))); }
+.scène-canevas.plein > .zone-console { flex: none; height: 30vh; min-height: 0; width: min(100%, 1100px); }
+.scène-canevas.plein > .zone-console #btnPleinConsole { display: none; }
+#btnConsolePlein[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .scène-canevas.plein .cadre-canevas {
     flex: none;
     width: min(100%, calc((100vh - 70px) * var(--ratio, 1.3333)));

@@ -332,9 +332,18 @@
    v
 )
 
+(defpat parsing ( ['default $ exp] )
+   (if (eq (size exp) 1)
+      (list 'true (parsing exp))
+      (list 'true (consb 'block (mapcar 'parsing exp)))
+   )
+)
 
-(defpat parsing ( ['acase chk exp])
-   (list (parsing chk) (parsing exp))
+(defpat parsing ( ['acase chk $ exp])
+   (if (eq (size exp) 1)
+      (list (parsing chk) (parsing exp))
+      (list (parsing chk) (consb 'block (mapcar 'parsing exp)))
+   )
 )
 
 (defpat parsing ( ['switch vari $ cs])

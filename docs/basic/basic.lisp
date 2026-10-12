@@ -1,4 +1,4 @@
-;Date: 2026/10/09 15:01:20
+;Date: 2026/10/12 14:07:07
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -2765,7 +2765,7 @@
    )
 )
 
-;!acase := $cas astring %: expressions
+;!acase := $cas astring expressions+ $fincas
 (defun C_acase (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2774,8 +2774,8 @@
             (setq v1 ())
             (compare tokens "cas" i1 v1 nil)
             (C_astring tokens i1 v1)
-            (compare tokens ":" i1 v1 nil)
-            (C_expressions tokens i1 v1)
+            (P_acase_0 tokens i1 v1)
+            (compare tokens "fincas" i1 v1 nil)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -2784,7 +2784,51 @@
    )
 )
 
-;!switch := $selon ;14 %( variable %) acase+ $finselon
+(defun P_acase_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_expressions tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_expressions tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+;!default := $défaut expressions+ $findéfaut
+(defun C_default (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "défaut" i1 v1 nil)
+            (P_default_0 tokens i1 v1)
+            (compare tokens "findéfaut" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'default v0))
+      )
+   )
+)
+
+(defun P_default_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_expressions tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_expressions tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+;!switch := $selon ;14 %( variable %) acase+ default? $finselon
 (defun C_switch (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2798,6 +2842,7 @@
                   (C_variable tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                   (P_switch_0 tokens i1 v1)
+                  (O_switch_1 tokens i1 v1)
                   (compare tokens "finselon" i1 v1 nil)
                )
                (pop error_id)
@@ -2824,9 +2869,16 @@
    )
 )
 
+(defun O_switch_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_default tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
 
 (defun nokeywords(w)
-      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "selon" "finselon") (lower w)))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w)))
 )
    (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
 (setq parser_tok (tokenizer_rules))

@@ -24,7 +24,7 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.11.21.35">
+    <link rel="stylesheet" href="style.css?v=2026.10.12.14.20">
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             <span class="logo">P</span>
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.11.21.35</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.14.20</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -153,22 +153,6 @@
                 <div class="section-tête"><span class="étiquette">Code LispE produit</span></div>
                 <pre id="codeLispE"></pre>
             </div>
-            <div class="zone-console">
-                <div class="section-tête">
-                    <span class="étiquette">Console</span>
-                    <span class="espace-barre"></span>
-                    <button id="btnPleinConsole" class="btn btn-secondaire btn-petit btn-icône" title="La console en plein écran" aria-label="La console en plein écran">⛶</button>
-                    <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
-                </div>
-                <div id="console" class="console"></div>
-                <!-- Ligne de commande, comme l'invite >>> de Python -->
-                <div class="saisie-console">
-                    <span class="invite" aria-hidden="true">&gt;&gt;&gt;</span>
-                    <textarea id="saisieConsole" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off"
-                        aria-label="Ligne de commande : tape un nom de variable ou une ligne de code, puis Entrée"
-                        placeholder="Tape un nom de variable ou du code, puis Entrée"></textarea>
-                </div>
-            </div>
         </section>
 
         <div id="séparateur" class="séparateur" title="Glisser pour redimensionner"></div>
@@ -186,6 +170,7 @@
             <!-- La scène : le canevas, et en plein écran une barre pour arrêter le programme et revenir -->
             <div id="scèneCanevas" class="scène-canevas">
                 <div class="barre-plein-écran">
+                    <button id="btnConsolePlein" class="btn btn-secondaire btn-petit" title="Montrer la console sous le canevas" aria-pressed="false">▤ Console</button>
                     <button id="btnArrêterPlein" class="btn btn-secondaire btn-petit" disabled title="Arrêter le programme">■ Arrêter</button>
                     <button id="btnQuittePlein" class="btn btn-secondaire btn-petit" title="Revenir à l'affichage normal (Échap)">✕ Quitter le plein écran</button>
                 </div>
@@ -195,6 +180,23 @@
                 </div>
             </div>
             <div id="coordonnées" class="coordonnées"></div>
+            <!-- La console, sous le canevas ; en plein écran du canevas, ▤ Console l'y fait venir -->
+            <div id="zoneConsole" class="zone-console">
+                <div class="section-tête">
+                    <span class="étiquette">Console</span>
+                    <span class="espace-barre"></span>
+                    <button id="btnPleinConsole" class="btn btn-secondaire btn-petit btn-icône" title="La console en plein écran" aria-label="La console en plein écran">⛶</button>
+                    <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
+                </div>
+                <div id="console" class="console"></div>
+                <!-- Ligne de commande, comme l'invite >>> de Python -->
+                <div class="saisie-console">
+                    <span class="invite" aria-hidden="true">&gt;&gt;&gt;</span>
+                    <textarea id="saisieConsole" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off"
+                        aria-label="Ligne de commande : tape un nom de variable ou une ligne de code, puis Entrée"
+                        placeholder="Tape un nom de variable ou du code, puis Entrée"></textarea>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -467,7 +469,7 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.11.21.35';
+                return répertoire + fichier + '?v=2026.10.12.14.20';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -475,15 +477,15 @@ quand_clic(clic)        # aussi : quand_souris(f), quand_glisse(f), quand_touche
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.11.21.35"></script>
-    <script src="js/zip.js?v=2026.10.11.21.35"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.11.21.35"></script>
-    <script src="js/erreurs.js?v=2026.10.11.21.35"></script>
-    <script src="js/canevas.js?v=2026.10.11.21.35"></script>
-    <script src="js/pythonerie.js?v=2026.10.11.21.35"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.12.14.20"></script>
+    <script src="js/zip.js?v=2026.10.12.14.20"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.12.14.20"></script>
+    <script src="js/erreurs.js?v=2026.10.12.14.20"></script>
+    <script src="js/canevas.js?v=2026.10.12.14.20"></script>
+    <script src="js/pythonerie.js?v=2026.10.12.14.20"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.11.21.35"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.11.21.35"></script>
+    <script src="lispe/lispe.js?v=2026.10.12.14.20"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.12.14.20"></script>
 </body>
 
 </html>

@@ -5,7 +5,7 @@
 const PYTHONERIE_MOTS_CLEFS = [
     'si', 'sinonsi', 'sinon', 'alors', 'tantque', 'pour', 'dans',
     'fonction', 'def', 'retourne', 'renvoie', 'sortir', 'continuer', 'lever',
-    'classe', 'soi', 'essaie', 'sauf', 'attrape', 'selon', 'cas',
+    'classe', 'soi', 'essaie', 'sauf', 'attrape', 'selon', 'cas', 'défaut',
     'et', 'ou', 'oux', 'non', 'est', 'importe', 'comme', 'lambda',
     'règle', 'motif', 'prolog'
 ];
@@ -18,6 +18,8 @@ const PYTHONERIE_FONCTIONS = {
     'affiche': 'affiche(a, b, ...) — écrit dans la console puis passe à la ligne',
     'écris': 'écris(a, ...) — écrit dans la console sans passer à la ligne (jusqu\'à 8 valeurs)',
     'efface_console': 'efface_console() — vide la console',
+    'affiche_console': 'affiche_console() — montre la console, même en plein écran du canevas',
+    'cache_console': 'cache_console() — en plein écran du canevas, renvoie la console',
     'demande': 'demande(question) — pose une question, renvoie la réponse (texte)',
     'demande_nombre': 'demande_nombre(question) — pose une question, renvoie un nombre',
     'lire': 'lire(question) — comme demande',

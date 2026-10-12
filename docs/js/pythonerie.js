@@ -764,6 +764,7 @@ const Pythonerie = (function () {
 
     function quittePleinÉcran() {
         const scène = $('scèneCanevas');
+        consoleSousLeCanevas(false);
         Pyt.relâcheTouches();
         if (document.fullscreenElement === scène && document.exitFullscreen) document.exitFullscreen().catch(() => {});
         scène.classList.remove('plein', 'secours');
@@ -830,8 +831,34 @@ const Pythonerie = (function () {
         });
     }
 
+    // En plein écran du canevas, la console peut venir sous le canevas (▤ Console, ou
+    // affiche_console() dans le programme) : elle passe dans la scène, puis revient à sa place
+    function consoleSousLeCanevas(oui) {
+        const zone = $('zoneConsole'), scène = $('scèneCanevas');
+        oui = !!oui && enPleinÉcran();
+        if (oui && zone.parentElement !== scène) scène.appendChild(zone);
+        if (!oui && zone.parentElement !== $('zoneCanevas')) $('zoneCanevas').appendChild(zone);
+        scène.classList.toggle('avec-console', oui);
+        $('btnConsolePlein').setAttribute('aria-pressed', String(oui));
+        $('btnConsolePlein').textContent = oui ? '▤ Cacher la console' : '▤ Console';
+        $('console').scrollTop = $('console').scrollHeight;
+    }
+
+    // affiche_console() : la console devient visible, quel que soit l'affichage
+    function afficheConsole() {
+        if (zonePleine === 'code') quitteZonePleine();
+        if (enPleinÉcran()) consoleSousLeCanevas(true);
+        else $('zoneConsole').scrollIntoView({ block: 'nearest' });
+    }
+
+    // cache_console() : en plein écran du canevas, la console s'en va (sinon, rien ne change)
+    function cacheConsole() {
+        if (enPleinÉcran()) consoleSousLeCanevas(false);
+    }
+
     function installePleinÉcran() {
         $('btnPleinÉcran').addEventListener('click', entrePleinÉcran);
+        $('btnConsolePlein').addEventListener('click', () => consoleSousLeCanevas(!$('scèneCanevas').classList.contains('avec-console')));
         $('btnQuittePlein').addEventListener('click', quittePleinÉcran);
         $('btnArrêterPlein').addEventListener('click', arrête);
         // sortie par Échap (ou par le navigateur) du vrai plein écran
@@ -3613,6 +3640,7 @@ const Pythonerie = (function () {
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
+        afficheConsole, cacheConsole,
         médias: () => médiasSite,
         compile // utile pour les tests depuis la console du navigateur
     };

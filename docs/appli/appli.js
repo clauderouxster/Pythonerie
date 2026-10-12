@@ -349,6 +349,14 @@ const Pythonerie = (function () {
         $('btnArrêter').disabled = !Pyt.enCours();
     }
 
+    // affiche_console() : la console devient visible ; en plein écran, elle est sous le canevas
+    // (voir le changement de plein écran plus bas) ; cache_console() la cache
+    function afficheConsole() {
+        $('zoneConsole').hidden = false;
+        if (!document.fullscreenElement) $('zoneConsole').scrollIntoView({ block: 'nearest' });
+    }
+    function cacheConsole() { $('zoneConsole').hidden = true; }
+
     function basculePleinÉcran() {
         if (document.fullscreenElement) document.exitFullscreen();
         else if ($('scène').requestFullscreen) $('scène').requestFullscreen().catch(() => { /* refusé */ });
@@ -368,6 +376,12 @@ const Pythonerie = (function () {
         $('btnRecommencer').addEventListener('click', () => lance());
         $('btnArrêter').addEventListener('click', arrête);
         $('btnPleinÉcran').addEventListener('click', basculePleinÉcran);
+        // en plein écran, la console passe dans la scène, sous le canevas ; elle revient après
+        document.addEventListener('fullscreenchange', () => {
+            const plein = document.fullscreenElement === $('scène');
+            if (plein) $('scène').appendChild($('zoneConsole'));
+            else $('scène').after($('zoneConsole'));
+        });
         $('réponse').addEventListener('keydown', (ev) => {
             if (questionPosée === null) return;
             if (ev.key === 'Enter') {
@@ -389,6 +403,7 @@ const Pythonerie = (function () {
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         signaleAnimation: () => metAJourBoutons(),
+        afficheConsole, cacheConsole,
         // les médias du site emportés avec l'application (exemples/médias/...)
         médias: () => APPLI.médias
     };

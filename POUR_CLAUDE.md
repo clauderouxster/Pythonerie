@@ -8,6 +8,7 @@ La Pythonerie fait programmer des enfants (à partir de 7 ans) dans un **Python 
 
 - **Un seul programme complet**, dans un bloc de code. L'élève le colle dans l'éditeur (ou l'importe en `.pyf`, l'extension des programmes de la Pythonerie) et clique sur « Exécuter ».
 - Ou bien, quand il faut plusieurs programmes, des onglets de données ou des fichiers, **un projet complet en JSON**, dans un bloc de code `json` (voir « Un projet en JSON ») : l'élève le colle avec ☰ → « 📋 Coller un projet (JSON)… ».
+- Ou bien, pour une **pile de cartes** à la HyperCard, le seul fichier JSON de la pile (voir « Des piles de cartes »).
 - Une première ligne de commentaire avec le titre, puis quelques lignes qui expliquent comment jouer ou utiliser le programme.
 - **Des noms français avec leur orthographe correcte** : `épaisseur`, `état`, `vitesse_balle`. Les accents sont obligatoires dans les noms du langage (`va_à`, `lève_crayon`, `carré`), et souhaités dans les tiens.
 - Des commentaires courts et simples, lisibles par un enfant.
@@ -30,7 +31,7 @@ Les blocs se repèrent au **décalage de 4 espaces**. La ligne qui ouvre un bloc
 | `and / or / not / in / not in / is` | `et / ou / non / dans / non dans / est` ; `oux` = ou exclusif |
 | `True / False / None` | `Vrai / Faux / Rien` |
 | `class C: / self` | `classe C:` / `soi` (méthodes avec `def`, constructeur `__init__(soi, …)`) |
-| `match x: case "a":` / `case _:` | `selon (x):`, puis des blocs `cas "a":` ou `cas 3:` (un texte ou un nombre) et, en dernier, `défaut:` ; chaque `cas` et `défaut` ouvre un bloc décalé sur les lignes suivantes (pas d'instruction sur la même ligne) |
+| `match x: case "a":` / `case _:` | `selon (x):`, puis des blocs `cas "a":` ou `cas 3:` (un texte ou un nombre positif : `cas -1:` est refusé) et, en dernier, `défaut:` ; chaque `cas` et `défaut` ouvre un bloc décalé sur les lignes suivantes (pas d'instruction sur la même ligne) |
 | `lambda x: x * 2` | `lambda(x) x * 2` (ou `λ`) |
 | `f"{x}"` | `f"{x}"` (les expressions entre accolades suivent la syntaxe de la Pythonerie) |
 | `[x * x for x in l if x > 0]` | `[x * x pour x dans l si x > 0]` |
@@ -108,9 +109,9 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 
 ### Médias disponibles sur le site
 Chemins à donner tels quels à `charge_image` / `charge_son` :
-- `exemples/médias/étoile.svg`
+- images : `exemples/médias/étoile.svg`, `exemples/médias/La Pythonerie.png` (le logo de la Pythonerie, 1254 × 1254)
 - sons : `exemples/médias/ding.wav`, `pop.wav`, `tir.wav` (laser), `explosion.wav`, `boum.wav` (gros choc), `pas_1.wav` à `pas_4.wav` (notes graves brèves)
-- piano, trois octaves : `exemples/médias/piano/do_3.wav` … `si_5.wav`, avec `do_dièse_4.wav`, `ré_dièse_4.wav`, `fa_dièse_4.wav`, `sol_dièse_4.wav`, `la_dièse_4.wav` (octaves 3, 4 et 5)
+- piano, trois octaves (3, 4 et 5) : `exemples/médias/piano/<note>_<octave>.wav`, les notes étant `do`, `do_dièse`, `ré`, `ré_dièse`, `mi`, `fa`, `fa_dièse`, `sol`, `sol_dièse`, `la`, `la_dièse`, `si` (de `do_3.wav` à `si_5.wav`, `fa_dièse_4.wav`…)
 
 ## Projets
 
@@ -241,8 +242,10 @@ Dans un script, `va_vers_carte("Rosa")` montre une autre carte de la pile.
 5. **Une seule chose par ligne**, pas de `;`. Pas de `import` de modules Python, pas de `global` / `nonlocal`, pas de décorateurs, de `with`, de `yield`, de `*args` ni d'arguments nommés.
 6. `Rien` s'affiche `[]`.
 7. Un nombre écrit sans point est un entier (`7`) ; avec un point ou un exposant, c'est un réel (`7.0`, `1.5e3`). Pour un score ou un compteur, utilise des entiers. `arrondi(x)` et `**` peuvent donner un réel (`4.0`, `8.0`) : utilise `entier(…)` si tu veux afficher un entier.
-8. Écris `sauf(e):` avec les parenthèses, et `retourne Rien` pour quitter une fonction avant la fin.
+8. Pour quitter une fonction avant la fin, écris `retourne Rien`. Si tu dois faire `retourne` dans le bloc qui attrape une erreur, écris `sauf:` sans variable : dans `sauf(e):`, `retourne` ne quitte que le bloc `sauf`, et la fonction continue après.
 9. Dans une fonction appelée par `animer`, `quand_clic`…, n'oublie pas `=:` (ou `+=`) pour modifier l'état du jeu ; un simple `=` crée une variable locale, et le jeu semble ne rien faire.
+10. **`non` appliqué à une liste agit sur chacun de ses éléments** : `si non pile:` ne teste pas si la liste est vide (avec `pile = []`, la condition est fausse). Écris `si longueur(pile) == 0:`.
+11. Une erreur d'exécution montre l'expression LispE en cause (« dans le code LispE : at l 5) »), sans numéro de ligne du programme : écris un code simple à relire, et nomme bien tes variables.
 
 ## Modèle de jeu
 

@@ -12,6 +12,6 @@
   {
     "fichier": "cartes.zip",
     "titre": "Les cartes (à la HyperCard)",
-    "description": "Des piles de cartes, comme HyperCard : l'Éditeur dessine les cartes (textes, formes, images, sons, boutons qui mènent à une autre carte ou à une autre pile, et des scripts en Pythonerie, rangés dans biblios.pyf) et les range en JSON dans le répertoire données ; le Lecteur les montre, et sa liste déroulante choisit la pile. Deux piles reliées pour commencer : un petit cours de Pythonerie en dix cartes, et une visite du système solaire."
+    "description": "Des piles de cartes, comme HyperCard : l'Éditeur dessine les cartes (textes, formes, images, sons, boutons qui mènent à une autre carte ou à une autre pile, et des scripts : les fonctions que tu écris dans biblios.pyf) et les range en JSON dans le répertoire données ; le Lecteur les montre, et sa liste déroulante choisit la pile. Deux piles reliées pour commencer : un petit cours de Pythonerie en dix cartes, avec un bouton ▶ Exécute par exemple, et une visite du système solaire."
   }
 ]

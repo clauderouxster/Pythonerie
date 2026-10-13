@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.12.23.06">
-    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.12.23.06">
+    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.13.08.54">
+    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.13.08.54">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -25,17 +25,17 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.12.23.06">
+    <link rel="stylesheet" href="style.css?v=2026.10.13.08.54">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <img class="logo" src="images/logo-96.png?v=2026.10.12.23.06" alt="" width="36" height="36">
+            <img class="logo" src="images/logo-96.png?v=2026.10.13.08.54" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.12.23.06</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.13.08.54</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -94,7 +94,6 @@
                     <input type="file" id="fichierProjet" accept=".zip,.json,application/zip,application/json" hidden>
                     <input type="file" id="fichierArchive" accept=".zip,application/zip" hidden>
                     <input type="file" id="fichierRépertoire" multiple hidden>
-                    <input type="file" id="fichierDonnées" hidden>
                 </div>
                 <!-- Sélection de plusieurs programmes (Cmd/Ctrl+clic, Maj+clic) -->
                 <div id="bandeauSélection" class="bandeau-sélection" hidden></div>
@@ -134,7 +133,7 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
-                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.12.23.06" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
+                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.13.08.54" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
                     <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
@@ -222,7 +221,7 @@
         <div class="modal">
             <div class="modal-tête">
                 <div class="aide-marque">
-                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.12.23.06" alt="" width="44" height="44">
+                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.13.08.54" alt="" width="44" height="44">
                     <div>
                         <h2>Aide de la Pythonerie</h2>
                         <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
@@ -344,8 +343,10 @@ selon (nom):
                 <h3 id="aide-fonctions">Fonctions utiles</h3>
                 <table class="table-aide">
                     <tr><td><code>affiche(a, b…)</code></td><td>écrit dans la console (<code>écris</code> : sans aller à la ligne)</td>
-                        <td><code>demande("Question ?")</code></td><td>demande un texte : on répond sous la console (Entrée ; Échap arrête)</td></tr>
-                    <tr><td><code>demande_nombre("…")</code></td><td>demande un nombre</td>
+                        <td><code>demande("Question ?", f)</code></td><td>une petite fenêtre pose la question ; f(réponse) quand on a répondu</td></tr>
+                    <tr><td><code>demande_nombre("…", f)</code></td><td>f reçoit un nombre</td>
+                        <td><code>lire("Question ?", f)</code></td><td>pose la question dans la console ; f(réponse) quand on a répondu</td></tr>
+                    <tr><td><code>assigne(nom, valeur)</code></td><td>range la valeur dans la variable nom</td>
                         <td><code>longueur(x)</code></td><td>taille d'une liste ou d'un texte</td></tr>
                     <tr><td><code>intervalle(a, b, pas)</code></td><td>les nombres de a à b (b exclu)</td>
                         <td><code>aléatoire(a, b)</code> · <code>hasard()</code></td><td>un entier entre a et b · un réel entre 0 et 1</td></tr>
@@ -455,7 +456,7 @@ quand_clic(clic)</pre>
                         <td><code>sauve_données("notes.csv", t)</code></td><td>l'écrit (ou le remplace) dans ce répertoire</td></tr>
                     <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets de données (bouton <b>▦ Données</b>)</td>
                         <td><code>range_données("don1", v)</code> · <code>prend_données("don1")</code></td><td>écrit dans un onglet · le relit</td></tr>
-                    <tr><td><code>t = lit_fichier()</code></td><td>un fichier de l'ordinateur, choisi dans une fenêtre (ou <code>lit_fichier("https://…")</code>)</td>
+                    <tr><td><code>lit_fichier(f)</code></td><td>un fichier de l'ordinateur, choisi dans une fenêtre ; f(texte) le reçoit</td>
                         <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements</td></tr>
                     <tr><td><code>importe "outils"</code></td><td>ajoute le code du programme « outils » du projet</td>
                         <td><code>charge_programme</code> · <code>sauve_programme</code></td><td>lit ou écrit un programme du projet</td></tr>
@@ -518,7 +519,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.12.23.06';
+                return répertoire + fichier + '?v=2026.10.13.08.54';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -526,15 +527,15 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.12.23.06"></script>
-    <script src="js/zip.js?v=2026.10.12.23.06"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.12.23.06"></script>
-    <script src="js/erreurs.js?v=2026.10.12.23.06"></script>
-    <script src="js/canevas.js?v=2026.10.12.23.06"></script>
-    <script src="js/pythonerie.js?v=2026.10.12.23.06"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.13.08.54"></script>
+    <script src="js/zip.js?v=2026.10.13.08.54"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.13.08.54"></script>
+    <script src="js/erreurs.js?v=2026.10.13.08.54"></script>
+    <script src="js/canevas.js?v=2026.10.13.08.54"></script>
+    <script src="js/pythonerie.js?v=2026.10.13.08.54"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.12.23.06"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.12.23.06"></script>
+    <script src="lispe/lispe.js?v=2026.10.13.08.54"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.13.08.54"></script>
 </body>
 
 </html>

@@ -437,14 +437,47 @@ Il en reste 2</div>
             <!-- ================================================================ -->
             <section id="demander">
                 <h2>❓ Poser une question</h2>
-                <p><code>demande</code> pose une question. La question s'écrit dans la console, et la ligne juste en dessous,
-                    marquée d'un <b>?</b>, attend ta réponse&nbsp;: tape-la au clavier, puis appuie sur <b>Entrée</b>.
-                    Pour arrêter le programme sans répondre, appuie sur <b>Échap</b>.</p>
-                <div class="exemple"><pre data-essai>nom = demande("Comment t'appelles-tu ?")
-affiche("Enchanté,", nom)</pre></div>
-                <p>Pour une réponse qui est un nombre, utilise <code>demande_nombre</code>&nbsp;:</p>
-                <div class="exemple"><pre data-essai>âge = demande_nombre("Quel âge as-tu ?")
-affiche("L'an prochain, tu auras", âge + 1, "ans")</pre></div>
+                <p>Imagine que tu as une partie de football ou de hockey, et que l'un de tes parents doit t'y conduire.
+                    Il a deux possibilités&nbsp;: <b>rester</b> jusqu'à la fin de la partie, et alors sa journée est bloquée&nbsp;;
+                    ou te dire <b>«&nbsp;appelle-moi quand tu as fini&nbsp;»</b>, et alors il est libre d'aller travailler ou
+                    de faire les courses pendant que tu joues.</p>
+                <p>Ton programme fait comme le second parent. Quand il pose une question, il n'attend pas ta réponse&nbsp;:
+                    il continue son travail. Tu lui donnes une fonction, la <b>fonction de rappel</b>, et la Pythonerie
+                    l'appelle avec ta réponse, quand tu as répondu. Pendant ce temps, rien n'est bloqué&nbsp;: les animations
+                    tournent, les sons jouent.</p>
+                <p><code>demande</code> pose la question dans une petite fenêtre, sur le canevas&nbsp;: tape ta réponse, puis appuie
+                    sur <b>Entrée</b> (<b>Échap</b> abandonne la question).</p>
+                <div class="exemple"><pre data-essai>fonction répond(nom):
+    affiche("Enchanté,", nom)
+
+demande("Comment t'appelles-tu ?", répond)
+affiche("Le programme a continué sans attendre !")</pre></div>
+                <p>Pour une réponse qui est un nombre, utilise <code>demande_nombre</code>. Pour poser une deuxième question
+                    après la première, pose-la dans la fonction de rappel&nbsp;:</p>
+                <div class="exemple"><pre data-essai>fonction prénom(nom):
+    affiche("Bonjour", nom)
+    demande_nombre("Quel âge as-tu ?", âge)
+
+fonction âge(n):
+    affiche("L'an prochain, tu auras", entier(n) + 1, "ans")
+
+demande("Comment t'appelles-tu ?", prénom)</pre></div>
+                <p><code>lire</code> fait la même chose, mais pose la question <b>dans la console</b>&nbsp;: la ligne juste en
+                    dessous, marquée d'un <b>?</b>, attend ta réponse. <code>lire_nombre</code> donne un nombre.</p>
+                <p>Un argument de plus, après la fonction, lui est donné avec la réponse&nbsp;: <code>demande("Question ?", f, a)</code>
+                    appelle <code>f(réponse, a)</code>. Une même fonction peut ainsi servir à plusieurs questions.
+                    Avec <code>assigne(nom, valeur)</code>, elle peut même ranger chaque réponse dans la variable qui s'appelle
+                    <code>nom</code>&nbsp;:</p>
+                <div class="exemple"><pre data-essai>nom = ""
+ville = ""
+fonction range(réponse, variable):
+    assigne(variable, réponse)
+    affiche(variable, "vaut maintenant", réponse)
+
+demande("Ton nom ?", range, "nom")
+demande("Ta ville ?", range, "ville")</pre></div>
+                <p>Les questions posées l'une après l'autre attendent leur tour&nbsp;: la deuxième vient quand tu as répondu à
+                    la première. <b>■ Arrêter</b> les abandonne toutes.</p>
             </section>
 
             <!-- ================================================================ -->
@@ -820,23 +853,22 @@ joue_son(ding)</pre></div>
                 <p><code>écrit_fichier(nom, texte)</code> enregistre ton texte dans un fichier, qui arrive dans ton dossier
                     <b>Téléchargements</b>. Donne-lui un simple nom, sans répertoire&nbsp;: <code>"scores"</code> devient
                     <code>scores.txt</code>.</p>
-                <p><code>lit_fichier()</code>, sans rien entre les parenthèses, te donne tout le texte d'un fichier de ton ordinateur. Pour protéger
-                    ton ordinateur, la Pythonerie n'a pas le droit d'y lire ce qu'elle veut&nbsp;: c'est <b>toi</b> qui choisis
-                    le fichier. Quand le programme arrive à <code>lit_fichier()</code>, il s'arrête, une fenêtre s'ouvre pour
-                    que tu choisisses le fichier, puis le programme recommence tout seul depuis le début, avec le texte du fichier.
-                    La fenêtre revient à chaque fois que tu exécutes le programme&nbsp;: si tu as changé le fichier entre-temps,
-                    c'est la nouvelle version qui est lue.</p>
+                <p><code>lit_fichier(f)</code> lit tout le texte d'un fichier de ton ordinateur. Pour protéger ton ordinateur,
+                    la Pythonerie n'a pas le droit d'y lire ce qu'elle veut&nbsp;: c'est <b>toi</b> qui choisis le fichier, dans
+                    une fenêtre. Comme pour une question, le programme n'attend pas&nbsp;: quand tu as choisi le fichier,
+                    la Pythonerie appelle la fonction <code>f</code> avec son texte (sa fonction de rappel, voir
+                    <a href="#demander">Poser une question</a>).</p>
                 <div class="exemple"><pre data-essai># 1. On écrit un fichier : il arrive dans Téléchargements
 écrit_fichier("courses", "pommes\npain\nfromage")
 
 # 2. On le relit : choisis courses.txt dans Téléchargements
-texte = lit_fichier()
-pour article dans texte.découpe("\n"):
-    affiche("Il faut acheter :", article)</pre></div>
-                <p>Si tu fermes la fenêtre sans choisir de fichier, le programme s'arrête. Si ton programme appelle
-                    <code>lit_fichier()</code> deux fois, la Pythonerie te demande deux fichiers, l'un après l'autre.</p>
-                <p>Entre les parenthèses, tu peux aussi donner l'adresse d'une page Internet, qui commence par
-                    <code>https://</code>&nbsp;: <code>lit_fichier("https://…")</code> te donne son texte, si le site le permet.</p>
+fonction liste(texte):
+    pour article dans texte.découpe("\n"):
+        affiche("Il faut acheter :", article)
+
+lit_fichier(liste)</pre></div>
+                <p>Si tu fermes la fenêtre sans choisir de fichier, la fonction n'est pas appelée. <code>lit_fichier(f, a)</code>
+                    appelle <code>f(texte, a)</code>.</p>
 
                 <h3>📚 Le matériel de ton enseignant</h3>
                 <p>Au-dessus des <b>Exemples</b>, la liste <b>📚 Matériels</b> contient ce que ton enseignant a préparé
@@ -1091,11 +1123,12 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>efface_console()</code></td><td>vide la console</td><td class="ex"><code>efface_console()</code></td></tr>
                     <tr><td><code>affiche_console()</code></td><td>montre la console, même quand le canevas est en plein écran (elle vient alors dessous)</td><td class="ex"><code>affiche_console()</code></td></tr>
                     <tr><td><code>cache_console()</code></td><td>en plein écran, renvoie la console</td><td class="ex"><code>cache_console()</code></td></tr>
-                    <tr><td><code>demande(question)</code></td><td>pose une question et donne la réponse (un texte)</td><td class="ex"><code>nom = demande("Ton nom ?")</code></td></tr>
-                    <tr><td><code>demande_nombre(question)</code></td><td>pose une question et donne la réponse (un nombre)</td><td class="ex"><code>n = demande_nombre("Un nombre ?")</code></td></tr>
-                    <tr><td><code>lire(question)</code></td><td>comme <code>demande</code></td><td class="ex"><code>lire("Ton nom ?")</code></td></tr>
-                    <tr><td><code>lire_nombre(question)</code></td><td>comme <code>demande_nombre</code></td><td class="ex"><code>lire_nombre("Ton âge ?")</code></td></tr>
-                    <tr><td><code>input(question)</code></td><td>comme <code>demande</code> (le mot de Python)</td><td class="ex"><code>input("Ton nom ?")</code></td></tr>
+                    <tr><td><code>demande(question, f)</code></td><td>pose une question dans une petite fenêtre, sur le canevas ; le programme continue, et <code>f(réponse)</code> est appelée quand tu as répondu (<code>demande(question, f, a)</code> : <code>f(réponse, a)</code>)</td><td class="ex"><code>demande("Ton nom ?", répond)</code></td></tr>
+                    <tr><td><code>demande_nombre(question, f)</code></td><td>comme <code>demande</code>, et <code>f</code> reçoit un nombre</td><td class="ex"><code>demande_nombre("Un nombre ?", f)</code></td></tr>
+                    <tr><td><code>lire(question, f)</code></td><td>pose la question dans la console (qui apparaît si elle était cachée) ; le programme continue, et <code>f(réponse)</code> est appelée quand tu as répondu ; <code>lire(question, f, a)</code> appelle <code>f(réponse, a)</code></td><td class="ex"><code>lire("Ton nom ?", répond)</code></td></tr>
+                    <tr><td><code>lire_nombre(question, f)</code></td><td>comme <code>lire</code>, et <code>f</code> reçoit un nombre</td><td class="ex"><code>lire_nombre("Ton âge ?", âge)</code></td></tr>
+                    <tr><td><code>assigne(nom, valeur)</code></td><td>range la valeur dans la variable du programme qui s'appelle nom (un texte), même depuis une fonction</td><td class="ex"><code>assigne("score", 10)</code></td></tr>
+                    <tr><td><code>input(question, f)</code></td><td>comme <code>demande</code> (le mot de Python)</td><td class="ex"><code>input("Ton nom ?", répond)</code></td></tr>
                 </table>
 
                 <h3 id="g-nombres">Les nombres</h3>
@@ -1247,8 +1280,7 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)&nbsp;; un onglet vide ne crée pas de variable</td><td class="ex"><code>don0.découpe("\n")</code></td></tr>
                     <tr><td><code>range_données(nom, valeur)</code></td><td>écrit la valeur dans un onglet de données (il peut créer l'onglet qui suit le dernier)</td><td class="ex"><code>range_données("don1", scores)</code></td></tr>
                     <tr><td><code>prend_données(nom)</code></td><td>le texte actuel d'un onglet de données (<code>""</code> s'il est vide)</td><td class="ex"><code>t = prend_données("don1")</code></td></tr>
-                    <tr><td><code>lit_fichier()</code></td><td>donne le texte d'un fichier de ton ordinateur, que tu choisis dans une fenêtre</td><td class="ex"><code>t = lit_fichier()</code></td></tr>
-                    <tr><td><code>lit_fichier(adresse)</code></td><td>donne le texte d'une page Internet&nbsp;; l'adresse commence par <code>https://</code></td><td class="ex"><code>t = lit_fichier("https://…")</code></td></tr>
+                    <tr><td><code>lit_fichier(f)</code></td><td>tu choisis un fichier de ton ordinateur dans une fenêtre, puis <code>f(texte)</code> reçoit son texte (<code>lit_fichier(f, a)</code> : <code>f(texte, a)</code>)</td><td class="ex"><code>lit_fichier(liste)</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
                     <tr><td><code>ouvre_page(adresse)</code></td><td>ouvre une page Internet (une adresse <code>https://</code>) dans un nouvel onglet. Le navigateur ne l'accepte que juste après un clic ou une touche&nbsp;: appelle-la depuis un bouton, par exemple</td><td class="ex"><code>ouvre_page("https://fr.wikipedia.org")</code></td></tr>
                     <tr><td><code>charge_données(nom)</code></td><td>donne le texte d'un fichier du répertoire données du projet</td><td class="ex"><code>t = charge_données("capitales.csv")</code></td></tr>

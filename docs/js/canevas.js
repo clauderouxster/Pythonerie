@@ -158,60 +158,119 @@ const Pyt = (function () {
 
     function appelle(nom, args) {
         if (!nom || !rappel) return;
-        const code = '(' + nom + (args.length ? ' ' + args.join(' ') : '') + ')';
-        // un nouvel événement : les réponses d'une question posée pendant le précédent sont oubliées
-        événement = { code, réponses: [], rang: 0 };
-        rappel(code);
+        rappel('(' + nom + (args.length ? ' ' + args.join(' ') : '') + ')');
     }
 
-    // ---------- demande() pendant un événement, en plein écran ----------
-    // window.prompt ne peut pas s'ouvrir quand le canevas est en plein écran : Chrome quitte le
-    // plein écran pour montrer la fenêtre, mais prompt bloque la page et l'écran reste blanc.
-    // La question est alors posée dans un cadre sur le canevas ; l'événement (un clic, une
-    // touche...) s'arrête, puis il est rejoué avec la réponse, comme le programme l'est pour
-    // une demande() hors événement. Échap abandonne la question : en plein écran, le navigateur
-    // s'en sert aussi pour sortir du plein écran, et rejouer l'événement pendant cette sortie
-    // bloquerait la page. Sortir du plein écran abandonne de même une question en attente.
-    let événement = { code: null, réponses: [], rang: 0 };
-    let questionÉvénement = null;      // le cadre de la question en attente, ou null
+    // ---------- Les attentes : demande, lire, lit_fichier ----------
+    // Rien n'attend l'élève en bloquant la page : demande(question, f) pose la question dans
+    // une petite fenêtre sur le canevas, lire(question, f) dans la console, lit_fichier(f)
+    // ouvre la fenêtre de choix d'un fichier ; l'appel rend la main tout de suite, et le
+    // programme continue. Quand l'élève a répondu, la valeur est gardée dans valeurReçue, puis
+    // (_réponse_lue numéro) est évalué : bibliothèque.lisp y retrouve la fonction de rappel et
+    // son argument, lit la valeur (Pyt.valeurReçue) et appelle f(valeur) ou f(valeur, a).
+    // Les attentes sont servies l'une après l'autre, dans l'ordre. ■ Arrêter, ou une nouvelle
+    // exécution, les oublie : la génération change, et une réponse tardive (un fichier choisi
+    // après coup) ne va pas au programme suivant.
+    let attentes = [];            // [{ genre, question, id }] : celles qui attendent leur tour
+    let attenteEnCours = null;    // celle qui est posée, ou null
+    let générationAttentes = 0;
+    let valeurReçue = '';
+    let cadreEnAttente = null;    // la fenêtre posée sur le canevas, ou null
 
-    // la question est abandonnée : rien n'est rejoué
-    function abandonneQuestionSurCanevas() {
-        if (!questionÉvénement) return;
-        questionÉvénement.remove();
-        questionÉvénement = null;
+    function prochaineAttente() {
+        attenteEnCours = attentes.shift() || null;
+        if (!attenteEnCours) return;
+        const l = attenteEnCours, génération = générationAttentes;
+        const répond = (valeur) => {
+            if (génération !== générationAttentes) return;
+            attenteEnCours = null;
+            valeurReçue = String(valeur).normalize('NFC');
+            if (rappel) rappel('(_réponse_lue ' + l.id + ')');
+            valeurReçue = '';
+            // la fonction de rappel a pu poser la question suivante
+            if (!attenteEnCours) prochaineAttente();
+        };
+        const abandonne = (message) => {
+            if (génération !== générationAttentes) return;
+            attenteEnCours = null;
+            if (message && window.Pythonerie && window.Pythonerie.info) window.Pythonerie.info(message);
+            prochaineAttente();
+        };
+        if (l.genre === 'console') {
+            if (window.Pythonerie && window.Pythonerie.afficheConsole) window.Pythonerie.afficheConsole();
+            window.Pythonerie.poseQuestionConsole(l.question, répond, () => abandonne(''));
+        } else if (l.genre === 'fichier') choisisFichier(répond, abandonne);
+        else poseQuestionSurCanevas(l.question, répond, abandonne);
     }
 
-    function poseQuestionSurCanevas(question) {
-        // l'événement qui pose la question, et ses réponses déjà données : une animation qui
-        // tourne pendant que l'élève répond lance d'autres événements, qui ne doivent pas le remplacer
-        const code = événement.code, réponses = événement.réponses.slice();
+    function oublieAttentes() {
+        générationAttentes++;
+        attentes = [];
+        if (attenteEnCours && attenteEnCours.genre === 'console' && window.Pythonerie && window.Pythonerie.fermeQuestionConsole)
+            window.Pythonerie.fermeQuestionConsole();
+        if (cadreEnAttente) { cadreEnAttente.remove(); cadreEnAttente = null; }
+        attenteEnCours = null;
+    }
+
+    // Une petite fenêtre sur le canevas : un texte, puis un champ (demande) ou un bouton
+    // (lit_fichier) ; Entrée ou le bouton valide, Échap abandonne
+    function cadreSurCanevas(texte, avecChamp, libelléBouton, valide, abandonne) {
         const cadre = document.createElement('form');
         cadre.className = 'question-canevas';
-        const texte = document.createElement('div');
-        texte.textContent = question || 'Ta réponse :';
-        const champ = document.createElement('input');
-        champ.type = 'text';
-        champ.spellcheck = false;
+        const t = document.createElement('div');
+        t.textContent = texte;
+        cadre.appendChild(t);
+        let champ = null;
+        if (avecChamp) {
+            champ = document.createElement('input');
+            champ.type = 'text';
+            champ.spellcheck = false;
+            cadre.appendChild(champ);
+        } else {
+            const b = document.createElement('button');
+            b.type = 'submit';
+            b.className = 'question-canevas-bouton';
+            b.textContent = libelléBouton;
+            cadre.appendChild(b);
+        }
         const aide = document.createElement('div');
         aide.className = 'question-canevas-aide';
-        aide.textContent = 'Entrée : répondre — Échap : abandonner';
-        cadre.append(texte, champ, aide);
+        aide.textContent = avecChamp ? 'Entrée : répondre — Échap : abandonner' : 'Échap : abandonner';
+        cadre.appendChild(aide);
+        const ferme = () => { cadre.remove(); if (cadreEnAttente === cadre) cadreEnAttente = null; };
         cadre.addEventListener('pointerdown', (ev) => ev.stopPropagation());
-        const répond = (réponse) => {
-            cadre.remove();
-            questionÉvénement = null;
-            événement = { code, réponses: [...réponses, réponse.normalize('NFC')], rang: 0 };
-            if (rappel) rappel(code);
-        };
-        cadre.addEventListener('submit', (ev) => { ev.preventDefault(); répond(champ.value); });
-        champ.addEventListener('keydown', (ev) => {
+        const envoie = () => { const v = champ ? champ.value : ''; ferme(); valide(v); };
+        cadre.addEventListener('submit', (ev) => { ev.preventDefault(); envoie(); });
+        cadre.addEventListener('keydown', (ev) => {
             ev.stopPropagation();
-            if (ev.key === 'Escape') { ev.preventDefault(); abandonneQuestionSurCanevas(); }
+            if (ev.key === 'Escape') { ev.preventDefault(); ferme(); abandonne('— Question abandonnée.'); }
+            else if (ev.key === 'Enter' && champ) { ev.preventDefault(); envoie(); }
         });
         canevas.parentElement.appendChild(cadre);
-        questionÉvénement = cadre;
-        champ.focus();
+        cadreEnAttente = cadre;
+        (champ || cadre.querySelector('button')).focus();
+    }
+
+    function poseQuestionSurCanevas(question, répond, abandonne) {
+        cadreSurCanevas(question || 'Ta réponse :', true, '', répond, abandonne);
+    }
+
+    // lit_fichier : la fenêtre de choix d'un fichier. Le navigateur ne l'ouvre que juste après
+    // un geste de l'élève (▶ Exécuter, un clic, une touche) ; sinon, un bouton sur le canevas
+    // demande ce geste.
+    function choisisFichier(répond, abandonne) {
+        const entrée = document.createElement('input');
+        entrée.type = 'file';
+        entrée.addEventListener('change', async () => {
+            const f = entrée.files[0];
+            if (!f) { abandonne('— Aucun fichier choisi.'); return; }
+            try { répond(await f.text()); }
+            catch (e) { abandonne('Impossible de lire le fichier « ' + f.name + ' » : ' + e.message); }
+        });
+        entrée.addEventListener('cancel', () => abandonne('— Aucun fichier choisi.'));
+        if (!navigator.userActivation || navigator.userActivation.isActive) { entrée.click(); return; }
+        cadreSurCanevas('Le programme a besoin d\'un fichier de ton ordinateur.', false, '📂 Choisir le fichier',
+            () => entrée.click(), abandonne);
     }
 
     // une chaîne "..." de LispE : les sauts de ligne s'écrivent \n (un vrai saut de ligne
@@ -245,9 +304,6 @@ const Pyt = (function () {
         x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
         return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
     }
-    // Pendant la partie rejouée d'un programme (voir demande), les sons sont coupés
-    let sonsCoupés = false;
-
     // Les sons déjà décodés, par adresse (blob: d'un son du projet, fichier du site, https://).
     // Le programme s'exécute d'un seul trait, et demande() bloque la page : un son décodé
     // pendant que le programme tourne ne serait prêt qu'à la fin. Les sons nommés dans le
@@ -467,7 +523,6 @@ const Pyt = (function () {
         window.addEventListener('blur', () => relâcheTout(true));
         // sortie du plein écran (Échap, ou le navigateur) : une question posée sur le canevas
         // est abandonnée
-        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) abandonneQuestionSurCanevas(); });
         document.addEventListener('visibilitychange', () => { if (document.hidden) relâcheTout(true); });
     }
 
@@ -530,26 +585,15 @@ const Pyt = (function () {
         écris(texte) {
             if (window.Pythonerie) window.Pythonerie.écrisPartiel(String(texte));
         },
-        // demande(question) : la question est posée dans la console (voir pythonerie.js).
-        // Sans réponse, le programme s'arrête le temps que l'élève réponde, puis repart du
-        // début. Pendant une animation ou un clic, on ne peut pas repartir : la fenêtre du
-        // navigateur pose alors la question.
-        demande(question) {
-            dernièreErreur = '';
-            const r = window.Pythonerie ? window.Pythonerie.réponseÀ(String(question)) : null;
-            if (r && r.manque) { dernièreErreur = 'le programme attend une réponse'; return ''; }
-            if (r) return r.réponse;
-            // pendant un événement : une réponse déjà donnée (l'événement est rejoué), ou, en plein
-            // écran, la question sur le canevas (voir poseQuestionSurCanevas)
-            if (événement.rang < événement.réponses.length) return événement.réponses[événement.rang++];
-            if (document.fullscreenElement && événement.code) {
-                if (!questionÉvénement) poseQuestionSurCanevas(String(question));
-                dernièreErreur = 'le programme attend une réponse';
-                return '';
-            }
-            const réponse = window.prompt(String(question || ''), '');
-            return réponse === null ? '' : réponse.normalize('NFC');
+        // demande, lire, lit_fichier : genre "fenêtre", "console" ou "fichier" ; id : le numéro sous
+        // lequel bibliothèque.lisp a rangé la fonction de rappel (voir prochaineAttente)
+        attends(genre, question, id) {
+            attentes.push({ genre: String(genre), question: String(question), id: Math.trunc(nombre(id)) });
+            if (!attenteEnCours) prochaineAttente();
+            return true;
         },
+        // la réponse (ou le contenu du fichier) que (_réponse_lue numéro) vient chercher
+        valeurReçue() { return valeurReçue; },
         aléatoire(a, b) {
             a = Math.ceil(nombre(a)); b = Math.floor(nombre(b));
             if (b < a) [a, b] = [b, a];
@@ -557,7 +601,6 @@ const Pyt = (function () {
         },
         hasard() { return aléa(); },
         graine(g) { étatHasard = g >>> 0; },
-        coupeSons(oui) { sonsCoupés = !!oui; },
 
         // ---------- Styles ----------
         efface() {
@@ -745,16 +788,11 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
         },
         enCours() {
-            return minuteries.length > 0 || champs.size > 0
+            return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0
                 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche);
         },
-        // gardeSons : le programme s'arrête sur une question (demande) ; le son qu'il vient
-        // de lancer (« bravo ! ») continue pendant que l'élève lit la question
-        // Vrai pendant qu'une question posée sur le canevas attend sa réponse : l'événement s'est
-        // arrêté exprès, ce n'est pas une erreur à montrer
-        questionEnAttente() { return questionÉvénement !== null; },
         stoppeTout(gardeSons) {
-            if (questionÉvénement) { questionÉvénement.remove(); questionÉvénement = null; }
+            oublieAttentes();
             retireChamps();
             relâcheTout(false);
             this.arrête();
@@ -1056,41 +1094,9 @@ const Pyt = (function () {
         },
 
         // ---------- Fichiers ----------
-        // lit_fichier() : un fichier du disque, choisi par l'élève (voir pythonerie.js)
-        // lit_fichier("https://...") : le texte d'une adresse Internet (lecture synchrone :
-        // le programme attend ; le site doit autoriser la lecture depuis une autre page)
-        litFichier(adresse) {
-            dernièreErreur = '';
-            if (adresse === undefined || adresse === null) {
-                const r = window.Pythonerie.litFichierLocal();
-                if (r.erreur) { dernièreErreur = r.erreur; return ''; }
-                return r.contenu;
-            }
-            adresse = String(adresse).normalize('NFC').trim();
-            if (!/^https:\/\/[^\s]+$/i.test(adresse)) {
-                dernièreErreur = 'lit_fichier : l\'adresse doit commencer par https:// (« ' + adresse + ' »). '
-                    + 'Pour un fichier de ton ordinateur, écris lit_fichier() sans rien entre les parenthèses.';
-                return '';
-            }
-            const requête = new XMLHttpRequest();
-            try {
-                requête.open('GET', adresse, false);
-                requête.overrideMimeType('text/plain; charset=utf-8');
-                requête.send();
-            } catch (e) {
-                dernièreErreur = 'impossible de lire « ' + adresse + ' » (pas de connexion, ou le site refuse d\'être lu par une autre page)';
-                return '';
-            }
-            if (requête.status !== 200) {
-                dernièreErreur = 'impossible de lire « ' + adresse + ' » (erreur ' + requête.status + ')';
-                return '';
-            }
-            return requête.responseText.normalize('NFC');
-        },
         // ouvre_page(adresse) : la page https://... s'ouvre dans un nouvel onglet. Le navigateur ne
         // l'autorise que juste après un geste de l'élève (un clic, une touche, ▶ Exécuter) : sinon,
-        // l'erreur le dit. Quand le programme est rejoué après une demande(), la partie déjà jouée
-        // (muette, comme pour les sons) ne rouvre pas la page.
+        // l'erreur le dit.
         ouvrePage(adresse) {
             dernièreErreur = '';
             const a = String(adresse).normalize('NFC').trim();
@@ -1098,7 +1104,6 @@ const Pyt = (function () {
                 dernièreErreur = 'ouvre_page : « ' + a + ' » n\'est pas une adresse qui commence par https://';
                 return;
             }
-            if (sonsCoupés) return;
             const onglet = window.open(a, '_blank');
             if (!onglet) {
                 dernièreErreur = 'ouvre_page : le navigateur a bloqué l\'ouverture de « ' + a + ' » ; appelle ouvre_page juste après un clic (un bouton, quand_clic) ou une touche';
@@ -1116,7 +1121,6 @@ const Pyt = (function () {
                 return;
             }
             if (!nom.includes('.')) nom += '.txt';
-            if (window.Pythonerie.déjàÉcrit(nom, String(texte))) return;
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([String(texte)], { type: 'text/plain;charset=utf-8' }));
             a.download = nom;
@@ -1301,7 +1305,6 @@ const Pyt = (function () {
         joueSon(numéro) {
             const entrée = sons[numéro];
             if (!entrée) throw new Error('Son inconnu : ' + numéro + ' (utilise le numéro renvoyé par charge_son)');
-            if (sonsCoupés) return;          // déjà entendu, avant la dernière réponse
             const ctx = contexteAudio();
             if (entrée.tampon && ctx) {
                 // le navigateur suspend l'audio tant qu'on n'a pas cliqué : un clic le réveille

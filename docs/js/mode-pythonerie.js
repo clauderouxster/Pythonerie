@@ -20,11 +20,12 @@ const PYTHONERIE_FONCTIONS = {
     'efface_console': 'efface_console() — vide la console',
     'affiche_console': 'affiche_console() — montre la console, même en plein écran du canevas',
     'cache_console': 'cache_console() — en plein écran du canevas, renvoie la console',
-    'demande': 'demande(question) — pose une question, renvoie la réponse (texte)',
-    'demande_nombre': 'demande_nombre(question) — pose une question, renvoie un nombre',
-    'lire': 'lire(question) — comme demande',
-    'lire_nombre': 'lire_nombre(question) — comme demande_nombre',
-    'input': 'input(question) — comme demande',
+    'demande': 'demande(question, f, a) — une petite fenêtre pose la question ; f(réponse), ou f(réponse, a), quand on a répondu',
+    'demande_nombre': 'demande_nombre(question, f, a) — comme demande, f reçoit un nombre',
+    'lire': 'lire(question, f, a) — pose la question dans la console ; f(réponse), ou f(réponse, a), quand on a répondu',
+    'lire_nombre': 'lire_nombre(question, f, a) — comme lire, f reçoit un nombre',
+    'assigne': 'assigne(nom, valeur) — range la valeur dans la variable du programme qui s\'appelle nom',
+    'input': 'input(question, f, a) — comme demande',
     // Conversions
     'longueur': 'longueur(x) — nombre d\'éléments d\'une liste ou d\'une chaîne',
     'len': 'len(x) — comme longueur',
@@ -148,7 +149,7 @@ const PYTHONERIE_FONCTIONS = {
     'sauve_données': 'sauve_données(nom, valeur) — écrit le fichier nom dans le répertoire données du projet',
     'range_données': 'range_données("don0", valeur) — range la valeur dans l\'onglet de données don0 (créé s\'il suit le dernier)',
     'prend_données': 'prend_données("don0") — le texte actuel de l\'onglet de données don0',
-    'lit_fichier': 'lit_fichier() — texte d\'un fichier de l\'ordinateur, choisi dans une fenêtre ; lit_fichier("https://…") — texte d\'une adresse Internet',
+    'lit_fichier': 'lit_fichier(f, a) — l\'élève choisit un fichier de son ordinateur ; f(texte), ou f(texte, a), le reçoit',
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements',
     'ouvre_page': 'ouvre_page(adresse) — ouvre la page https://... dans un nouvel onglet (après un clic)'
 };

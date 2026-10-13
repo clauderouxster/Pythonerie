@@ -18,8 +18,15 @@ affiche("7 // 2 =", 7 // 2, "(division entière)")
 affiche("7 % 2 =", 7 % 2, "(reste)")
 affiche("2 ** 10 =", 2 ** 10, "(puissance)")
 
-# On pose une question : la réponse est lue au clavier
-nom = demande("Comment t'appelles-tu ?")
-affiche("Enchanté,", nom, "!")
-année = demande_nombre("En quelle année es-tu né(e) ?")
-affiche("Tu as environ", 2026 - année, "ans.")
+# On pose une question. Le programme n'attend pas la réponse : il continue,
+# et la Pythonerie appellera la fonction donnée quand tu auras répondu
+# (comme un parent qui te dépose au match et te dit : « appelle-moi quand c'est fini »)
+fonction bonjour(nom):
+    affiche("Enchanté,", nom, "!")
+    # la question suivante est posée quand on a la réponse à la première
+    demande_nombre("En quelle année es-tu né(e) ?", naissance)
+
+fonction naissance(année):
+    affiche("Tu as environ", entier(2026 - année), "ans.")
+
+demande("Comment t'appelles-tu ?", bonjour)

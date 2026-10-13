@@ -53,7 +53,22 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 ## La bibliothèque
 
 ### Console
-`affiche(a, b, …)` (avec retour à la ligne), `écris(a, …)` (sans), `efface_console()`, `affiche_console()` (montre la console, même en plein écran du canevas, où elle vient sous le canevas ; `cache_console()` l'en retire), `demande(question)` → texte, `demande_nombre(question)` → nombre (`lire`, `lire_nombre`, `input` sont des synonymes). La question s'écrit dans la console, et l'élève répond sous la console. **Le programme repart du début après chaque réponse** (les réponses déjà données sont rendues dans l'ordre, la partie rejouée est muette) : tout le hasard (`aléatoire`, `hasard`, `choisis`, `mélange`, `au_hasard`, les lois de probabilité) refait les mêmes tirages à chaque relance, si bien que les questions ne changent pas. Évite seulement de dépendre de l'heure avant une question. Dans une fonction d'animation ou d'événement, `demande` ouvre une fenêtre du navigateur, qui bloque la page ; quand le canevas est en plein écran (où cette fenêtre ne peut pas s'ouvrir), la question est posée dans un cadre sur le canevas, puis l'événement est **rejoué** avec la réponse : ce qui précède la question dans la fonction s'exécute deux fois. Pose plutôt tes questions dans le programme principal, ou utilise `saisie`.
+`affiche(a, b, …)` (avec retour à la ligne), `écris(a, …)` (sans), `efface_console()`, `affiche_console()` (montre la console, même en plein écran du canevas, où elle vient sous le canevas ; `cache_console()` l'en retire), **Les questions n'attendent pas.** `demande(question, f)` pose la question dans une petite fenêtre sur le canevas, `lire(question, f)` dans la console (qu'il fait apparaître si elle est cachée) ; l'appel **rend la main tout de suite** et le programme continue. Quand l'élève a répondu (Entrée), `f(réponse)` est appelée ; Échap abandonne la question, et `f` n'est pas appelée. `demande_nombre(question, f)` et `lire_nombre(question, f)` donnent un nombre réel ; `input` est un synonyme de `demande`. Un argument de plus est rendu avec la réponse : `demande(question, f, a)` appelle `f(réponse, a)` (`a` : une valeur quelconque, pour qu'une même fonction serve à plusieurs questions). Plusieurs questions à la suite sont posées l'une après l'autre, dans l'ordre. La fonction est donnée par son nom, sans parenthèses, comme pour `bouton`. Sans fonction de rappel (`demande("Nom ?")`), c'est une erreur. Rien n'est rejoué et rien ne bloque la page : c'est la même chose dans le programme principal, dans un jeu ou dans une fonction d'événement. (Le mode d'emploi l'explique aux enfants avec l'image d'un parent qui dit « appelle-moi quand tu as fini » au lieu d'attendre la fin du match.) **Tout ce qui dépend de la réponse doit se trouver dans `f`** (ou dans une fonction qu'elle appelle) ; une deuxième question se pose dans la fonction de rappel de la première :
+
+```python
+fonction répond(nom):
+    affiche("Enchanté,", nom)
+    demande_nombre("Quel âge as-tu ?", âge, nom)
+
+fonction âge(n, nom):
+    affiche(nom, "aura", entier(n) + 1, "ans l'an prochain")
+
+demande("Comment t'appelles-tu ?", répond)
+```
+
+Pour une suite de questions (un quiz), une fonction pose la question suivante, et la fonction de rappel corrige la réponse puis la rappelle ; les compteurs sont des variables du programme, modifiées avec `=:` (voir le quiz des capitales, dans `docs/matériels/quiz_des_capitales.zip`).
+
+`assigne(nom, valeur)` range `valeur` dans la variable du programme qui s'appelle `nom` (un texte), comme `nom =: valeur`, mais avec un nom calculé : une seule fonction de rappel peut ainsi remplir plusieurs variables (`demande("Ton nom ?", range, "nom")` avec `fonction range(r, variable):` puis `assigne(variable, r)`).
 
 ### Nombres
 `aléatoire(a, b)` (entier, bornes comprises), `hasard()` (entre 0 et 1), `choisis(liste)`, `absolu(x)` (ou `abs`), `racine(x)`, `puissance(x, y)`, `arrondi(x)` / `arrondi(x, n)`, `somme(l)`, `maximum(l)` ou `maximum(a, b)`, `minimum(…)`, `sinus(degrés)`, `cosinus(degrés)`, `pi`, `entier(x)`, `réel(x)`, `nombre(texte)` (réel, accepte « 2,5 », 0.0 sinon), `chaîne(x)`, `typede(x)` (le genre en français, en texte : `"entier"`, `"réel"`, `"texte"`, `"liste"`, `"dictionnaire"`, `"booléen"`, `"rien"`, ou le nom de la classe d'un objet ; à préférer pour comparer : `si typede(d) == "dictionnaire":`), `type_de(x)` (le nom LispE, un atome anglais), `intervalle(fin)` / `intervalle(début, fin, pas)` (ou `range`), `longueur(x)` (ou `len`).
@@ -103,9 +118,9 @@ Opérateurs : `+ - * / // % **`, `+= -= *= /=`, comparaisons `== != < <= > >=`. 
 - `charge_données(nom)` : le texte d'un fichier du répertoire **données** du projet (par exemple `charge_données("capitales.csv")`) ; un fichier absent est une erreur. Ce n'est pas un fichier du site : l'élève (ou un projet des Matériels) doit l'avoir mis dans le projet.
 - `charge_programme(nom)` : le code d'un programme du projet ; `sauve_programme(nom, code)` l'écrit ou le crée, sans l'ouvrir (un programme peut en écrire un autre, qu'un troisième importe) ; `vérifie_code(code)` rend `""` si le code se compile, sinon le message d'erreur, sans rien exécuter. Pas disponibles dans une application Web.
 - `sauve_données(nom, valeur)` : écrit (ou remplace) le fichier `nom` dans le répertoire **données** du projet (`.txt`, `.csv`, `.tsv`, `.json` ou `.md` ; sans extension, `.txt`) ; une valeur qui n'est pas un texte est écrite comme `affiche` l'écrirait : pour du JSON, `sauve_données("pile.json", en_json(d))`, relu par `analyse_json(charge_données("pile.json"))`. Le fichier apparaît dans le projet et part avec lui (export, application Web). Dans une application Web, il ne vit que le temps de la visite.
-- `lit_fichier()` (sans argument) : un fichier de l'ordinateur, choisi par l'élève dans une fenêtre (le programme repart du début une fois le fichier choisi) ; `lit_fichier("https://…")` : le texte d'une adresse Internet, si le site l'autorise.
+- `lit_fichier(f)` : l'élève choisit un fichier de son ordinateur dans une fenêtre, puis `f(texte)` reçoit son contenu (`lit_fichier(f, a)` : `f(texte, a)`) ; comme pour une question, le programme continue sans attendre, et `f` n'est pas appelée si l'élève annule. Il n'y a pas de lecture d'une adresse Internet.
 - `écrit_fichier(nom, texte)` : enregistre le texte dans le dossier Téléchargements (`"scores"` devient `scores.txt`).
-- `ouvre_page(adresse)` : ouvre une page `https://…` dans un nouvel onglet ; une autre adresse est une erreur. Le navigateur bloque une fenêtre ouverte sans geste de l'élève : appelle `ouvre_page` dans la fonction d'un bouton ou de `quand_clic` (ou au début du programme, juste après ▶ Exécuter), pas dans `animer`. Quand le programme est rejoué après une `demande()`, la page n'est pas rouverte.
+- `ouvre_page(adresse)` : ouvre une page `https://…` dans un nouvel onglet ; une autre adresse est une erreur. Le navigateur bloque une fenêtre ouverte sans geste de l'élève : appelle `ouvre_page` dans la fonction d'un bouton ou de `quand_clic` (ou au début du programme, juste après ▶ Exécuter), pas dans `animer`.
 
 ### Médias disponibles sur le site
 Chemins à donner tels quels à `charge_image` / `charge_son` :
@@ -245,7 +260,8 @@ Dans un script, `va_vers_carte("Rosa")` montre une autre carte de la pile.
 8. Pour quitter une fonction avant la fin, écris `retourne Rien`. Si tu dois faire `retourne` dans le bloc qui attrape une erreur, écris `sauf:` sans variable : dans `sauf(e):`, `retourne` ne quitte que le bloc `sauf`, et la fonction continue après.
 9. Dans une fonction appelée par `animer`, `quand_clic`…, n'oublie pas `=:` (ou `+=`) pour modifier l'état du jeu ; un simple `=` crée une variable locale, et le jeu semble ne rien faire.
 10. **`non` appliqué à une liste agit sur chacun de ses éléments** : `si non pile:` ne teste pas si la liste est vide (avec `pile = []`, la condition est fausse). Écris `si longueur(pile) == 0:`.
-11. Une erreur d'exécution montre l'expression LispE en cause (« dans le code LispE : at l 5) »), sans numéro de ligne du programme : écris un code simple à relire, et nomme bien tes variables.
+11. **Une question ou `lit_fichier` n'attend pas** : `nom = demande("Nom ?")` est une erreur, et le code écrit après `demande("Nom ?", f)` s'exécute avant la réponse. Ce qui a besoin de la réponse va dans la fonction de rappel `f`.
+12. Une erreur d'exécution montre l'expression LispE en cause (« dans le code LispE : at l 5) »), sans numéro de ligne du programme : écris un code simple à relire, et nomme bien tes variables.
 
 ## Modèle de jeu
 

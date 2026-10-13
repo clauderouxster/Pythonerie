@@ -240,21 +240,15 @@ const Pythonerie = (function () {
 
     // Exécute une ligne de la console dans l'interpréteur du dernier programme :
     // ses variables et ses fonctions sont disponibles.
-    function exécuteConsole(code, relancé) {
+    function exécuteConsole(code) {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter du code, il faut d\'abord dire qui tu es.')) {
             écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter du code.', 'info');
             return;
         }
         const lignes = code.split('\n');
-        if (relancé !== true) {
-            écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
-            fichiersÉcrits = new Set();
-            lecture = { fichiers: [], rang: 0 };
-            donnéesRetenues = false;
-        }
-        lecture.rang = 0;
-        fichierDemandé = false;
+        écritConsole(lignes.map((l, i) => (i ? '... ' : '>>> ') + l).join('\n'), 'commande');
+        donnéesRetenues = false;
         oubliePile();
         // la console peut aussi importer un programme du projet
         let source = code;
@@ -266,9 +260,8 @@ const Pythonerie = (function () {
             if (idxExécution === null) nouvelInterpréteur();
             évalue(idxExécution, c.lispe);
         } catch (e) {
-            if (!fichierDemandé) écritConsole(nettoieErreur(e), 'erreur');
+            écritConsole(nettoieErreur(e), 'erreur');
         }
-        if (fichierDemandé) choisitFichier(() => exécuteConsole(code, true));
         metAJourBoutons();
     }
 
@@ -351,68 +344,26 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // lit_fichier() : un fichier du disque de l'élève. Le navigateur ne peut le lire
-    // que si l'élève le choisit lui-même, et le programme ne peut pas attendre ce choix :
-    // quand le programme arrive à un lit_fichier() sans fichier, il s'arrête, la fenêtre
-    // de sélection s'ouvre, puis le programme repart depuis le début. Les fichiers choisis
-    // sont rendus dans l'ordre des appels : le premier lit_fichier() reçoit le premier
-    // fichier, le deuxième le deuxième... Ils ne servent que pour l'exécution en cours :
-    // une nouvelle exécution les redemande (ils ont pu changer sur le disque).
+    // Les attentes (demande, lire, lit_fichier) : rien ne bloque la page, et aucune ne relance
+    // le programme (voir Pyt.attends, dans canevas.js). Ici, la question de lire(), qui attend
+    // sa réponse dans la ligne sous la console ; { ligne, répond, abandonne }, ou null
     // ------------------------------------------------------------------
-    let lecture = { fichiers: [], rang: 0 };        // programme et console
-    let lectureÉvénements = { fichiers: [], rang: 0 };  // animations, clics, touches
-    let fichierDemandé = false;
-    // Les fichiers déjà téléchargés par écrit_fichier pendant cette exécution : quand le
-    // programme repart après le choix d'un fichier, on ne les télécharge pas une seconde fois
-    let fichiersÉcrits = new Set();
+    let questionConsole = null;
 
-    // Appelé par Pyt.écritFichier : Vrai si ce fichier, avec ce texte, est déjà parti
-    function déjàÉcrit(nom, texte) {
-        const clé = nom + '\u0000' + texte;
-        if (fichiersÉcrits.has(clé)) return true;
-        fichiersÉcrits.add(clé);
-        return false;
+    function poseQuestionConsole(question, répond, abandonne) {
+        const ligne = écritQuestion(question, null);
+        poseQuestion(question);
+        questionConsole = { ligne, répond, abandonne };
     }
 
-    // Appelé par Pyt.litFichier : { contenu } ou { erreur }
-    function litFichierLocal() {
-        const i = lecture.rang++;
-        if (i < lecture.fichiers.length) return { contenu: lecture.fichiers[i] };
-        fichierDemandé = true;
-        return { erreur: 'il faut choisir un fichier sur ton ordinateur' };
+    function fermeQuestionConsole() {
+        if (!questionConsole) return;
+        questionConsole = null;
+        fermeQuestion();
     }
 
-    // ------------------------------------------------------------------
-    // demande(question) : la question est posée dans la console, comme input() en Python,
-    // sans fenêtre qui bloquerait la page (les sons ne joueraient pas, la console ne
-    // s'afficherait pas). Le programme s'arrête à la première question sans réponse ;
-    // l'élève répond sous la console (Entrée), puis le programme repart du début : les
-    // réponses déjà données sont rendues dans l'ordre et réécrites dans la console, les
-    // sons de la partie rejouée sont coupés, et le hasard reprend la même graine (mêmes
-    // tirages, donc mêmes questions ; voir aussi random_seed dans exécute). Échap abandonne :
-    // le programme s'arrête.
-    // Pendant une animation, un clic, ou dans la ligne >>>, on ne peut pas rejouer :
-    // demande() ouvre alors la fenêtre du navigateur.
-    // ------------------------------------------------------------------
-    let réponses = { liste: [], rang: 0 };
-    let graineExécution = 0;
-    let dansProgramme = false;      // vrai pendant l'exécution du programme lui-même
-    let questionPosée = null;       // la question qui attend sa réponse, ou null
-
-    // Appelé par Pyt.demande : { réponse }, { manque: true }, ou null (fenêtre du navigateur)
-    function réponseÀ(question) {
-        if (!dansProgramme) return null;
-        const i = réponses.rang++;
-        if (i < réponses.liste.length) {
-            écritQuestion(question, réponses.liste[i]);
-            if (i === réponses.liste.length - 1) Pyt.coupeSons(false);   // la suite est nouvelle : on l'entend
-            return { réponse: réponses.liste[i] };
-        }
-        questionPosée = question;
-        return { manque: true };
-    }
-
-    // La question dans la console, suivie de la réponse (null : pas encore de réponse)
+    // La question dans la console, suivie de la réponse (null : pas encore de réponse) ;
+    // renvoie la ligne de la question
     function écritQuestion(question, réponse) {
         let ligne = ligneOuverte;              // après écris("…"), la question continue la ligne
         ligneOuverte = null;
@@ -429,74 +380,27 @@ const Pythonerie = (function () {
             ligne.appendChild(r);
         }
         $('console').scrollTop = $('console').scrollHeight;
+        return ligne;
     }
 
-    // Le programme s'est arrêté sur une question : la ligne sous la console attend la réponse
+    // La ligne sous la console attend la réponse à la question (déjà écrite dans la console)
     function poseQuestion(question) {
-        écritQuestion(question, null);
         const zone = $('saisieConsole');
         zone.closest('.saisie-console').classList.add('en-question');
         zone.closest('.saisie-console').querySelector('.invite').textContent = '?';
         zone.value = '';
         zone.style.height = '';
-        zone.placeholder = 'Ta réponse, puis Entrée (Échap : arrêter le programme)';
+        zone.placeholder = 'Ta réponse, puis Entrée (Échap : abandonner la question)';
         zone.setAttribute('aria-label', 'Réponse à la question : ' + question);
         zone.focus();
     }
 
     function fermeQuestion() {
-        questionPosée = null;
         const zone = $('saisieConsole');
         zone.closest('.saisie-console').classList.remove('en-question');
         zone.closest('.saisie-console').querySelector('.invite').textContent = '>>>';
         zone.placeholder = 'Tape un nom de variable ou du code, puis Entrée';
         zone.setAttribute('aria-label', 'Ligne de commande : tape un nom de variable ou une ligne de code, puis Entrée');
-    }
-
-    function répondQuestion(texte) {
-        réponses.liste.push(nfc(texte));
-        fermeQuestion();
-        exécute(true);
-    }
-
-    function abandonneQuestion() {
-        fermeQuestion();
-        écritConsole('— Question abandonnée : le programme est arrêté.', 'info');
-    }
-
-    // Ouvre la fenêtre de sélection du fichier demandé, puis relance
-    function choisitFichier(relancer) {
-        fichierDemandé = false;
-        const numéro = lecture.fichiers.length + 1;
-        const quel = numéro === 1 ? 'un fichier' : 'un ' + numéro + 'e fichier';
-        Pyt.stoppeTout();
-        écritConsole('— Le programme a besoin d\'' + quel + ' : choisis-le sur ton ordinateur.', 'info');
-        const entrée = $('fichierDonnées');
-        const ouvre = () => {
-            entrée.onchange = async () => {
-                const f = entrée.files[0];
-                entrée.value = '';
-                if (!f) return;
-                try {
-                    lecture.fichiers.push(nfc(await f.text()));
-                } catch (e) {
-                    écritConsole('Impossible de lire le fichier « ' + f.name + ' » : ' + e.message, 'erreur');
-                    return;
-                }
-                relancer();
-            };
-            entrée.oncancel = () => écritConsole('— Aucun fichier choisi : le programme est arrêté.', 'info');
-            entrée.click();
-        };
-        // Le navigateur n'ouvre la fenêtre que juste après un clic ou une touche. Après une
-        // relance (un deuxième fichier), ce n'est plus le cas : on demande un clic.
-        if (!navigator.userActivation || navigator.userActivation.isActive) { ouvre(); return; }
-        dialogue('Choisir un fichier', 'Le programme a besoin d\'' + quel + '.',
-            [{ texte: '📂 Choisir le fichier', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }])
-            .then(choix => {
-                if (choix) ouvre();
-                else écritConsole('— Aucun fichier choisi : le programme est arrêté.', 'info');
-            });
     }
 
     function installeLigneDeCommande() {
@@ -529,10 +433,27 @@ const Pythonerie = (function () {
             if (!String(window.getSelection())) zone.focus();
         });
         zone.addEventListener('keydown', (ev) => {
-            // une question du programme attend sa réponse : Entrée répond, Échap abandonne
-            if (questionPosée !== null) {
-                if (ev.key === 'Enter') { ev.preventDefault(); const r = zone.value; remplace(''); répondQuestion(r); }
-                else if (ev.key === 'Escape') { ev.preventDefault(); remplace(''); abandonneQuestion(); }
+            // une question de lire() : Entrée répond (la fonction de rappel reçoit la réponse),
+            // Échap abandonne la question
+            if (questionConsole) {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    const r = nfc(zone.value), q = questionConsole;
+                    remplace('');
+                    fermeQuestionConsole();
+                    const span = document.createElement('span');
+                    span.className = 'réponse-élève';
+                    span.textContent = (/\s$/.test(q.ligne.textContent) ? '' : ' ') + r;
+                    q.ligne.appendChild(span);
+                    q.répond(r);
+                } else if (ev.key === 'Escape') {
+                    ev.preventDefault();
+                    const q = questionConsole;
+                    remplace('');
+                    fermeQuestionConsole();
+                    écritConsole('— Question abandonnée.', 'info');
+                    q.abandonne();
+                }
                 return;
             }
             if (ev.key === 'Enter' && !ev.shiftKey) {
@@ -593,40 +514,17 @@ const Pythonerie = (function () {
     // Appelé par le canevas (animations, clics, touches)
     function rappel(code) {
         if (idxExécution === null) return;
-        // pendant un événement, lit_fichier() puise dans les fichiers choisis pour les événements
-        const lectureProgramme = lecture;
-        lecture = lectureÉvénements;
-        lecture.rang = 0;
-        fichierDemandé = false;
         try {
             évalue(idxExécution, code);
         } catch (e) {
-            if (!fichierDemandé && !Pyt.questionEnAttente()) {
-                Pyt.stoppeTout();
-                écritConsole(nettoieErreur(e), 'erreur');
-                metAJourBoutons();
-            }
+            Pyt.stoppeTout();
+            écritConsole(nettoieErreur(e), 'erreur');
+            metAJourBoutons();
         }
-        lecture = lectureProgramme;
-        // lit_fichier dans une animation ou un clic : le fichier choisi servira la fois suivante
-        if (fichierDemandé) choisitFichierPendantAnimation();
     }
 
-    function choisitFichierPendantAnimation() {
-        fichierDemandé = false;
-        const entrée = $('fichierDonnées');
-        entrée.onchange = async () => {
-            const f = entrée.files[0];
-            entrée.value = '';
-            if (f) lectureÉvénements.fichiers.push(nfc(await f.text()));
-        };
-        entrée.oncancel = null;
-        entrée.click();
-    }
-
-    // relancé : après le choix d'un fichier pour lit_fichier (on garde les fichiers choisis)
     let numéroExécution = 0;     // une exécution qui attend ses sons est abandonnée si une autre commence
-    async function exécute(relancé) {
+    async function exécute() {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
             écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
@@ -642,18 +540,7 @@ const Pythonerie = (function () {
         Pyt.stoppeTout();
         Pyt.réinitialise();
         effaceConsole();
-        if (relancé !== true) {
-            lecture = { fichiers: [], rang: 0 };
-            lectureÉvénements = { fichiers: [], rang: 0 };
-            fichiersÉcrits = new Set();
-            donnéesRetenues = false;
-            réponses = { liste: [], rang: 0 };
-            graineExécution = (Math.random() * 4294967296) >>> 0;
-        }
-        lecture.rang = 0;
-        fichierDemandé = false;
-        réponses.rang = 0;
-        if (questionPosée !== null) fermeQuestion();
+        donnéesRetenues = false;
         oubliePile();
 
         // Le texte compilé : les données (onglets non vides, une ligne par onglet), les
@@ -687,34 +574,21 @@ const Pythonerie = (function () {
         afficheLispE();
 
         const début = performance.now();
-        // la même graine à chaque relance ; la partie déjà jouée (avant la dernière réponse) est muette
-        Pyt.graine(graineExécution);
-        Pyt.coupeSons(réponses.liste.length > 0);
         try {
             nouvelInterpréteur();
-            // le hasard de LispE (mélange, au_hasard, les lois de probabilité) reprend lui
-            // aussi la même graine : une relance refait les mêmes tirages
-            évalue(idxExécution, '(random_seed ' + (graineExécution % 2147483647) + ')');
-            dansProgramme = true;
-            try { évalue(idxExécution, c.lispe); } finally { dansProgramme = false; }
+            évalue(idxExécution, c.lispe);
             const durée = Math.round(performance.now() - début);
-            if (questionPosée !== null) { /* rien : la question est posée ci-dessous */ }
-            else if (fichierDemandé) { /* rien : la fenêtre de sélection s'ouvre ci-dessous */ }
-            else if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
-            else écritConsole('— Programme en cours (animation ou événements). Clique sur « Arrêter » pour le stopper.', 'info');
+            if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
+            else écritConsole('— Programme en cours (animation, événements ou question en attente). Clique sur « Arrêter » pour le stopper.', 'info');
         } catch (e) {
-            if (!fichierDemandé && questionPosée === null) écritConsole(nettoieErreur(e), 'erreur');
-            Pyt.stoppeTout(questionPosée !== null);
+            écritConsole(nettoieErreur(e), 'erreur');
+            Pyt.stoppeTout();
         }
-        Pyt.coupeSons(false);
-        if (questionPosée !== null) { Pyt.stoppeTout(true); poseQuestion(questionPosée); }
-        else if (fichierDemandé) choisitFichier(() => exécute(true));
         metAJourBoutons();
     }
 
     function arrête() {
         numéroExécution++;
-        if (questionPosée !== null) fermeQuestion();
         Pyt.stoppeTout();
         écritConsole('— Programme arrêté', 'info');
         metAJourBoutons();
@@ -826,7 +700,7 @@ const Pythonerie = (function () {
         // mais pas quand Échap sert déjà : abandonner une question, fermer les propositions
         window.addEventListener('keydown', (ev) => {
             if (ev.key !== 'Escape' || !zonePleine || document.fullscreenElement) return;
-            if (questionPosée !== null || (éditeur.state && éditeur.state.completionActive)) return;
+            if (questionConsole || (éditeur.state && éditeur.state.completionActive)) return;
             quitteZonePleine();
         });
     }
@@ -3944,11 +3818,12 @@ const Pythonerie = (function () {
     function oubliePile() { aprèsPile = false; }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, litFichierLocal, déjàÉcrit, chargeDonnées, sauveDonnées, chargeProgramme, sauveProgramme, vérifieCode, rangeDonnées, prendDonnées, réponseÀ,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, chargeDonnées, sauveDonnées, chargeProgramme, sauveProgramme, vérifieCode, rangeDonnées, prendDonnées,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
+        info: (texte) => écritConsole(texte, 'info'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
-        afficheConsole, cacheConsole,
+        afficheConsole, cacheConsole, poseQuestionConsole, fermeQuestionConsole,
         médias: () => médiasSite,
         compile // utile pour les tests depuis la console du navigateur
     };

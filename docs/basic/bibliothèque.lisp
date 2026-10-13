@@ -35,22 +35,61 @@
 (defpat écris (a b c d e f g) (_écris_liste (list a b c d e f g)))
 (defpat écris (a b c d e f g h) (_écris_liste (list a b c d e f g h)))
 
-; Pose une question à l'utilisateur et renvoie sa réponse (une chaîne), tapée dans la
-; console ; sans réponse, le programme s'arrête le temps que l'élève réponde (il repart
-; ensuite du début : voir pythonerie.js)
-(defun demande ((question ""))
-   (setq réponse (evaljs (list "Pyt.demande" (string question))))
-   (_erreur_navigateur)
-   réponse)
-
-; Pose une question et renvoie la réponse sous forme de nombre
-(defun demande_nombre ((question ""))
-   (float (demande question)))
-
-; Synonymes : lire("Ton nom ?"), lire_nombre(...), et input(...) comme en Python
-(defun lire ((question "")) (demande question))
-(defun lire_nombre ((question "")) (demande_nombre question))
-(defun input ((question "")) (demande question))
+; Les attentes : rien n'attend l'élève en bloquant la page (voir Pyt.attends, dans canevas.js).
+;   demande(question, f)      une petite fenêtre sur le canevas pose la question
+;   lire(question, f)         la question est posée dans la console
+;   lit_fichier(f)            l'élève choisit un fichier de son ordinateur
+; L'appel rend la main tout de suite : le programme continue. Quand l'élève a répondu (ou
+; choisi le fichier), f(valeur) est appelée ; avec un argument de plus, demande(question, f, a),
+; c'est f(valeur, a) : a, une valeur quelconque, permet à une même fonction de servir à
+; plusieurs questions. demande_nombre et lire_nombre donnent un nombre ; input est un
+; synonyme de demande. La fonction est donnée par son nom (sans parenthèses), comme pour bouton.
+; La fonction et a sont gardés ici sous un numéro ; la réponse revient par (_réponse_lue numéro),
+; qui lit la valeur avec Pyt.valeurReçue.
+(setq _lectures {})
+(setq _numéro_lecture 0)
+(defun _attend (_genre _question _nom _a _en_nombre _avec_a)
+   (+= _numéro_lecture 1)
+   (set@ _lectures (string _numéro_lecture) (list _nom _a _en_nombre _avec_a))
+   (evaljs (list "Pyt.attends" _genre (string _question) _numéro_lecture))
+   nil)
+; la réponse arrive : la fonction de rappel la reçoit, avec a (quote : a n'est pas réévalué).
+; Les noms commencent par « _ » : la fonction de l'élève peut s'appeler réponse ou numéro
+(defun _réponse_lue (_numéro)
+   (setq _numéro (string _numéro))
+   (check (in_it _lectures _numéro)
+      (setq _e (@ _lectures _numéro))
+      (pop _lectures _numéro)
+      (setq _réponse (evaljs "Pyt.valeurReçue()"))
+      (if (@ _e 2) (setq _réponse (nombre _réponse)))
+      (if (@ _e 3)
+         (eval (list (atom (@ _e 0)) _réponse (list 'quote (@ _e 1))))
+         (eval (list (atom (@ _e 0)) _réponse))))
+   nil)
+(defmacro demande (question) (throw "demande a besoin d'une fonction de rappel : demande(question, f), et f(réponse) reçoit la réponse (ou demande(question, f, a) : f(réponse, a))"))
+(defmacro demande (question f) (_attend "fenêtre" question (string (quote f)) nil false false))
+(defmacro demande (question f a) (_attend "fenêtre" question (string (quote f)) a false true))
+(defmacro demande_nombre (question) (throw "demande_nombre a besoin d'une fonction de rappel : demande_nombre(question, f), et f(nombre) reçoit la réponse"))
+(defmacro demande_nombre (question f) (_attend "fenêtre" question (string (quote f)) nil true false))
+(defmacro demande_nombre (question f a) (_attend "fenêtre" question (string (quote f)) a true true))
+(defmacro input (question) (throw "input a besoin d'une fonction de rappel : input(question, f), comme demande"))
+(defmacro input (question f) (_attend "fenêtre" question (string (quote f)) nil false false))
+(defmacro input (question f a) (_attend "fenêtre" question (string (quote f)) a false true))
+(defmacro lire (question) (throw "lire a besoin d'une fonction de rappel : lire(question, f), et f(réponse) reçoit la réponse (ou lire(question, f, a) : f(réponse, a))"))
+(defmacro lire (question f) (_attend "console" question (string (quote f)) nil false false))
+(defmacro lire (question f a) (_attend "console" question (string (quote f)) a false true))
+(defmacro lire_nombre (question) (throw "lire_nombre a besoin d'une fonction de rappel : lire_nombre(question, f), et f(nombre) reçoit la réponse"))
+(defmacro lire_nombre (question f) (_attend "console" question (string (quote f)) nil true false))
+(defmacro lire_nombre (question f a) (_attend "console" question (string (quote f)) a true true))
+(defmacro lit_fichier () (throw "lit_fichier a besoin d'une fonction de rappel : lit_fichier(f), et f(contenu) reçoit le contenu du fichier (ou lit_fichier(f, a) : f(contenu, a))"))
+(defmacro lit_fichier (f) (_attend "fichier" "" (string (quote f)) nil false false))
+(defmacro lit_fichier (f a) (_attend "fichier" "" (string (quote f)) a false true))
+; assigne(nom, valeur) : range valeur dans la variable du programme qui s'appelle nom (un
+; texte), comme nom =: valeur, mais le nom peut être calculé : une fonction de rappel de
+; demande ou de lire s'en sert pour ranger la réponse dans la variable que lui donne a
+(defun assigne (_nom _valeur)
+   (eval (list 'setg (atom (string _nom)) (list 'quote _valeur)))
+   nil)
 
 ;------------------------------------------------------------------
 ; Conversions et utilitaires
@@ -328,9 +367,7 @@
 
 ;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
-; lit_fichier() : contenu d'un fichier du disque, que l'élève choisit dans une fenêtre
-; (le programme est relancé une fois le fichier choisi) ;
-; lit_fichier("https://...") : le texte d'une adresse Internet.
+; lit_fichier(f) : voir les attentes, plus haut (avec demande et lire).
 ; écrit_fichier(nom, texte) : le fichier est téléchargé (dossier Téléchargements).
 ;------------------------------------------------------------------
 ; Une erreur côté navigateur (fichier absent, nom invalide, taille impossible) devient une erreur du
@@ -338,14 +375,6 @@
 (defun _erreur_navigateur ()
    (setq e (evaljs "Pyt.dernièreErreur()"))
    (if (!= e "") (throw e)))
-
-(defun lit_fichier ((adresse nil))
-   (setq contenu
-      (if (nullp adresse)
-         (evaljs "Pyt.litFichier()")
-         (evaljs (list "Pyt.litFichier" (string adresse)))))
-   (_erreur_navigateur)
-   contenu)
 
 ; canevas(largeur, hauteur) : nouvelle taille du canevas (efface le dessin)
 (defun canevas (l h)

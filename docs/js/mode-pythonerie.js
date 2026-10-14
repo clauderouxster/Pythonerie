@@ -151,6 +151,11 @@ const PYTHONERIE_FONCTIONS = {
     'prend_données': 'prend_données("don0") — le texte actuel de l\'onglet de données don0',
     'lit_fichier': 'lit_fichier(f, a) — l\'élève choisit un fichier de son ordinateur ; f(texte), ou f(texte, a), le reçoit',
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements',
+    'login': 'login() — le nom de l\'élève (« Unique » en mode utilisateur unique ; son identifiant en mode classe)',
+    'sauve_élèves': 'sauve_élèves(liste, f, a) — mode administrateur : la liste des élèves de la classe ([{"identifiant", "nom"}] ou [[identifiant, nom]]) ; f(nombre)',
+    'sauve_dans_serveur': 'sauve_dans_serveur(professeur, chemin, valeur, f, a) — envoie la valeur au professeur, sur serveur.py ; f(Vrai) quand c\'est enregistré',
+    'liste_dans_serveur': 'liste_dans_serveur(chemin, f, a) — mode administrateur : f(entrées), ce que les élèves ont envoyé sous chemin',
+    'lit_dans_serveur': 'lit_dans_serveur(chemin, f, a) — mode administrateur : f(contenu), le texte du fichier (sa valeur pour un .json)',
     'ouvre_page': 'ouvre_page(adresse) — ouvre la page https://... dans un nouvel onglet (après un clic)'
 };
 

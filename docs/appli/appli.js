@@ -320,6 +320,10 @@ const Pythonerie = (function () {
         info: (texte) => écritConsole(texte, 'info'),
         signaleAnimation: () => metAJourBoutons(),
         afficheConsole, cacheConsole, poseQuestionConsole, fermeQuestionConsole,
+        // sauve_dans_serveur : une application Web ne connaît pas l'élève ; pas de mode administrateur
+        élève: () => '',
+        jetonAdmin: () => null,
+        jetonÉlève: () => null,
         // les médias du site emportés avec l'application (exemples/médias/...)
         médias: () => APPLI.médias
     };

@@ -61,10 +61,17 @@
       (setq _e (@ _lectures _numéro))
       (pop _lectures _numéro)
       (setq _réponse (evaljs "Pyt.valeurReçue()"))
-      (if (@ _e 2) (setq _réponse (nombre _réponse)))
+      ; la conversion : true (un nombre), "json" (une valeur décrite en JSON), "vrai" (Vrai)
+      (setq _conversion (@ _e 2))
+      (if (stringp _conversion)
+         (cond
+            ((= _conversion "json") (setq _réponse (json_parse _réponse)))
+            ((= _conversion "vrai") (setq _réponse true)))
+         (if _conversion (setq _réponse (nombre _réponse))))
+      ; quote : une liste ou un dictionnaire (liste_dans_serveur, un .json) n'est pas réévalué
       (if (@ _e 3)
-         (eval (list (atom (@ _e 0)) _réponse (list 'quote (@ _e 1))))
-         (eval (list (atom (@ _e 0)) _réponse))))
+         (eval (list (atom (@ _e 0)) (list 'quote _réponse) (list 'quote (@ _e 1))))
+         (eval (list (atom (@ _e 0)) (list 'quote _réponse)))))
    nil)
 (defmacro demande (question) (throw "demande a besoin d'une fonction de rappel : demande(question, f), et f(réponse) reçoit la réponse (ou demande(question, f, a) : f(réponse, a))"))
 (defmacro demande (question f) (_attend "fenêtre" question (string (quote f)) nil false false))
@@ -84,6 +91,46 @@
 (defmacro lit_fichier () (throw "lit_fichier a besoin d'une fonction de rappel : lit_fichier(f), et f(contenu) reçoit le contenu du fichier (ou lit_fichier(f, a) : f(contenu, a))"))
 (defmacro lit_fichier (f) (_attend "fichier" "" (string (quote f)) nil false false))
 (defmacro lit_fichier (f a) (_attend "fichier" "" (string (quote f)) a false true))
+; Les échanges avec serveur.py (voir Pyt.réseau, dans canevas.js) : eux aussi rendent la main
+; tout de suite, et la fonction de rappel reçoit le résultat.
+;   sauve_dans_serveur(professeur, chemin, valeur)       écrit le fichier chemin dans le répertoire
+;   sauve_dans_serveur(professeur, chemin, valeur, f)    du professeur ; f(Vrai) quand c'est fait.
+;       Une valeur qui n'est pas un texte est écrite en JSON. L'élève écrit, mais ne peut pas relire.
+;   liste_dans_serveur(chemin, f)    f(entrées) : les fichiers reçus sous chemin ("" : tous), une
+;       entrée par version, {"chemin", "élève", "date", "taille", "actuel"}
+;   lit_dans_serveur(chemin, f)      f(contenu) : le texte du fichier, ou sa valeur pour un .json
+; Les deux dernières ne marchent qu'en mode administrateur, une fois le professeur connecté ;
+; chacune accepte un argument de plus, rendu à f : f(résultat, a).
+; login() : le nom sous lequel l'élève travaille dans la Pythonerie (« Unique » en mode
+; utilisateur unique, "" dans une application Web) ; pour l'écrire dans un chemin :
+; sauve_dans_serveur("dupont", f"contrôle1/{login()}.json", réponses)
+(defun login () (evaljs "Pyt.login()"))
+(defun _réseau (_genre _p1 _p2 _p3 _nom _a _conversion _avec_a)
+   (setq _id 0)
+   (check _nom
+      (+= _numéro_lecture 1)
+      (setq _id _numéro_lecture)
+      (set@ _lectures (string _id) (list _nom _a _conversion _avec_a)))
+   (evaljs (list "Pyt.réseau" _genre (string _p1) (string _p2) _p3 _id))
+   nil)
+(defun _en_texte_ou_json (_v) (if (stringp _v) _v (json _v)))
+(defun _conversion_lecture (_chemin) (if (= (right (string _chemin) 5) ".json") "json" ""))
+(defmacro sauve_dans_serveur (professeur chemin valeur) (_réseau "sauve" professeur chemin (_en_texte_ou_json valeur) nil nil "vrai" false))
+(defmacro sauve_dans_serveur (professeur chemin valeur f) (_réseau "sauve" professeur chemin (_en_texte_ou_json valeur) (string (quote f)) nil "vrai" false))
+(defmacro sauve_dans_serveur (professeur chemin valeur f a) (_réseau "sauve" professeur chemin (_en_texte_ou_json valeur) (string (quote f)) a "vrai" true))
+(defmacro liste_dans_serveur (chemin) (throw "liste_dans_serveur a besoin d'une fonction de rappel : liste_dans_serveur(chemin, f), et f(entrées) reçoit la liste"))
+(defmacro liste_dans_serveur (chemin f) (_réseau "liste" chemin "" "" (string (quote f)) nil "json" false))
+(defmacro liste_dans_serveur (chemin f a) (_réseau "liste" chemin "" "" (string (quote f)) a "json" true))
+; sauve_élèves(liste) ou sauve_élèves(liste, f) : en mode administrateur, la liste des élèves
+; autorisés du professeur connecté (élèves.json) ; un élève est {"identifiant": ..., "nom": ...}
+; ou [identifiant, nom] ; f(nombre) reçoit le nombre d'élèves enregistrés. Le serveur refuse
+; une liste où il manque un identifiant, ou dont deux identifiants sont pareils.
+(defmacro sauve_élèves (liste) (_réseau "élèves" (json liste) "" "" nil nil true false))
+(defmacro sauve_élèves (liste f) (_réseau "élèves" (json liste) "" "" (string (quote f)) nil true false))
+(defmacro sauve_élèves (liste f a) (_réseau "élèves" (json liste) "" "" (string (quote f)) a true true))
+(defmacro lit_dans_serveur (chemin) (throw "lit_dans_serveur a besoin d'une fonction de rappel : lit_dans_serveur(chemin, f), et f(contenu) reçoit le fichier"))
+(defmacro lit_dans_serveur (chemin f) (_réseau "lit" chemin "" "" (string (quote f)) nil (_conversion_lecture chemin) false))
+(defmacro lit_dans_serveur (chemin f a) (_réseau "lit" chemin "" "" (string (quote f)) a (_conversion_lecture chemin) true))
 ; assigne(nom, valeur) : range valeur dans la variable du programme qui s'appelle nom (un
 ; texte), comme nom =: valeur, mais le nom peut être calculé : une fonction de rappel de
 ; demande ou de lire s'en sert pour ranger la réponse dans la variable que lui donne a

@@ -506,15 +506,20 @@
 )
 
 
-
 (defpat parsing (['comprehension $ d])
    (setq vari (atom (@ d 1)))
+   (setq lmb (list 'lambda (list vari) (parsing (@ d 0))))
+   (setq verif (list 'lambda (list vari) vari))
    (ife (= (size d) 3)
-      (nconcn (list 'mapcar (list 'lambda (list vari) (parsing (@ d 0))) (parsing (@ d 2))))
-      (nconcn 
-         (list 'mapcar 
-            (list 'lambda (list vari) (parsing (@ d 0))) 
-            (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (parsing (@ d 2))))))
+      (nconcn (list 'mapcar lmb (parsing (@ d 2))))
+      (if (= lmb verif)
+         (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (parsing (@ d 2)))
+         (nconcn 
+            (list 'mapcar 
+               lmb
+               (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (parsing (@ d 2)))))
+      )
+   )
 )
 
 ; forin: For A in range(1,10,1)... EndFor

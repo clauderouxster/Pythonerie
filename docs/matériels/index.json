@@ -13,5 +13,10 @@
     "fichier": "cartes.zip",
     "titre": "Les cartes (à la HyperCard)",
     "description": "Des piles de cartes, comme HyperCard : l'Éditeur dessine les cartes (textes, formes, images, sons, boutons qui mènent à une autre carte ou à une autre pile, et des scripts : les fonctions que tu écris dans biblios.pyf) et les range en JSON dans le répertoire données ; le Lecteur les montre, et sa liste déroulante choisit la pile. Trois piles pour commencer : un petit cours de Pythonerie en dix cartes, avec un bouton ▶ Exécute par exemple, une visite du système solaire, et les déclinaisons latines (rosa, lupus, templum, canis, portus, diēs : chaque modèle avec un exemple, sa traduction et une image)."
+  },
+  {
+    "fichier": "ma_classe.zip",
+    "titre": "Ma classe (pour le professeur)",
+    "description": "En mode administrateur (port 8001 de serveur.py), une fois connecté : la liste des élèves autorisés pour le mode classe. Colle une liste d'un coup depuis un tableur (identifiant et nom) : elle s'ajoute au tableau, sans doublon ; corrige-la, vide-la au besoin, puis enregistre-la sur le serveur (élèves.json)."
   }
 ]

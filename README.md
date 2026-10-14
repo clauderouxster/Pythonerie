@@ -13,8 +13,8 @@ La Pythonerie s'adresse aux enfants à partir de 7 ans, à leurs parents et à l
 L'écran est découpé en trois zones :
 
 1. **Le projet**, à gauche : son nom (un clic ouvre la liste **Mes projets**), les répertoires images, sons et données, les programmes de l'élève, que l'on peut ranger dans des répertoires, et deux listes déroulantes : **Matériels**, où l'enseignant dépose le matériel de cours (voir plus bas), et **Exemples**, des programmes à essayer, chacun dans son projet. La largeur de la colonne se règle en faisant glisser sa bordure droite.
-2. **L'éditeur**, au milieu : on y écrit son programme, avec la coloration des mots, l'indentation automatique et des propositions pendant la frappe ; choisir une fonction dans les propositions l'écrit avec ses arguments (`rectangle(x, y, l, h)`), et une ligne sous l'éditeur rappelle les arguments du nom sélectionné. Un **clic droit** sur le nom d'une fonction du projet (pas d'une fonction prédéfinie) mène à l'endroit où elle est écrite, même dans un autre programme ; **↩ Retour** ramène là où l'on était. Au-dessus de l'éditeur : **⛶** (l'éditeur en plein écran, avec la même taille de caractères ; **✕** ou Échap ramène l'affichage normal, et **▶ Exécuter** en sort, pour voir le canevas), **▦ Données** (voir plus bas), **λ LispE** (le code LispE produit, avec ses numéros de ligne), **■ Arrêter** et **▶ Exécuter**.
-3. **Le canevas**, à droite : une feuille de dessin où le programme peut dessiner, écrire, faire avancer une tortue, animer des formes, afficher des images, jouer des sons et réagir à la souris et au clavier. **Effacer** le vide, **Image** télécharge le dessin en PNG, et **⛶ Plein écran** l'agrandit à tout l'écran, pour un jeu par exemple : une petite barre propose alors **▤ Console** (fait venir la console sous le canevas, ou la renvoie), **■ Arrêter** (le programme) et **✕ Quitter le plein écran** ; la touche Échap ramène aussi à l'affichage normal. Sous le canevas, la **console** affiche les messages du programme, et la ligne **`>>>`** exécute tout de suite ce que l'on y tape ; elle a son bouton **⛶** et son bouton **Effacer**.
+2. **L'éditeur**, au milieu : on y écrit son programme, avec la coloration des mots, l'indentation automatique et des propositions pendant la frappe ; choisir une fonction dans les propositions l'écrit avec ses arguments (`rectangle(x, y, l, h)`), et une ligne sous l'éditeur rappelle les arguments du nom sélectionné. Un **clic droit** sur le nom d'une fonction du projet (pas d'une fonction prédéfinie) mène à l'endroit où elle est écrite, même dans un autre programme ; **↩ Retour** ramène là où l'on était. Au-dessus de l'éditeur : **⧉ Copier** (le programme, ou l'onglet de données affiché, dans le presse-papiers), **⛶** (l'éditeur en plein écran, avec la même taille de caractères ; **✕** ou Échap ramène l'affichage normal, et **▶ Exécuter** en sort, pour voir le canevas), **▦ Données** (voir plus bas), **λ LispE** (le code LispE produit, avec ses numéros de ligne), **■ Arrêter** et **▶ Exécuter**.
+3. **Le canevas**, à droite : une feuille de dessin où le programme peut dessiner, écrire, faire avancer une tortue, animer des formes, afficher des images, jouer des sons et réagir à la souris et au clavier. **Effacer** le vide, **Image** télécharge le dessin en PNG, et **⛶ Plein écran** l'agrandit à tout l'écran, pour un jeu par exemple : une petite barre propose alors **▤ Console** (fait venir la console sous le canevas, ou la renvoie), **■ Arrêter** (le programme) et **✕ Quitter le plein écran** ; la touche Échap ramène aussi à l'affichage normal. Sous le canevas, la **console** affiche les messages du programme, et la ligne **`>>>`** exécute tout de suite ce que l'on y tape ; elle a son bouton **⛶**, son bouton **⧉ Copier** (tout son texte dans le presse-papiers) et son bouton **Effacer**.
 
 Sur un écran étroit (téléphone, tablette tenue en hauteur), les trois zones s'empilent : le projet en haut, que le bouton **▴** replie, puis l'éditeur, puis le canevas et sa console.
 
@@ -157,22 +157,48 @@ Pour travailler sans connexion, ou pour une salle de classe, on peut lancer la P
 ```bash
 git clone https://github.com/clauderouxster/Pythonerie.git
 cd Pythonerie
-python3 serveur.py          # ouvre http://localhost:8000
+python3 serveur.py          # élèves : http://localhost:8000 ; mode administrateur : http://localhost:8001
 ```
 
-Le serveur ne fait que deux choses :
+Le serveur ouvre **deux ports** : celui des **élèves** (8000) et celui du **mode administrateur** (8001), qui n'écoute par défaut que sur la machine du serveur. Il fait trois choses :
 
-- il **fournit les fichiers** de la Pythonerie aux navigateurs ;
-- il **garde une copie des projets** : chaque fois qu'un élève exporte son projet, celui-ci est téléchargé sur son poste, comme d'habitude, et une copie est enregistrée dans le répertoire `projets/` du serveur. L'enseignant dispose ainsi des projets de tous ses élèves en un même lieu.
+- il **fournit les fichiers** de la Pythonerie aux navigateurs, sur les deux ports ;
+- il **garde une copie des projets** : chaque fois qu'un élève exporte son projet, celui-ci est téléchargé sur son poste, comme d'habitude, et une copie est enregistrée dans le répertoire `projets/` du serveur. L'enseignant dispose ainsi des projets de tous ses élèves en un même lieu ;
+- il **reçoit les données que les programmes des élèves envoient à un professeur**, pour un examen, un sondage ou une expérience, et les donne aux programmes du professeur, en mode administrateur (voir ci-dessous).
 
 Les projets en cours, eux, restent dans le navigateur de chaque élève, et le serveur n'exécute **aucun** programme : la traduction et l'exécution se passent toujours dans le navigateur, exactement comme avec la version en ligne.
 
 Les projets du serveur ne peuvent être ni remplacés ni supprimés depuis la Pythonerie : deux projets du même nom sont gardés tous les deux (`Mon_jardin_Léa_2026_10_08_14_30.zip`, puis `Mon_jardin_Léa_2026_10_08_14_30_2.zip`), et la liste des projets n'est jamais montrée aux élèves. Un projet peut peser jusqu'à 100 Mo. Seul l'enseignant décide de ce qu'il en fait, directement dans le répertoire.
 
+### Le mode administrateur : les données des examens
+
+Sur le port administrateur (`http://localhost:8001`), la Pythonerie affiche un bouton **🔑 Mode administrateur** dans son en-tête. La première fois, le professeur y **crée son compte** (un identifiant et un mot de passe de 6 caractères au moins) ; ensuite, il s'y **connecte**. Le mot de passe n'est jamais enregistré : `serveur/comptes.json` ne garde que son empreinte (scrypt, avec un sel propre à chaque compte), et la connexion dure 12 heures, le temps de l'onglet. **Se déconnecter** (un nouveau clic sur 🔑) arrête le programme en cours et ferme le projet ouvert, qui rejoint **Mes projets** : la personne suivante ne voit ni les programmes du professeur, ni ses données. À la création du compte, le serveur crée le répertoire du professeur, `serveur/professeurs/<identifiant>/`. Le port des élèves ne montre jamais ce bouton, et refuse toutes les opérations du mode administrateur. Comme les deux ports sont deux « origines » différentes pour le navigateur, les projets du professeur sur le port administrateur ne se mélangent pas avec ceux d'un élève qui utiliserait la même machine.
+
+- **Les élèves écrivent**, sans pouvoir relire : `sauve_dans_serveur("dupont", "contrôle1/réponses.json", valeur)` écrit le fichier dans le répertoire du professeur `dupont` (l'identifiant peut être demandé au début de l'examen, avec `demande`). Le chemin est gardé tel quel, avec ses sous-répertoires : au professeur de faire mettre le nom de l'élève dans le chemin s'il veut un fichier par élève. `login()` donne ce nom, celui sous lequel l'élève travaille dans la Pythonerie (« Unique » en mode utilisateur unique, son identifiant vérifié en mode classe, `""` dans une application Web) : `sauve_dans_serveur("dupont", f"contrôle1/{login()}.json", réponses)`. Une valeur qui n'est pas un texte est écrite en JSON ; `sauve_dans_serveur(professeur, chemin, valeur, f)` appelle `f(Vrai)` une fois le fichier enregistré. Les extensions acceptées sont `.txt`, `.json`, `.csv`, `.tsv` et `.md` (sans extension : `.txt`), 5 Mo au plus par fichier ; un chemin avec `..` est refusé. Les envois d'une même page partent l'un après l'autre, dans l'ordre du programme.
+- **Rien ne se perd** : si un fichier est réécrit, la version précédente est gardée à côté, sous son nom suivi de sa date (`réponses_2026-10-13_10-42-05.json`).
+- **L'index** : à chaque écriture, le serveur met à jour `serveur/professeurs/<identifiant>/index.json`, une entrée par version : `{"chemin", "élève", "date", "taille", "actuel"}` (`élève` : le nom sous lequel l'élève travaille dans la Pythonerie).
+- **Le professeur lit**, avec des programmes qu'il écrit dans la Pythonerie du port administrateur, une fois connecté : `liste_dans_serveur("contrôle1", f)` appelle `f(entrées)` avec les entrées de l'index sous `contrôle1/` (`""` : toutes), et `lit_dans_serveur("contrôle1/réponses.json", f)` appelle `f(contenu)` avec le texte du fichier, ou sa valeur pour un `.json`. Un professeur ne lit que son propre répertoire. Comme `demande`, ces fonctions rendent la main tout de suite, et acceptent un argument de plus, rendu à `f`.
+- Le serveur n'exécute toujours aucun programme : la correction ou les statistiques tournent dans le navigateur du professeur.
+
+### Le mode classe : des élèves identifiés
+
+Pour un examen, le professeur peut réserver le serveur à ses élèves, identifiés par l'**identifiant unique** que l'école leur a donné.
+
+1. **La liste des élèves.** En mode administrateur, une fois connecté, le professeur ouvre **« Ma classe (pour le professeur) »** dans les Matériels et l'exécute. Il colle sa liste d'un coup dans la zone de gauche, une ligne par élève, avec l'identifiant et le nom séparés par une tabulation (une copie depuis un tableur) ou par un point-virgule. La colonne qui contient des chiffres est prise pour l'identifiant. **« Ajouter au tableau ▶ »** ajoute ces élèves à ceux du tableau Identifiant | Nom (14 lignes par page, ◀ ▶) : un élève déjà présent (même identifiant, sans compter les majuscules ; ou, sans identifiant, même nom) n'est pas ajouté une deuxième fois, et le message dit lesquels étaient déjà là. On peut ainsi compléter une liste en plusieurs fois. **Vider le tableau** repart de zéro. Il corrige ou complète les cases, puis **Enregistrer**, qui refuse deux élèves avec le même identifiant, range la liste dans `serveur/professeurs/<identifiant>/élèves.json` : `[{"identifiant": "id100", "nom": "Jean Lupin"}, …]`. Le programme relit la liste enregistrée à son démarrage (et avec **Recharger**). Il se sert de `sauve_élèves(liste, f)`, réservé au mode administrateur : le serveur refuse une liste où il manque un identifiant, ou dont deux identifiants sont pareils (sans compter les majuscules). `index.json` et `élèves.json`, à la racine du répertoire, ne s'écrivent jamais avec `sauve_dans_serveur`.
+2. **Le lancement.** `python3 serveur.py --professeur dupont` demande le mot de passe de `dupont` dans le terminal, sans l'afficher. Il n'est jamais écrit sur la ligne de commande, où il resterait dans l'historique. Le serveur vérifie le compte et la liste, puis passe en mode classe.
+3. **La connexion des élèves.** Sur le port des élèves, le mode plusieurs élèves est imposé. Le bouton **👤** demande l'**identifiant**, et le serveur vérifie qu'il est dans la liste, sans compter les majuscules ni les espaces. Un identifiant inconnu est refusé. L'élève reste connecté le temps de l'onglet (12 heures au plus), même s'il recharge la page.
+4. **Pendant l'examen.** `login()` donne l'identifiant de l'élève. `sauve_dans_serveur` n'écrit que chez le professeur de la classe. Chaque envoi porte l'identité vérifiée par le serveur, `"élève"` (l'identifiant) et `"nom"` dans l'index, et non ce que dirait le navigateur. Le professeur, connecté au mode administrateur, peut aussi écrire, sous le nom « (le professeur) ».
+
+L'identifiant tient lieu de preuve : il doit rester connu du seul élève, comme un mot de passe. Techniquement, le jeton de l'élève voyage dans l'en-tête HTTP `X-Pythonerie-Eleve`, sans accent, car les noms d'en-têtes n'acceptent que l'ASCII.
+
+Le répertoire `serveur/` (comptes et données des professeurs) n'est jamais publié avec le dépôt (`.gitignore`).
+
 Options :
-- `--port 8080` pour choisir un autre port ;
+- `--port 8080` pour choisir le port des élèves, `--port-admin 8081` celui du mode administrateur ;
 - `--hôte 0.0.0.0` pour que les élèves d'une salle de classe se connectent depuis leur poste ;
-- `--projets /un/répertoire` pour ranger les projets ailleurs que dans `projets/` ;
+- `--hôte-admin 0.0.0.0` pour ouvrir aussi le mode administrateur au réseau (depuis une tablette, par exemple) : il reste protégé par les comptes, mais par défaut il n'écoute que sur la machine du serveur ;
+- `--projets /un/répertoire` pour ranger les projets ailleurs que dans `projets/`, `--données /un/répertoire` pour les comptes et les données des professeurs (par défaut `serveur/`) ;
+- `--professeur dupont` pour le mode classe (le mot de passe est demandé au lancement) ;
 - `--sans-navigateur` pour ne pas ouvrir de navigateur au lancement.
 
 Le fichier `docs/config.json` contient les réglages de l'installation :
@@ -197,6 +223,7 @@ La Pythonerie est parfaitement compatible avec le **RGPD** européen et avec ses
 - **Aucun pistage** : ni cookie, ni mesure d'audience, ni publicité, ni service tiers. L'éditeur et les polices de caractères sont fournis par le site lui-même, sans appel à un autre site (pas de Google Fonts, pas de CDN).
 - **Le nom de l'élève** n'est qu'une étiquette : il sert à nommer les projets exportés. Il est oublié à la fermeture de l'onglet, et la déconnexion efface tout l'espace de l'élève. Chaque établissement peut d'ailleurs donner à ses élèves un identifiant propre, plutôt que leur vrai nom : c'est plus discret, et cela évite de confondre deux élèves qui portent le même nom.
 - **Les projets exportés** sont des fichiers enregistrés sur l'ordinateur, dans le dossier Téléchargements. En ligne, ils ne sont envoyés nulle part : c'est l'élève ou l'enseignant qui décide de les transmettre.
+- **Les données envoyées à un professeur** (`sauve_dans_serveur`) n'existent qu'avec `serveur.py`, sur la machine de l'établissement : elles y sont rangées avec le nom sous lequel l'élève travaille et l'heure, dans `serveur/professeurs/`. L'établissement décide combien de temps il les garde ; la version en ligne n'a pas de serveur, et ces fonctions y donnent une erreur.
 - **Les photos** : une photo d'un élève, placée dans le répertoire images d'un projet, est une donnée personnelle. Elle reste dans le navigateur comme le reste du projet, mais elle part avec le projet quand on l'exporte : à garder en tête avant de partager un projet.
 
 Deux remarques pour les établissements :
@@ -207,7 +234,7 @@ Deux remarques pour les établissements :
 ## Limites connues
 
 - Le programme s'exécute dans la page : pendant qu'il tourne, la page ne réagit plus. Une boucle `tantque` sans fin (`tantque Vrai:` sans `sortir`) est arrêtée au bout de 10 millions de tours (moins d'une seconde), avec un message qui l'explique ; une boucle `tantque` légitime ne dépasse pas cette limite. Pour une animation, il faut utiliser `animer`, qui rend la main à la page entre deux images.
-- Une erreur d'exécution montre l'expression LispE en cause (« dans le code LispE : at l 5) »), sans le numéro de la ligne du programme de l'élève ; les erreurs de syntaxe, elles, citent la ligne.
+- Une erreur d'exécution montre l'expression LispE en cause (« dans le code LispE : (at l 5) »), puis la fonction du programme où elle s'est produite, avec la ligne où cette fonction est définie et ses appelants (« dans la fonction cherche (définie ligne 2 ; ligne 3 du code LispE) — appelée par calcule, elle-même appelée par le programme principal ») ; un clic sur le message mène à la fonction, et ↩ Retour ramène où l'on était. La Pythonerie le déduit de la pile d'appels de LispE, dont chaque étape donne sa ligne dans le code LispE (celle du panneau λ LispE). Elle ne donne pas encore la ligne exacte de l'instruction dans le programme de l'élève ; les erreurs de syntaxe, elles, citent la ligne.
 - Un `cas` n'accepte pas un nombre négatif (`cas -1:`).
 - `Rien` s'affiche `[]`.
 - Pour échanger deux valeurs, on écrit `a, b = b, a`, et non `[a, b] = [b, a]`.

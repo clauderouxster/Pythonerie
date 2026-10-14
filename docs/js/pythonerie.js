@@ -82,13 +82,156 @@ const Pythonerie = (function () {
         zone.scrollTop = zone.scrollHeight;
     }
 
+    // Le texte de la console, une ligne par message (sans le texte d'accueil d'une console vide)
+    function texteDeLaConsole() {
+        return [...$('console').querySelectorAll('.console-ligne')].map(d => d.textContent).join('\n');
+    }
+
+    // Copie le texte dans le presse-papiers ; le bouton affiche « ✓ Copié » un instant
+    async function copieTexte(texte, bouton) {
+        let fait = false;
+        try { await navigator.clipboard.writeText(texte); fait = true; }
+        catch (e) {
+            // sans l'API du presse-papiers (page servie en http par une autre machine, par exemple)
+            const zone = document.createElement('textarea');
+            zone.value = texte;
+            zone.style.position = 'fixed';
+            zone.style.opacity = '0';
+            document.body.appendChild(zone);
+            zone.select();
+            try { fait = document.execCommand('copy'); } catch (x) { fait = false; }
+            zone.remove();
+        }
+        if (!bouton) return;
+        const avant = bouton.dataset.texte || bouton.textContent;
+        bouton.dataset.texte = avant;
+        bouton.textContent = fait ? '✓ Copié' : '✗ Impossible';
+        clearTimeout(bouton._minuterie);
+        bouton._minuterie = setTimeout(() => { bouton.textContent = avant; }, 1200);
+    }
+
     function effaceConsole() {
         ligneOuverte = null;
         $('console').innerHTML = '<div class="console-vide">Les messages de ton programme s\'afficheront ici.</div>';
     }
 
     // Les messages d'erreur de LispE, traduits et simplifiés : voir js/erreurs.js
-    const { nettoieErreur, LIGNE_PILE } = ErreursLispE;
+    const { nettoieErreur, pileDe, LIGNE_PILE } = ErreursLispE;
+
+    // ------------------------------------------------------------------
+    // Où une erreur d'exécution s'est produite. LispE donne la pile d'appels, avec la ligne
+    // du code LispE de chaque étape (voir pileDe) ; chaque ligne tombe dans un (defun nom ...)
+    // du code produit pour le programme (dernierLispE), et nom se retrouve dans le programme
+    // de l'élève, ou dans un programme importé (« fonction nom(...) »). Le message dit alors :
+    //    dans la fonction élèves_remplis (définie ligne 55 ; ligne 44 du code LispE)
+    //    appelée par dessine, elle-même appelée par commande
+    // et un clic sur l'erreur mène à la fonction. contexte : "programme" (une ligne hors de toute
+    // fonction est le programme principal) ; "événement" ou "console" : le code évalué n'est pas
+    // dernierLispE (l'appel d'une fonction par le canevas, ou une ligne >>>), ses lignes ne disent rien.
+    // ------------------------------------------------------------------
+    let fonctionsLispE = { code: null, liste: [] };
+
+    // Les (defun nom ...) du code LispE : [{ nom, début, fin }] (lignes, à partir de 1)
+    function fonctionsDuCode(code) {
+        if (fonctionsLispE.code === code) return fonctionsLispE.liste;
+        const liste = [], ouvertes = [];
+        let ligne = 1, dansChaîne = false;
+        for (let i = 0; i < code.length; i++) {
+            const c = code[i];
+            if (c === '\n') { ligne++; continue; }
+            if (dansChaîne) {
+                if (c === '\\') i++;
+                else if (c === '"') dansChaîne = false;
+                continue;
+            }
+            if (c === '"') dansChaîne = true;
+            else if (c === '(') {
+                const m = /^\((?:defun|defmacro|defpat)\s+([^\s()"]+)/.exec(code.slice(i, i + 120));
+                ouvertes.push(m ? { nom: m[1], début: ligne } : null);
+            } else if (c === ')') {
+                const f = ouvertes.pop();
+                if (f) liste.push({ nom: f.nom, début: f.début, fin: ligne });
+            }
+        }
+        fonctionsLispE = { code, liste };
+        return liste;
+    }
+
+    // La fonction (la plus intérieure) qui contient cette ligne du code LispE, ou null
+    function fonctionDeLaLigne(liste, n) {
+        let trouvée = null;
+        for (const f of liste) {
+            if (f.début <= n && n <= f.fin && (!trouvée || f.début >= trouvée.début)) trouvée = f;
+        }
+        return trouvée;
+    }
+
+    // Où est définie la fonction nom (du code LispE) : { chemin, ligne, nom } dans le programme
+    // ouvert, puis dans les autres programmes du projet ; une fonction renommée par le
+    // transpileur (une fonction de l'élève qui porte le nom d'une fonction de la
+    // bibliothèque : somme -> somme_perso) est cherchée sous son nom d'origine
+    function définitionDeFonction(nom) {
+        const noms = [nom];
+        if (nom.endsWith('_perso')) noms.push(nom.slice(0, -'_perso'.length));
+        const programmes = [[courant, éditeur.getValue()]];
+        const tout = StockageNavigateur._tout();
+        Object.keys(tout).sort(compareNoms).forEach(c => { if (c !== courant) programmes.push([c, tout[c].code || '']); });
+        for (const n of noms) {
+            for (const [chemin, code] of programmes) {
+                const p = positionDéfinition(code, n);
+                if (p) return { chemin, nom: n, ligne: code.slice(0, p.début).split('\n').length };
+            }
+        }
+        return null;
+    }
+
+    // { texte, aller } pour cette erreur, ou null si l'on ne sait pas où elle s'est produite
+    function localiseErreur(e, contexte) {
+        if (!dernierLispE) return null;
+        const liste = fonctionsDuCode(dernierLispE);
+        const étapes = [];      // [{ nom, ligne }] : la fonction de chaque étape, sans répétition
+        for (const { ligne } of pileDe(e)) {
+            if (ligne === null) continue;
+            const f = fonctionDeLaLigne(liste, ligne);
+            const nom = f ? f.nom : contexte === 'programme' ? null : undefined;
+            if (nom === undefined) continue;
+            if (étapes.length && étapes[étapes.length - 1].nom === nom) continue;
+            étapes.push({ nom, ligne });
+        }
+        if (!étapes.length) return null;
+        const [première, ...suite] = étapes;
+        let texte, aller = null;
+        if (première.nom === null) {
+            texte = '   dans le programme principal (ligne ' + première.ligne + ' du code LispE)';
+        } else {
+            const déf = définitionDeFonction(première.nom);
+            const où = déf ? 'définie ligne ' + déf.ligne + (déf.chemin !== courant ? ' de « ' + déf.chemin + ' »' : '') + ' ; ' : '';
+            texte = '   dans la fonction ' + (déf ? déf.nom : première.nom) + ' (' + où + 'ligne ' + première.ligne + ' du code LispE)';
+            if (déf) aller = async () => {
+                retiensOùOnEst();
+                if (déf.chemin !== courant) await ouvre(déf.chemin);
+                const p = positionDéfinition(éditeur.getValue(), déf.nom);
+                if (p) montreDéfinition(éditeur.getValue(), p);
+            };
+        }
+        const appelants = suite.map(é => é.nom === null ? 'le programme principal' : (définitionDeFonction(é.nom) || { nom: é.nom }).nom);
+        if (appelants.length) texte += '\n   appelée par ' + appelants.join(', elle-même appelée par ');
+        return { texte, aller, fonction: aller ? (définitionDeFonction(première.nom) || {}).nom : null };
+    }
+
+    // Une erreur d'exécution, dans la console : le message, puis où elle s'est produite ;
+    // un clic sur le message mène à la fonction
+    function écritErreur(e, contexte) {
+        let lieu = null;
+        try { lieu = localiseErreur(e, contexte); } catch (x) { lieu = null; }
+        écritConsole(nettoieErreur(e, lieu ? lieu.texte : ''), 'erreur');
+        if (lieu && lieu.aller) {
+            const div = $('console').lastElementChild;
+            div.classList.add('erreur-cliquable');
+            div.title = 'Aller à la fonction « ' + lieu.fonction + ' »';
+            div.addEventListener('click', lieu.aller);
+        }
+    }
 
     // ------------------------------------------------------------------
     // LispE : chargement, compilation, exécution
@@ -243,7 +386,8 @@ const Pythonerie = (function () {
     function exécuteConsole(code) {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter du code, il faut d\'abord dire qui tu es.')) {
-            écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter du code.', 'info');
+            écritConsole(classe ? '— Connecte-toi avec ton identifiant (👤 en haut à droite), puis recommence.'
+                                : '— Tape ton nom (👤 en haut à droite) pour exécuter du code.', 'info');
             return;
         }
         const lignes = code.split('\n');
@@ -260,7 +404,7 @@ const Pythonerie = (function () {
             if (idxExécution === null) nouvelInterpréteur();
             évalue(idxExécution, c.lispe);
         } catch (e) {
-            écritConsole(nettoieErreur(e), 'erreur');
+            écritErreur(e, 'console');
         }
         metAJourBoutons();
     }
@@ -518,7 +662,7 @@ const Pythonerie = (function () {
             évalue(idxExécution, code);
         } catch (e) {
             Pyt.stoppeTout();
-            écritConsole(nettoieErreur(e), 'erreur');
+            écritErreur(e, 'événement');
             metAJourBoutons();
         }
     }
@@ -527,7 +671,8 @@ const Pythonerie = (function () {
     async function exécute() {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
-            écritConsole('— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
+            écritConsole(classe ? '— Connecte-toi avec ton identifiant (👤 en haut à droite), puis clique de nouveau sur ▶ Exécuter.'
+                                : '— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
             return;
         }
         if (!courant) {
@@ -581,7 +726,7 @@ const Pythonerie = (function () {
             if (!Pyt.enCours()) écritConsole('— Programme terminé (' + durée + ' ms)', 'info');
             else écritConsole('— Programme en cours (animation, événements ou question en attente). Clique sur « Arrêter » pour le stopper.', 'info');
         } catch (e) {
-            écritConsole(nettoieErreur(e), 'erreur');
+            écritErreur(e, 'programme');
             Pyt.stoppeTout();
         }
         metAJourBoutons();
@@ -883,6 +1028,74 @@ const Pythonerie = (function () {
     let élève = null;
     try { élève = sessionStorage.getItem('pythonerie.élève'); } catch (e) { /* rien */ }
 
+    // Le mode classe (serveur.py --professeur dupont) : l'élève se connecte avec l'identifiant
+    // que son école lui a donné, et le serveur vérifie qu'il est dans la liste de la classe
+    // (élèves.json). Le jeton reçu accompagne ses envois (sauve_dans_serveur), qui portent
+    // alors son identité vérifiée. classe : l'identifiant du professeur, ou null.
+    let classe = null;
+    let jetonÉlève = null;
+    let nomVérifié = '';
+    try { jetonÉlève = sessionStorage.getItem('pythonerie.jetonÉlève'); } catch (e) { /* rien */ }
+
+    function gardeJetonÉlève(jeton) {
+        jetonÉlève = jeton || null;
+        try { if (jetonÉlève) sessionStorage.setItem('pythonerie.jetonÉlève', jetonÉlève); else sessionStorage.removeItem('pythonerie.jetonÉlève'); } catch (e) { /* rien */ }
+    }
+
+    // Au démarrage : l'élève de l'onglet est-il toujours connu du serveur ?
+    async function vérifieÉlèveClasse() {
+        nomVérifié = '';
+        let réponse = null;
+        if (jetonÉlève) {
+            try {
+                const r = await fetch('api/élève/moi', { headers: { 'X-Pythonerie-Eleve': jetonÉlève } });
+                réponse = r.ok ? await r.json() : null;
+            } catch (e) { réponse = null; }
+        }
+        if (réponse && réponse.identifiant) { nomVérifié = réponse.nom || ''; if (élève !== réponse.identifiant) changeÉlève(réponse.identifiant); }
+        else { gardeJetonÉlève(null); if (élève) changeÉlève(null); }
+    }
+
+    let connexionClasseOuverte = false;
+    async function connecteÉlèveClasse(raison, message) {
+        if (connexionClasseOuverte) return;
+        connexionClasseOuverte = true;
+        const formulaire = document.createElement('div');
+        formulaire.className = 'formulaire-admin';
+        const l = document.createElement('label');
+        l.textContent = 'Identifiant';
+        const champ = document.createElement('input');
+        champ.type = 'text';
+        champ.autocomplete = 'username';
+        champ.spellcheck = false;
+        l.appendChild(champ);
+        formulaire.appendChild(l);
+        formulaire.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); $('dialogueBoutons').querySelector('button').click(); }
+        });
+        setTimeout(() => champ.focus(), 0);
+        const choix = await dialogue('Connexion à la classe',
+            (message ? message + '\n\n' : '') + (raison ? raison + '\n\n' : '')
+            + 'Tape l\'identifiant que ton école t\'a donné (la classe de « ' + classe + ' »).',
+            [{ texte: 'Se connecter', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }], formulaire);
+        connexionClasseOuverte = false;
+        if (!choix) return;
+        let réponse = null;
+        try {
+            const r = await fetch('api/élève/connexion', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiant: nfc(champ.value).trim() }) });
+            réponse = await r.json();
+        } catch (e) { réponse = { erreur: 'le serveur ne répond pas' }; }
+        if (!réponse || réponse.erreur) return connecteÉlèveClasse(raison, '⚠️ ' + ((réponse && réponse.erreur) || 'erreur'));
+        gardeJetonÉlève(réponse.jeton);
+        nomVérifié = réponse.nom || '';
+        const nouveau = réponse.identifiant !== élève;
+        changeÉlève(réponse.identifiant);
+        if (nouveau) prendPossession(réponse.identifiant);
+        écritConsole('— Bienvenue' + (nomVérifié ? ', ' + nomVérifié : '') + ' ! Tu es connecté(e) à la classe de « ' + classe
+            + ' » avec l\'identifiant « ' + réponse.identifiant + ' ».', 'info');
+    }
+
     // Le nom sous lequel on travaille : « Unique », ou celui que l'élève a tapé
     function nomCourant() {
         return utilisateurUnique ? NOM_UNIQUE : élève;
@@ -903,6 +1116,7 @@ const Pythonerie = (function () {
 
     function changeÉlève(nom) {
         élève = nom || null;
+        if (!élève) { gardeJetonÉlève(null); nomVérifié = ''; }
         try {
             if (élève) sessionStorage.setItem('pythonerie.élève', élève);
             else sessionStorage.removeItem('pythonerie.élève');
@@ -916,15 +1130,19 @@ const Pythonerie = (function () {
         $('btnÉlève').classList.toggle('inconnu', !nom);
         $('btnÉlève').disabled = utilisateurUnique;
         $('btnÉlève').title = utilisateurUnique ? 'Mode utilisateur unique : pas besoin de se connecter (voir le menu ☰)'
-            : élève ? 'Connecté : ' + élève + ' (cliquer pour se déconnecter)' : 'Se connecter : taper son nom';
+            : élève ? 'Connecté : ' + (nomVérifié ? nomVérifié + ' (' + élève + ')' : élève) + ' (cliquer pour se déconnecter)'
+            : classe ? 'Se connecter : taper son identifiant' : 'Se connecter : taper son nom';
         $('btnUtilisateurUnique').setAttribute('aria-checked', String(utilisateurUnique));
         $('btnUtilisateurUnique').disabled = multiImposé;
-        if (multiImposé) $('btnUtilisateurUnique').title = 'Le mode plusieurs élèves est imposé par config.json';
+        if (multiImposé) $('btnUtilisateurUnique').title = classe ? 'Le serveur est en mode classe : chaque élève se connecte avec son identifiant'
+            : 'Le mode plusieurs élèves est imposé par config.json';
         $('btnUtilisateurUnique').textContent = (utilisateurUnique ? '☑' : '☐') + ' Utilisateur unique (sans connexion)';
     }
 
     // Demande le nom de l'élève ; renvoie Vrai s'il est connecté à la fin
     function demandeÉlève(raison) {
+        // en mode classe, le serveur vérifie l'identifiant : la réponse arrive plus tard
+        if (classe) { connecteÉlèveClasse(raison); return !!élève; }
         const texte = (raison ? raison + '\n\n' : '') + 'Ton nom (ou ton identifiant) :';
         const réponse = prompt(texte, élève || '');
         if (réponse === null) return !!élève;
@@ -1953,6 +2171,118 @@ const Pythonerie = (function () {
             const réponse = r.ok ? await r.json() : null;
             return !!(réponse && réponse.projets === true);
         } catch (e) { return false; }
+    }
+
+    // ------------------------------------------------------------------
+    // Le mode administrateur : la Pythonerie ouverte sur le port administrateur de serveur.py
+    // (8001, sur la machine du serveur). Un professeur y crée son compte ou s'y connecte ; le
+    // jeton de sa session (gardé le temps de l'onglet) accompagne les lectures de ses
+    // programmes (liste_dans_serveur, lit_dans_serveur : voir Pyt.réseau). Sur le port des
+    // élèves, le bouton 🔑 n'existe pas, et le serveur refuse de toute façon ces lectures.
+    // ------------------------------------------------------------------
+    let modeAdmin = false;
+    let professeur = null;          // l'identifiant du professeur connecté
+    let jetonAdmin = null;
+    try { jetonAdmin = sessionStorage.getItem('pythonerie.jetonAdmin'); } catch (e) { /* rien */ }
+
+    // { serveur, admin } : serveur.py est là, et la page vient de son port administrateur
+    async function détecteServeur() {
+        if (location.hostname.endsWith('.github.io')) return { serveur: false, admin: false, classe: null };
+        try {
+            const r = await fetch('api/serveur', { cache: 'no-cache' });
+            const réponse = r.ok ? await r.json() : null;
+            if (réponse && réponse.serveur === true) return { serveur: true, admin: réponse.admin === true, classe: réponse.classe || null };
+        } catch (e) { /* un serveur plus ancien : seulement la copie des projets */ }
+        return { serveur: await détecteServeurProjets(), admin: false, classe: null };
+    }
+
+    function gardeJeton(jeton) {
+        jetonAdmin = jeton;
+        try { if (jeton) sessionStorage.setItem('pythonerie.jetonAdmin', jeton); else sessionStorage.removeItem('pythonerie.jetonAdmin'); } catch (e) { /* rien */ }
+    }
+
+    // La session gardée dans l'onglet est-elle toujours valable ?
+    async function vérifieSessionAdmin() {
+        professeur = null;
+        if (!jetonAdmin) return;
+        try {
+            const r = await fetch('api/admin/moi', { headers: { 'X-Pythonerie-Jeton': jetonAdmin } });
+            const réponse = await r.json();
+            if (r.ok && réponse.identifiant) professeur = réponse.identifiant;
+            else gardeJeton(null);
+        } catch (e) { gardeJeton(null); }
+    }
+
+    function afficheAdmin() {
+        const b = $('btnAdmin');
+        b.hidden = !modeAdmin;
+        document.body.classList.toggle('mode-admin', modeAdmin);
+        $('nomAdmin').textContent = professeur ? 'Administrateur : ' + professeur : 'Mode administrateur : se connecter';
+        b.title = professeur ? 'Connecté(e) en tant que « ' + professeur + ' » : cliquer pour se déconnecter'
+                             : 'Se connecter, ou créer un compte de professeur';
+    }
+
+    async function ouvreAdmin(message) {
+        if (professeur) {
+            const choix = await dialogue('Mode administrateur', 'Tu es connecté(e) en tant que « ' + professeur + ' ».',
+                [{ texte: 'Se déconnecter', valeur: 'sortie', genre: 'danger' }, { texte: 'Fermer', valeur: null }]);
+            if (choix !== 'sortie') return;
+            try { await fetch('api/admin/déconnexion', { method: 'POST', headers: { 'X-Pythonerie-Jeton': jetonAdmin || '' } }); } catch (e) { /* rien */ }
+            // le programme en cours lisait peut-être les données du professeur : il s'arrête, et le
+            // projet ouvert est fermé (rangé dans Mes projets, comme avec ✖ Fermer le projet)
+            if (Pyt.enCours()) arrête();
+            let vide = false;
+            try { vide = nomDuProjet === SANS_NOM && espaceVide(await instantané()); } catch (e) { /* rien */ }
+            if (!vide) await fermeProjet();
+            écritConsole('— « ' + professeur + ' » est déconnecté(e) du mode administrateur.', 'info');
+            gardeJeton(null);
+            professeur = null;
+            afficheAdmin();
+            return;
+        }
+        // le formulaire : identifiant et mot de passe
+        const formulaire = document.createElement('div');
+        formulaire.className = 'formulaire-admin';
+        const champ = (libellé, type) => {
+            const l = document.createElement('label');
+            l.textContent = libellé;
+            const i = document.createElement('input');
+            i.type = type;
+            i.autocomplete = type === 'password' ? 'current-password' : 'username';
+            i.spellcheck = false;
+            l.appendChild(i);
+            formulaire.appendChild(l);
+            return i;
+        };
+        const identifiant = champ('Identifiant', 'text');
+        const motDePasse = champ('Mot de passe', 'password');
+        identifiant.value = ouvreAdmin.dernier || '';
+        // Entrée, dans un champ : se connecter
+        formulaire.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); $('dialogueBoutons').querySelector('button').click(); }
+        });
+        setTimeout(() => (identifiant.value ? motDePasse : identifiant).focus(), 0);
+        const choix = await dialogue('Mode administrateur',
+            (message ? message + '\n\n' : '') + 'Connecte-toi avec ton compte de professeur, ou crée-le (la première fois). '
+            + 'Le mot de passe n\'est jamais gardé sur le serveur : seulement son empreinte.',
+            [{ texte: 'Se connecter', valeur: 'connexion', genre: 'principal' },
+             { texte: 'Créer le compte', valeur: 'compte' },
+             { texte: 'Annuler', valeur: null }], formulaire);
+        if (!choix) return;
+        ouvreAdmin.dernier = nfc(identifiant.value).trim();
+        let réponse = null;
+        try {
+            const r = await fetch('api/admin/' + choix, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiant: ouvreAdmin.dernier, mot_de_passe: motDePasse.value }) });
+            réponse = await r.json();
+        } catch (e) { réponse = { erreur: 'le serveur ne répond pas' }; }
+        if (!réponse || réponse.erreur) return ouvreAdmin('⚠️ ' + ((réponse && réponse.erreur) || 'erreur'));
+        gardeJeton(réponse.jeton);
+        professeur = réponse.identifiant;
+        afficheAdmin();
+        écritConsole('— Mode administrateur : ' + (choix === 'compte' ? 'compte « ' + professeur + ' » créé, et ' : '')
+            + 'connecté(e) en tant que « ' + professeur + ' ». Les élèves t\'envoient des données avec sauve_dans_serveur("'
+            + professeur + '", chemin, valeur) ; tes programmes les lisent avec liste_dans_serveur et lit_dans_serveur.', 'info');
     }
 
     // Envoie la copie du projet au serveur ; il ne remplace jamais un projet existant
@@ -3700,11 +4030,14 @@ const Pythonerie = (function () {
             if (fichiers.length && répertoireÀRemplir) importe(fichiers, '', répertoireÀRemplir);
         });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
+        $('btnCopieConsole').addEventListener('click', (ev) => copieTexte(texteDeLaConsole(), ev.currentTarget));
+        $('btnCopieCode').addEventListener('click', (ev) => copieTexte(modeDonnées ? (onglets[ongletActif] || '') : éditeur.getValue(), ev.currentTarget));
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', téléchargeImage);
         installePleinÉcran();
         installeZonesPleines();
         $('btnThème').addEventListener('click', basculeThème);
+        $('btnAdmin').addEventListener('click', () => ouvreAdmin());
         $('btnAide').addEventListener('click', () => $('aide').classList.add('visible'));
         $('fermeAide').addEventListener('click', () => $('aide').classList.remove('visible'));
         $('aide').addEventListener('click', (ev) => { if (ev.target.id === 'aide') $('aide').classList.remove('visible'); });
@@ -3741,8 +4074,19 @@ const Pythonerie = (function () {
         stockage = StockageNavigateur;
         // les fichiers du projet (images, sons, données), rangés dans IndexedDB
         try { await FichiersProjet.charge(); } catch (e) { écritConsole('Les fichiers du projet ne sont pas disponibles : ' + e.message, 'erreur'); }
-        serveurProjets = await détecteServeurProjets();
+        const serveur = await détecteServeur();
+        serveurProjets = serveur.serveur;
+        modeAdmin = serveur.admin;
+        classe = !modeAdmin && serveur.classe ? serveur.classe : null;
+        if (modeAdmin) await vérifieSessionAdmin();
+        afficheAdmin();
         await chargeConfig();
+        // en mode classe, chaque élève se connecte avec son identifiant, vérifié par le serveur
+        if (classe) {
+            multiImposé = true;
+            utilisateurUnique = false;
+            await vérifieÉlèveClasse();
+        }
         // Mode plusieurs élèves imposé par config.json : chaque nouvelle session (nouvel
         // onglet, navigateur relancé) commence avec un espace vide, même si l'élève
         // précédent est parti sans se déconnecter. Un simple rechargement de la page
@@ -3824,6 +4168,10 @@ const Pythonerie = (function () {
         info: (texte) => écritConsole(texte, 'info'),
         signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
         afficheConsole, cacheConsole, poseQuestionConsole, fermeQuestionConsole,
+        // pour sauve_dans_serveur (le nom de l'élève) et les lectures du mode administrateur
+        élève: () => nomCourant() || '',
+        jetonAdmin: () => jetonAdmin,
+        jetonÉlève: () => jetonÉlève,
         médias: () => médiasSite,
         compile // utile pour les tests depuis la console du navigateur
     };

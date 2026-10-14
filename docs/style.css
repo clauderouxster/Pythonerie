@@ -330,6 +330,12 @@ a.btn { text-decoration: none; display: inline-block; }
 .btn.élève.inconnu #nomÉlève { font-style: italic; color: var(--text-muted); }
 /* Mode utilisateur unique : le nom reste lisible, mais le bouton ne réagit pas */
 .btn.élève:disabled { opacity: 0.7; }
+/* Le mode administrateur (port administrateur de serveur.py) : un bouton bien visible, et son formulaire */
+.btn.admin { border-color: var(--accent); color: var(--accent); font-weight: 600; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.btn.admin[hidden] { display: none; }
+.formulaire-admin { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; white-space: normal; }
+.formulaire-admin label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+.formulaire-admin input { font: inherit; padding: 7px 9px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-primary); }
 .menu-séparateur { height: 1px; margin: 6px 10px; background: var(--border-color); }
 /* Listes déroulantes : Mes projets, Matériels, Exemples */
 .menu.déroulante { max-width: min(380px, calc(100vw - 16px)); overflow-y: auto; }
@@ -809,3 +815,7 @@ pre.exemple {
 
 /* Créer une application Web : le choix du programme principal, dans le dialogue */
 .choix-programme { width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-primary); font: inherit; }
+
+/* Une erreur dont on sait dans quelle fonction elle s'est produite : un clic y mène */
+.console-ligne.erreur-cliquable { cursor: pointer; }
+.console-ligne.erreur-cliquable:hover { text-decoration: underline dotted; }

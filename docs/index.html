@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.13.08.54">
-    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.13.08.54">
+    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.14.08.59">
+    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.14.08.59">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -25,20 +25,21 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.13.08.54">
+    <link rel="stylesheet" href="style.css?v=2026.10.14.08.59">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <img class="logo" src="images/logo-96.png?v=2026.10.13.08.54" alt="" width="36" height="36">
+            <img class="logo" src="images/logo-96.png?v=2026.10.14.08.59" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.13.08.54</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.14.08.59</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
+            <button id="btnAdmin" class="btn btn-secondaire admin" hidden>🔑 <span id="nomAdmin" class="libellé">Mode administrateur</span></button>
             <button id="btnÉlève" class="btn btn-secondaire élève" disabled>👤 <span id="nomÉlève">Unique</span></button>
             <a id="lienGuide" class="btn btn-secondaire" href="guide.html" target="_blank" rel="noopener" title="Le mode d'emploi, pour apprendre pas à pas">📖 <span class="libellé">Mode d'emploi</span></a>
             <button id="btnAide" class="btn btn-secondaire" title="Aide">❓ <span class="libellé">Aide</span></button>
@@ -120,6 +121,7 @@
                 </div>
                 <div class="barre-droite">
                     <button id="btnRetourDéfinition" class="btn btn-secondaire btn-petit" title="Revenir là où tu étais avant d'aller à une définition (clic droit sur une fonction)" hidden>↩ Retour</button>
+                    <button id="btnCopieCode" class="btn btn-secondaire btn-petit" title="Copier le programme (ou l'onglet de données affiché) dans le presse-papiers">⧉ Copier</button>
                     <button id="btnPleinCode" class="btn btn-secondaire btn-petit btn-icône" title="Le code en plein écran" aria-label="Le code en plein écran">⛶</button>
                     <button id="btnDonnées" class="btn btn-secondaire btn-petit" title="Les données du projet : don0, don1...">▦ Données</button>
                     <button id="btnLispE" class="btn btn-secondaire btn-petit" title="Voir le code LispE produit">λ LispE</button>
@@ -133,7 +135,7 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
-                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.13.08.54" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
+                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.14.08.59" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
                     <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
@@ -191,6 +193,7 @@
                     <span class="étiquette">Console</span>
                     <span class="espace-barre"></span>
                     <button id="btnPleinConsole" class="btn btn-secondaire btn-petit btn-icône" title="La console en plein écran" aria-label="La console en plein écran">⛶</button>
+                    <button id="btnCopieConsole" class="btn btn-secondaire btn-petit" title="Copier tout le texte de la console dans le presse-papiers">⧉ Copier</button>
                     <button id="btnEffaceConsole" class="btn btn-secondaire btn-petit">Effacer</button>
                 </div>
                 <div id="console" class="console"></div>
@@ -221,7 +224,7 @@
         <div class="modal">
             <div class="modal-tête">
                 <div class="aide-marque">
-                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.13.08.54" alt="" width="44" height="44">
+                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.14.08.59" alt="" width="44" height="44">
                     <div>
                         <h2>Aide de la Pythonerie</h2>
                         <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
@@ -458,6 +461,10 @@ quand_clic(clic)</pre>
                         <td><code>range_données("don1", v)</code> · <code>prend_données("don1")</code></td><td>écrit dans un onglet · le relit</td></tr>
                     <tr><td><code>lit_fichier(f)</code></td><td>un fichier de l'ordinateur, choisi dans une fenêtre ; f(texte) le reçoit</td>
                         <td><code>écrit_fichier("scores", t)</code></td><td>enregistre le texte dans Téléchargements</td></tr>
+                    <tr><td><code>sauve_dans_serveur(prof, chemin, v)</code></td><td>envoie v au professeur, sur serveur.py (sans pouvoir la relire)</td>
+                        <td><code>liste_dans_serveur</code> · <code>lit_dans_serveur</code></td><td>mode administrateur : ce que les élèves ont envoyé</td></tr>
+                    <tr><td><code>login()</code></td><td>le nom de l'élève (« Unique » en mode utilisateur unique)</td>
+                        <td><code>sauve_élèves(liste, f)</code></td><td>mode administrateur : la liste des élèves de la classe</td></tr>
                     <tr><td><code>importe "outils"</code></td><td>ajoute le code du programme « outils » du projet</td>
                         <td><code>charge_programme</code> · <code>sauve_programme</code></td><td>lit ou écrit un programme du projet</td></tr>
                 </table>
@@ -519,7 +526,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.13.08.54';
+                return répertoire + fichier + '?v=2026.10.14.08.59';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -527,15 +534,15 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.13.08.54"></script>
-    <script src="js/zip.js?v=2026.10.13.08.54"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.13.08.54"></script>
-    <script src="js/erreurs.js?v=2026.10.13.08.54"></script>
-    <script src="js/canevas.js?v=2026.10.13.08.54"></script>
-    <script src="js/pythonerie.js?v=2026.10.13.08.54"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.14.08.59"></script>
+    <script src="js/zip.js?v=2026.10.14.08.59"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.14.08.59"></script>
+    <script src="js/erreurs.js?v=2026.10.14.08.59"></script>
+    <script src="js/canevas.js?v=2026.10.14.08.59"></script>
+    <script src="js/pythonerie.js?v=2026.10.14.08.59"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.13.08.54"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.13.08.54"></script>
+    <script src="lispe/lispe.js?v=2026.10.14.08.59"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.14.08.59"></script>
 </body>
 
 </html>

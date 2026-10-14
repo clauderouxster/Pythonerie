@@ -203,6 +203,67 @@ const Pyt = (function () {
         else poseQuestionSurCanevas(l.question, répond, abandonne);
     }
 
+    // ---------- Les échanges avec serveur.py (sauve_dans_serveur, liste_dans_serveur, lit_dans_serveur) ----------
+    // fetch, sans bloquer la page ; le résultat revient comme une réponse (voir prochaineAttente),
+    // mais sans attendre son tour : une sauvegarde ne doit pas attendre la fin d'une question.
+    let échangesEnCours = 0;
+    // les écritures partent l'une après l'autre, dans l'ordre du programme : sinon, deux
+    // sauve_dans_serveur du même fichier pourraient arriver dans l'autre ordre
+    let fileDesSauvegardes = Promise.resolve();
+    const NOMS_ÉCHANGES = { sauve: 'sauve_dans_serveur', liste: 'liste_dans_serveur', lit: 'lit_dans_serveur', élèves: 'sauve_élèves' };
+
+    // sauve_élèves : une liste de dictionnaires {"identifiant", "nom"}, ou de paires [identifiant, nom]
+    function listeDesÉlèves(texteJSON) {
+        let liste = [];
+        try { liste = JSON.parse(texteJSON); } catch (e) { liste = null; }
+        if (!Array.isArray(liste)) return null;
+        return liste.map(e => Array.isArray(e) ? { identifiant: String(e[0] ?? ''), nom: String(e[1] ?? '') }
+            : (e && typeof e === 'object') ? { identifiant: String(e.identifiant ?? ''), nom: String(e.nom ?? '') } : { identifiant: String(e), nom: '' });
+    }
+
+    async function échange(genre, p1, p2, p3, id) {
+        const génération = générationAttentes;
+        const nom = NOMS_ÉCHANGES[genre] || genre;
+        const P = window.Pythonerie || {};
+        const jeton = P.jetonAdmin ? P.jetonAdmin() : '';
+        // en mode classe, l'élève vérifié (un nom d'en-tête n'accepte que l'ASCII : Eleve)
+        const entêtes = { 'Content-Type': 'application/json', 'X-Pythonerie-Jeton': jeton || '',
+            'X-Pythonerie-Eleve': (P.jetonÉlève ? P.jetonÉlève() : '') || '' };
+        let requête;
+        if (genre === 'sauve') {
+            const corps = JSON.stringify({ professeur: p1, chemin: p2, élève: P.élève ? P.élève() : '', contenu: p3 });
+            requête = fileDesSauvegardes.then(() => fetch('api/serveur/sauve', { method: 'POST', headers: entêtes, body: corps }));
+            fileDesSauvegardes = requête.catch(() => null);
+        } else if (genre === 'élèves') {
+            const liste = listeDesÉlèves(p1);
+            if (!liste) { if (P.erreur) P.erreur('sauve_élèves : il faut une liste d\'élèves'); return; }
+            requête = fetch('api/admin/élèves', { method: 'POST', headers: entêtes, body: JSON.stringify({ élèves: liste }) });
+        } else {
+            requête = fetch('api/admin/' + genre + '?chemin=' + encodeURIComponent(p1), { headers: { 'X-Pythonerie-Jeton': jeton || '' } });
+        }
+        échangesEnCours++;
+        let valeur = null, erreur = '';
+        try {
+            const r = await requête;
+            let corps = null;
+            try { corps = await r.json(); } catch (e) { corps = null; }
+            if (!corps) erreur = 'pas de serveur de la Pythonerie ici (il faut la lancer avec python3 serveur.py)';
+            else if (!r.ok || corps.erreur) erreur = corps.erreur || ('erreur ' + r.status);
+            else valeur = genre === 'sauve' ? 'vrai' : genre === 'élèves' ? String(corps.nombre)
+                : genre === 'liste' ? JSON.stringify(corps.entrées || []) : String(corps.contenu);
+        } catch (e) {
+            erreur = 'le serveur ne répond pas';
+        }
+        échangesEnCours--;
+        if (P.signaleAnimation) P.signaleAnimation();
+        if (génération !== générationAttentes) return;
+        if (erreur) { if (P.erreur) P.erreur(nom + ' : ' + erreur); return; }
+        if (!id) return;
+        valeurReçue = valeur.normalize('NFC');
+        if (rappel) rappel('(_réponse_lue ' + id + ')');
+        valeurReçue = '';
+    }
+
     function oublieAttentes() {
         générationAttentes++;
         attentes = [];
@@ -592,6 +653,14 @@ const Pyt = (function () {
             if (!attenteEnCours) prochaineAttente();
             return true;
         },
+        // login() : le nom sous lequel l'élève travaille (« Unique » en mode utilisateur unique ;
+        // "" s'il n'a pas encore dit qui il est, ou dans une application Web)
+        login() { const P = window.Pythonerie; return (P && P.élève ? P.élève() : '') || ''; },
+        // sauve_dans_serveur, liste_dans_serveur, lit_dans_serveur (voir échange)
+        réseau(genre, p1, p2, p3, id) {
+            échange(String(genre), String(p1), String(p2), String(p3), Math.trunc(nombre(id)));
+            return true;
+        },
         // la réponse (ou le contenu du fichier) que (_réponse_lue numéro) vient chercher
         valeurReçue() { return valeurReçue; },
         aléatoire(a, b) {
@@ -788,7 +857,7 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
         },
         enCours() {
-            return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0
+            return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0 || échangesEnCours > 0
                 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche);
         },
         stoppeTout(gardeSons) {

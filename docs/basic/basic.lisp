@@ -34,9 +34,6 @@
 (link "Vrai" true)
 (link "Faux" false)
 (link "Rien" nil)
-(link "vrai" true)
-(link "faux" false)
-(link "rien" nil)
 
 (defun C_Pythonjoin (tokens i v)
    (check (< (car i) (size tokens))

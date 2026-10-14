@@ -25,7 +25,25 @@ const ErreursLispE = (function () {
     // Une ligne de la pile d'appels de LispE : "[12] (expression...)" ou "[-] (...)"
     const LIGNE_PILE = /^\[(\d+|-)\] \(/;
 
-    function nettoieErreur(message) {
+    // La pile d'appels d'une erreur, de l'endroit de l'erreur jusqu'au premier appel :
+    // [{ ligne, expression }], ligne étant la ligne du code LispE (null si LispE ne la donne pas).
+    // Sans l'entrée __root__, et sans le throw d'une erreur levée exprès (voir nettoieErreur).
+    function pileDe(message) {
+        const m = String(message && message.message ? message.message : message);
+        const avant = LIGNE_PILE.test(m.trim()) && m.includes('\n\n') ? m.slice(0, m.lastIndexOf('\n\n')) : m;
+        const pile = avant.split('\n').filter(l => LIGNE_PILE.test(l) && !/^\[(\d+|-)\] \(__root__\b/.test(l));
+        if (pile.length && /^\[(\d+|-)\] \(throw\b/.test(pile[0])) {
+            while (pile.length && /^\[(\d+|-)\] \((throw\b|if\b|_)/.test(pile[0])) pile.shift();
+        }
+        return pile.map(l => {
+            const n = l.match(/^\[(\d+|-)\] /);
+            return { ligne: n[1] === '-' ? null : Number(n[1]), expression: l.slice(n[0].length) };
+        });
+    }
+
+    // lieu (facultatif) : quelques lignes qui disent où l'erreur s'est produite dans le programme
+    // de l'élève (voir localiseErreur, dans pythonerie.js) ; elles suivent l'expression LispE
+    function nettoieErreur(message, lieu) {
         let m = String(message && message.message ? message.message : message);
         // Dans le WebAssembly, le message est précédé de la pile d'appels : "[12] (expression...)"
         // Pour une erreur levée exprès (lever, ou lit_fichier...), le haut de la pile est
@@ -58,10 +76,11 @@ const ErreursLispE = (function () {
             if (motif.test(m)) { m = m.replace(motif, français); break; }
         }
         let texte = /^Erreur/.test(m.trim()) ? m.trim() : 'Erreur : ' + m.trim();
-        if (pile.length) texte += '\n   dans le code LispE : ' + pile[0].replace(LIGNE_PILE, '');
+        if (pile.length) texte += '\n   dans le code LispE : ' + pile[0].replace(/^\[(\d+|-)\] /, '');
         else if (ligne && !levée && !/ligne \d/.test(m)) texte += '\n   (ligne ' + ligne + ' du code LispE)';
+        if (lieu) texte += '\n' + lieu;
         return texte;
     }
 
-    return { nettoieErreur, LIGNE_PILE };
+    return { nettoieErreur, pileDe, LIGNE_PILE };
 })();

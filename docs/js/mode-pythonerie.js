@@ -151,6 +151,7 @@ const PYTHONERIE_FONCTIONS = {
     'prend_données': 'prend_données("don0") — le texte actuel de l\'onglet de données don0',
     'lit_fichier': 'lit_fichier(f, a) — l\'élève choisit un fichier de son ordinateur ; f(texte), ou f(texte, a), le reçoit',
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements',
+    'largeur_texte': 'largeur_texte(message) — la largeur du texte en points, avec la police et la taille du moment (pour centrer : 400 - largeur_texte(t) / 2)',
     'login': 'login() — le nom de l\'élève (« Unique » en mode utilisateur unique ; son identifiant en mode classe)',
     'sauve_élèves': 'sauve_élèves(liste, f, a) — mode administrateur : la liste des élèves de la classe ([{"identifiant", "nom"}] ou [[identifiant, nom]]) ; f(nombre)',
     'sauve_dans_serveur': 'sauve_dans_serveur(professeur, chemin, valeur, f, a) — envoie la valeur au professeur, sur serveur.py ; f(Vrai) quand c\'est enregistré',

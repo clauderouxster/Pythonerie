@@ -297,6 +297,9 @@
 ; Texte
 (defun texte (x y message) (evaljs (list "Pyt.texte" x y (string message))) nil)
 (defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) nil)
+; largeur_texte(message) : la largeur (en points du canevas) qu'aurait message écrit par texte(),
+; avec la police et la taille du moment ; la plus longue ligne pour un texte sur plusieurs lignes
+(defun largeur_texte (message) (evaljs_d (list "Pyt.largeurTexte" (string message))))
 (defun police (nom) (evaljs (list "Pyt.police" nom)) nil)
 
 ; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)

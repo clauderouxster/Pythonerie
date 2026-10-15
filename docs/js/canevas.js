@@ -771,6 +771,12 @@ const Pyt = (function () {
                 ctx.fillText(l, nombre(x), nombre(y) + i * état.taille * 1.2);
             });
         },
+        // largeur_texte(message) : la largeur, en points du canevas, qu'aurait message écrit par
+        // texte() avec la police et la taille du moment (la plus longue ligne, s'il y en a plusieurs)
+        largeurTexte(message) {
+            appliqueStyle();
+            return Math.max(...String(message).split('\n').map(l => ctx.measureText(l).width));
+        },
         tailleTexte(n) { état.taille = Math.max(4, nombre(n, 20)); },
         police(nom) { état.police = String(nom || 'Inter, sans-serif'); },
 

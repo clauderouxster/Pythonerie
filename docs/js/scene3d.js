@@ -289,5 +289,7 @@ const Scène3D = (function () {
         textures = new Map();
     }
 
-    return { installe, montre, ajoute, change, fond, caméraLibre, objetSous, dimensionne, réinitialise, actif: () => actif };
+    // le canevas de la couche 3D (null s'il n'y en a pas) : preserveDrawingBuffer garde sa dernière image lisible
+    return { installe, montre, ajoute, change, fond, caméraLibre, objetSous, dimensionne, réinitialise,
+             actif: () => actif, canevas: () => couche };
 })();

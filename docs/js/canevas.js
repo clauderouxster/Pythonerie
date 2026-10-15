@@ -481,6 +481,20 @@ const Pyt = (function () {
     // Une zone qui déborde du canevas y lit des points transparents (0, 0, 0, 0).
     // Une image venue d'un autre site interdit au navigateur de lire le dessin : l'erreur est
     // signalée au programme (voir _erreur_navigateur dans bibliothèque.lisp).
+    // Le dessin tel qu'on le voit : en 3D, la couche 3D, puis le canevas 2D (transparent) par-dessus ;
+    // sinon, le canevas 2D lui-même. Pour le bouton Image, capture_image, couleur_pixel et pixels.
+    function dessinComplet() {
+        const couche3D = mode3D && scène3D() ? scène3D().canevas() : null;
+        if (!couche3D) return canevas;
+        const c = document.createElement('canvas');
+        c.width = LARGEUR;
+        c.height = HAUTEUR;
+        const cc = c.getContext('2d');
+        cc.drawImage(couche3D, 0, 0, LARGEUR, HAUTEUR);   // la couche 3D peut être plus fine (écran haute densité)
+        cc.drawImage(canevas, 0, 0);
+        return c;
+    }
+
     function lisPixels(fonction, x, y, l, h) {
         dernièreErreur = '';
         l = Math.round(l); h = Math.round(h);
@@ -489,7 +503,7 @@ const Pyt = (function () {
             return new Uint8ClampedArray(0);
         }
         try {
-            return ctx.getImageData(Math.round(x), Math.round(y), l, h).data;
+            return dessinComplet().getContext('2d').getImageData(Math.round(x), Math.round(y), l, h).data;
         } catch (e) {
             dernièreErreur = fonction + ' : le dessin contient une image venue d\'un autre site, le navigateur interdit d\'en lire les pixels';
             return new Uint8ClampedArray(0);
@@ -1319,7 +1333,7 @@ const Pyt = (function () {
             copie.height = h;
             let source;
             try {
-                copie.getContext('2d').putImageData(ctx.getImageData(x, y, l, h), 0, 0);
+                copie.getContext('2d').putImageData(dessinComplet().getContext('2d').getImageData(x, y, l, h), 0, 0);
                 source = copie.toDataURL('image/png');
             } catch (e) {
                 dernièreErreur = 'capture_image : le dessin contient une image venue d\'un autre site, le navigateur interdit de le copier';
@@ -1464,7 +1478,7 @@ const Pyt = (function () {
         },
 
         // Image PNG du dessin (impossible si une image vient d'un autre site sans autorisation)
-        image() { return canevas.toDataURL('image/png'); }
+        image() { return dessinComplet().toDataURL('image/png'); }
     };
 })();
 

@@ -49,7 +49,8 @@
 (link "insère" 'insert)                  ; insère(l, x, i) : insère x à la position i
 (link "ajoute_début" 'pushfirst)         ; ajoute_début(l, x) : ajoute x au début de la liste
 (link "ajoute_fin" 'pushlast)            ; ajoute_fin(l, x) : ajoute x à la fin de la liste
-(link "retire_élément" 'pop)                     ; retire(l, i) : retire l'élément à la position i (le dernier sans i)
+(link "retire_élément" 'pop)             ; retire_élément(l, i) : retire l'élément à la position i (le dernier sans i)
+(link "ramène_élément" 'popvalue)        ; ramène_élément(l, i) : retire l'élément et le renvoie
 (link "retire_premier" 'popfirst)        ; retire_premier(l) : retire le premier élément
 (link "retire_dernier" 'poplast)         ; retire_dernier(l) : retire le dernier élément
 (link "colle_listes" 'nconc)             ; colle(l1, l2) : ajoute les éléments de l2 à la fin de l1

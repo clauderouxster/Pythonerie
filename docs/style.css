@@ -819,3 +819,6 @@ pre.exemple {
 /* Une erreur dont on sait dans quelle fonction elle s'est produite : un clic y mène */
 .console-ligne.erreur-cliquable { cursor: pointer; }
 .console-ligne.erreur-cliquable:hover { text-decoration: underline dotted; }
+
+/* La couche 3D (voir js/scene3d.js) : sous le canevas 2D, qui devient transparent */
+.cadre-canevas canvas.couche-3d { pointer-events: none; }

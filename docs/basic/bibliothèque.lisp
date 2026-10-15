@@ -416,6 +416,92 @@
 (defun liste_données () (evaljs_j "Pyt.listeFichiers('données', false)"))
 
 ;------------------------------------------------------------------
+; La 3D (voir js/scene3d.js, avec three.js)
+; scène = nouvelle_scène() rend une scène vide : un dictionnaire caché, avec sa liste d'objets.
+; Chaque primitive y ajoute un dictionnaire et rend le numéro de l'objet :
+;   cube(scène, x, y, z, côté, couleur)          boîte(scène, x, y, z, largeur, hauteur, profondeur, couleur)
+;   sphère(scène, x, y, z, rayon, couleur)       cylindre(scène, x, y, z, rayon, hauteur, couleur)
+;   cône(scène, x, y, z, rayon, hauteur, couleur)
+;   anneau(scène, x, y, z, rayon_intérieur, rayon_extérieur, couleur)   (couché à plat)
+;   lumière(scène, x, y, z) ou lumière(scène, x, y, z, intensité)
+;   caméra(scène, x, y, z, vx, vy, vz) : où est la caméra, et le point qu'elle regarde
+;   groupe(scène, x, y, z) rend un groupe : une scène dans la scène, qui se déplace et tourne
+;     avec tous ses objets (la Lune dans le groupe de la Terre)
+; montre_3d(scène) l'envoie d'un coup (en JSON, que l'élève ne voit jamais) : la couche 3D
+; apparaît sous le canevas 2D, devenu transparent. Ensuite, sur un numéro d'objet (ou un groupe) :
+;   déplace(o, x, y, z)   tourne(o, ax, ay, az) (des degrés de plus)   oriente_3d(o, ax, ay, az)
+;   colore(o, couleur)    texture(o, image) (le numéro rendu par charge_image)   lumineux(o)
+;   cache_objet(o)        montre_objet(o)
+;   regarde(x, y, z) : la caméra vise ce point ; caméra_libre() : la souris la fait tourner
+;   quand_clic_objet(f) : f(numéro) reçoit l'objet cliqué
+; Une primitive appelée après montre_3d ajoute aussitôt son objet à la scène montrée.
+;------------------------------------------------------------------
+(setq _numéro_3d 0)
+(setq _3d_montrée false)
+; la scène (ou le groupe) donnée à une primitive ; une autre valeur est une erreur claire
+(defun _scène_3d (_s _nom)
+   (if (in (string (type _s)) "dictionary")
+      (if (in_it _s "objets") _s (throw (+ _nom " : le premier argument doit être une scène (nouvelle_scène()) ou un groupe")))
+      (throw (+ _nom " : le premier argument doit être une scène (nouvelle_scène()) ou un groupe"))))
+; le numéro d'un objet 3D : un nombre (rendu par une primitive), ou un groupe
+(defun _numéro_objet_3d (_o _nom)
+   (cond
+      ((numberp _o) _o)
+      ((in (string (type _o)) "dictionary") (@ _o "numéro"))
+      (true (throw (+ _nom " : il faut le numéro d'un objet 3D (rendu par cube, sphère...) ou un groupe")))))
+(defun _nouveau_3d (_s _nom _entrée)
+   (setq _parent (_scène_3d _s _nom))
+   (+= _numéro_3d 1)
+   (set@ _entrée "numéro" _numéro_3d)
+   (push (@ _parent "objets") _entrée)
+   (if _3d_montrée (evaljs (list "Pyt.ajoute3D" (@ _parent "numéro") (json _entrée))))
+   _numéro_3d)
+(defun nouvelle_scène ()
+   (+= _numéro_3d 1)
+   (dictionary "genre" "groupe" "numéro" _numéro_3d "x" 0 "y" 0 "z" 0 "objets" (list)))
+(defun cube (s x y z côté (c "blanc"))
+   (_nouveau_3d s "cube" (dictionary "genre" "cube" "x" x "y" y "z" z "côté" côté "couleur" c)))
+(defun boîte (s x y z l h p (c "blanc"))
+   (_nouveau_3d s "boîte" (dictionary "genre" "boîte" "x" x "y" y "z" z "largeur" l "hauteur" h "profondeur" p "couleur" c)))
+(defun sphère (s x y z r (c "blanc"))
+   (_nouveau_3d s "sphère" (dictionary "genre" "sphère" "x" x "y" y "z" z "rayon" r "couleur" c)))
+(defun cylindre (s x y z r h (c "blanc"))
+   (_nouveau_3d s "cylindre" (dictionary "genre" "cylindre" "x" x "y" y "z" z "rayon" r "hauteur" h "couleur" c)))
+(defun cône (s x y z r h (c "blanc"))
+   (_nouveau_3d s "cône" (dictionary "genre" "cône" "x" x "y" y "z" z "rayon" r "hauteur" h "couleur" c)))
+(defun anneau (s x y z intérieur extérieur (c "blanc"))
+   (_nouveau_3d s "anneau" (dictionary "genre" "anneau" "x" x "y" y "z" z "intérieur" intérieur "extérieur" extérieur "couleur" c)))
+(defun lumière (s x y z (intensité 2.5) (c "blanc"))
+   (_nouveau_3d s "lumière" (dictionary "genre" "lumière" "x" x "y" y "z" z "intensité" intensité "couleur" c)))
+(defun caméra (s x y z (vx 0) (vy 0) (vz 0))
+   (_nouveau_3d s "caméra" (dictionary "genre" "caméra" "x" x "y" y "z" z "vx" vx "vy" vy "vz" vz)))
+; un groupe est rendu tel quel : il sert de scène à ses objets, et d'objet à déplace ou tourne
+(defun groupe (s (x 0) (y 0) (z 0))
+   (setq _g (dictionary "genre" "groupe" "x" x "y" y "z" z "objets" (list)))
+   (_nouveau_3d s "groupe" _g)
+   _g)
+(defun montre_3d (s)
+   (setq _racine (_scène_3d s "montre_3d"))
+   (evaljs (list "Pyt.montre3D" (json _racine)))
+   (_erreur_navigateur)
+   (setq _3d_montrée true)
+   nil)
+(defun _change_3d (_genre _o _nom (_a 0) (_b 0) (_c 0))
+   (evaljs (list "Pyt.change3D" _genre (_numéro_objet_3d _o _nom) _a _b _c))
+   nil)
+(defun déplace (o x y z) (_change_3d "déplace" o "déplace" x y z))
+(defun tourne (o ax ay az) (_change_3d "tourne" o "tourne" ax ay az))
+(defun oriente_3d (o ax ay az) (_change_3d "oriente" o "oriente_3d" ax ay az))
+(defun colore (o c) (_change_3d "colore" o "colore" (string c)))
+(defun texture (o image) (_change_3d "texture" o "texture" image))
+(defun lumineux (o) (_change_3d "lumineux" o "lumineux"))
+(defun cache_objet (o) (_change_3d "cache" o "cache_objet"))
+(defun montre_objet (o) (_change_3d "montre" o "montre_objet"))
+(defun regarde (x y z) (evaljs (list "Pyt.change3D" "regarde" 0 x y z)) nil)
+(defun caméra_libre () (evaljs "Pyt.caméraLibre()") nil)
+(defmacro quand_clic_objet (fonction) (block (evaljs (list "Pyt.quandClicObjet" (string (quote fonction)))) nil))
+
+;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
 ; lit_fichier(f) : voir les attentes, plus haut (avec demande et lire).
 ; écrit_fichier(nom, texte) : le fichier est téléchargé (dossier Téléchargements).

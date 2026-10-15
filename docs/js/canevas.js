@@ -50,7 +50,7 @@ const Pyt = (function () {
     let canevas = null, ctx = null, couche = null, ctxTortue = null;
     let état = null, tortue = null;
     let minuteries = [];
-    let gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
+    let gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null, clicObjet: null };
     // Images et sons chargés par le programme : charge_image et charge_son renvoient leur numéro
     let images = [];
     let sons = [];
@@ -68,6 +68,10 @@ const Pyt = (function () {
     // Augmente à chaque efface() ou fond() : une image qui finit de se charger après
     // un effacement n'est plus dessinée
     let génération = 0;
+    // une scène 3D est montrée (montre_3d) : le canevas 2D devient une vitre transparente, posée
+    // sur la couche 3D (voir scene3d.js) ; efface() et fond() en tiennent compte
+    let mode3D = false;
+    const scène3D = () => (typeof Scène3D !== 'undefined' ? Scène3D : null);
     // Fonction fournie par l'application pour exécuter du LispE : rappel(code)
     let rappel = null;
     let dessinTortuePrévu = false;
@@ -514,6 +518,7 @@ const Pyt = (function () {
         if (canevas.height !== ht) canevas.height = couche.height = ht;
         canevas.parentElement.style.aspectRatio = lg + ' / ' + ht;
         canevas.parentElement.style.setProperty('--ratio', String(lg / ht));
+        if (scène3D()) scène3D().dimensionne(lg, ht);
         const étiquette = document.getElementById('tailleCanevas');
         if (étiquette) étiquette.textContent = lg + ' × ' + ht;
         champs.forEach(placeChamp);
@@ -541,8 +546,13 @@ const Pyt = (function () {
         couche.addEventListener('pointerdown', (ev) => {
             // on garde le pointeur même s'il sort du canevas pendant un glissé
             if (couche.setPointerCapture) couche.setPointerCapture(ev.pointerId);
-            if (!gestionnaires.clic) return;
             const p = positionSouris(ev);
+            // quand_clic_objet(f) : f(numéro) reçoit l'objet 3D sous la souris
+            if (gestionnaires.clicObjet && mode3D) {
+                const n = scène3D().objetSous(p.x, p.y);
+                if (n >= 0) appelle(gestionnaires.clicObjet, [n]);
+            }
+            if (!gestionnaires.clic) return;
             appelle(gestionnaires.clic, [p.x, p.y]);
         });
         couche.addEventListener('pointermove', (ev) => {
@@ -609,6 +619,12 @@ const Pyt = (function () {
             ctx = canevas.getContext('2d');
             ctxTortue = couche.getContext('2d');
             rappel = fonctionRappel;
+            if (scène3D()) scène3D().installe({
+                cadre: canevas.parentElement, élémentÉvénements: couche, couleurCSS,
+                image: (n) => (images[n] ? images[n].img : null),
+                largeur: () => LARGEUR, hauteur: () => HAUTEUR,
+                erreur: (m) => signaleErreur(m)
+            });
             installeÉvénements();
             // Le navigateur peut garder le son « suspendu » tant que la page n'a pas reçu de geste :
             // le premier clic ou la première touche, n'importe où, le réveille
@@ -626,7 +642,9 @@ const Pyt = (function () {
             dimensionne(LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT);
             this.arrête();
             this.arrêteSons();
-            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null, clicObjet: null };
+            if (scène3D()) scène3D().réinitialise();
+            mode3D = false;
             images = [];
             sons = [];
             état = étatInitial();
@@ -677,12 +695,24 @@ const Pyt = (function () {
             ctx.save();
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, LARGEUR, HAUTEUR);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, LARGEUR, HAUTEUR);
+            // en 3D, le canevas 2D reste transparent : on voit la scène au travers
+            if (!mode3D) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, LARGEUR, HAUTEUR);
+            }
             ctx.restore();
         },
         fond(c) {
             génération++;
+            // en 3D, fond() colore le fond de la scène, et la 2D redevient transparente
+            if (mode3D) {
+                scène3D().fond(c);
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, LARGEUR, HAUTEUR);
+                ctx.restore();
+                return;
+            }
             ctx.save();
             ctx.fillStyle = couleurCSS(c);
             ctx.fillRect(0, 0, LARGEUR, HAUTEUR);
@@ -844,6 +874,25 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
         },
         quandClic(nom) { gestionnaires.clic = nom; },
+        quandClicObjet(nom) { gestionnaires.clicObjet = nom; },
+
+        // ---------- La 3D (voir scene3d.js et les primitives de bibliothèque.lisp) ----------
+        // montre_3d(scène) : la scène, décrite en JSON par la bibliothèque, devient visible
+        montre3D(texteJSON) {
+            dernièreErreur = '';
+            if (!scène3D()) { dernièreErreur = 'la 3D n\'est pas disponible ici'; return; }
+            mode3D = true;
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, LARGEUR, HAUTEUR);
+            ctx.restore();
+            scène3D().montre(String(texteJSON));
+        },
+        // une primitive appelée après montre_3d : parent est le numéro de sa scène ou de son groupe
+        ajoute3D(parent, texteJSON) { if (scène3D()) scène3D().ajoute(Math.trunc(nombre(parent)), String(texteJSON)); },
+        // déplace, tourne, oriente, colore, texture, cache, montre, regarde
+        change3D(genre, numéro, a, b, c) { if (scène3D()) scène3D().change(String(genre), Math.trunc(nombre(numéro)), a, b, c); },
+        caméraLibre() { if (scène3D()) scène3D().caméraLibre(); },
         quandSouris(nom) { gestionnaires.souris = nom; },
         quandGlisse(nom) { gestionnaires.glisse = nom; },
         quandTouche(nom) { gestionnaires.touche = nom; },
@@ -864,7 +913,7 @@ const Pyt = (function () {
         },
         enCours() {
             return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0 || échangesEnCours > 0
-                || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche);
+                || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche || gestionnaires.clicObjet);
         },
         stoppeTout(gardeSons) {
             oublieAttentes();
@@ -872,7 +921,7 @@ const Pyt = (function () {
             relâcheTout(false);
             this.arrête();
             if (!gardeSons) this.arrêteSons();
-            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null };
+            gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null, clicObjet: null };
         },
 
         // retire_objet(clef) : enlève un objet du canevas (rien s'il n'existe pas) ;

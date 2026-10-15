@@ -76,7 +76,7 @@ Pour une suite de questions (un quiz), une fonction pose la question suivante, e
 `7 / 2` vaut `3.5`, `7 // 2` vaut `3`, `[1, 2] + [3]` vaut `[1, 2, 3]`.
 
 ### Listes et textes
-`liste.ajoute(x)` (ou `append`), `trie(l)`, `inverse(l)`, `contient(conteneur, x)`, `majuscules(t)`, `minuscules(t)`, `remplace(t, avant, après)`, `découpe(t, séparateur)` (aux espaces par défaut), `nettoie(t)` (ou `strip`), `"sép".joindre(l)`. Les fonctions de texte s'écrivent aussi comme des méthodes : `ligne.découpe(",")`, `texte.majuscules()`.
+`liste.ajoute(x)` (ou `append`), `ramène_élément(liste)` (retire le dernier élément et le rend ; `ramène_élément(liste, i)` : celui d'indice i ; `liste.pop()`, lui, rend la liste), `trie(l)`, `inverse(l)`, `contient(conteneur, x)`, `majuscules(t)`, `minuscules(t)`, `remplace(t, avant, après)`, `découpe(t, séparateur)` (aux espaces par défaut), `nettoie(t)` (ou `strip`), `"sép".joindre(l)`. Les fonctions de texte s'écrivent aussi comme des méthodes : `ligne.découpe(",")`, `texte.majuscules()`.
 
 ### Dessin (canevas de 800 × 600, origine en haut à gauche, y vers le bas)
 - `canevas(largeur, hauteur)` change la taille (à appeler au début ; le dessin est effacé) ; `largeur()`, `hauteur()` donnent la taille actuelle. Chaque exécution repart de 800 × 600.
@@ -108,6 +108,31 @@ Pour une suite de questions (un quiz), une fonction pose la question suivante, e
   - `valeur_objet(clef)` lit la valeur de n'importe quel objet (texte, nombre, Vrai/Faux, chemin) ; `change_objet(clef, valeur)` la change sans appeler `f` ; `retire_objet(clef)` enlève un objet, `retire_objets()` les enlève tous (pour changer d'écran). Les fonctions sont données par leur nom, sans parenthèses.
 - `arrête()` arrête les animations. L'élève a aussi un bouton « Arrêter » et un mode plein écran.
 - Le clavier ne marche qu'après un clic dans le canevas (ou en plein écran) : dis-le dans les commentaires.
+
+### La 3D (avec three.js)
+```python
+scène = nouvelle_scène()
+soleil = sphère(scène, 0, 0, 0, 3, "jaune")
+lumineux(soleil)                          # éclairé par lui-même
+orbite = groupe(scène)                    # un groupe : ses objets bougent avec lui
+terre = sphère(orbite, 10, 0, 0, 1, "bleu")
+lumière(scène, 0, 0, 0)                   # une lumière au centre du Soleil
+caméra(scène, 0, 15, 30, 0, 0, 0)         # où est la caméra, et ce qu'elle regarde
+montre_3d(scène)                          # la scène apparaît, sous le canevas 2D
+
+fonction image():
+    tourne(orbite, 0, 1, 0)               # un degré de plus autour de l'axe y
+    efface()                              # la 2D (transparente en 3D) : un texte par-dessus
+    texte(10, 10, "Le système solaire")
+
+caméra_libre()
+animer(image, 16)
+```
+- Les primitives prennent la scène (ou un groupe) en premier, puis la position `x, y, z`, et rendent le **numéro** de l'objet : `cube(s, x, y, z, côté, couleur)`, `boîte(s, x, y, z, largeur, hauteur, profondeur, couleur)`, `sphère(s, x, y, z, rayon, couleur)`, `cylindre(s, x, y, z, rayon, hauteur, couleur)`, `cône(s, x, y, z, rayon, hauteur, couleur)`, `anneau(s, x, y, z, rayon_intérieur, rayon_extérieur, couleur)` (couché à plat), `lumière(s, x, y, z)` (ou avec une intensité, 2.5 au départ), `caméra(s, x, y, z, vx, vy, vz)`. La couleur est facultative (blanc). `groupe(s, x, y, z)` rend le groupe lui-même : on y ajoute des objets comme dans une scène, et on le donne à `tourne` ou `déplace` comme un numéro.
+- y est vers le haut ; une scène de quelques dizaines d'unités se voit bien avec la caméra par défaut. Il y a toujours une faible lumière ambiante : sans `lumière`, tout est sombre mais visible.
+- `montre_3d(scène)` (une fois) envoie la scène. Après, sur un numéro ou un groupe : `déplace(o, x, y, z)` (position absolue), `tourne(o, ax, ay, az)` (degrés ajoutés), `oriente_3d(o, ax, ay, az)` (`oriente` est celui de la tortue), `colore(o, c)`, `texture(o, image)` (un numéro de `charge_image` : une carte équirectangulaire pour une sphère, une bande radiale pour un anneau), `lumineux(o)`, `cache_objet(o)`, `montre_objet(o)` ; `regarde(x, y, z)`, `caméra_libre()`, `quand_clic_objet(f)` → `f(numéro)`. Une primitive appelée après `montre_3d` ajoute son objet aussitôt.
+- En 3D, `efface()` rend la 2D transparente (sans fond blanc) et `fond(c)` colore le fond de la scène. Toute la logique passe par `animer`, comme en 2D ; il n'y a pas d'autre boucle.
+- Pour un jeu : crée tous les objets au départ (des « réserves » : des listes d'objets cachés avec `cache_objet`), puis prends-en un quand il en faut (`objet = ramène_élément(réserve)`, puis `montre_objet(objet)`) et rends-le quand il disparaît (`cache_objet(objet)`, `réserve.ajoute(objet)`). Ne crée pas d'objet à chaque image : la scène les garderait tous. Une caméra au-dessus du centre, `caméra(scène, 0, h, 0.01, 0, 0, 0)`, voit un plan horizontal de `1,07 × h` sur `0,93 × h` (sur un canevas 4/3) : les coordonnées de la souris se ramènent alors simplement à ce plan.
 
 ### Images et sons
 `img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. `liste_sons()`, `liste_images()` et `liste_données()` rendent les noms des fichiers du projet (triés, à donner tels quels à `charge_son`, `charge_image`, `charge_données`) ; `liste_sons()` et `liste_images()` y ajoutent ceux des médias du site (`"exemples/médias/ding.wav"`, `"exemples/médias/piano/do_4.wav"`, `"exemples/médias/étoile.svg"`…). Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable. Écris le nom du son **en toutes lettres** dans `charge_son("…")` (pas une variable ni un calcul) : la Pythonerie décode alors ce son avant de lancer le programme, et il est prêt à jouer tout de suite. Un nom seul (`"chat.png"`, `"bravo.wav"`) désigne un fichier des répertoires images ou sons du projet ; un chemin (`exemples/médias/ding.wav`) un fichier du site ; `https://…` une adresse Internet : une image ou un son en ligne s'utilise directement, `charge_image("https://upload.wikimedia.org/…")`, même si le site ne permet pas de télécharger le fichier.
@@ -322,7 +347,7 @@ Les exemples du site montrent le style attendu ; lis-les avant d'écrire un prog
 
 `01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas).
 
-Trois **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons), `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet) et `cartes.zip` (les piles de cartes à la HyperCard : voir « Des piles de cartes »).
+Trois **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons), `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet) et `cartes.zip` (les piles de cartes à la HyperCard : voir « Des piles de cartes ») ; `systeme_solaire_3d.zip` montre la 3D (groupes emboîtés, textures, inclinaisons, clic sur un objet) ; `asteroides_3d.zip`, un jeu en 3D (logique en points, montrée sur un plan vu d'en haut ; objets créés au départ dans des réserves, puis cachés et réutilisés).
 
 Le mode d'emploi pour les enfants (`docs/guide.html`) contient un glossaire de tous les mots. Environ 180 instructions avancées de LispE portent aussi un nom français ; elles sont décrites dans `docs/basic/français.lisp` (une ligne `(link "nom" 'instruction) ; description` par instruction). Préfère les fonctions de ce guide, plus simples pour un enfant.
 

@@ -1262,6 +1262,22 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>cap()</code></td><td>dans quelle direction regarde la tortue (en degrés)</td><td class="ex"><code>cap()</code></td></tr>
                 </table>
 
+                <h3 id="g-3d">La 3D</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>nouvelle_scène()</code></td><td>commence une scène en 3D, vide</td><td class="ex"><code>scène = nouvelle_scène()</code></td></tr>
+                    <tr><td><code>cube(scène, x, y, z, côté, couleur)</code></td><td>ajoute un cube et donne son numéro (aussi <code>boîte</code>, <code>sphère</code>, <code>cylindre</code>, <code>cône</code>, <code>anneau</code>)</td><td class="ex"><code>c = cube(scène, 0, 0, 0, 2, "rouge")</code></td></tr>
+                    <tr><td><code>sphère(scène, x, y, z, rayon, couleur)</code></td><td>ajoute une boule</td><td class="ex"><code>terre = sphère(scène, 5, 0, 0, 1, "bleu")</code></td></tr>
+                    <tr><td><code>groupe(scène, x, y, z)</code></td><td>un groupe d'objets qui bougent et tournent ensemble</td><td class="ex"><code>orbite = groupe(scène)</code></td></tr>
+                    <tr><td><code>lumière(scène, x, y, z)</code></td><td>une lampe, qui éclaire tout autour d'elle</td><td class="ex"><code>lumière(scène, 0, 10, 0)</code></td></tr>
+                    <tr><td><code>caméra(scène, x, y, z, vx, vy, vz)</code></td><td>où est la caméra, et le point qu'elle regarde</td><td class="ex"><code>caméra(scène, 0, 5, 20, 0, 0, 0)</code></td></tr>
+                    <tr><td><code>montre_3d(scène)</code></td><td>montre la scène, sous le canevas 2D (un texte en 2D reste au-dessus)</td><td class="ex"><code>montre_3d(scène)</code></td></tr>
+                    <tr><td><code>tourne(o, ax, ay, az)</code> · <code>déplace(o, x, y, z)</code></td><td>fait tourner un objet (des degrés de plus) · le met à une autre place</td><td class="ex"><code>tourne(orbite, 0, 1, 0)</code></td></tr>
+                    <tr><td><code>texture(o, image)</code> · <code>colore(o, c)</code> · <code>lumineux(o)</code></td><td>habille l'objet d'une image · change sa couleur · le fait briller tout seul</td><td class="ex"><code>texture(terre, charge_image("terre.jpg"))</code></td></tr>
+                    <tr><td><code>caméra_libre()</code></td><td>la souris fait tourner la caméra, la molette zoome</td><td class="ex"><code>caméra_libre()</code></td></tr>
+                    <tr><td><code>quand_clic_objet(f)</code></td><td>un clic sur un objet appelle <code>f(numéro)</code></td><td class="ex"><code>quand_clic_objet(touché)</code></td></tr>
+                </table>
+
                 <h3 id="g-medias">Images et sons</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>

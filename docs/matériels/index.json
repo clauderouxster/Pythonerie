@@ -18,5 +18,15 @@
     "fichier": "ma_classe.zip",
     "titre": "Ma classe (pour le professeur)",
     "description": "En mode administrateur (port 8001 de serveur.py), une fois connecté : la liste des élèves autorisés pour le mode classe. Colle une liste d'un coup depuis un tableur (identifiant et nom) : elle s'ajoute au tableau, sans doublon ; corrige-la, vide-la au besoin, puis enregistre-la sur le serveur (élèves.json)."
+  },
+  {
+    "fichier": "systeme_solaire_3d.zip",
+    "titre": "Le système solaire en 3D",
+    "description": "La 3D de la Pythonerie : les huit planètes et la Lune, avec leurs vraies textures (Solar System Scope, CC BY 4.0), tournent autour du Soleil et sur elles-mêmes. La souris fait tourner la caméra, un clic sur une planète affiche son nom."
+  },
+  {
+    "fichier": "asteroides_3d.zip",
+    "titre": "Astéroïdes 3D",
+    "description": "Le jeu d'Astéroïdes (l'exemple 19), en relief : des rochers habillés de la vraie surface de l'astéroïde Bennu (NASA, domaine public) et de la Lune, qui tournoient ; un vaisseau qui penche dans les virages ; une caméra en perspective. Mêmes commandes (souris ou clavier), même meilleur score dans don0. Le programme montre comment garder des objets 3D en réserve et les réutiliser."
   }
 ]

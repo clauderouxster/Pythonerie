@@ -236,3 +236,6 @@ details[open] > .arbre-branche::before { content: '▾'; }
 .saisie-console:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 
 .pied { margin: 16px auto 12px; color: var(--text-muted); font-size: 12px; }
+
+/* La couche 3D (voir js/scene3d.js) : sous le canevas 2D, qui devient transparent */
+.cadre-canevas canvas.couche-3d { pointer-events: none; }

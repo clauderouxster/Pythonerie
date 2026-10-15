@@ -1676,9 +1676,13 @@ const Pythonerie = (function () {
             const quand = new Date().toLocaleString('fr');
             const programme = '// Le programme « ' + principal + ' » du projet « ' + titre + ' », traduit en LispE par la Pythonerie le '
                 + quand + '\nconst APPLI = ' + JSON.stringify(appli, null, 1) + ';\n';
-            const [page, style, moteur, lisezmoi, canevasJs, erreursJs, lispeJs, lispeFonctions, wasm, ...polices] = await Promise.all([
+            // la 3D : three.js part avec l'application si le programme montre une scène
+            const avec3D = /\bmontre_3d\s*\(/.test(assemblé.source);
+            const THREE_FICHIERS = ['three.module.min.js', 'OrbitControls.js', 'LICENSE.txt'];
+            const fichiers3D = avec3D ? await Promise.all(THREE_FICHIERS.map(f => lit('vendor/three/' + f, true))) : [];
+            const [page, style, moteur, lisezmoi, canevasJs, erreursJs, scène3DJs, lispeJs, lispeFonctions, wasm, ...polices] = await Promise.all([
                 lit('appli/index.html'), lit('appli/appli.css'), lit('appli/appli.js'), lit('appli/LISEZMOI.txt'),
-                lit('js/canevas.js'), lit('js/erreurs.js'),
+                lit('js/canevas.js'), lit('js/erreurs.js'), lit('js/scene3d.js'),
                 lit('lispe/lispe.js'), lit('lispe/lispe_functions.js'), lit('lispe/lispe.wasm', true),
                 ...POLICES.map(p => lit('vendor/fonts/' + p, true))
             ]);
@@ -1693,6 +1697,7 @@ const Pythonerie = (function () {
                 { nom: d + 'js/' },
                 { nom: d + 'js/canevas.js', octets: enc.encode(canevasJs) },
                 { nom: d + 'js/erreurs.js', octets: enc.encode(erreursJs) },
+                { nom: d + 'js/scene3d.js', octets: enc.encode(scène3DJs) },
                 { nom: d + 'lispe/' },
                 { nom: d + 'lispe/lispe.js', octets: enc.encode(lispeJs) },
                 { nom: d + 'lispe/lispe_functions.js', octets: enc.encode(lispeFonctions) },
@@ -1700,6 +1705,10 @@ const Pythonerie = (function () {
                 { nom: d + 'polices/' }
             ];
             POLICES.forEach((p, i) => entrées.push({ nom: d + 'polices/' + p, octets: polices[i] }));
+            if (avec3D) {
+                entrées.push({ nom: d + 'vendor/' }, { nom: d + 'vendor/three/' });
+                THREE_FICHIERS.forEach((f, i) => entrées.push({ nom: d + 'vendor/three/' + f, octets: fichiers3D[i] }));
+            }
             if (appli.médias.length) {
                 const octetsMédias = await Promise.all(appli.médias.map(m => lit(encodeURI(m), true)));
                 // les répertoires : exemples/, exemples/médias/, exemples/médias/piano/...

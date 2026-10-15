@@ -789,8 +789,8 @@ saisie("âge", 100, 180, reçu)</pre></div>
                         ligne)&nbsp;; <code>f(clef, texte)</code> quand tu quittes la zone, ou avec <b>Ctrl+Entrée</b>.</li>
                 </ul>
                 <p><code>valeur_objet(clef)</code> lit la valeur d'un objet à tout moment, et <code>change_objet(clef, valeur)</code>
-                    la change (sans appeler sa fonction)&nbsp;: <code>change_objet("taille", 30)</code>,
-                    <code>change_objet("grille", Vrai)</code>… <code>retire_objet(clef)</code> enlève un objet du canevas,
+                    la change&nbsp;: voir <a href="#valeur-objet">Lire et changer la valeur d'un objet</a>, plus bas.
+                    <code>retire_objet(clef)</code> enlève un objet du canevas,
                     et <code>retire_objets()</code> les enlève tous (pour passer d'un écran à un autre, par exemple).</p>
                 <div class="exemple"><pre data-essai>fonction choisi(clef, valeur):
     affiche(clef, ":", valeur)
@@ -804,6 +804,116 @@ glissière("vitesse", 20, 180, 1, 10, 5, choisi)
 liste_déroulante("animal", 20, 220, ["chat", "chien", "lapin"], choisi)
 liste_hiérarchique("aliments", 300, 20, 6, [["Fruits", ["pomme", "poire"]], ["Légumes", ["carotte", "salade"]], "Pain"], choisi)</pre></div>
                 <p>L'exemple <b>20. L'atelier de formes</b> se sert de tous ces objets à la fois. Ses boutons de formes sont des <code>bouton_image</code>&nbsp;: le programme dessine chaque icône, la copie avec <code>capture_image</code>, et sa pipette lit la couleur d'un point avec <code>couleur_pixel</code>.</p>
+
+                <h3 id="valeur-objet">🔁 Lire et changer la valeur d'un objet</h3>
+                <p>Un objet du canevas <b>garde lui-même sa valeur</b>&nbsp;: le texte tapé dans un champ, l'élément choisi dans
+                    une liste, la case cochée ou non, la position de la glissière… Ce n'est pas une variable de ton programme&nbsp;:
+                    c'est l'objet, dans la page, qui la retient. Ta fonction la reçoit quand on se sert de l'objet&nbsp;; mais ton
+                    programme peut aussi, à tout moment&nbsp;:</p>
+                <ul>
+                    <li><b>la lire</b>&nbsp;: <code>valeur_objet(clef)</code> donne ce que l'objet contient <b>maintenant</b>&nbsp;;</li>
+                    <li><b>la changer</b>&nbsp;: <code>change_objet(clef, valeur)</code> change ce que l'objet montre. Sa fonction n'est
+                        <b>pas</b> appelée&nbsp;: c'est ton programme qui change l'objet, pas l'élève qui s'en sert.</li>
+                </ul>
+                <table class="glossaire">
+                    <tr><th>Objet</th><th><code>valeur_objet(clef)</code> donne…</th><th><code>change_objet(clef, valeur)</code>…</th></tr>
+                    <tr><td><code>saisie</code>, <code>zone_édition</code></td><td>le texte tapé dedans</td><td>remplace le texte&nbsp;: <code>change_objet("nom", "")</code> vide le champ</td></tr>
+                    <tr><td><code>liste_déroulante</code></td><td>l'élément choisi</td><td>choisit un autre élément&nbsp;: <code>change_objet("classe", "CM1")</code></td></tr>
+                    <tr><td><code>case_à_cocher</code></td><td><code>Vrai</code> si elle est cochée, sinon <code>Faux</code></td><td>coche ou décoche&nbsp;: <code>change_objet("cantine", Faux)</code></td></tr>
+                    <tr><td><code>bouton_radio</code></td><td><code>Vrai</code> si c'est lui qui est choisi</td><td><code>change_objet("moyen", Vrai)</code> le choisit (les autres boutons du groupe se décochent)</td></tr>
+                    <tr><td><code>glissière</code></td><td>sa position, un nombre</td><td>la déplace&nbsp;: <code>change_objet("âge", 10)</code></td></tr>
+                    <tr><td><code>bouton</code></td><td>le texte écrit dessus</td><td>change ce texte&nbsp;: <code>change_objet("compteur", "Cliqué 3 fois")</code></td></tr>
+                    <tr><td><code>bouton_image</code></td><td>le numéro de son image</td><td>lui donne une autre image&nbsp;: <code>change_objet("jouer", image_pause)</code></td></tr>
+                    <tr><td><code>liste_hiérarchique</code></td><td>le chemin choisi&nbsp;: <code>["Fruits", "pomme"]</code></td><td>choisit un élément et déplie ses branches&nbsp;: <code>change_objet("aliments", ["Fruits", "poire"])</code></td></tr>
+                </table>
+                <p><b>Une fiche à remplir.</b> Un champ de saisie n'envoie sa valeur à sa fonction que quand on appuie sur
+                    <b>Entrée</b>. Pour une fiche, le plus simple est donc de laisser l'élève tout remplir, puis de <b>lire</b> tous
+                    les objets d'un coup quand il clique sur «&nbsp;Valider&nbsp;». «&nbsp;Effacer&nbsp;» <b>change</b> chaque objet pour
+                    le remettre comme au départ. Remplis la fiche, clique sur Valider, puis sur Effacer&nbsp;:</p>
+                <div class="exemple"><pre data-essai># Une fiche : on remplit les objets, puis « Valider » lit tout ce qu'ils contiennent
+fonction attend(clef, valeur):
+    retourne Rien          # rien à faire pendant qu'on remplit la fiche
+
+fonction commande(clef, texte):
+    si clef == "valider":
+        # valeur_objet lit ce que chaque objet contient MAINTENANT
+        nom = valeur_objet("nom")            # le texte tapé dans le champ
+        la_classe = valeur_objet("classe")   # l'élément choisi dans la liste
+        âge = valeur_objet("âge")            # la position de la glissière (un nombre)
+        cantine = valeur_objet("cantine")    # Vrai si la case est cochée
+        affiche(f"{nom}, {âge} ans, en {la_classe}")
+        si cantine:
+            affiche("mange à la cantine")
+    sinon:
+        # change_objet remet chaque objet dans son état de départ
+        change_objet("nom", "")
+        change_objet("classe", "CM1")
+        change_objet("âge", 10)
+        change_objet("cantine", Faux)
+        affiche("— la fiche est effacée")
+
+taille_texte(16)
+texte(20, 25, "Prénom :")
+saisie("nom", 120, 20, attend)
+texte(20, 75, "Classe :")
+liste_déroulante("classe", 120, 70, ["CP", "CE1", "CE2", "CM1", "CM2"], attend)
+change_objet("classe", "CM1")
+texte(20, 125, "Âge :")
+glissière("âge", 120, 120, 6, 12, 10, attend)
+case_à_cocher("cantine", 20, 170, "Mange à la cantine", attend)
+bouton("valider", 20, 220, "Valider", commande)
+bouton("effacer", 140, 220, "Effacer", commande)</pre></div>
+                <p><b>Deux objets qui se suivent.</b> Ici, une glissière et un champ montrent le même nombre&nbsp;: quand l'un change,
+                    le programme met l'autre à jour avec <code>change_objet</code>. Comme <code>change_objet</code> n'appelle pas la
+                    fonction de l'objet, les deux ne se renvoient pas la balle à l'infini. Fais glisser la réglette, puis tape un nombre
+                    dans le champ et appuie sur Entrée&nbsp;:</p>
+                <div class="exemple"><pre data-essai># Une glissière et un champ qui se suivent : chacun met l'autre à jour
+fonction dessine():
+    fond("blanc")
+    couleur("noir")
+    texte(20, 10, "Rouge :")
+    couleur(rgb(valeur_objet("rouge"), 120, 200))
+    disque(500, 200, 100)
+
+# la glissière bouge : le champ montre le nouveau nombre
+fonction glissée(clef, valeur):
+    change_objet("nombre", chaîne(valeur))
+    dessine()
+
+# on tape un nombre dans le champ (puis Entrée) : la glissière se place dessus
+fonction tapé(clef, valeur):
+    n = maximum(0, minimum(255, entier(nombre(valeur))))
+    change_objet("rouge", n)
+    change_objet("nombre", chaîne(n))
+    dessine()
+
+taille_texte(16)
+glissière("rouge", 20, 35, 0, 255, 128, glissée)
+largeur_saisie(80)
+saisie("nombre", 20, 85, tapé)
+change_objet("nombre", "128")
+dessine()</pre></div>
+                <p><b>Un bouton qui change.</b> Le programme peut aussi changer le texte d'un bouton, ou choisir lui-même un bouton
+                    radio. Clique cinq fois sur le bouton&nbsp;:</p>
+                <div class="exemple"><pre data-essai># Le programme change le texte d'un bouton, et choisit lui-même un bouton radio
+compte = 0
+
+fonction clic(clef, texte):
+    compte += 1
+    change_objet("compteur", f"Cliqué {compte} fois")   # le texte du bouton change
+    si compte == 5:
+        change_objet("moyen", Vrai)                      # le programme choisit « Moyen »
+        affiche("Cinq clics : tu passes au niveau moyen")
+
+fonction niveau(groupe, clef):
+    affiche("Niveau choisi :", clef)
+
+taille_texte(16)
+bouton("compteur", 20, 20, "Clique-moi", clic)
+bouton_radio("facile", "niveau", 20, 80, "Facile", niveau)
+bouton_radio("moyen", "niveau", 20, 110, "Moyen", niveau)
+bouton_radio("difficile", "niveau", 20, 140, "Difficile", niveau)
+change_objet("facile", Vrai)</pre></div>
 
                 <h3>Dessiner en faisant glisser la souris</h3>
                 <p><code>quand_glisse(f)</code> appelle ta fonction <code>f(x, y)</code> quand tu déplaces la souris

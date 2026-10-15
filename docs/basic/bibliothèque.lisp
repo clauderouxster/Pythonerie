@@ -3,10 +3,13 @@
 ; Ce fichier est chargé dans l'interpréteur LispE avant chaque programme.
 ; Les noms suivent l'orthographe française : épaisseur, aléatoire, carré, va_à...
 ; Il définit les fonctions françaises du langage et les instructions de dessin,
-; qui appellent l'objet JavaScript "Pyt" (voir js/canevas.js) via evaljs.
+; qui appellent l'objet JavaScript "Pyt" (voir js/canevas.js) via evaljsc.
 ;
-; (evaljs (list "Pyt.cercle" x y r)) exécute en JavaScript : Pyt.cercle(x, y, r);
-; les arguments sont convertis en JSON.
+; (evaljsc (list "Pyt.cercle" x y r)) exécute en JavaScript : Pyt.cercle(x, y, r);
+; evaljsc compile une seule fois l'appel à Pyt.cercle, quels que soient les arguments :
+; les nombres passent directement (sans texte, donc exacts), les autres valeurs en JSON.
+; Un texte comme (evaljsc "Pyt.efface()") est aussi compilé une seule fois.
+; Les variantes evaljs_i, evaljs_d, evaljs_b, evaljs_j, evaljs_li… n'ont pas de cache.
 
 ; Une valeur renvoyée par JavaScript est toujours une chaîne : on la convertit en nombre
 (defun js_nombre (s) (float s))
@@ -14,17 +17,17 @@
 ;------------------------------------------------------------------
 ; Console
 ;------------------------------------------------------------------
-(defun efface_console () (evaljs "Pyt.effaceConsole()") nil)
+(defun efface_console () (evaljsc "Pyt.effaceConsole()") nil)
 ; affiche_console() : rend la console visible, même quand le canevas est en plein écran (elle
 ; vient alors dessous) ; cache_console() la retire du plein écran
-(defun affiche_console () (evaljs "Pyt.afficheConsole()") nil)
-(defun cache_console () (evaljs "Pyt.cacheConsole()") nil)
+(defun affiche_console () (evaljsc "Pyt.afficheConsole()") nil)
+(defun cache_console () (evaljsc "Pyt.cacheConsole()") nil)
 
 ; écris(a, b, ...) écrit sans passer à la ligne. Dans le WebAssembly, chaque print de
 ; LispE arrive comme une ligne complète : on passe donc par la console JavaScript.
 ; defpat permet d'accepter de 1 à 8 arguments sous le même nom.
 (defun _écris_liste (valeurs)
-   (evaljs (list "Pyt.écris" (join (maplist '_texte valeurs false) " ")))
+   (evaljsc (list "Pyt.écris" (join (maplist '_texte valeurs false) " ")))
    nil)
 (defpat écris (a) (_écris_liste (list a)))
 (defpat écris (a b) (_écris_liste (list a b)))
@@ -51,7 +54,7 @@
 (defun _attend (_genre _question _nom _a _en_nombre _avec_a)
    (+= _numéro_lecture 1)
    (set@ _lectures (string _numéro_lecture) (list _nom _a _en_nombre _avec_a))
-   (evaljs (list "Pyt.attends" _genre (string _question) _numéro_lecture))
+   (evaljsc (list "Pyt.attends" _genre (string _question) _numéro_lecture))
    nil)
 ; la réponse arrive : la fonction de rappel la reçoit, avec a (quote : a n'est pas réévalué).
 ; Les noms commencent par « _ » : la fonction de l'élève peut s'appeler réponse ou numéro
@@ -60,7 +63,7 @@
    (check (in_it _lectures _numéro)
       (setq _e (@ _lectures _numéro))
       (pop _lectures _numéro)
-      (setq _réponse (evaljs "Pyt.valeurReçue()"))
+      (setq _réponse (evaljsc "Pyt.valeurReçue()"))
       ; la conversion : true (un nombre), "json" (une valeur décrite en JSON), "vrai" (Vrai)
       (setq _conversion (@ _e 2))
       (if (stringp _conversion)
@@ -104,14 +107,14 @@
 ; login() : le nom sous lequel l'élève travaille dans la Pythonerie (« Unique » en mode
 ; utilisateur unique, "" dans une application Web) ; pour l'écrire dans un chemin :
 ; sauve_dans_serveur("dupont", f"contrôle1/{login()}.json", réponses)
-(defun login () (evaljs "Pyt.login()"))
+(defun login () (evaljsc "Pyt.login()"))
 (defun _réseau (_genre _p1 _p2 _p3 _nom _a _conversion _avec_a)
    (setq _id 0)
    (check _nom
       (+= _numéro_lecture 1)
       (setq _id _numéro_lecture)
       (set@ _lectures (string _id) (list _nom _a _conversion _avec_a)))
-   (evaljs (list "Pyt.réseau" _genre (string _p1) (string _p2) _p3 _id))
+   (evaljsc (list "Pyt.réseau" _genre (string _p1) (string _p2) _p3 _id))
    nil)
 (defun _en_texte_ou_json (_v) (if (stringp _v) _v (json _v)))
 (defun _conversion_lecture (_chemin) (if (= (right (string _chemin) 5) ".json") "json" ""))
@@ -251,29 +254,29 @@
 ; Comme en Python, les fonctions qui agissent sans calculer de valeur renvoient Rien
 ; (la console n'affiche donc rien après cercle(...) ou avance(...)).
 ;------------------------------------------------------------------
-(defun efface () (evaljs "Pyt.efface()") nil)
-(defun fond (c) (evaljs (list "Pyt.fond" c)) nil)
-(defun couleur (c) (evaljs (list "Pyt.couleur" c)) nil)
-(defun couleur_trait (c) (evaljs (list "Pyt.couleurTrait" c)) nil)
-(defun couleur_remplissage (c) (evaljs (list "Pyt.couleurRemplissage" c)) nil)
-(defun épaisseur (e) (evaljs (list "Pyt.épaisseur" e)) nil)
+(defun efface () (evaljsc "Pyt.efface()") nil)
+(defun fond (c) (evaljsc (list "Pyt.fond" c)) nil)
+(defun couleur (c) (evaljsc (list "Pyt.couleur" c)) nil)
+(defun couleur_trait (c) (evaljsc (list "Pyt.couleurTrait" c)) nil)
+(defun couleur_remplissage (c) (evaljsc (list "Pyt.couleurRemplissage" c)) nil)
+(defun épaisseur (e) (evaljsc (list "Pyt.épaisseur" e)) nil)
 
-(defun point (x y) (evaljs (list "Pyt.point" x y)) nil)
-(defun ligne (x1 y1 x2 y2) (evaljs (list "Pyt.ligne" x1 y1 x2 y2)) nil)
-(defun rectangle (x y l h) (evaljs (list "Pyt.rectangle" x y l h false)) nil)
-(defun rectangle_plein (x y l h) (evaljs (list "Pyt.rectangle" x y l h true)) nil)
-(defun carré (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté false)) nil)
-(defun carré_plein (x y côté) (evaljs (list "Pyt.rectangle" x y côté côté true)) nil)
-(defun cercle (x y r) (evaljs (list "Pyt.cercle" x y r false)) nil)
-(defun disque (x y r) (evaljs (list "Pyt.cercle" x y r true)) nil)
-(defun ellipse (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry false)) nil)
-(defun ellipse_pleine (x y rx ry) (evaljs (list "Pyt.ellipse" x y rx ry true)) nil)
-(defun triangle (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) nil)
-(defun triangle_plein (x1 y1 x2 y2 x3 y3) (evaljs (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) nil)
+(defun point (x y) (evaljsc (list "Pyt.point" x y)) nil)
+(defun ligne (x1 y1 x2 y2) (evaljsc (list "Pyt.ligne" x1 y1 x2 y2)) nil)
+(defun rectangle (x y l h) (evaljsc (list "Pyt.rectangle" x y l h false)) nil)
+(defun rectangle_plein (x y l h) (evaljsc (list "Pyt.rectangle" x y l h true)) nil)
+(defun carré (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté false)) nil)
+(defun carré_plein (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté true)) nil)
+(defun cercle (x y r) (evaljsc (list "Pyt.cercle" x y r false)) nil)
+(defun disque (x y r) (evaljsc (list "Pyt.cercle" x y r true)) nil)
+(defun ellipse (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry false)) nil)
+(defun ellipse_pleine (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry true)) nil)
+(defun triangle (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) nil)
+(defun triangle_plein (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) nil)
 ; points est une liste de couples : [[0,0], [100,0], [50,80]]
 ; Les listes imbriquées sont passées en JSON : evaljs réévaluerait chaque sous-liste
-(defun polygone (points) (evaljs (list "Pyt.polygone" (json points) false)) nil)
-(defun polygone_plein (points) (evaljs (list "Pyt.polygone" (json points) true)) nil)
+(defun polygone (points) (evaljsc (list "Pyt.polygone" (json points) false)) nil)
+(defun polygone_plein (points) (evaljsc (list "Pyt.polygone" (json points) true)) nil)
 
 ; Pixels : chaque point du dessin a quatre valeurs de 0 à 255 (rouge, vert, bleu, opacité).
 ; couleur_pixel(x, y) : la couleur du point (x, y), en liste [rouge, vert, bleu, opacité]
@@ -290,17 +293,17 @@
    v)
 ; les valeurs sont passées en JSON, comme les points d'un polygone
 (defun pose_pixels (x y l h valeurs)
-   (evaljs (list "Pyt.posePixels" x y l h (json valeurs)))
+   (evaljsc (list "Pyt.posePixels" x y l h (json valeurs)))
    (_erreur_navigateur)
    nil)
 
 ; Texte
-(defun texte (x y message) (evaljs (list "Pyt.texte" x y (string message))) nil)
-(defun taille_texte (n) (evaljs (list "Pyt.tailleTexte" n)) nil)
+(defun texte (x y message) (evaljsc (list "Pyt.texte" x y (string message))) nil)
+(defun taille_texte (n) (evaljsc (list "Pyt.tailleTexte" n)) nil)
 ; largeur_texte(message) : la largeur (en points du canevas) qu'aurait message écrit par texte(),
 ; avec la police et la taille du moment ; la plus longue ligne pour un texte sur plusieurs lignes
 (defun largeur_texte (message) (evaljs_d (list "Pyt.largeurTexte" (string message))))
-(defun police (nom) (evaljs (list "Pyt.police" nom)) nil)
+(defun police (nom) (evaljsc (list "Pyt.police" nom)) nil)
 
 ; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)
 ; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
@@ -310,17 +313,17 @@
 ;------------------------------------------------------------------
 ; La tortue
 ;------------------------------------------------------------------
-(defun avance (d) (evaljs (list "Pyt.avance" d)) nil)
-(defun recule (d) (evaljs (list "Pyt.avance" (* -1 d))) nil)
-(defun gauche (a) (evaljs (list "Pyt.tourne" (* -1 a))) nil)
-(defun droite (a) (evaljs (list "Pyt.tourne" a)) nil)
-(defun lève_crayon () (evaljs (list "Pyt.crayon" false)) nil)
-(defun baisse_crayon () (evaljs (list "Pyt.crayon" true)) nil)
-(defun va_à (x y) (evaljs (list "Pyt.vaÀ" x y)) nil)
-(defun oriente (angle) (evaljs (list "Pyt.oriente" angle)) nil)
-(defun origine () (evaljs "Pyt.origine()") nil)
-(defun montre_tortue () (evaljs (list "Pyt.montreTortue" true)) nil)
-(defun cache_tortue () (evaljs (list "Pyt.montreTortue" false)) nil)
+(defun avance (d) (evaljsc (list "Pyt.avance" d)) nil)
+(defun recule (d) (evaljsc (list "Pyt.avance" (* -1 d))) nil)
+(defun gauche (a) (evaljsc (list "Pyt.tourne" (* -1 a))) nil)
+(defun droite (a) (evaljsc (list "Pyt.tourne" a)) nil)
+(defun lève_crayon () (evaljsc (list "Pyt.crayon" false)) nil)
+(defun baisse_crayon () (evaljsc (list "Pyt.crayon" true)) nil)
+(defun va_à (x y) (evaljsc (list "Pyt.vaÀ" x y)) nil)
+(defun oriente (angle) (evaljsc (list "Pyt.oriente" angle)) nil)
+(defun origine () (evaljsc "Pyt.origine()") nil)
+(defun montre_tortue () (evaljsc (list "Pyt.montreTortue" true)) nil)
+(defun cache_tortue () (evaljsc (list "Pyt.montreTortue" false)) nil)
 (defun position_x () (evaljs_d "Pyt.tortueX()"))
 (defun position_y () (evaljs_d "Pyt.tortueY()"))
 (defun cap () (evaljs_d "Pyt.tortueCap()"))
@@ -331,42 +334,42 @@
 ; Animation et événements
 ; La fonction peut être donnée par son nom : animer(bouge, 30) ou animer("bouge", 30)
 ;------------------------------------------------------------------
-(defmacro animer (fonction délai) (block (evaljs (list "Pyt.animer" (string (quote fonction)) délai)) nil))
-(defmacro quand_clic (fonction) (block (evaljs (list "Pyt.quandClic" (string (quote fonction)))) nil))
-(defmacro quand_souris (fonction) (block (evaljs (list "Pyt.quandSouris" (string (quote fonction)))) nil))
-(defmacro quand_touche (fonction) (block (evaljs (list "Pyt.quandTouche" (string (quote fonction)))) nil))
+(defmacro animer (fonction délai) (block (evaljsc (list "Pyt.animer" (string (quote fonction)) délai)) nil))
+(defmacro quand_clic (fonction) (block (evaljsc (list "Pyt.quandClic" (string (quote fonction)))) nil))
+(defmacro quand_souris (fonction) (block (evaljsc (list "Pyt.quandSouris" (string (quote fonction)))) nil))
+(defmacro quand_touche (fonction) (block (evaljsc (list "Pyt.quandTouche" (string (quote fonction)))) nil))
 ; quand_relâche(f) : f(touche) quand on relâche une touche (même nom qu'à l'appui)
-(defmacro quand_relâche (fonction) (block (evaljs (list "Pyt.quandRelâche" (string (quote fonction)))) nil))
+(defmacro quand_relâche (fonction) (block (evaljsc (list "Pyt.quandRelâche" (string (quote fonction)))) nil))
 ; touche_enfoncée(nom) : Vrai tant que la touche est tenue (à appeler dans la fonction d'animer)
 (defun touche_enfoncée (nom) (evaljs_b (list "Pyt.toucheEnfoncée" (string nom))))
-(defmacro quand_glisse (fonction) (block (evaljs (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
+(defmacro quand_glisse (fonction) (block (evaljsc (list "Pyt.quandGlisse" (string (quote fonction)))) nil))
 ; saisie(clef, x, y, fonction) : un champ de saisie dans le canevas ; Entrée (ou un clic
 ; dans un autre champ) appelle fonction(clef, valeur), la valeur étant un texte
-(defmacro saisie (clef x y fonction) (block (evaljs (list "Pyt.saisie" (string clef) x y (string (quote fonction)))) nil))
+(defmacro saisie (clef x y fonction) (block (evaljsc (list "Pyt.saisie" (string clef) x y (string (quote fonction)))) nil))
 ; Les autres objets du canevas (même règle : la fonction est donnée par son nom)
 ; bouton(clef, x, y, texte, f) : un clic appelle f(clef, texte)
-(defmacro bouton (clef x y texte fonction) (block (evaljs (list "Pyt.bouton" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+(defmacro bouton (clef x y texte fonction) (block (evaljsc (list "Pyt.bouton" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
 ; case_à_cocher(clef, x, y, texte, f) : f(clef, Vrai ou Faux) quand on la coche ou la décoche
-(defmacro case_à_cocher (clef x y texte fonction) (block (evaljs (list "Pyt.caseÀCocher" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
+(defmacro case_à_cocher (clef x y texte fonction) (block (evaljsc (list "Pyt.caseÀCocher" (string clef) x y (_texte texte) (string (quote fonction)))) nil))
 ; retire_objet(clef) : enlève un objet du canevas ; retire_objets() les enlève tous
-(defun retire_objet (clef) (evaljs (list "Pyt.retireObjet" (string clef))) nil)
-(defun retire_objets () (evaljs "Pyt.retireObjets()") nil)
+(defun retire_objet (clef) (evaljsc (list "Pyt.retireObjet" (string clef))) nil)
+(defun retire_objets () (evaljsc "Pyt.retireObjets()") nil)
 ; bouton_image(clef, x, y, image, f) : un bouton qui a l'aspect de l'image (numéro rendu par
 ; charge_image ou capture_image) ; bouton_image(clef, x, y, image, image_appuyée, f) lui donne un
 ; second aspect tant qu'on appuie. Un clic appelle f(clef, image). (deux macros : 5 ou 6 arguments)
-(defmacro bouton_image (clef x y image fonction) (block (evaljs (list "Pyt.boutonImage" (string clef) x y image nil (string (quote fonction)))) (_erreur_navigateur) nil))
-(defmacro bouton_image (clef x y image appuyée fonction) (block (evaljs (list "Pyt.boutonImage" (string clef) x y image appuyée (string (quote fonction)))) (_erreur_navigateur) nil))
+(defmacro bouton_image (clef x y image fonction) (block (evaljsc (list "Pyt.boutonImage" (string clef) x y image nil (string (quote fonction)))) (_erreur_navigateur) nil))
+(defmacro bouton_image (clef x y image appuyée fonction) (block (evaljsc (list "Pyt.boutonImage" (string clef) x y image appuyée (string (quote fonction)))) (_erreur_navigateur) nil))
 ; bouton_radio(clef, groupe, x, y, texte, f) : un seul coché par groupe ; f(groupe, clef) quand on le choisit
-(defmacro bouton_radio (clef groupe x y texte fonction) (block (evaljs (list "Pyt.boutonRadio" (string clef) (string groupe) x y (_texte texte) (string (quote fonction)))) nil))
+(defmacro bouton_radio (clef groupe x y texte fonction) (block (evaljsc (list "Pyt.boutonRadio" (string clef) (string groupe) x y (_texte texte) (string (quote fonction)))) nil))
 ; glissière(clef, x, y, mini, maxi, valeur, f) : f(clef, valeur) pendant qu'on la déplace
-(defmacro glissière (clef x y mini maxi valeur fonction) (block (evaljs (list "Pyt.glissière" (string clef) x y mini maxi valeur (string (quote fonction)))) nil))
+(defmacro glissière (clef x y mini maxi valeur fonction) (block (evaljsc (list "Pyt.glissière" (string clef) x y mini maxi valeur (string (quote fonction)))) nil))
 ; zone_édition(clef, x, y, lignes, f) : un texte sur plusieurs lignes ; f(clef, texte) quand on la quitte (ou Ctrl+Entrée)
-(defmacro zone_édition (clef x y lignes fonction) (block (evaljs (list "Pyt.zoneÉdition" (string clef) x y lignes (string (quote fonction)))) nil))
+(defmacro zone_édition (clef x y lignes fonction) (block (evaljsc (list "Pyt.zoneÉdition" (string clef) x y lignes (string (quote fonction)))) nil))
 ; liste_déroulante(clef, x, y, éléments, f) : f(clef, choix) quand on choisit un élément
-(defmacro liste_déroulante (clef x y éléments fonction) (block (evaljs (list "Pyt.listeDéroulante" (string clef) x y (json éléments) (string (quote fonction)))) nil))
+(defmacro liste_déroulante (clef x y éléments fonction) (block (evaljsc (list "Pyt.listeDéroulante" (string clef) x y (json éléments) (string (quote fonction)))) nil))
 ; liste_hiérarchique(clef, x, y, lignes, arbre, f) : un arbre ; un élément est un texte ou [nom, [enfants]] ;
 ; un clic appelle f(clef, chemin), chemin étant la liste des noms depuis la racine
-(defmacro liste_hiérarchique (clef x y lignes arbre fonction) (block (evaljs (list "Pyt.listeHiérarchique" (string clef) x y lignes (json arbre) (string (quote fonction)))) nil))
+(defmacro liste_hiérarchique (clef x y lignes arbre fonction) (block (evaljsc (list "Pyt.listeHiérarchique" (string clef) x y lignes (json arbre) (string (quote fonction)))) nil))
 ; valeur_objet(clef) : la valeur actuelle d'un objet (texte, nombre, Vrai / Faux pour une case ou
 ; un radio, le chemin choisi pour une liste hiérarchique)
 ; evaljs_j rend directement la valeur JavaScript : booléen, nombre, texte ou liste
@@ -376,19 +379,19 @@
    v)
 ; change_objet(clef, valeur) : change la valeur d'un objet, sans appeler sa fonction
 (defun change_objet (clef valeur)
-   (evaljs (list "Pyt.changeObjet" (string clef) (if (consp valeur) (json valeur) valeur)))
+   (evaljsc (list "Pyt.changeObjet" (string clef) (if (consp valeur) (json valeur) valeur)))
    (_erreur_navigateur)
    nil)
 ; largeur_saisie(l) : la largeur des champs créés ensuite (200 au départ)
-(defun largeur_saisie (l) (evaljs (list "Pyt.largeurSaisie" l)) nil)
+(defun largeur_saisie (l) (evaljsc (list "Pyt.largeurSaisie" l)) nil)
 ; active_saisie(clef) : donne la main au champ (le champ quitté envoie sa valeur)
 (defun active_saisie (clef)
-   (evaljs (list "Pyt.activeSaisie" (string clef)))
+   (evaljsc (list "Pyt.activeSaisie" (string clef)))
    (_erreur_navigateur)
    nil)
 ; saisie_active() : la clef du champ qui a la main ("" s'il n'y en a pas)
-(defun saisie_active () (evaljs "Pyt.saisieActive()"))
-(defun arrête () (evaljs "Pyt.arrête()") nil)
+(defun saisie_active () (evaljsc "Pyt.saisieActive()"))
+(defun arrête () (evaljsc "Pyt.arrête()") nil)
 
 ;------------------------------------------------------------------
 ; Images et sons
@@ -398,9 +401,9 @@
 ;------------------------------------------------------------------
 (defun charge_image (adresse) (evaljs_i (list "Pyt.chargeImage" (string adresse))))
 ; place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur)
-(defun place_image (image x y (l nil) (h nil)) (evaljs (list "Pyt.placeImage" image x y l h)) (_erreur_navigateur) nil)
+(defun place_image (image x y (l nil) (h nil)) (evaljsc (list "Pyt.placeImage" image x y l h)) (_erreur_navigateur) nil)
 (defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
-(defun joue_son (son) (evaljs (list "Pyt.joueSon" son)) nil)
+(defun joue_son (son) (evaljsc (list "Pyt.joueSon" son)) nil)
 ; capture_image(x, y, l, h) : un rectangle du dessin devient une image (son numéro)
 (defun capture_image (x y l h)
    (setq _n (evaljs_i (list "Pyt.captureImage" x y l h)))
@@ -456,7 +459,7 @@
    (+= _numéro_3d 1)
    (set@ _entrée "numéro" _numéro_3d)
    (push (@ _parent "objets") _entrée)
-   (if _3d_montrée (evaljs (list "Pyt.ajoute3D" (@ _parent "numéro") (json _entrée))))
+   (if _3d_montrée (evaljsc (list "Pyt.ajoute3D" (@ _parent "numéro") (json _entrée))))
    _numéro_3d)
 (defun nouvelle_scène ()
    (+= _numéro_3d 1)
@@ -484,12 +487,12 @@
    _g)
 (defun montre_3d (s)
    (setq _racine (_scène_3d s "montre_3d"))
-   (evaljs (list "Pyt.montre3D" (json _racine)))
+   (evaljsc (list "Pyt.montre3D" (json _racine)))
    (_erreur_navigateur)
    (setq _3d_montrée true)
    nil)
 (defun _change_3d (_genre _o _nom (_a 0) (_b 0) (_c 0))
-   (evaljs (list "Pyt.change3D" _genre (_numéro_objet_3d _o _nom) _a _b _c))
+   (evaljsc (list "Pyt.change3D" _genre (_numéro_objet_3d _o _nom) _a _b _c))
    nil)
 (defun déplace (o x y z) (_change_3d "déplace" o "déplace" x y z))
 (defun tourne (o ax ay az) (_change_3d "tourne" o "tourne" ax ay az))
@@ -499,9 +502,9 @@
 (defun lumineux (o) (_change_3d "lumineux" o "lumineux"))
 (defun cache_objet (o) (_change_3d "cache" o "cache_objet"))
 (defun montre_objet (o) (_change_3d "montre" o "montre_objet"))
-(defun regarde (x y z) (evaljs (list "Pyt.change3D" "regarde" 0 x y z)) nil)
-(defun caméra_libre () (evaljs "Pyt.caméraLibre()") nil)
-(defmacro quand_clic_objet (fonction) (block (evaljs (list "Pyt.quandClicObjet" (string (quote fonction)))) nil))
+(defun regarde (x y z) (evaljsc (list "Pyt.change3D" "regarde" 0 x y z)) nil)
+(defun caméra_libre () (evaljsc "Pyt.caméraLibre()") nil)
+(defmacro quand_clic_objet (fonction) (block (evaljsc (list "Pyt.quandClicObjet" (string (quote fonction)))) nil))
 
 ;------------------------------------------------------------------
 ; Fichiers (sans le système de fichiers du WASM)
@@ -511,18 +514,18 @@
 ; Une erreur côté navigateur (fichier absent, nom invalide, taille impossible) devient une erreur du
 ; programme, que l'élève peut attraper avec essaie / sauf.
 (defun _erreur_navigateur ()
-   (setq e (evaljs "Pyt.dernièreErreur()"))
+   (setq e (evaljsc "Pyt.dernièreErreur()"))
    (if (!= e "") (throw e)))
 
 ; canevas(largeur, hauteur) : nouvelle taille du canevas (efface le dessin)
 (defun canevas (l h)
-   (evaljs (list "Pyt.canevas" l h))
+   (evaljsc (list "Pyt.canevas" l h))
    (_erreur_navigateur)
    nil)
 
 ; charge_données(nom) : un fichier du répertoire données du projet
 (defun charge_données (nom)
-   (setq contenu (evaljs (list "Pyt.chargeDonnées" (string nom))))
+   (setq contenu (evaljsc (list "Pyt.chargeDonnées" (string nom))))
    (_erreur_navigateur)
    contenu)
 
@@ -530,7 +533,7 @@
 ; projet : un texte tel quel, une autre valeur comme affiche l'écrirait (en_json(x) pour du JSON).
 ; charge_données(nom) le relit aussitôt ; sans extension, le nom reçoit « .txt ».
 (defun sauve_données (nom valeur)
-   (evaljs (list "Pyt.sauveDonnées" (string nom) (_texte valeur)))
+   (evaljsc (list "Pyt.sauveDonnées" (string nom) (_texte valeur)))
    (_erreur_navigateur)
    nil)
 
@@ -538,38 +541,38 @@
 ; (ou le crée), sans l'ouvrir ; vérifie_code(code) : "" si le code se compile, sinon le message
 ; d'erreur (rien n'est exécuté). L'Éditeur des cartes s'en sert pour écrire biblios.pyf.
 (defun charge_programme (nom)
-   (setq _c (evaljs (list "Pyt.chargeProgramme" (string nom))))
+   (setq _c (evaljsc (list "Pyt.chargeProgramme" (string nom))))
    (_erreur_navigateur)
    _c)
 (defun sauve_programme (nom code)
-   (evaljs (list "Pyt.sauveProgramme" (string nom) (string code)))
+   (evaljsc (list "Pyt.sauveProgramme" (string nom) (string code)))
    (_erreur_navigateur)
    nil)
-(defun vérifie_code (code) (evaljs (list "Pyt.vérifieCode" (string code))))
+(defun vérifie_code (code) (evaljsc (list "Pyt.vérifieCode" (string code))))
 
 ; range_données("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
 ; l'onglet don0 de la section Données ; l'onglet est créé s'il vient juste après le dernier
 (defun range_données (nom valeur)
-   (setq e (evaljs (list "Pythonerie.rangeDonnées" (string nom) (_texte valeur))))
+   (setq e (evaljsc (list "Pythonerie.rangeDonnées" (string nom) (_texte valeur))))
    (if (!= e "") (throw e))
    nil)
 
 ; prend_données("don0") : le texte actuel de l'onglet don0 de la section Données ("" s'il est vide)
 (defun prend_données (nom)
-   (setq contenu (evaljs (list "Pythonerie.prendDonnées" (string nom))))
-   (setq e (evaljs "Pythonerie.erreurDonnées()"))
+   (setq contenu (evaljsc (list "Pythonerie.prendDonnées" (string nom))))
+   (setq e (evaljsc "Pythonerie.erreurDonnées()"))
    (if (!= e "") (throw e))
    contenu)
 
 ; ouvre_page(adresse) : ouvre la page https://... dans un nouvel onglet ; le navigateur ne
 ; l'accepte que juste après un clic ou une touche (sinon, une erreur le dit)
 (defun ouvre_page (adresse)
-   (evaljs (list "Pyt.ouvrePage" (string adresse)))
+   (evaljsc (list "Pyt.ouvrePage" (string adresse)))
    (_erreur_navigateur)
    nil)
 
 (defun écrit_fichier (nom texte)
-   (evaljs (list "Pyt.écritFichier" (string nom) (_texte texte)))
+   (evaljsc (list "Pyt.écritFichier" (string nom) (_texte texte)))
    (_erreur_navigateur)
    nil)
 

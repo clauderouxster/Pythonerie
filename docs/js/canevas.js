@@ -1,8 +1,8 @@
 // =====================================================================
 // Pythonerie — API de dessin
 // ---------------------------------------------------------------------
-// L'objet Pyt (window.Pyt) est appelé depuis LispE via evaljs
-// (voir basic/bibliothèque.lisp) : (evaljs (list "Pyt.cercle" x y r false))
+// L'objet Pyt (window.Pyt) est appelé depuis LispE via evaljsc
+// (voir basic/bibliothèque.lisp) : (evaljsc (list "Pyt.cercle" x y r false))
 // exécute en JavaScript : Pyt.cercle(x, y, r, false);
 //
 // Le canevas a une taille logique (LARGEUR x HAUTEUR, 800 x 600 sauf appel à canevas) ; il est mis à

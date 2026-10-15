@@ -153,24 +153,24 @@ const PYTHONERIE_FONCTIONS = {
     'écrit_fichier': 'écrit_fichier(nom, texte) — enregistre le texte dans Téléchargements',
     'largeur_texte': 'largeur_texte(message) — la largeur du texte en points, avec la police et la taille du moment (pour centrer : 400 - largeur_texte(t) / 2)',
     'nouvelle_scène': 'nouvelle_scène() — une scène 3D vide, pour cube, sphère, groupe...',
-    'cube': 'cube(scène, x, y, z, côté, couleur) — un cube dans la scène 3D ; donne son numéro',
-    'boîte': 'boîte(scène, x, y, z, largeur, hauteur, profondeur, couleur) — un pavé dans la scène 3D',
-    'sphère': 'sphère(scène, x, y, z, rayon, couleur) — une boule dans la scène 3D ; donne son numéro',
-    'cylindre': 'cylindre(scène, x, y, z, rayon, hauteur, couleur) — un cylindre dans la scène 3D',
-    'cône': 'cône(scène, x, y, z, rayon, hauteur, couleur) — un cône dans la scène 3D',
-    'anneau': 'anneau(scène, x, y, z, rayon_intérieur, rayon_extérieur, couleur) — un anneau couché à plat (Saturne)',
-    'groupe': 'groupe(scène, x, y, z) — un groupe d\'objets 3D qui bougent et tournent ensemble',
-    'lumière': 'lumière(scène, x, y, z, intensité) — une lampe dans la scène 3D',
-    'caméra': 'caméra(scène, x, y, z, vx, vy, vz) — la position de la caméra, et le point qu\'elle regarde',
+    'cube': 'scène.cube(x, y, z, côté, couleur) — un cube dans la scène 3D ; donne son numéro',
+    'boîte': 'scène.boîte(x, y, z, largeur, hauteur, profondeur, couleur) — un pavé dans la scène 3D',
+    'sphère': 'scène.sphère(x, y, z, rayon, couleur) — une boule dans la scène 3D ; donne son numéro',
+    'cylindre': 'scène.cylindre(x, y, z, rayon, hauteur, couleur) — un cylindre dans la scène 3D',
+    'cône': 'scène.cône(x, y, z, rayon, hauteur, couleur) — un cône dans la scène 3D',
+    'anneau': 'scène.anneau(x, y, z, rayon_intérieur, rayon_extérieur, couleur) — un anneau couché à plat (Saturne)',
+    'groupe': 'scène.groupe(x, y, z) — un nouveau groupe d\'objets 3D qui bougent et tournent ensemble',
+    'lumière': 'scène.lumière(x, y, z, intensité) — une lampe dans la scène 3D',
+    'caméra': 'scène.caméra(x, y, z, vx, vy, vz) — la position de la caméra, et le point qu\'elle regarde',
     'montre_3d': 'montre_3d(scène) — montre la scène 3D, sous le canevas 2D',
-    'déplace': 'déplace(objet, x, y, z) — met un objet 3D à cette place',
-    'tourne': 'tourne(objet, ax, ay, az) — fait tourner un objet 3D de quelques degrés de plus',
-    'oriente_3d': 'oriente_3d(objet, ax, ay, az) — l\'orientation d\'un objet 3D, en degrés',
-    'colore': 'colore(objet, couleur) — change la couleur d\'un objet 3D',
-    'texture': 'texture(objet, image) — habille un objet 3D d\'une image (numéro de charge_image)',
-    'lumineux': 'lumineux(objet) — l\'objet 3D brille par lui-même (le Soleil)',
-    'cache_objet': 'cache_objet(objet) — cache un objet 3D',
-    'montre_objet': 'montre_objet(objet) — montre un objet 3D caché',
+    'déplace': 'objet.déplace(x, y, z) — met un objet 3D à cette place',
+    'tourne': 'objet.tourne(ax, ay, az) — fait tourner un objet 3D de quelques degrés de plus',
+    'oriente_3d': 'objet.oriente_3d(ax, ay, az) — l\'orientation d\'un objet 3D, en degrés',
+    'colore': 'objet.colore(couleur) — change la couleur d\'un objet 3D',
+    'texture': 'objet.texture(image) — habille un objet 3D d\'une image (numéro de charge_image)',
+    'lumineux': 'objet.lumineux() — l\'objet 3D brille par lui-même (le Soleil)',
+    'cache_objet': 'objet.cache_objet() — cache un objet 3D',
+    'montre_objet': 'objet.montre_objet() — montre un objet 3D caché',
     'regarde': 'regarde(x, y, z) — la caméra 3D vise ce point',
     'caméra_libre': 'caméra_libre() — la souris fait tourner la caméra 3D, la molette zoome',
     'quand_clic_objet': 'quand_clic_objet(f) — un clic sur un objet 3D appelle f(numéro)',
@@ -263,19 +263,28 @@ CodeMirror.defineMIME('text/x-pythonerie', 'pythonerie');
 // Complétion : mots-clefs, fonctions de la bibliothèque et mots déjà présents dans le programme
 // La signature d'une fonction, d'après sa description : « rectangle(x, y, largeur, hauteur) —
 // … » donne « rectangle(x, y, largeur, hauteur) » ; un argument facultatif noté « [a,] » est
-// laissé de côté. Sans parenthèses, le nom seul.
-function signatureDe(nom, desc) {
-    const m = String(desc || '').match(/^([^\s(]+\([^)]*\))/);
-    if (!m || !m[1].startsWith(nom + '(')) return nom;
-    return m[1].replace(/\s*\[[^\]]*,\]\s*/g, ' ').replace(/\(\s+/, '(').replace(/,\s+/g, ', ');
+// laissé de côté. Sans parenthèses, le nom seul. Une description en méthode,
+// « scène.cube(x, y, z, côté, couleur) — … », donne « scène.cube(x, y, z, côté, couleur) »
+// (et « cube(x, y, z, côté, couleur) » si l'élève a déjà tapé « scène. »).
+function signatureDe(nom, desc, aprèsPoint) {
+    const m = String(desc || '').match(/^((?:[^\s(.]+\.)?)([^\s(]+\([^)]*\))/);
+    if (!m || !m[2].startsWith(nom + '(')) return nom;
+    return (aprèsPoint ? '' : m[1]) + m[2].replace(/\s*\[[^\]]*,\]\s*/g, ' ').replace(/\(\s+/, '(').replace(/,\s+/g, ', ');
 }
 
 // Choisir une fonction insère sa signature, puis sélectionne son premier argument :
-// il n'y a plus qu'à taper la valeur à sa place
+// il n'y a plus qu'à taper la valeur à sa place ; pour une méthode (« scène.cube(…) »),
+// c'est l'objet devant le point qui est sélectionné
 function insèreSignature(cm, données, choix) {
     cm.replaceRange(choix.text, données.from, données.to, 'complete');
     const ouvre = choix.text.indexOf('(');
     if (ouvre < 0) return;
+    const point = choix.text.slice(0, ouvre).indexOf('.');
+    if (point > 0) {
+        const ligne = données.from.line, début = données.from.ch;
+        cm.setSelection(CodeMirror.Pos(ligne, début), CodeMirror.Pos(ligne, début + point));
+        return;
+    }
     const premier = choix.text.slice(ouvre + 1).split(/[,)]/)[0];
     const ligne = données.from.line, début = données.from.ch + ouvre + 1;
     if (premier.trim()) cm.setSelection(CodeMirror.Pos(ligne, début), CodeMirror.Pos(ligne, début + premier.length));
@@ -293,6 +302,8 @@ function pythonerieComplétion(cm) {
 
     // une parenthèse suit déjà le mot : on ne remplace que le nom
     const parenthèseAprès = ligne.charAt(fin) === '(';
+    // « scène.cu » : une méthode, sans répéter l'objet
+    const aprèsPoint = ligne.charAt(début - 1) === '.';
 
     const vus = new Set();
     const liste = [];
@@ -311,7 +322,7 @@ function pythonerieComplétion(cm) {
         const sig = d[1] + '(' + d[2].trim().replace(/\s*,\s*/g, ', ') + ')';
         ajoute(d[1], sig + '  (ton programme)', sig);
     }
-    Object.entries(PYTHONERIE_FONCTIONS).forEach(([nom, desc]) => ajoute(nom, desc, signatureDe(nom, desc)));
+    Object.entries(PYTHONERIE_FONCTIONS).forEach(([nom, desc]) => ajoute(nom, desc, signatureDe(nom, desc, aprèsPoint)));
     PYTHONERIE_CONSTANTES.forEach(m => ajoute(m));
     const mots = cm.getValue().match(/[A-Za-zÀ-ÿ_][\wÀ-ÿ]*/g) || [];
     mots.forEach(m => ajoute(m));

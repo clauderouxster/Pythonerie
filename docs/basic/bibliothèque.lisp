@@ -419,19 +419,21 @@
 ; La 3D (voir js/scene3d.js, avec three.js)
 ; scène = nouvelle_scène() rend une scène vide : un dictionnaire caché, avec sa liste d'objets.
 ; Chaque primitive y ajoute un dictionnaire et rend le numéro de l'objet :
-;   cube(scène, x, y, z, côté, couleur)          boîte(scène, x, y, z, largeur, hauteur, profondeur, couleur)
-;   sphère(scène, x, y, z, rayon, couleur)       cylindre(scène, x, y, z, rayon, hauteur, couleur)
-;   cône(scène, x, y, z, rayon, hauteur, couleur)
-;   anneau(scène, x, y, z, rayon_intérieur, rayon_extérieur, couleur)   (couché à plat)
-;   lumière(scène, x, y, z) ou lumière(scène, x, y, z, intensité)
-;   caméra(scène, x, y, z, vx, vy, vz) : où est la caméra, et le point qu'elle regarde
-;   groupe(scène, x, y, z) rend un groupe : une scène dans la scène, qui se déplace et tourne
-;     avec tous ses objets (la Lune dans le groupe de la Terre)
+;   scène.cube(x, y, z, côté, couleur)           scène.boîte(x, y, z, largeur, hauteur, profondeur, couleur)
+;   scène.sphère(x, y, z, rayon, couleur)        scène.cylindre(x, y, z, rayon, hauteur, couleur)
+;   scène.cône(x, y, z, rayon, hauteur, couleur)
+;   scène.anneau(x, y, z, rayon_intérieur, rayon_extérieur, couleur)   (couché à plat)
+;   scène.lumière(x, y, z) ou scène.lumière(x, y, z, intensité)
+;   scène.caméra(x, y, z, vx, vy, vz) : où est la caméra, et le point qu'elle regarde
+;   scène.groupe(x, y, z) rend un nouveau groupe : une scène dans la scène, qui se déplace et
+;     tourne avec tous ses objets (la Lune dans le groupe de la Terre : orbite.sphère(...))
+; L'écriture en méthode est celle de la documentation : le transpileur fait de scène.cube(...)
+; l'appel (cube scène ...), comme cube(scène, ...), qui reste accepté.
 ; montre_3d(scène) l'envoie d'un coup (en JSON, que l'élève ne voit jamais) : la couche 3D
 ; apparaît sous le canevas 2D, devenu transparent. Ensuite, sur un numéro d'objet (ou un groupe) :
-;   déplace(o, x, y, z)   tourne(o, ax, ay, az) (des degrés de plus)   oriente_3d(o, ax, ay, az)
-;   colore(o, couleur)    texture(o, image) (le numéro rendu par charge_image)   lumineux(o)
-;   cache_objet(o)        montre_objet(o)
+;   o.déplace(x, y, z)   o.tourne(ax, ay, az) (des degrés de plus)   o.oriente_3d(ax, ay, az)
+;   o.colore(couleur)    o.texture(image) (le numéro rendu par charge_image)   o.lumineux()
+;   o.cache_objet()      o.montre_objet()
 ;   regarde(x, y, z) : la caméra vise ce point ; caméra_libre() : la souris la fait tourner
 ;   quand_clic_objet(f) : f(numéro) reçoit l'objet cliqué
 ; Une primitive appelée après montre_3d ajoute aussitôt son objet à la scène montrée.
@@ -441,14 +443,14 @@
 ; la scène (ou le groupe) donnée à une primitive ; une autre valeur est une erreur claire
 (defun _scène_3d (_s _nom)
    (if (in (string (type _s)) "dictionary")
-      (if (in_it _s "objets") _s (throw (+ _nom " : le premier argument doit être une scène (nouvelle_scène()) ou un groupe")))
-      (throw (+ _nom " : le premier argument doit être une scène (nouvelle_scène()) ou un groupe"))))
+      (if (in_it _s "objets") _s (throw (+ _nom " : il faut une scène (nouvelle_scène()) ou un groupe devant le point, comme dans scène." _nom "(...)")))
+      (throw (+ _nom " : il faut une scène (nouvelle_scène()) ou un groupe devant le point, comme dans scène." _nom "(...)"))))
 ; le numéro d'un objet 3D : un nombre (rendu par une primitive), ou un groupe
 (defun _numéro_objet_3d (_o _nom)
    (cond
       ((numberp _o) _o)
       ((in (string (type _o)) "dictionary") (@ _o "numéro"))
-      (true (throw (+ _nom " : il faut le numéro d'un objet 3D (rendu par cube, sphère...) ou un groupe")))))
+      (true (throw (+ _nom " : il faut un objet 3D devant le point (le numéro rendu par scène.cube, scène.sphère...) ou un groupe, comme dans terre." _nom "(...)")))))
 (defun _nouveau_3d (_s _nom _entrée)
    (setq _parent (_scène_3d _s _nom))
    (+= _numéro_3d 1)

@@ -513,6 +513,8 @@ body:not(.dark-mode) .CodeMirror-activeline-background { background: rgba(179, 9
 body.plein-code .zone-édition,
 body.plein-console .zone-console { position: fixed; inset: 0; z-index: 90; min-height: 0; background: var(--bg-primary); padding: 12px 16px 16px; }
 body.plein-code .zone-console { display: none; }
+#btnExécutionConsole { display: none; }
+body.plein-console #btnExécutionConsole { display: inline-block; }
 body.plein-code .conteneur-éditeur, body.plein-code .panneau-données { flex: 1 1 0; }
 .console {
     flex: 1;

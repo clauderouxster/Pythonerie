@@ -755,8 +755,24 @@ const Pythonerie = (function () {
         });
     }
 
+    // En plein écran (du canevas ou de la console), un seul bouton : ▶ Exécuter quand le
+    // programme est à l'arrêt, ■ Arrêter pendant qu'il tourne
     function metAJourBoutons() {
-        $('btnArrêter').disabled = $('btnArrêterPlein').disabled = !Pyt.enCours();
+        const enCours = Pyt.enCours();
+        $('btnArrêter').disabled = !enCours;
+        ['btnExécutionPlein', 'btnExécutionConsole'].forEach(id => {
+            const b = $(id);
+            b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
+            b.title = enCours ? 'Arrêter le programme' : 'Exécuter le programme';
+            b.classList.toggle('btn-secondaire', enCours);
+        });
+    }
+
+    function basculeExécution(ev) {
+        // le bouton ne garde pas le clavier : Espace ou Entrée doivent aller au programme
+        if (ev && ev.currentTarget && ev.currentTarget.blur) ev.currentTarget.blur();
+        if (Pyt.enCours()) arrête();
+        else exécute();
     }
 
     // ------------------------------------------------------------------
@@ -879,7 +895,8 @@ const Pythonerie = (function () {
         $('btnPleinÉcran').addEventListener('click', entrePleinÉcran);
         $('btnConsolePlein').addEventListener('click', () => consoleSousLeCanevas(!$('scèneCanevas').classList.contains('avec-console')));
         $('btnQuittePlein').addEventListener('click', quittePleinÉcran);
-        $('btnArrêterPlein').addEventListener('click', arrête);
+        $('btnExécutionPlein').addEventListener('click', basculeExécution);
+        $('btnExécutionConsole').addEventListener('click', basculeExécution);
         // sortie par Échap (ou par le navigateur) du vrai plein écran
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && !$('scèneCanevas').classList.contains('secours')) quittePleinÉcran();

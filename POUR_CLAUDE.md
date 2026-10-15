@@ -112,27 +112,27 @@ Pour une suite de questions (un quiz), une fonction pose la question suivante, e
 ### La 3D (avec three.js)
 ```python
 scène = nouvelle_scène()
-soleil = sphère(scène, 0, 0, 0, 3, "jaune")
-lumineux(soleil)                          # éclairé par lui-même
-orbite = groupe(scène)                    # un groupe : ses objets bougent avec lui
-terre = sphère(orbite, 10, 0, 0, 1, "bleu")
-lumière(scène, 0, 0, 0)                   # une lumière au centre du Soleil
-caméra(scène, 0, 15, 30, 0, 0, 0)         # où est la caméra, et ce qu'elle regarde
+soleil = scène.sphère(0, 0, 0, 3, "jaune")
+soleil.lumineux()                         # éclairé par lui-même
+orbite = scène.groupe()                   # un nouveau groupe : ses objets bougent avec lui
+terre = orbite.sphère(10, 0, 0, 1, "bleu")
+scène.lumière(0, 0, 0)                    # une lumière au centre du Soleil
+scène.caméra(0, 15, 30, 0, 0, 0)          # où est la caméra, et ce qu'elle regarde
 montre_3d(scène)                          # la scène apparaît, sous le canevas 2D
 
 fonction image():
-    tourne(orbite, 0, 1, 0)               # un degré de plus autour de l'axe y
+    orbite.tourne(0, 1, 0)                # un degré de plus autour de l'axe y
     efface()                              # la 2D (transparente en 3D) : un texte par-dessus
     texte(10, 10, "Le système solaire")
 
 caméra_libre()
 animer(image, 16)
 ```
-- Les primitives prennent la scène (ou un groupe) en premier, puis la position `x, y, z`, et rendent le **numéro** de l'objet : `cube(s, x, y, z, côté, couleur)`, `boîte(s, x, y, z, largeur, hauteur, profondeur, couleur)`, `sphère(s, x, y, z, rayon, couleur)`, `cylindre(s, x, y, z, rayon, hauteur, couleur)`, `cône(s, x, y, z, rayon, hauteur, couleur)`, `anneau(s, x, y, z, rayon_intérieur, rayon_extérieur, couleur)` (couché à plat), `lumière(s, x, y, z)` (ou avec une intensité, 2.5 au départ), `caméra(s, x, y, z, vx, vy, vz)`. La couleur est facultative (blanc). `groupe(s, x, y, z)` rend le groupe lui-même : on y ajoute des objets comme dans une scène, et on le donne à `tourne` ou `déplace` comme un numéro.
+- **Écris les primitives 3D en méthode**. Pour créer un objet, la scène (ou le groupe) devant le point : `s.cube(x, y, z, côté, couleur)`, `s.boîte(x, y, z, largeur, hauteur, profondeur, couleur)`, `s.sphère(x, y, z, rayon, couleur)`, `s.cylindre(x, y, z, rayon, hauteur, couleur)`, `s.cône(x, y, z, rayon, hauteur, couleur)`, `s.anneau(x, y, z, rayon_intérieur, rayon_extérieur, couleur)` (couché à plat), `s.lumière(x, y, z)` (ou avec une intensité, 2.5 au départ), `s.caméra(x, y, z, vx, vy, vz)`. Chacune rend le **numéro** du nouvel objet. La couleur est facultative (blanc). `s.groupe(x, y, z)` rend un nouveau groupe : on y ajoute des objets comme dans une scène (`lune = orbite.sphère(…)`), et on le donne à `tourne` ou `déplace` comme un numéro. Le transpileur fait de `s.sphère(…)` le même appel que `sphère(s, …)`, mais l'écriture en méthode montre mieux qui reçoit le nouvel objet : c'est celle des exemples et de la documentation.
 - y est vers le haut ; une scène de quelques dizaines d'unités se voit bien avec la caméra par défaut. Il y a toujours une faible lumière ambiante : sans `lumière`, tout est sombre mais visible.
-- `montre_3d(scène)` (une fois) envoie la scène. Après, sur un numéro ou un groupe : `déplace(o, x, y, z)` (position absolue), `tourne(o, ax, ay, az)` (degrés ajoutés), `oriente_3d(o, ax, ay, az)` (`oriente` est celui de la tortue), `colore(o, c)`, `texture(o, image)` (un numéro de `charge_image` : une carte équirectangulaire pour une sphère, une bande radiale pour un anneau), `lumineux(o)`, `cache_objet(o)`, `montre_objet(o)` ; `regarde(x, y, z)`, `caméra_libre()`, `quand_clic_objet(f)` → `f(numéro)`. Une primitive appelée après `montre_3d` ajoute son objet aussitôt.
+- `montre_3d(scène)` (une fois) envoie la scène. Après, toujours en méthode, sur un numéro d'objet ou un groupe (`terre.tourne(0, 1, 0)`, `a[7].cache_objet()` : l'objet devant le point peut être un élément de liste) : `o.déplace(x, y, z)` (position absolue), `o.tourne(ax, ay, az)` (degrés ajoutés), `o.oriente_3d(ax, ay, az)` (`oriente` est celui de la tortue), `o.colore(c)`, `o.texture(image)` (un numéro de `charge_image` : une carte équirectangulaire pour une sphère, une bande radiale pour un anneau), `o.lumineux()`, `o.cache_objet()`, `o.montre_objet()` ; `regarde(x, y, z)`, `caméra_libre()`, `quand_clic_objet(f)` → `f(numéro)`. Une primitive appelée après `montre_3d` ajoute son objet aussitôt.
 - En 3D, `efface()` rend la 2D transparente (sans fond blanc) et `fond(c)` colore le fond de la scène. Le bouton Image, `capture_image`, `couleur_pixel` et `pixels` voient la scène 3D avec la 2D par-dessus, comme à l'écran ; mais la scène n'est dessinée qu'à l'image suivante (three.js se charge, puis dessine) : lis ou capture les pixels depuis la fonction d'`animer` ou d'un clic, pas juste après `montre_3d`. Toute la logique passe par `animer`, comme en 2D ; il n'y a pas d'autre boucle.
-- Pour un jeu : crée tous les objets au départ (des « réserves » : des listes d'objets cachés avec `cache_objet`), puis prends-en un quand il en faut (`objet = ramène_élément(réserve)`, puis `montre_objet(objet)`) et rends-le quand il disparaît (`cache_objet(objet)`, `réserve.ajoute(objet)`). Ne crée pas d'objet à chaque image : la scène les garderait tous. Une caméra au-dessus du centre, `caméra(scène, 0, h, 0.01, 0, 0, 0)`, voit un plan horizontal de `1,07 × h` sur `0,93 × h` (sur un canevas 4/3) : les coordonnées de la souris se ramènent alors simplement à ce plan.
+- Pour un jeu : crée tous les objets au départ (des « réserves » : des listes d'objets cachés avec `objet.cache_objet()`), puis prends-en un quand il en faut (`objet = ramène_élément(réserve)`, puis `objet.montre_objet()`) et rends-le quand il disparaît (`objet.cache_objet()`, `réserve.ajoute(objet)`). Ne crée pas d'objet à chaque image : la scène les garderait tous. Une caméra au-dessus du centre, `scène.caméra(0, h, 0.01, 0, 0, 0)`, voit un plan horizontal de `1,07 × h` sur `0,93 × h` (sur un canevas 4/3) : les coordonnées de la souris se ramènent alors simplement à ce plan.
 
 ### Images et sons
 `img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. `liste_sons()`, `liste_images()` et `liste_données()` rendent les noms des fichiers du projet (triés, à donner tels quels à `charge_son`, `charge_image`, `charge_données`) ; `liste_sons()` et `liste_images()` y ajoutent ceux des médias du site (`"exemples/médias/ding.wav"`, `"exemples/médias/piano/do_4.wav"`, `"exemples/médias/étoile.svg"`…). Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable. Écris le nom du son **en toutes lettres** dans `charge_son("…")` (pas une variable ni un calcul) : la Pythonerie décode alors ce son avant de lancer le programme, et il est prêt à jouer tout de suite. Un nom seul (`"chat.png"`, `"bravo.wav"`) désigne un fichier des répertoires images ou sons du projet ; un chemin (`exemples/médias/ding.wav`) un fichier du site ; `https://…` une adresse Internet : une image ou un son en ligne s'utilise directement, `charge_image("https://upload.wikimedia.org/…")`, même si le site ne permet pas de télécharger le fichier.

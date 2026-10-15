@@ -9,3 +9,4 @@ __pycache__/
 # Comptes et données des professeurs (serveur.py), jamais publiés
 serveur/
 docs/.DS_Store
+docs/.DS_Store

@@ -100,5 +100,23 @@
     "titre": "20. L'atelier de formes",
     "description": "tous les objets du canevas : saisie, liste déroulante, glissière, liste hiérarchique, cases, boutons radio, boutons, boutons-images dessinés (capture_image), zone d'édition, et une pipette (couleur_pixel)",
     "programme": "Atelier de formes"
+  },
+  {
+    "fichier": "21_casse_briques_dessins.pyf",
+    "titre": "21. Casse-briques, avec des dessins",
+    "description": "le casse-briques de l'exemple 15 avec un décor riche, préparé dans des dessins : montré en un seul appel par image (touche D : comparer)",
+    "programme": "Casse-briques avec dessins"
+  },
+  {
+    "fichier": "22_envahisseurs_dessins.pyf",
+    "titre": "22. Les envahisseurs, avec des dessins",
+    "description": "les envahisseurs de l'exemple 17 avec une ville, une planète et des boucliers qui s'effritent ; la flotte n'est redessinée qu'à chacun de ses pas (touche D : comparer)",
+    "programme": "Envahisseurs avec dessins"
+  },
+  {
+    "fichier": "23_asteroides_dessins.pyf",
+    "titre": "23. Astéroïdes, avec des dessins",
+    "description": "les astéroïdes de l'exemple 19 dans un ciel de nébuleuses et une galaxie tracée par la tortue, préparé une fois dans un dessin (touche C : comparer)",
+    "programme": "Astéroïdes avec dessins"
   }
 ]

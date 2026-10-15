@@ -1372,6 +1372,15 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>cap()</code></td><td>dans quelle direction regarde la tortue (en degrés)</td><td class="ex"><code>cap()</code></td></tr>
                 </table>
 
+                <h3 id="g-dessins">Les dessins</h3>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>nouveau_dessin()</code></td><td>commence un dessin vide, qu'on prépare avant de le montrer</td><td class="ex"><code>décor = nouveau_dessin()</code></td></tr>
+                    <tr><td><code>dessin.disque(x, y, rayon)</code></td><td>ajoute un disque au dessin, sans le dessiner tout de suite&nbsp;; toutes les instructions de dessin et de la tortue s'écrivent ainsi (<code>dessin.couleur</code>, <code>dessin.texte</code>, <code>dessin.avance</code>…)</td><td class="ex"><code>décor.disque(400, 300, 50)</code></td></tr>
+                    <tr><td><code>montre_dessin(dessin)</code></td><td>dessine tout le dessin d'un coup&nbsp;; on peut le montrer à chaque image d'une animation, c'est très rapide</td><td class="ex"><code>montre_dessin(décor)</code></td></tr>
+                    <tr><td><code>vide_dessin(dessin)</code></td><td>enlève toutes les commandes du dessin, pour en préparer un autre</td><td class="ex"><code>vide_dessin(décor)</code></td></tr>
+                </table>
+
                 <h3 id="g-3d">La 3D</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>

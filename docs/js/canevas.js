@@ -54,6 +54,8 @@ const Pyt = (function () {
     // Images et sons chargés par le programme : charge_image et charge_son renvoient leur numéro
     let images = [];
     let sons = [];
+    // Dessins préparés par le programme (nouveau_dessin, montre_dessin) : leurs commandes, par numéro
+    let dessins = new Map();
     let enLecture = [];        // lecteurs <audio> en cours (solution de repli)
     let sourcesActives = [];   // sons Web Audio en cours
     let audio = null;
@@ -661,6 +663,7 @@ const Pyt = (function () {
             mode3D = false;
             images = [];
             sons = [];
+            dessins = new Map();
             état = étatInitial();
             tortue = tortueInitiale();
             this.efface();
@@ -879,6 +882,59 @@ const Pyt = (function () {
         tortueX() { return tortue.x; },
         tortueY() { return tortue.y; },
         tortueCap() { return tortue.cap; },
+        // ---------- Dessins : voir nouveau_dessin et montre_dessin (bibliothèque.lisp) ----------
+        // Les commandes d'un dessin arrivent en deux listes : nombres (un Float64Array : chaque
+        // commande est un code suivi de ses nombres) et textes (couleurs, messages, polices, dans
+        // l'ordre des commandes). Le dessin est gardé sous son numéro : redessine le rejoue sans
+        // qu'il soit renvoyé. Chaque commande passe par la méthode du dessin immédiat.
+        montreDessin(numéro, nombres, textes) {
+            dessins.set(numéro, { nombres, textes: Array.isArray(textes) ? textes : [] });
+            this.redessine(numéro);
+        },
+        redessine(numéro) {
+            dernièreErreur = '';
+            const d = dessins.get(numéro);
+            if (!d) return;
+            const n = d.nombres, t = d.textes;
+            let i = 0, k = 0;
+            while (i < n.length) {
+                switch (n[i++]) {
+                    case 1: this.efface(); break;
+                    case 2: this.fond(t[k++]); break;
+                    case 3: this.couleur(t[k++]); break;
+                    case 4: this.couleurTrait(t[k++]); break;
+                    case 5: this.couleurRemplissage(t[k++]); break;
+                    case 6: this.épaisseur(n[i++]); break;
+                    case 7: this.point(n[i], n[i + 1]); i += 2; break;
+                    case 8: this.ligne(n[i], n[i + 1], n[i + 2], n[i + 3]); i += 4; break;
+                    case 9: this.rectangle(n[i], n[i + 1], n[i + 2], n[i + 3], n[i + 4] === 1); i += 5; break;
+                    case 10: this.cercle(n[i], n[i + 1], n[i + 2], n[i + 3] === 1); i += 4; break;
+                    case 11: this.ellipse(n[i], n[i + 1], n[i + 2], n[i + 3], n[i + 4] === 1); i += 5; break;
+                    case 12: {
+                        // le nombre de points, leurs coordonnées, puis plein (1) ou non (0)
+                        const nb = n[i++], points = [];
+                        for (let p = 0; p < nb; p++, i += 2) points.push([n[i], n[i + 1]]);
+                        this.polygone(points, n[i++] === 1);
+                        break;
+                    }
+                    case 13: this.texte(n[i], n[i + 1], t[k++]); i += 2; break;
+                    case 14: this.tailleTexte(n[i++]); break;
+                    case 15: this.police(t[k++]); break;
+                    case 16: this.avance(n[i++]); break;
+                    case 17: this.tourne(n[i++]); break;
+                    case 18: this.crayon(n[i++] === 1); break;
+                    case 19: this.vaÀ(n[i], n[i + 1]); i += 2; break;
+                    case 20: this.oriente(n[i++]); break;
+                    case 21: this.origine(); break;
+                    case 22: this.montreTortue(n[i++] === 1); break;
+                    // une image inconnue arrête le dessin : son erreur remonte au programme
+                    case 23: this.placeImage(n[i], n[i + 1], n[i + 2]); i += 3; if (dernièreErreur) return; break;
+                    case 24: this.placeImage(n[i], n[i + 1], n[i + 2], n[i + 3]); i += 4; if (dernièreErreur) return; break;
+                    case 25: this.placeImage(n[i], n[i + 1], n[i + 2], n[i + 3], n[i + 4]); i += 5; if (dernièreErreur) return; break;
+                    default: dernièreErreur = 'montre_dessin : commande inconnue ' + n[i - 1]; return;
+                }
+            }
+        },
 
         // ---------- Animation et événements ----------
         animer(nom, délai) {

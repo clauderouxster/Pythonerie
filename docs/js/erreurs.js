@@ -12,6 +12,7 @@ const ErreursLispE = (function () {
         [/Division by zero/i, 'Division par zéro'],
         [/Function '([^']*)' already declared/i, 'La fonction « $1 » est définie deux fois (dans deux programmes importés, peut-être ?)'],
         [/Wrong number of arguments/i, 'Nombre d\'arguments incorrect'],
+        [/Could not find a match for function: '([^']*)'/i, 'Nombre ou type d\'arguments incorrect pour « $1 »'],
         [/Wrong parameter description/i, 'Paramètres mal décrits'],
         [/Index out of bounds|out of range/i, 'Indice en dehors de la liste'],
         [/Unknown key/i, 'Clé absente du dictionnaire'],

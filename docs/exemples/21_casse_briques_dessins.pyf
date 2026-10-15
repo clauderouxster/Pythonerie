@@ -1,0 +1,364 @@
+# 21. Casse-briques, avec des dessins
+# Le même jeu que l'exemple 15, avec un décor bien plus riche : un ciel en dégradé,
+# des bulles de lumière, des briques en relief, une traînée derrière la balle et
+# des éclats quand une brique casse.
+# La souris (ou les flèches du clavier, tenues enfoncées) déplace la raquette.
+# Clic ou Espace : lancer la balle. Tu as 3 vies ! (Clique d'abord dans le canevas
+# pour que le clavier fonctionne.)
+#
+# Ce qui ne bouge pas est préparé dans des dessins (nouveau_dessin) : le décor une fois
+# pour toutes, le mur seulement quand une brique casse. À chaque image, montre_dessin
+# les dessine en un seul appel, quel que soit leur nombre de formes.
+# Touche D : compare avec la même chose reconstruite à chaque image, ce qui revient
+# à dessiner chaque forme une par une. Le temps de dessin s'affiche en bas.
+# Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
+
+# Le mur de briques : 5 rangées de 10 briques
+COLONNES = 10
+RANGÉES = 5
+LARGEUR_BRIQUE = 75
+HAUTEUR_BRIQUE = 24
+ÉCART = 4
+HAUT_DU_MUR = 60
+# chaque rangée : la couleur du corps, celle du reflet (en haut), celle de l'ombre (en bas)
+COULEURS = [["#e53935", "#ff8a80", "#8e1c1a"], ["#fb8c00", "#ffcc80", "#9a5200"],
+            ["#fdd835", "#fff59d", "#9e8500"], ["#43a047", "#a5d6a7", "#1b5e20"],
+            ["#1e88e5", "#90caf9", "#0d47a1"]]
+
+ding = charge_son("exemples/médias/ding.wav")
+pop = charge_son("exemples/médias/pop.wav")
+
+raquette_l = 110
+raquette_h = 14
+raquette_x = 345
+raquette_y = 560
+rayon = 9
+
+# briques[i] vaut Vrai tant que la brique numéro i n'est pas cassée
+briques = [Vrai pour i dans intervalle(COLONNES * RANGÉES)]
+restantes = COLONNES * RANGÉES
+balle_x = 400.0
+balle_y = 540.0
+vx = 0.0
+vy = 0.0
+vitesse = 6.0
+vies = 3
+score = 0
+état = "attente"      # "attente", "jeu", "perdu" ou "gagné"
+traînée = []          # les dernières positions de la balle : [x, y]
+éclats = []           # les morceaux d'une brique cassée : [x, y, vx, vy, durée, couleur]
+
+# --- Le meilleur score ---
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
+# Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
+# le record ne vaut alors que le temps de l'exécution.
+JEU = "Casse-briques (dessins)"
+records_rangés = Vrai     # Faux si don0 contient autre chose que les records
+
+# le dictionnaire des records ({} si don0 est vide)
+fonction lit_records():
+    t = prend_données("don0")
+    si t == "":
+        retourne {}
+    essaie:
+        d = analyse_json(t)
+    sauf:
+        records_rangés =: Faux     # don0 contient un texte qui n'est pas du JSON
+        retourne {}
+    si typede(d) == "dictionnaire":
+        retourne d
+    records_rangés =: Faux         # du JSON, mais pas un dictionnaire
+    retourne {}
+
+fonction record_du_jeu():
+    d = lit_records()
+    si JEU dans d:
+        retourne d[JEU]
+    retourne 0
+
+fonction range_record(valeur):
+    d = lit_records()
+    si records_rangés:
+        d[JEU] = valeur
+        range_données("don0", en_json(d))
+
+record = record_du_jeu()
+nouveau_record = Faux
+
+# Appelée quand la partie est finie : un meilleur score devient le record
+fonction fin_de_partie():
+    si score > record:
+        record =: score
+        nouveau_record =: Vrai
+        range_record(score)
+
+# La position d'une brique se calcule à partir de son numéro
+fonction brique_x(i):
+    retourne 5 + (i % COLONNES) * (LARGEUR_BRIQUE + ÉCART)
+
+fonction brique_y(i):
+    retourne HAUT_DU_MUR + (i // COLONNES) * (HAUTEUR_BRIQUE + ÉCART)
+
+# La balle attend, posée sur la raquette
+fonction pose_balle():
+    balle_x =: raquette_x + raquette_l / 2
+    balle_y =: raquette_y - rayon - 1
+
+fonction recommence():
+    pour i dans intervalle(longueur(briques)):
+        briques[i] = Vrai
+    restantes =: COLONNES * RANGÉES
+    mur_à_refaire =: Vrai
+    vies =: 3
+    score =: 0
+    vitesse =: 6.0
+    nouveau_record =: Faux
+    état =: "attente"
+    pose_balle()
+
+fonction lance():
+    si état == "attente":
+        vx =: choisis([-3.0, 3.0])
+        vy =: -vitesse
+        état =: "jeu"
+    sinonsi état == "perdu" ou état == "gagné":
+        recommence()
+
+# La raquette ne sort pas du canevas
+fonction place_raquette(centre):
+    raquette_x =: minimum(maximum(centre - raquette_l / 2, 0.0), largeur() - raquette_l)
+    si état == "attente":
+        pose_balle()
+
+fonction souris(x, y):
+    place_raquette(x)
+
+fonction clic(x, y):
+    lance()
+
+# Espace lance la balle ; les flèches sont lues dans image(), tant qu'elles sont tenues
+fonction clavier(t):
+    si t == "espace":
+        lance()
+    sinonsi minuscules(t) == "d":
+        préparé =: non préparé
+
+# Les flèches tenues déplacent la raquette doucement, à chaque image
+fonction pilote_clavier():
+    centre = raquette_x + raquette_l / 2
+    si touche_enfoncée("gauche"):
+        place_raquette(centre - 9)
+    si touche_enfoncée("droite"):
+        place_raquette(centre + 9)
+
+# Une brique touchée disparaît, et la balle rebondit
+fonction casse_brique():
+    pour i dans intervalle(longueur(briques)):
+        si briques[i]:
+            x = brique_x(i)
+            y = brique_y(i)
+            dedans_x = balle_x + rayon > x et balle_x - rayon < x + LARGEUR_BRIQUE
+            dedans_y = balle_y + rayon > y et balle_y - rayon < y + HAUTEUR_BRIQUE
+            si dedans_x et dedans_y:
+                briques[i] = Faux
+                restantes -= 1
+                mur_à_refaire =: Vrai
+                pour k dans intervalle(10):
+                    éclats.ajoute([x + hasard() * LARGEUR_BRIQUE, y + hasard() * HAUTEUR_BRIQUE,
+                                   hasard() * 4 - 2, hasard() * -3, aléatoire(20, 40), COULEURS[i // COLONNES][0]])
+                # les rangées du haut rapportent plus de points
+                score += 10 * (RANGÉES - i // COLONNES)
+                # touchée par le côté : la balle repart de côté, sinon vers le haut ou le bas
+                si balle_x < x ou balle_x > x + LARGEUR_BRIQUE:
+                    vx =: -vx
+                sinon:
+                    vy =: -vy
+                # la balle va un peu plus vite à chaque brique
+                vitesse =: minimum(vitesse + 0.08, 11.0)
+                joue_son(ding)
+                si restantes == 0:
+                    état =: "gagné"
+                    fin_de_partie()
+                sortir
+
+fonction avance_balle():
+    balle_x += vx
+    balle_y += vy
+    # Les murs de gauche, de droite et du haut
+    si balle_x < rayon:
+        balle_x =: rayon
+        vx =: absolu(vx)
+    sinonsi balle_x > largeur() - rayon:
+        balle_x =: largeur() - rayon
+        vx =: -absolu(vx)
+    si balle_y < rayon:
+        balle_y =: rayon
+        vy =: absolu(vy)
+    # La raquette : plus la balle la touche loin du centre, plus elle part de côté
+    sur_raquette = balle_x > raquette_x - rayon et balle_x < raquette_x + raquette_l + rayon
+    à_hauteur = balle_y + rayon >= raquette_y et balle_y < raquette_y + raquette_h
+    si vy > 0 et sur_raquette et à_hauteur:
+        décalage = (balle_x - (raquette_x + raquette_l / 2)) / (raquette_l / 2)
+        décalage = minimum(maximum(décalage, -0.85), 0.85)
+        vx =: décalage * vitesse
+        vy =: -racine(vitesse * vitesse - vx * vx)
+        balle_y =: raquette_y - rayon
+        joue_son(pop)
+    casse_brique()
+    # La balle est tombée
+    si balle_y > hauteur() + rayon:
+        vies -= 1
+        si vies == 0:
+            état =: "perdu"
+            fin_de_partie()
+        sinon:
+            état =: "attente"
+            pose_balle()
+
+# --- Les dessins ---
+# Les bulles de lumière sont tirées une fois au hasard : le décor est le même à chaque image
+bulles = [[aléatoire(0, 800), aléatoire(0, 600), 2 + hasard() * 12, arrondi(0.03 + hasard() * 0.12, 2)] pour i dans intervalle(220)]
+
+décor = nouveau_dessin()
+mur = nouveau_dessin()
+mur_à_refaire = Vrai
+préparé = Vrai        # Faux (touche D) : les dessins sont refaits à chaque image
+temps_cumulé = 0
+images_comptées = 0
+temps_moyen = 0.0
+
+# Le décor : un ciel en dégradé de 75 bandes, des bulles de lumière, et un cadre
+fonction prépare_décor():
+    vide_dessin(décor)
+    pour i dans intervalle(75):
+        décor.couleur(rgb(8 + i, 12 + i * 0.8, 50 + i * 1.6))
+        décor.rectangle_plein(0, i * 8, 800, 8)
+    pour b dans bulles:
+        décor.couleur(f"rgba(255, 255, 255, {b[3]})")
+        décor.disque(b[0], b[1], b[2])
+    décor.couleur("#37474f")
+    décor.rectangle_plein(0, 0, 800, 4)
+    décor.rectangle_plein(0, 0, 4, 600)
+    décor.rectangle_plein(796, 0, 4, 600)
+    décor.couleur("#90a4ae")
+    pour k dans intervalle(20):
+        décor.disque(20 + k * 40, 2, 1.5)
+
+# Une brique en relief : l'ombre, le corps, le reflet du haut et une petite brillance
+fonction ajoute_brique(d, i):
+    x = brique_x(i)
+    y = brique_y(i)
+    c = COULEURS[i // COLONNES]
+    d.couleur(c[2])
+    d.rectangle_plein(x, y, LARGEUR_BRIQUE, HAUTEUR_BRIQUE)
+    d.couleur(c[0])
+    d.rectangle_plein(x, y, LARGEUR_BRIQUE - 3, HAUTEUR_BRIQUE - 3)
+    d.couleur(c[1])
+    d.rectangle_plein(x, y, LARGEUR_BRIQUE - 3, 4)
+    d.couleur("rgba(255, 255, 255, 0.35)")
+    d.ellipse_pleine(x + 16, y + 9, 9, 3)
+
+fonction prépare_mur():
+    vide_dessin(mur)
+    pour i dans intervalle(longueur(briques)):
+        si briques[i]:
+            ajoute_brique(mur, i)
+
+# Le décor et le mur : préparés une fois (et le mur quand une brique casse),
+# ou refaits à chaque image pour comparer
+fonction montre_dessins():
+    si non préparé:
+        prépare_décor()
+        prépare_mur()
+    sinonsi mur_à_refaire:
+        prépare_mur()
+        mur_à_refaire =: Faux
+    montre_dessin(décor)
+    montre_dessin(mur)
+
+fonction dessine():
+    # le temps des dessins, en moyenne sur 30 images
+    temps_cumulé += a_durée(montre_dessins())
+    images_comptées += 1
+    si images_comptées == 30:
+        temps_moyen =: temps_cumulé / 30
+        temps_cumulé =: 0
+        images_comptées =: 0
+    # la traînée de la balle : des disques de plus en plus transparents
+    pour k dans intervalle(longueur(traînée)):
+        couleur(f"rgba(255, 235, 59, {arrondi(0.05 + k * 0.05, 2)})")
+        disque(traînée[k][0], traînée[k][1], rayon * (0.4 + k * 0.07))
+    couleur("orange")
+    pour e dans éclats:
+        couleur(e[5])
+        rectangle_plein(e[0], e[1], 4, 4)
+    # la raquette : un corps, un reflet et deux bouts arrondis
+    couleur("#b0bec5")
+    rectangle_plein(raquette_x, raquette_y, raquette_l, raquette_h)
+    couleur("#eceff1")
+    rectangle_plein(raquette_x + 4, raquette_y + 2, raquette_l - 8, 4)
+    couleur("#78909c")
+    disque(raquette_x, raquette_y + raquette_h / 2, raquette_h / 2)
+    disque(raquette_x + raquette_l, raquette_y + raquette_h / 2, raquette_h / 2)
+    couleur("jaune")
+    disque(balle_x, balle_y, rayon)
+    couleur("blanc")
+    disque(balle_x - 3, balle_y - 3, 2.5)
+    couleur("blanc")
+    taille_texte(18)
+    texte(10, 20, f"Score : {score}")
+    texte(largeur() - 100, 20, f"Vies : {vies}")
+    # ce que coûtent les dessins
+    formes = 75 + longueur(bulles) + 23 + 4 * restantes
+    taille_texte(14)
+    couleur("rgba(255, 255, 255, 0.8)")
+    si préparé:
+        texte(10, 578, f"Dessins préparés : {formes} formes en 2 appels par image, {arrondi(temps_moyen, 1)} ms (D : comparer)")
+    sinon:
+        texte(10, 578, f"Refaits à chaque image : {formes} formes une par une, {arrondi(temps_moyen, 1)} ms (D : revenir)")
+    taille_texte(26)
+    couleur("blanc")
+    si état == "attente":
+        texte(215, 380, "Clic ou Espace : lancer la balle")
+        si record > 0:
+            texte(270, 430, f"Meilleur score : {record}")
+    sinonsi état == "perdu":
+        texte(240, 340, f"Perdu ! Score : {score}")
+        texte(255, 390, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 440, "Nouveau record !")
+        sinon:
+            texte(270, 440, f"Meilleur score : {record}")
+    sinonsi état == "gagné":
+        couleur("jaune")
+        texte(195, 340, f"Bravo, tout est cassé ! Score : {score}")
+        texte(255, 390, "Clic ou Espace : rejouer")
+        si nouveau_record:
+            couleur("jaune")
+            texte(300, 440, "Nouveau record !")
+        sinon:
+            texte(270, 440, f"Meilleur score : {record}")
+
+fonction image():
+    pilote_clavier()
+    si état == "jeu":
+        avance_balle()
+        traînée.ajoute([balle_x, balle_y])
+        si longueur(traînée) > 10:
+            ramène_élément(traînée, 0)
+    sinon:
+        traînée =: []
+    # les éclats tombent et s'effacent
+    éclats =: [[e[0] + e[2], e[1] + e[3], e[2], e[3] + 0.2, e[4] - 1, e[5]] pour e dans éclats si e[4] > 1]
+    dessine()
+
+cache_tortue()
+prépare_décor()
+pose_balle()
+quand_souris(souris)
+quand_glisse(souris)      # sur une tablette : glisser le doigt
+quand_clic(clic)
+quand_touche(clavier)
+animer(image, 16)

@@ -254,29 +254,92 @@
 ; Comme en Python, les fonctions qui agissent sans calculer de valeur renvoient Rien
 ; (la console n'affiche donc rien après cercle(...) ou avance(...)).
 ;------------------------------------------------------------------
-(defun efface () (evaljsc "Pyt.efface()") nil)
-(defun fond (c) (evaljsc (list "Pyt.fond" c)) nil)
-(defun couleur (c) (evaljsc (list "Pyt.couleur" c)) nil)
-(defun couleur_trait (c) (evaljsc (list "Pyt.couleurTrait" c)) nil)
-(defun couleur_remplissage (c) (evaljsc (list "Pyt.couleurRemplissage" c)) nil)
-(defun épaisseur (e) (evaljsc (list "Pyt.épaisseur" e)) nil)
+;------------------------------------------------------------------
+; Les dessins : préparer un dessin, puis le montrer d'un coup
+; d = nouveau_dessin() rend un dessin vide. Les instructions de dessin et de la tortue acceptent
+; un dessin en premier argument : d.couleur("rouge"), d.disque(x, y, r), d.avance(10)...
+; (ou disque(d, x, y, r)). Elles ne dessinent rien : elles ajoutent leur commande au dessin.
+; montre_dessin(d) dessine toutes ses commandes, dans l'ordre, en un seul appel à JavaScript.
+; Le navigateur garde le dessin : le montrer de nouveau (à chaque image d'une animation, pour
+; un décor) ne renvoie pas ses commandes s'il n'a pas changé. vide_dessin(d) les retire toutes.
+; Sans dessin, les instructions dessinent tout de suite, comme avant : cercle(x, y, r).
+; Chaque commande est un code suivi de ses nombres, dans la liste "nombres" (des doubles, que
+; evaljsc transmet sans texte) ; les couleurs, les messages et les polices vont dans "textes".
+; Les codes sont ceux de Pyt.redessine (js/canevas.js).
+;------------------------------------------------------------------
+(setq _numéro_dessin 0)
+(defun nouveau_dessin ()
+   (+= _numéro_dessin 1)
+   (dictionary "genre" "dessin" "numéro" _numéro_dessin "nombres" (numbers) "textes" (list) "envoyé" -1))
+; la liste des nombres du dessin donné à une instruction ; une autre valeur est une erreur claire
+(defun _dessin (_d _nom)
+   (if (and (in_it _d "genre") (= (@ _d "genre") "dessin"))
+      (@ _d "nombres")
+      (throw (+ _nom " : il faut un dessin (nouveau_dessin()) devant le point, comme dans d." _nom "(...)"))))
+(defun _polygone_dessin (_d _nom _points _plein)
+   (setq _n (_dessin _d _nom))
+   (push _n 12 (size _points))
+   (loop _p _points (push _n (@ _p 0) (@ _p 1)))
+   (push _n _plein))
+; "envoyé" : le nombre de valeurs déjà envoyées au navigateur (-1 : rien) ; un dessin ne fait que
+; grandir, sauf par vide_dessin, qui remet "envoyé" à -1
+(defun montre_dessin (_d)
+   (setq _n (_dessin _d "montre_dessin"))
+   (if (= (size _n) (@ _d "envoyé"))
+      (evaljsc (list "Pyt.redessine" (@ _d "numéro")))
+      (block
+         (evaljsc (list "Pyt.montreDessin" (@ _d "numéro") _n (@ _d "textes")))
+         (set@ _d "envoyé" (size _n))))
+   (_erreur_navigateur)
+   nil)
+(defun vide_dessin (_d)
+   (_dessin _d "vide_dessin")
+   (set@ _d "nombres" (numbers))
+   (set@ _d "textes" (list))
+   (set@ _d "envoyé" -1)
+   nil)
+(defun efface ((_dd nil)) (if _dd (push (_dessin _dd "efface") 1) (evaljsc "Pyt.efface()")) nil)
+(defpat fond (c) (evaljsc (list "Pyt.fond" c)) nil)
+(defpat fond ((dictionary_ _dd) c) (push (_dessin _dd "fond") 2) (push (@ _dd "textes") c) nil)
+(defpat couleur (c) (evaljsc (list "Pyt.couleur" c)) nil)
+(defpat couleur ((dictionary_ _dd) c) (push (_dessin _dd "couleur") 3) (push (@ _dd "textes") c) nil)
+(defpat couleur_trait (c) (evaljsc (list "Pyt.couleurTrait" c)) nil)
+(defpat couleur_trait ((dictionary_ _dd) c) (push (_dessin _dd "couleur_trait") 4) (push (@ _dd "textes") c) nil)
+(defpat couleur_remplissage (c) (evaljsc (list "Pyt.couleurRemplissage" c)) nil)
+(defpat couleur_remplissage ((dictionary_ _dd) c) (push (_dessin _dd "couleur_remplissage") 5) (push (@ _dd "textes") c) nil)
+(defpat épaisseur (e) (evaljsc (list "Pyt.épaisseur" e)) nil)
+(defpat épaisseur ((dictionary_ _dd) e) (push (_dessin _dd "épaisseur") 6 e) nil)
 
-(defun point (x y) (evaljsc (list "Pyt.point" x y)) nil)
-(defun ligne (x1 y1 x2 y2) (evaljsc (list "Pyt.ligne" x1 y1 x2 y2)) nil)
-(defun rectangle (x y l h) (evaljsc (list "Pyt.rectangle" x y l h false)) nil)
-(defun rectangle_plein (x y l h) (evaljsc (list "Pyt.rectangle" x y l h true)) nil)
-(defun carré (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté false)) nil)
-(defun carré_plein (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté true)) nil)
-(defun cercle (x y r) (evaljsc (list "Pyt.cercle" x y r false)) nil)
-(defun disque (x y r) (evaljsc (list "Pyt.cercle" x y r true)) nil)
-(defun ellipse (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry false)) nil)
-(defun ellipse_pleine (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry true)) nil)
-(defun triangle (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) nil)
-(defun triangle_plein (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) nil)
+(defpat point (x y) (evaljsc (list "Pyt.point" x y)) nil)
+(defpat point ((dictionary_ _dd) x y) (push (_dessin _dd "point") 7 x y) nil)
+(defpat ligne (x1 y1 x2 y2) (evaljsc (list "Pyt.ligne" x1 y1 x2 y2)) nil)
+(defpat ligne ((dictionary_ _dd) x1 y1 x2 y2) (push (_dessin _dd "ligne") 8 x1 y1 x2 y2) nil)
+(defpat rectangle (x y l h) (evaljsc (list "Pyt.rectangle" x y l h false)) nil)
+(defpat rectangle ((dictionary_ _dd) x y l h) (push (_dessin _dd "rectangle") 9 x y l h 0) nil)
+(defpat rectangle_plein (x y l h) (evaljsc (list "Pyt.rectangle" x y l h true)) nil)
+(defpat rectangle_plein ((dictionary_ _dd) x y l h) (push (_dessin _dd "rectangle_plein") 9 x y l h 1) nil)
+(defpat carré (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté false)) nil)
+(defpat carré ((dictionary_ _dd) x y côté) (push (_dessin _dd "carré") 9 x y côté côté 0) nil)
+(defpat carré_plein (x y côté) (evaljsc (list "Pyt.rectangle" x y côté côté true)) nil)
+(defpat carré_plein ((dictionary_ _dd) x y côté) (push (_dessin _dd "carré_plein") 9 x y côté côté 1) nil)
+(defpat cercle (x y r) (evaljsc (list "Pyt.cercle" x y r false)) nil)
+(defpat cercle ((dictionary_ _dd) x y r) (push (_dessin _dd "cercle") 10 x y r 0) nil)
+(defpat disque (x y r) (evaljsc (list "Pyt.cercle" x y r true)) nil)
+(defpat disque ((dictionary_ _dd) x y r) (push (_dessin _dd "disque") 10 x y r 1) nil)
+(defpat ellipse (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry false)) nil)
+(defpat ellipse ((dictionary_ _dd) x y rx ry) (push (_dessin _dd "ellipse") 11 x y rx ry 0) nil)
+(defpat ellipse_pleine (x y rx ry) (evaljsc (list "Pyt.ellipse" x y rx ry true)) nil)
+(defpat ellipse_pleine ((dictionary_ _dd) x y rx ry) (push (_dessin _dd "ellipse_pleine") 11 x y rx ry 1) nil)
+(defpat triangle (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) false)) nil)
+(defpat triangle ((dictionary_ _dd) x1 y1 x2 y2 x3 y3) (push (_dessin _dd "triangle") 12 3 x1 y1 x2 y2 x3 y3 0) nil)
+(defpat triangle_plein (x1 y1 x2 y2 x3 y3) (evaljsc (list "Pyt.polygone" (json (list (list x1 y1) (list x2 y2) (list x3 y3))) true)) nil)
+(defpat triangle_plein ((dictionary_ _dd) x1 y1 x2 y2 x3 y3) (push (_dessin _dd "triangle_plein") 12 3 x1 y1 x2 y2 x3 y3 1) nil)
 ; points est une liste de couples : [[0,0], [100,0], [50,80]]
 ; Les listes imbriquées sont passées en JSON : evaljs réévaluerait chaque sous-liste
-(defun polygone (points) (evaljsc (list "Pyt.polygone" (json points) false)) nil)
-(defun polygone_plein (points) (evaljsc (list "Pyt.polygone" (json points) true)) nil)
+(defpat polygone (points) (evaljsc (list "Pyt.polygone" (json points) false)) nil)
+(defpat polygone ((dictionary_ _dd) points) (_polygone_dessin _dd "polygone" points 0) nil)
+(defpat polygone_plein (points) (evaljsc (list "Pyt.polygone" (json points) true)) nil)
+(defpat polygone_plein ((dictionary_ _dd) points) (_polygone_dessin _dd "polygone_plein" points 1) nil)
 
 ; Pixels : chaque point du dessin a quatre valeurs de 0 à 255 (rouge, vert, bleu, opacité).
 ; couleur_pixel(x, y) : la couleur du point (x, y), en liste [rouge, vert, bleu, opacité]
@@ -298,12 +361,15 @@
    nil)
 
 ; Texte
-(defun texte (x y message) (evaljsc (list "Pyt.texte" x y (string message))) nil)
-(defun taille_texte (n) (evaljsc (list "Pyt.tailleTexte" n)) nil)
+(defpat texte (x y message) (evaljsc (list "Pyt.texte" x y (string message))) nil)
+(defpat texte ((dictionary_ _dd) x y message) (push (_dessin _dd "texte") 13 x y) (push (@ _dd "textes") (string message)) nil)
+(defpat taille_texte (n) (evaljsc (list "Pyt.tailleTexte" n)) nil)
+(defpat taille_texte ((dictionary_ _dd) n) (push (_dessin _dd "taille_texte") 14 n) nil)
 ; largeur_texte(message) : la largeur (en points du canevas) qu'aurait message écrit par texte(),
 ; avec la police et la taille du moment ; la plus longue ligne pour un texte sur plusieurs lignes
 (defun largeur_texte (message) (evaljs_d (list "Pyt.largeurTexte" (string message))))
-(defun police (nom) (evaljsc (list "Pyt.police" nom)) nil)
+(defpat police (nom) (evaljsc (list "Pyt.police" nom)) nil)
+(defpat police ((dictionary_ _dd) nom) (push (_dessin _dd "police") 15) (push (@ _dd "textes") nom) nil)
 
 ; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)
 ; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
@@ -313,17 +379,23 @@
 ;------------------------------------------------------------------
 ; La tortue
 ;------------------------------------------------------------------
-(defun avance (d) (evaljsc (list "Pyt.avance" d)) nil)
-(defun recule (d) (evaljsc (list "Pyt.avance" (* -1 d))) nil)
-(defun gauche (a) (evaljsc (list "Pyt.tourne" (* -1 a))) nil)
-(defun droite (a) (evaljsc (list "Pyt.tourne" a)) nil)
-(defun lève_crayon () (evaljsc (list "Pyt.crayon" false)) nil)
-(defun baisse_crayon () (evaljsc (list "Pyt.crayon" true)) nil)
-(defun va_à (x y) (evaljsc (list "Pyt.vaÀ" x y)) nil)
-(defun oriente (angle) (evaljsc (list "Pyt.oriente" angle)) nil)
-(defun origine () (evaljsc "Pyt.origine()") nil)
-(defun montre_tortue () (evaljsc (list "Pyt.montreTortue" true)) nil)
-(defun cache_tortue () (evaljsc (list "Pyt.montreTortue" false)) nil)
+(defpat avance (d) (evaljsc (list "Pyt.avance" d)) nil)
+(defpat avance ((dictionary_ _dd) d) (push (_dessin _dd "avance") 16 d) nil)
+(defpat recule (d) (evaljsc (list "Pyt.avance" (* -1 d))) nil)
+(defpat recule ((dictionary_ _dd) d) (push (_dessin _dd "recule") 16 (* -1 d)) nil)
+(defpat gauche (a) (evaljsc (list "Pyt.tourne" (* -1 a))) nil)
+(defpat gauche ((dictionary_ _dd) a) (push (_dessin _dd "gauche") 17 (* -1 a)) nil)
+(defpat droite (a) (evaljsc (list "Pyt.tourne" a)) nil)
+(defpat droite ((dictionary_ _dd) a) (push (_dessin _dd "droite") 17 a) nil)
+(defun lève_crayon ((_dd nil)) (if _dd (push (_dessin _dd "lève_crayon") 18 0) (evaljsc (list "Pyt.crayon" false))) nil)
+(defun baisse_crayon ((_dd nil)) (if _dd (push (_dessin _dd "baisse_crayon") 18 1) (evaljsc (list "Pyt.crayon" true))) nil)
+(defpat va_à (x y) (evaljsc (list "Pyt.vaÀ" x y)) nil)
+(defpat va_à ((dictionary_ _dd) x y) (push (_dessin _dd "va_à") 19 x y) nil)
+(defpat oriente (angle) (evaljsc (list "Pyt.oriente" angle)) nil)
+(defpat oriente ((dictionary_ _dd) angle) (push (_dessin _dd "oriente") 20 angle) nil)
+(defun origine ((_dd nil)) (if _dd (push (_dessin _dd "origine") 21) (evaljsc "Pyt.origine()")) nil)
+(defun montre_tortue ((_dd nil)) (if _dd (push (_dessin _dd "montre_tortue") 22 1) (evaljsc (list "Pyt.montreTortue" true))) nil)
+(defun cache_tortue ((_dd nil)) (if _dd (push (_dessin _dd "cache_tortue") 22 0) (evaljsc (list "Pyt.montreTortue" false))) nil)
 (defun position_x () (evaljs_d "Pyt.tortueX()"))
 (defun position_y () (evaljs_d "Pyt.tortueY()"))
 (defun cap () (evaljs_d "Pyt.tortueCap()"))
@@ -401,7 +473,12 @@
 ;------------------------------------------------------------------
 (defun charge_image (adresse) (evaljs_i (list "Pyt.chargeImage" (string adresse))))
 ; place_image(numéro, x, y) ou place_image(numéro, x, y, largeur, hauteur)
-(defun place_image (image x y (l nil) (h nil)) (evaljsc (list "Pyt.placeImage" image x y l h)) (_erreur_navigateur) nil)
+(defpat place_image (image x y) (evaljsc (list "Pyt.placeImage" image x y nil nil)) (_erreur_navigateur) nil)
+(defpat place_image (image x y l) (evaljsc (list "Pyt.placeImage" image x y l nil)) (_erreur_navigateur) nil)
+(defpat place_image (image x y l h) (evaljsc (list "Pyt.placeImage" image x y l h)) (_erreur_navigateur) nil)
+(defpat place_image ((dictionary_ _dd) image x y) (push (_dessin _dd "place_image") 23 image x y) nil)
+(defpat place_image ((dictionary_ _dd) image x y l) (push (_dessin _dd "place_image") 24 image x y l) nil)
+(defpat place_image ((dictionary_ _dd) image x y l h) (push (_dessin _dd "place_image") 25 image x y l h) nil)
 (defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
 (defun joue_son (son) (evaljsc (list "Pyt.joueSon" son)) nil)
 ; capture_image(x, y, l, h) : un rectangle du dessin devient une image (son numéro)

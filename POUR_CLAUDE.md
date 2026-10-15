@@ -109,6 +109,32 @@ Pour une suite de questions (un quiz), une fonction pose la question suivante, e
 - `arrête()` arrête les animations. L'élève a aussi un bouton « Arrêter » et un mode plein écran.
 - Le clavier ne marche qu'après un clic dans le canevas (ou en plein écran) : dis-le dans les commentaires.
 
+### Les dessins (préparer, puis dessiner d'un coup)
+```python
+décor = nouveau_dessin()
+décor.fond("bleu clair")
+pour i dans intervalle(300):
+    décor.couleur("blanc")
+    décor.disque(hasard() * 800, hasard() * 400, 2)     # des étoiles
+décor.couleur("vert")
+décor.rectangle_plein(0, 450, 800, 150)
+
+x = 0
+
+fonction image():
+    montre_dessin(décor)            # tout le décor, en un seul appel
+    couleur("rouge")
+    disque(x, 420, 20)              # ce qui bouge se dessine tout de suite
+    x += 3
+
+animer(image, 30)
+```
+- `d = nouveau_dessin()` rend un dessin vide. Les instructions de dessin (`efface`, `fond`, `couleur`, `couleur_trait`, `couleur_remplissage`, `épaisseur`, `point`, `ligne`, `rectangle`, `carré`, `cercle`, `disque`, `ellipse`, `triangle`, `polygone` et leurs formes pleines, `texte`, `taille_texte`, `police`, `place_image`) et celles de la tortue (`avance`, `recule`, `droite`, `gauche`, `va_à`, `oriente`, `origine`, `lève_crayon`, `baisse_crayon`, `montre_tortue`, `cache_tortue`) acceptent un dessin devant le point : `d.disque(x, y, r)` ne dessine rien, il ajoute sa commande au dessin. Écris-les en méthode, comme en 3D ; `disque(d, x, y, r)` est le même appel. Sans dessin, elles dessinent tout de suite, comme avant : c'est la forme simple, à garder pour quelques formes.
+- `montre_dessin(d)` dessine toutes les commandes, dans l'ordre, en un seul appel au navigateur. Le navigateur garde le dessin : le montrer de nouveau (à chaque image d'`animer`) ne renvoie pas ses commandes tant qu'il n'a pas changé, et ne coûte presque rien. `vide_dessin(d)` retire toutes ses commandes, pour le reconstruire.
+- Les commandes rejouent les mêmes instructions : une couleur, une épaisseur ou une police choisie dans le dessin reste choisie après lui, et la tortue d'un dessin repart d'où elle se trouve à chaque `montre_dessin`. Un dessin qui commence par `fond(…)` remplace `efface()`.
+- Les fonctions qui rendent une valeur (`position_x`, `couleur_pixel`, `largeur_texte`…) et les objets (`bouton`, `saisie`…) n'entrent pas dans un dessin.
+- Quand s'en servir : un décor ou une figure de centaines de formes, redessiné à chaque image. Préparé une fois, il coûte un seul appel par image au lieu d'un appel par forme.
+
 ### La 3D (avec three.js)
 ```python
 scène = nouvelle_scène()

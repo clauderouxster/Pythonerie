@@ -51,7 +51,7 @@ const Scène3D = (function () {
         try { f(); } catch (e) { if (erreur) erreur('Erreur dans la 3D : ' + e.message); }
     }
 
-    const couleur = (c) => new THREE.Color(options.couleurCSS(c === undefined || c === null ? 'blanc' : c));
+    const couleur = (c) => new THREE.Color(options.couleurCSS(c === undefined || c === null ? '#ffffff' : c));
     const degrés = (a) => (Number(a) || 0) * Math.PI / 180;
     const nombre = (x, défaut = 0) => { const n = Number(x); return Number.isFinite(n) ? n : défaut; };
 
@@ -106,7 +106,7 @@ const Scène3D = (function () {
             }
             case 'lumière':
                 // decay 0 : l'éclairage ne faiblit pas avec la distance (sinon les planètes lointaines seraient noires)
-                o = new THREE.PointLight(couleur(e.couleur || 'blanc'), nombre(e.intensité, 2.5), 0, 0);
+                o = new THREE.PointLight(couleur(e.couleur || '#ffffff'), nombre(e.intensité, 2.5), 0, 0);
                 break;
             case 'caméra':
                 // la caméra de la scène : sa position, et le point qu'elle regarde

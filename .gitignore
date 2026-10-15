@@ -1,7 +1,11 @@
-# Archives des élèves conservées par serveur.py (données locales, jamais publiées)
-archives/*
-!archives/.gitkeep
+# Projets des élèves conservés par serveur.py (données locales, jamais publiées)
+projets/*
+!projets/.gitkeep
 
 __pycache__/
 *.pyc
 .DS_Store
+
+# Comptes et données des professeurs (serveur.py), jamais publiés
+serveur/
+docs/.DS_Store

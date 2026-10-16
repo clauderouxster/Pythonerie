@@ -879,6 +879,28 @@ const Pyt = (function () {
         },
         largeur() { return LARGEUR; },
         hauteur() { return HAUTEUR; },
+        // appareil() : sur quoi tourne le programme, pour l'adapter. Le genre d'appareil, puis la
+        // largeur et la hauteur de l'écran (en points CSS), dans le sens où on le tient :
+        // ["ordinateur", 1440, 900], ["tablette", 1180, 820], ["téléphone", 390, 844].
+        // Le navigateur dit souvent ce qu'il est (iPhone, Android « Mobile », iPad) ; un iPad récent
+        // se dit Mac, mais il est tactile ; sinon, un doigt (pointer: coarse) plutôt qu'une souris
+        // fait une tablette ou un téléphone, selon la taille de l'écran. Un ordinateur portable à
+        // écran tactile garde la souris ou le pavé comme pointeur principal : il reste un ordinateur.
+        appareil() {
+            const ua = navigator.userAgent || '';
+            const tactile = (navigator.maxTouchPoints || 0) > 0;
+            const doigt = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+            const petit = Math.min(screen.width, screen.height), grand = Math.max(screen.width, screen.height);
+            let genre;
+            if (/iPhone|iPod|Windows Phone|Android.*Mobile|Mobile.*Firefox/i.test(ua)) genre = 'téléphone';
+            else if (/iPad|Android|Tablet|Silk|Kindle/i.test(ua) || (/Macintosh/.test(ua) && tactile)) genre = 'tablette';
+            else if (tactile && doigt) genre = petit < 600 ? 'téléphone' : 'tablette';
+            else genre = 'ordinateur';
+            // l'écran d'un iPhone ou d'un iPad ne tourne pas avec l'appareil (screen.width reste
+            // la largeur en portrait) : on suit l'orientation
+            const paysage = !!(window.matchMedia && window.matchMedia('(orientation: landscape)').matches);
+            return [genre, paysage ? grand : petit, paysage ? petit : grand];
+        },
 
         // ---------- Tortue ----------
         avance(d) {

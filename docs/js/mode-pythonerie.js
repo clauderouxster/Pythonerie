@@ -87,6 +87,7 @@ const PYTHONERIE_FONCTIONS = {
     'taille_texte': 'taille_texte(n) — taille des lettres en pixels',
     'police': 'police(nom) — "serif", "monospace", "Comic Sans MS"...',
     'canevas': 'canevas(largeur, hauteur) — change la taille du canevas (800 × 600 sinon)',
+    'appareil': 'appareil() — sur quoi tourne le programme : ["ordinateur", 1440, 900], ["tablette", …] ou ["téléphone", …], avec la largeur et la hauteur de l\'écran',
     'largeur': 'largeur() — largeur du canevas (800 au départ)',
     'hauteur': 'hauteur() — hauteur du canevas (600 au départ)',
     'couleur_pixel': 'couleur_pixel(x, y) — [rouge, vert, bleu, opacité] du point (0 à 255)',

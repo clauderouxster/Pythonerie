@@ -375,6 +375,10 @@
 ; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
 (defun largeur () (evaljs_d "Pyt.largeur()"))
 (defun hauteur () (evaljs_d "Pyt.hauteur()"))
+; appareil() : sur quoi tourne le programme, pour l'adapter : ["ordinateur", 1440, 900],
+; ["tablette", 1180, 820] ou ["téléphone", 390, 844], le genre d'appareil, puis la largeur et la
+; hauteur de l'écran (en points), dans le sens où on le tient. evaljs_j rend directement la liste.
+(defun appareil () (evaljs_j "Pyt.appareil()"))
 
 ;------------------------------------------------------------------
 ; La tortue

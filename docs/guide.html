@@ -1119,6 +1119,11 @@ affiche(double(21))       # affiche 42</pre></div>
                         Si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», la Pythonerie te demande d'abord de lui en donner un.
                         Tu le trouves dans le dossier <b>Téléchargements</b>. Dans certaines classes, une copie est aussi
                         envoyée à ton enseignant&nbsp;: la Pythonerie te le dit dans la console.</li>
+                    <li>Pour l'envoyer <b>par courriel</b>, choisis plutôt <b>✉️ Exporter pour un courriel (.json)</b>&nbsp;:
+                        beaucoup de messageries refusent les fichiers <b>zip</b>, mais pas un fichier texte. Le fichier <code>.json</code>
+                        contient la même chose (il est juste un peu plus gros) et s'ouvre de la même façon.</li>
+                    <li>Encore plus simple&nbsp;: le bouton <b>📤</b> à côté du nom de ton projet ouvre le <b>partage</b> de ta tablette
+                        ou de ton ordinateur (Mail, Messages, AirDrop…), avec ton projet déjà joint. Celui qui le reçoit l'ouvre avec <b>📥 Charger un projet…</b>.</li>
                     <li>Pour ouvrir un projet exporté, choisis <b>📥 Charger un projet…</b>. Il prend la place de ton projet en cours,
                         qui t'attend dans la liste <b>Mes projets</b>.</li>
                     <li>Claude (ou ton enseignant) t'a préparé un projet écrit en texte, qui commence par <code>{ "format": "projet-pythonerie"</code>&nbsp;?
@@ -1319,6 +1324,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>police(nom)</code></td><td>choisit la forme des lettres</td><td class="ex"><code>police("serif")</code></td></tr>
                     <tr><td><code>canevas(largeur, hauteur)</code></td><td>change la taille du canevas (800 sur 600 au départ) et efface le dessin</td><td class="ex"><code>canevas(400, 400)</code></td></tr>
                     <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur et la hauteur du canevas (800 et 600 au départ)</td><td class="ex"><code>largeur()</code></td></tr>
+                    <tr><td><code>appareil()</code></td><td>sur quoi tourne ton programme&nbsp;: <code>"ordinateur"</code>, <code>"tablette"</code> ou <code>"téléphone"</code>, puis la largeur et la hauteur de l'écran (dans le sens où tu le tiens). Pratique pour adapter un jeu&nbsp;: sur une tablette, pas de clavier&nbsp;!</td><td class="ex"><code>si appareil()[0] == "tablette":</code></td></tr>
                 </table>
 
                 <h3 id="g-pixels">Les pixels</h3>

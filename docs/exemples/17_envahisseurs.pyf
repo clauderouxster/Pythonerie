@@ -5,6 +5,7 @@
 # (Clique d'abord dans le canevas pour que le clavier fonctionne,
 # ou passe en plein écran.)
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
+# Sur une tablette ou un téléphone : le bouton 🔥 Feu tire, et le doigt pilote.
 
 # La flotte : 5 rangées de 10 envahisseurs
 COLONNES = 10
@@ -130,8 +131,21 @@ fonction place_vaisseau(x):
 fonction souris(x, y):
     place_vaisseau(x)
 
+# Sur une tablette ou un téléphone, il n'y a pas de clavier, et toucher l'écran sert à
+# piloter : c'est le bouton 🔥 Feu (créé tout en bas) qui tire, à la place du clic
+TACTILE = appareil()[0] != "ordinateur"
+TIRER = "Clic ou Espace"
+si TACTILE:
+    TIRER = "Touche 🔥 Feu"
+
+fonction bouton_feu(clef, texte):
+    tire()
+
 fonction clic(x, y):
     place_vaisseau(x)
+    # sur une tablette, toucher l'écran pilote ; le bouton 🔥 Feu tire (un toucher lance encore la partie)
+    si TACTILE et état == "jeu":
+        retourne Rien
     tire()
 
 # Espace (ou haut) tire ; les flèches sont lues dans image(), tant qu'elles sont tenues
@@ -288,7 +302,7 @@ fonction dessine():
     texte(largeur() - 100, 20, f"Vies : {vies}")
     taille_texte(26)
     si état == "attente":
-        texte(165, 330, "Clic ou Espace : défendre la Terre !")
+        texte(165, 330, f"{TIRER} : défendre la Terre !")
         si record > 0:
             texte(270, 380, f"Meilleur score : {record}")
     sinonsi état == "perdu":
@@ -296,7 +310,7 @@ fonction dessine():
         texte(240, 300, f"La Terre est envahie !")
         couleur("blanc")
         texte(270, 345, f"Score : {score}, vague {vague}")
-        texte(255, 390, "Clic ou Espace : rejouer")
+        texte(255, 390, f"{TIRER} : rejouer")
         si nouveau_record:
             couleur("jaune")
             texte(300, 440, "Nouveau record !")
@@ -321,6 +335,10 @@ cache_tortue()
 nouvelle_vague()
 quand_souris(souris)
 quand_glisse(souris)      # sur une tablette : glisser le doigt
+# sur une tablette ou un téléphone, le bouton qui tire, à la place du clic
+si TACTILE:
+    taille_texte(26)
+    bouton("feu", 10, 420, "🔥 Feu", bouton_feu)
 quand_clic(clic)
 quand_touche(clavier)
 animer(image, 20)

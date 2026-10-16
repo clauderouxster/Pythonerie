@@ -1525,6 +1525,8 @@ const Pythonerie = (function () {
         éléments.push({ texte: '✏️ Renommer « ' + nomDuProjet + ' »…', action: renommeProjet });
         if (nomDuProjet !== SANS_NOM) éléments.push({ texte: '✖ Fermer « ' + nomDuProjet + ' »', action: fermeProjet });
         éléments.push({ texte: '📦 Exporter le projet', action: exporteProjet });
+        éléments.push({ texte: '✉️ Exporter pour un courriel (.json)', action: exporteProjetTexte });
+        éléments.push({ texte: '📤 Envoyer le projet…', action: partageProjet });
         éléments.push({ texte: '🌐 Créer une application Web…', action: créeApplicationWeb });
         ouvreDéroulante($('nomProjet'), éléments);
     }
@@ -1581,7 +1583,8 @@ const Pythonerie = (function () {
     }
 
     // Exporte le projet dans Téléchargements (et en garde une copie sur le serveur de la classe)
-    async function exporteProjet() {
+    // Avant un export : un élève connu, et un projet qui a un nom ; rend l'instantané du projet
+    async function prépareExport() {
         if (!exigeÉlève('Pour exporter ton projet, il faut d\'abord dire qui tu es.')) return null;
         // un projet sans nom en reçoit un avant de partir
         if (nomDuProjet === SANS_NOM) {
@@ -1589,11 +1592,16 @@ const Pythonerie = (function () {
             if (!nom) { écritConsole('— Export annulé : le projet n\'a pas de nom.', 'info'); return null; }
             changeNomProjet(nom);
         }
-        let instant, archive;
-        try {
-            instant = await instantané();
-            archive = await archiveProjet(instant);
-        } catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return null; }
+        try { return await instantané(); }
+        catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return null; }
+    }
+
+    async function exporteProjet() {
+        const instant = await prépareExport();
+        if (!instant) return null;
+        let archive;
+        try { archive = await archiveProjet(instant); }
+        catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return null; }
         const nom = nomFichierProjet();
         const a = document.createElement('a');
         a.href = URL.createObjectURL(archive);
@@ -1777,6 +1785,113 @@ const Pythonerie = (function () {
         for (const r of Object.keys(FichiersProjet.RÉPERTOIRES)) entrées.push({ nom: r + '/' });
         for (const f of instant.fichiers) entrées.push({ nom: f.chemin, octets: new Uint8Array(await f.blob.arrayBuffer()) });
         return Zip.écrit(entrées);
+    }
+
+    // Le projet en un seul fichier texte .json, au format de lisProjetJSON (plus bas) : les
+    // messageries filtrent souvent les .zip, rarement un fichier texte. Les programmes, les
+    // onglets, les données et les images SVG y sont en clair ; les autres images et les sons
+    // en base64 (un tiers plus gros que dans le .zip).
+    async function texteProjet(instant, nom = nomDuProjet) {
+        const enBase64 = (blob) => new Promise((ok, échec) => {
+            const lecteur = new FileReader();
+            lecteur.onload = () => ok(String(lecteur.result).replace(/^data:[^,]*,/, ''));
+            lecteur.onerror = () => échec(lecteur.error);
+            lecteur.readAsDataURL(blob);
+        });
+        const fichiers = {};
+        for (const f of instant.fichiers) {
+            let texte = null;
+            // en clair seulement ce que lisProjetJSON lit en clair, et si c'est bien du texte
+            if (f.chemin.startsWith('données/') || /\.svg$/i.test(f.chemin)) {
+                try { texte = new TextDecoder('utf-8', { fatal: true }).decode(await f.blob.arrayBuffer()); }
+                catch (e) { texte = null; }
+            }
+            fichiers[f.chemin] = texte !== null ? texte : { base64: await enBase64(f.blob) };
+        }
+        const projet = { format: FORMAT_PROJET, version: 3, nom, élève: nomCourant(), créé: new Date().toISOString(),
+            programmes: instant.programmes, dossiers: [...instant.dossiers].sort(), onglets: instant.onglets, fichiers };
+        return JSON.stringify(projet, null, 1) + '\n';
+    }
+
+    // La taille d'un fichier, lisible
+    function tailleLisible(octets) {
+        return octets < 1024 * 1024 ? Math.max(1, Math.round(octets / 1024)) + ' Ko' : (octets / 1024 / 1024).toFixed(1) + ' Mo';
+    }
+
+    // Télécharge le projet en texte (le dossier Téléchargements) ; rend sa taille, lisible
+    function téléchargeTexteProjet(texte, nom) {
+        const blob = new Blob([texte], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nom + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        return tailleLisible(blob.size);
+    }
+
+    // ☰ → Exporter pour un courriel : le projet en un seul fichier .json
+    async function exporteProjetTexte() {
+        const instant = await prépareExport();
+        if (!instant) return null;
+        let texte;
+        try { texte = await texteProjet(instant); }
+        catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return null; }
+        const nom = nomFichierProjet();
+        const taille = téléchargeTexteProjet(texte, nom);
+        écritConsole('— Projet « ' + nomDuProjet + ' » exporté dans « ' + nom + '.json » (' + taille + '), un seul fichier texte à joindre à un courriel : il est dans le dossier Téléchargements. Pour l\'ouvrir : ☰ → Charger un projet, ou glisser le fichier dans la liste des programmes.', 'info');
+        try { await gardeProjetOuvert(instant); await rafraîchitListeProjets(); } catch (e) { /* rien */ }
+        return nom + '.json';
+    }
+
+    // ------------------------------------------------------------------
+    // Envoyer le projet (le bouton « partager » : une boîte et une flèche) : la feuille de
+    // partage de l'appareil (Mail, Messages, AirDrop…) reçoit le projet en un seul fichier
+    // texte (voir texteProjet). Chrome ne partage qu'une liste de types de fichiers, où .json
+    // manque mais pas .txt : le projet part alors en .txt, que Charger un projet lit aussi.
+    // La feuille de partage ne s'ouvre que pendant un clic : on prépare d'abord le fichier,
+    // puis le bouton « Envoyer… » d'une petite fenêtre l'ouvre. Sans partage (Firefox sur un
+    // ordinateur), le fichier est téléchargé, à joindre soi-même au courriel.
+    // ------------------------------------------------------------------
+    const SITE_PROJET = 'https://clauderouxster.github.io/Pythonerie/';
+
+    // Le fichier que ce navigateur accepte de partager : .json, sinon .txt, sinon null
+    function fichierÀPartager(texte, nom) {
+        if (!navigator.share || !navigator.canShare) return null;
+        for (const [extension, type] of [['.json', 'application/json'], ['.txt', 'text/plain']]) {
+            const f = new File([texte], nom + extension, { type });
+            try { if (navigator.canShare({ files: [f] })) return f; } catch (e) { /* type refusé */ }
+        }
+        return null;
+    }
+
+    async function partageProjet() {
+        const instant = await prépareExport();
+        if (!instant) return;
+        let texte;
+        try { texte = await texteProjet(instant); }
+        catch (e) { écritConsole('Impossible de préparer le projet : ' + e.message, 'erreur'); return; }
+        const nom = nomFichierProjet();
+        const fichier = fichierÀPartager(texte, nom);
+        if (!fichier) {
+            const taille = téléchargeTexteProjet(texte, nom);
+            écritConsole('— Ce navigateur ne sait pas envoyer un fichier : le projet est téléchargé dans « ' + nom + '.json » (' + taille + '), dans le dossier Téléchargements. Joins-le à ton courriel ; pour l\'ouvrir : ☰ → Charger un projet.', 'info');
+        } else {
+            const taille = tailleLisible(fichier.size);
+            const choix = await dialogue('Envoyer « ' + nomDuProjet + ' »', 'Le projet est prêt : « ' + fichier.name + ' » (' + taille + '), un seul fichier avec tous ses programmes, ses données, ses images et ses sons.\n« Envoyer… » ouvre le partage de ton appareil : Mail, Messages, AirDrop…\nPour l\'ouvrir, il suffira de le charger dans la Pythonerie (☰ → Charger un projet).',
+                [{ texte: '✉️ Envoyer…', valeur: 'oui', genre: 'principal' }, { texte: 'Annuler', valeur: null }]);
+            if (choix !== 'oui') return;
+            // l'adresse du site, pour celui qui reçoit le projet
+            const lien = location.protocol === 'https:' ? location.origin + location.pathname : SITE_PROJET;
+            try {
+                // appelé tout de suite, pendant le clic sur « Envoyer… »
+                await navigator.share({ files: [fichier], title: 'Projet « ' + nomDuProjet + ' »', text: 'Mon projet « ' + nomDuProjet + ' », fait dans la Pythonerie' + (lien ? ' (' + lien + ')' : '') + '. Pour l\'ouvrir : ☰ → Charger un projet, puis choisir ce fichier.' });
+                écritConsole('— Projet « ' + nomDuProjet + ' » envoyé (' + fichier.name + ').', 'info');
+            } catch (e) {
+                if (e.name === 'AbortError') écritConsole('— Envoi annulé.', 'info');
+                else { téléchargeTexteProjet(texte, nom); écritConsole('— Le partage n\'a pas marché (' + e.message + ') : le projet est téléchargé dans le dossier Téléchargements, joins-le toi-même à ton courriel.', 'info'); }
+            }
+        }
+        try { await gardeProjetOuvert(instant); await rafraîchitListeProjets(); } catch (e) { /* rien */ }
     }
 
     // Lit le .zip d'un projet : { nom, élève, instant, ignorés }, ou une erreur. projet.json
@@ -1987,9 +2102,10 @@ const Pythonerie = (function () {
     // répertoire Matériels) ; il remplace tout le projet en cours
     async function chargeProjetFichier(fichier) {
         // une archive de tous les projets (voir chargeArchive), plutôt qu'un projet
-        if (!/\.json$/i.test(fichier.name) && await estArchive(fichier)) { await chargeArchive(fichier); return false; }
+        if (!/\.(json|txt)$/i.test(fichier.name) && await estArchive(fichier)) { await chargeArchive(fichier); return false; }
         let lu;
-        try { lu = /\.json$/i.test(fichier.name) ? await lisProjetJSON(await fichier.text()) : await lisProjet(await fichier.arrayBuffer()); }
+        // un projet envoyé par le partage peut arriver en .txt (voir partageProjet)
+        try { lu = /\.(json|txt)$/i.test(fichier.name) ? await lisProjetJSON(await fichier.text()) : await lisProjet(await fichier.arrayBuffer()); }
         catch (e) {
             alert('« ' + fichier.name + ' » n\'est pas un projet de la Pythonerie : ' + e.message + '.');
             return false;
@@ -3387,9 +3503,10 @@ const Pythonerie = (function () {
         for (const f of Array.from(fichiers)) {
             // un projet exporté : il remplace le projet en cours (après confirmation)
             if (/\.zip$/i.test(f.name)) { await chargeProjetFichier(f); continue; }
-            if (/\.json$/i.test(f.name)) {
+            // un projet en texte (.json, ou .txt quand il vient du partage) ; sinon, des données
+            if (/\.(json|txt)$/i.test(f.name)) {
                 let p = null;
-                try { p = JSON.parse(await f.text()); } catch (e) { /* des données json ordinaires */ }
+                try { p = JSON.parse(await f.text()); } catch (e) { /* des données ordinaires */ }
                 if (p && p.format === FORMAT_PROJET) { await chargeProjetFichier(f); continue; }
             }
             if (/\.pyf?$/i.test(f.name) && !répertoire) {
@@ -4029,6 +4146,9 @@ const Pythonerie = (function () {
         // une première fois pour se connecter, une deuxième fois pour se déconnecter
         $('btnÉlève').addEventListener('click', () => { if (élève) déconnecte(); else demandeÉlève(); });
         $('btnExporteProjet').addEventListener('click', exporteProjet);
+        $('btnExporteProjetTexte').addEventListener('click', exporteProjetTexte);
+        $('btnPartageProjet').addEventListener('click', partageProjet);
+        $('btnMenuPartage').addEventListener('click', partageProjet);
         $('btnApplicationWeb').addEventListener('click', créeApplicationWeb);
         $('btnNouveauProjet').addEventListener('click', nouveauProjet);
         $('btnRenommeProjet').addEventListener('click', renommeProjet);

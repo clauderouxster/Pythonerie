@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.16.09.50">
-    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.16.09.50">
+    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.16.10.43">
+    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.16.10.43">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -25,17 +25,17 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.16.09.50">
+    <link rel="stylesheet" href="style.css?v=2026.10.16.10.43">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <img class="logo" src="images/logo-96.png?v=2026.10.16.09.50" alt="" width="36" height="36">
+            <img class="logo" src="images/logo-96.png?v=2026.10.16.10.43" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.16.09.50</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.16.10.43</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -54,6 +54,7 @@
                 <div id="titreProgrammes" class="section-tête" title="Déposer ici pour ranger à la racine">
                     <span class="étiquette">Projet</span>
                     <button id="nomProjet" class="nom-projet" aria-haspopup="true" aria-expanded="false" title="Tes projets">Sans Nom ▾</button>
+                    <button id="btnPartageProjet" class="btn btn-secondaire btn-petit btn-icône" title="Envoyer le projet (Mail, Messages, AirDrop…)" aria-label="Envoyer le projet (Mail, Messages, AirDrop…)"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 6H4v8h8V6h-1.5"/><path d="M8 1.5v8.5"/><path d="M5.5 4L8 1.5 10.5 4"/></svg></button>
                     <button id="btnReplieProgrammes" class="btn btn-secondaire btn-petit btn-icône seulement-étroit" title="Replier la liste" aria-label="Replier la liste" aria-expanded="true">▴</button>
                 </div>
                 <div class="barre-programmes">
@@ -76,6 +77,8 @@
                                 <button id="btnNouveauProjet" class="menu-item" role="menuitem">🆕 Nouveau projet…</button>
                                 <button id="btnRenommeProjet" class="menu-item" role="menuitem">✏️ Renommer le projet…</button>
                                 <button id="btnExporteProjet" class="menu-item" role="menuitem">📦 Exporter le projet</button>
+                                <button id="btnExporteProjetTexte" class="menu-item" role="menuitem" title="Le projet en un seul fichier texte : les messageries refusent souvent les .zip, pas les fichiers texte">✉️ Exporter pour un courriel (.json)</button>
+                                <button id="btnMenuPartage" class="menu-item" role="menuitem" title="Envoyer le projet (Mail, Messages, AirDrop…)">📤 Envoyer le projet…</button>
                                 <button id="btnApplicationWeb" class="menu-item" role="menuitem" title="Un dossier qui fait tourner un programme du projet sans la Pythonerie, à mettre sur un site Web">🌐 Créer une application Web…</button>
                                 <button id="btnChargeProjet" class="menu-item" role="menuitem">📥 Charger un projet (.zip, .json)…</button>
                                 <button id="btnColleProjet" class="menu-item" role="menuitem">📋 Coller un projet (JSON)…</button>
@@ -92,7 +95,7 @@
                             </div>
                         </span>
                     <input type="file" id="fichierImport" accept=".pyf,.py,.png,.jpg,.jpeg,.gif,.svg,.webp,.wav,.mp3,.ogg,.txt,.csv,.tsv,.json,.md,.zip" multiple hidden>
-                    <input type="file" id="fichierProjet" accept=".zip,.json,application/zip,application/json" hidden>
+                    <input type="file" id="fichierProjet" accept=".zip,.json,.txt,application/zip,application/json,text/plain" hidden>
                     <input type="file" id="fichierArchive" accept=".zip,application/zip" hidden>
                     <input type="file" id="fichierRépertoire" multiple hidden>
                 </div>
@@ -135,7 +138,7 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
-                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.16.09.50" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
+                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.16.10.43" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
                     <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
@@ -226,7 +229,7 @@
         <div class="modal">
             <div class="modal-tête">
                 <div class="aide-marque">
-                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.16.09.50" alt="" width="44" height="44">
+                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.16.10.43" alt="" width="44" height="44">
                     <div>
                         <h2>Aide de la Pythonerie</h2>
                         <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
@@ -379,7 +382,9 @@ selon (nom):
                 <!-- ============================================================ -->
                 <h3 id="aide-dessin">Le dessin</h3>
                 <p class="note">Le canevas mesure 800 × 600 ; (0, 0) est <b>en haut à gauche</b> et y descend. Survole-le pour voir les coordonnées.
-                    <code>canevas(400, 400)</code> change sa taille ; <code>largeur()</code>, <code>hauteur()</code> la donnent.</p>
+                    <code>canevas(400, 400)</code> change sa taille ; <code>largeur()</code>, <code>hauteur()</code> la donnent.
+                    <code>appareil()</code> dit sur quoi tourne le programme, pour l'adapter&nbsp;: <code>["tablette", 1180, 820]</code>
+                    (<code>"ordinateur"</code>, <code>"tablette"</code> ou <code>"téléphone"</code>, puis la largeur et la hauteur de l'écran, dans le sens où on le tient).</p>
                 <table class="table-aide">
                     <tr><td><code>efface()</code> · <code>fond("bleu clair")</code></td><td>page blanche · peint tout le fond</td>
                         <td><code>couleur("rouge")</code> · <code>rgb(255, 128, 0)</code></td><td>couleur des formes · couleur sur mesure</td></tr>
@@ -507,6 +512,8 @@ quand_clic(clic)</pre>
                     <table class="table-aide">
                         <tr><td><b>Nouveau projet</b> · <b>Renommer</b> · <b>Supprimer</b></td><td>un projet vide avec un nom · change son nom · l'efface</td></tr>
                         <tr><td><b>Exporter le projet</b></td><td>un fichier <code>.zip</code> dans Téléchargements, avec les programmes, les données, les images et les sons (un projet sans nom en reçoit un d'abord)</td></tr>
+                        <tr><td><b>Exporter pour un courriel</b></td><td>le même projet en un seul fichier texte <code>.json</code> : les messageries refusent souvent les <code>.zip</code>, pas les fichiers texte (les images et les sons y sont un tiers plus gros) ; il s'ouvre comme un <code>.zip</code>, avec <b>Charger un projet</b></td></tr>
+                        <tr><td><b>📤 Envoyer le projet</b> (le bouton à côté du nom du projet)</td><td>ouvre le partage de l'appareil (Mail, Messages, AirDrop…) avec le projet en un seul fichier ; sans partage dans le navigateur, le fichier est téléchargé, à joindre soi-même</td></tr>
                         <tr><td><b>Charger un projet</b> · <b>Coller un projet (JSON)</b></td><td>ouvre un <code>.zip</code> ou un <code>.json</code> à la place du projet en cours · un projet écrit en texte, comme ceux que prépare Claude</td></tr>
                         <tr><td><b>Créer une application Web</b></td><td>fait d'un programme (le principal, s'il y en a plusieurs) un petit site autonome : un zip à décompresser et à mettre sur un site Web (voir son <code>LISEZMOI.txt</code>)</td></tr>
                         <tr><td><b>Revenir au projet précédent</b></td><td>rouvre le dernier projet quitté</td></tr>
@@ -551,7 +558,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.16.09.50';
+                return répertoire + fichier + '?v=2026.10.16.10.43';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -559,16 +566,16 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.16.09.50"></script>
-    <script src="js/zip.js?v=2026.10.16.09.50"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.16.09.50"></script>
-    <script src="js/erreurs.js?v=2026.10.16.09.50"></script>
-    <script src="js/scene3d.js?v=2026.10.16.09.50"></script>
-    <script src="js/canevas.js?v=2026.10.16.09.50"></script>
-    <script src="js/pythonerie.js?v=2026.10.16.09.50"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.16.10.43"></script>
+    <script src="js/zip.js?v=2026.10.16.10.43"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.16.10.43"></script>
+    <script src="js/erreurs.js?v=2026.10.16.10.43"></script>
+    <script src="js/scene3d.js?v=2026.10.16.10.43"></script>
+    <script src="js/canevas.js?v=2026.10.16.10.43"></script>
+    <script src="js/pythonerie.js?v=2026.10.16.10.43"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.16.09.50"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.16.09.50"></script>
+    <script src="lispe/lispe.js?v=2026.10.16.10.43"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.16.10.43"></script>
 </body>
 
 </html>

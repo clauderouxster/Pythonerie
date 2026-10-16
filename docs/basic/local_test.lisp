@@ -21,6 +21,8 @@ selon(a):
            affiche("Yooo")
 	     affiche("Fin")
  
+evaljs_d("test")
+
 `)
  
 
@@ -42,4 +44,5 @@ selon(a):
    (23 (println "Test"))
    (true (block (println "Yooo") (println "Fin")))
 )
+
 

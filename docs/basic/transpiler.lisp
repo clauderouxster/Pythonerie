@@ -314,8 +314,9 @@
    v
 )
 
+
 (defpat parsing ( ['call n "(" arguments ")" $ mts] )
-   (if (consp n)
+   (ife (consp n)
       (setq v (cons (parsing n) (maplist 'parsing (cdr arguments) false)))
       (setq v (consb (atom n) (maplist 'parsing (cdr arguments) false)))
    )
@@ -976,6 +977,18 @@
       (setq code (cons '__root__ (maplist (λ (c) (if (consp c) (renomme_variables c table) (remplace_atome c table))) (cdr code) false))))
    code)
 
+; Le premier atome de instructions_interdites trouvé dans le code produit, ou nil :
+; le programme de l'élève ne doit pas exécuter de JavaScript ni évaluer un texte
+(defun cherche_interdite (code)
+   (loop e code
+      (cond
+         ((consp e)
+            (setq i (cherche_interdite e))
+            (if i (return i)))
+         ((and (atomp e) (in instructions_interdites e))
+            (return e))))
+   nil)
+
 (defun transpile (code)
    ; Transpiling into LispE
    (setq tree (abstract_tree code))
@@ -993,7 +1006,11 @@
 	      (push code c))
       )
    )
-   (renomme_réservés (habille_affichage code))
+   (setq code (renomme_réservés (habille_affichage code)))
+   (setq interdite (cherche_interdite code))
+   (if interdite
+      (list 'println (+ "Erreur : l'instruction « " interdite " » n'est pas disponible"))
+      code)
 )
 
 (defun compile(code)
@@ -1234,6 +1251,9 @@
       "push" "pushfirst" "pushlast" "insert" "set@" "set@@" "return" "break" "continue" "throw"
       "_console_valeur"))
 
+(setq instructions_interdites '(eval atom atoms use link evaljs evaljs_i evaljs_d evaljs_b 
+   evaljs_j evaljs_li evaljs_ld evaljs_lf asyncjs evaljsc asyncjsc loadcode load))
+
 (defun expression_console (forme)
    (or (not (consp forme))
       (not (in formes_instructions (string (car forme))))))
@@ -1253,4 +1273,5 @@
          (if (expression_console dern)
             (set@ formes (- (size formes) 1) (list '_console_valeur dern))))
       (texte_lispe formes)))
+
 

@@ -129,14 +129,10 @@
 (link "partie_imaginaire" 'imaginary)    ; partie_imaginaire(z) : partie imaginaire d'un complexe
 (link "octets" 'bytes)                   ; octets(s) : les octets d'une chaîne
 (link "atomes" 'atoms)                   ; atomes() : la liste des atomes connus
-(link "évalue" 'eval)                    ; évalue(code) : évalue du code LispE
-(link "évalue_js" 'evaljs)               ; évalue_js(code) : évalue du code JavaScript
 (link "a_durée" 'elapse)                   ; a_durée(expression) : temps d'évaluation en millisecondes
 (link "mise_en_forme" 'prettify)         ; mise_en_forme(code) : code LispE indenté
 (link "affiche_erreur" 'printerrln)      ; affiche_erreur(a, ...) : écrit sur la sortie d'erreur
 (link "constante" 'setconst)             ; constante(nom, valeur) : définit une constante
-(link "charge" 'load)                    ; charge(fichier) : charge un fichier LispE
-(link "lie" 'link)                       ; lie(nom, atome) : donne un autre nom à un atome
 (link "matrice_entiers" 'matrix_integer)   ; matrice_entiers(l, c, valeur) : matrice d'entiers
 (link "matrice_réels" 'matrix_float)       ; matrice_réels(l, c, valeur) : matrice de réels (simple précision)
 (link "matrice_nombres" 'matrix_number)    ; matrice_nombres(l, c, valeur) : matrice de nombres

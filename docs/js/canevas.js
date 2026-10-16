@@ -162,8 +162,16 @@ const Pyt = (function () {
         };
     }
 
+    // Le nom d'une fonction de rappel arrive en texte (animer("image", 20) aussi bien
+    // qu'animer(image, 20)) : le transpileur ne le voit pas. On n'appelle donc qu'un
+    // identifiant, et jamais une instruction de instructions_interdites (basic/transpiler.lisp)
+    const instructionsInterdites = new Set(['eval', 'atom', 'atoms', 'use', 'link',
+        'evaljs', 'evaljs_i', 'evaljs_d', 'evaljs_b', 'evaljs_j', 'evaljs_li', 'evaljs_ld', 'evaljs_lf',
+        'asyncjs', 'evaljsc', 'asyncjsc', 'loadcode', 'load']);
+
     function appelle(nom, args) {
         if (!nom || !rappel) return;
+        if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(nom) || instructionsInterdites.has(nom)) return;
         rappel('(' + nom + (args.length ? ' ' + args.join(' ') : '') + ')');
     }
 

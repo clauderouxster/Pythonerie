@@ -283,6 +283,8 @@ const Pythonerie = (function () {
         $('btnRecommencer').addEventListener('click', () => lance());
         $('btnArrêter').addEventListener('click', arrête);
         $('btnPleinÉcran').addEventListener('click', basculePleinÉcran);
+        // en plein écran, glisser le doigt (vers le bas surtout) ne doit pas le faire quitter
+        Pyt.retientGlissés($('scène'), () => document.fullscreenElement === $('scène'));
         // en plein écran, la console passe dans la scène, sous le canevas ; elle revient après
         document.addEventListener('fullscreenchange', () => {
             const plein = document.fullscreenElement === $('scène');

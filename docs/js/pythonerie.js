@@ -893,6 +893,8 @@ const Pythonerie = (function () {
 
     function installePleinÉcran() {
         $('btnPleinÉcran').addEventListener('click', entrePleinÉcran);
+        // en plein écran, glisser le doigt (vers le bas surtout) ne doit pas le faire quitter
+        Pyt.retientGlissés($('scèneCanevas'), enPleinÉcran);
         $('btnConsolePlein').addEventListener('click', () => consoleSousLeCanevas(!$('scèneCanevas').classList.contains('avec-console')));
         $('btnQuittePlein').addEventListener('click', quittePleinÉcran);
         $('btnExécutionPlein').addEventListener('click', basculeExécution);

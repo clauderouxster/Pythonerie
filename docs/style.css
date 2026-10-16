@@ -693,6 +693,10 @@ details[open] > .arbre-branche::before { content: '▾'; }
     box-sizing: border-box;
 }
 .scène-canevas.plein.secours { position: fixed; inset: 0; z-index: 1000; }
+/* sur une tablette : glisser le doigt dans la scène ne fait ni défiler, ni rafraîchir, ni quitter
+   le plein écran (voir retientGlissés dans canevas.js) ; la console, elle, défile toujours */
+.scène-canevas.plein { touch-action: none; overscroll-behavior: none; }
+:root:has(.scène-canevas.plein), body:has(.scène-canevas.plein) { overscroll-behavior: none; }
 .scène-canevas.plein .barre-plein-écran { display: flex; gap: 8px; align-self: flex-end; }
 /* ▤ Console (ou affiche_console()) : en plein écran, la console vient sous le canevas */
 .scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100vh - 70px - 32vh) * var(--ratio, 1.3333))); }

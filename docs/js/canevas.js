@@ -557,7 +557,41 @@ const Pyt = (function () {
         else console.error(message);
     }
 
+    // ---------- Les glissés du doigt, sur une tablette ----------
+    // Un doigt qui glisse sur le jeu ne doit pas faire défiler la page, ni être pris par le
+    // navigateur pour un de ses gestes : quitter le plein écran en glissant vers le bas
+    // (Safari sur iPad), tirer pour rafraîchir (Chrome sur Android), zoomer en pinçant.
+    // touch-action (style.css) ne suffit pas toujours dans Safari : on annule aussi touchmove.
+    // Les événements « pointer » du programme (quand_glisse, quand_souris) arrivent quand même.
+    // Ce qui défile vraiment (la console sous le canevas, une zone d'édition, une liste)
+    // garde son défilement.
+    function défilable(élément, limite) {
+        for (let e = élément; e && e !== limite; e = e.parentElement) {
+            if (e.matches && e.matches('textarea, select, input')) return true;
+            const s = getComputedStyle(e);
+            if (/(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight) return true;
+            if (/(auto|scroll)/.test(s.overflowX) && e.scrollWidth > e.clientWidth) return true;
+        }
+        return false;
+    }
+
+    // actif() : la protection ne vaut que tant qu'il rend vrai (par exemple en plein écran)
+    function retientGlissés(élément, actif) {
+        élément.addEventListener('touchmove', (ev) => {
+            if (actif && !actif()) return;
+            if (défilable(ev.target, élément)) return;
+            if (ev.cancelable) ev.preventDefault();
+        }, { passive: false });
+        // le pincement de Safari, qui zoome la page et peut faire sortir du plein écran
+        élément.addEventListener('gesturestart', (ev) => {
+            if (actif && !actif()) return;
+            ev.preventDefault();
+        });
+    }
+
     function installeÉvénements() {
+        // le doigt qui glisse sur le canevas joue, il ne fait pas défiler la page
+        retientGlissés(couche);
         // Événements « pointer » : la souris, mais aussi le doigt sur une tablette
         couche.addEventListener('pointerdown', (ev) => {
             // on garde le pointeur même s'il sort du canevas pendant un glissé
@@ -882,6 +916,9 @@ const Pyt = (function () {
         tortueX() { return tortue.x; },
         tortueY() { return tortue.y; },
         tortueCap() { return tortue.cap; },
+        // La scène en plein écran (pythonerie.js, appli.js) : voir retientGlissés plus haut
+        retientGlissés(élément, actif) { retientGlissés(élément, actif); },
+
         // ---------- Dessins : voir nouveau_dessin et montre_dessin (bibliothèque.lisp) ----------
         // Les commandes d'un dessin arrivent en deux listes : nombres (un Float64Array : chaque
         // commande est un code suivi de ses nombres) et textes (couleurs, messages, polices, dans

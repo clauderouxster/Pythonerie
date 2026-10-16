@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.16.10.43">
-    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.16.10.43">
+    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.16.10.55">
+    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.16.10.55">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -25,17 +25,17 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.16.10.43">
+    <link rel="stylesheet" href="style.css?v=2026.10.16.10.55">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <img class="logo" src="images/logo-96.png?v=2026.10.16.10.43" alt="" width="36" height="36">
+            <img class="logo" src="images/logo-96.png?v=2026.10.16.10.55" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.16.10.43</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.16.10.55</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -138,7 +138,7 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
-                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.16.10.43" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
+                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.16.10.55" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
                     <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
@@ -229,7 +229,7 @@
         <div class="modal">
             <div class="modal-tête">
                 <div class="aide-marque">
-                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.16.10.43" alt="" width="44" height="44">
+                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.16.10.55" alt="" width="44" height="44">
                     <div>
                         <h2>Aide de la Pythonerie</h2>
                         <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
@@ -558,7 +558,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.16.10.43';
+                return répertoire + fichier + '?v=2026.10.16.10.55';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -566,16 +566,16 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.16.10.43"></script>
-    <script src="js/zip.js?v=2026.10.16.10.43"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.16.10.43"></script>
-    <script src="js/erreurs.js?v=2026.10.16.10.43"></script>
-    <script src="js/scene3d.js?v=2026.10.16.10.43"></script>
-    <script src="js/canevas.js?v=2026.10.16.10.43"></script>
-    <script src="js/pythonerie.js?v=2026.10.16.10.43"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.16.10.55"></script>
+    <script src="js/zip.js?v=2026.10.16.10.55"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.16.10.55"></script>
+    <script src="js/erreurs.js?v=2026.10.16.10.55"></script>
+    <script src="js/scene3d.js?v=2026.10.16.10.55"></script>
+    <script src="js/canevas.js?v=2026.10.16.10.55"></script>
+    <script src="js/pythonerie.js?v=2026.10.16.10.55"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.16.10.43"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.16.10.43"></script>
+    <script src="lispe/lispe.js?v=2026.10.16.10.55"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.16.10.55"></script>
 </body>
 
 </html>

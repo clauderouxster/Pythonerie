@@ -522,6 +522,26 @@ const Pyt = (function () {
         setTimeout(() => appelle(fonction, args), 0);
     }
 
+    // Un bouton du canevas : à la souris, il agit au clic ; au doigt, dès qu'on le touche.
+    // Un autre doigt peut alors rester posé sur le canevas (piloter le vaisseau d'une main,
+    // tirer de l'autre) : les navigateurs ne font pas de « click » pour un toucher pendant
+    // qu'un autre doigt est posé. Le click qui suit un toucher seul est ignoré : une seule fois.
+    // (Chrome dit qu'un click vient du doigt, pointerType ; Safari non : on regarde alors s'il
+    // suit de près un toucher.)
+    function réagitAuClic(e, action) {
+        let dernierToucher = -Infinity;
+        e.addEventListener('pointerdown', (ev) => {
+            if (ev.pointerType !== 'touch') return;
+            dernierToucher = performance.now();
+            action();
+        });
+        e.addEventListener('click', (ev) => {
+            if (ev.pointerType === 'touch') return;
+            if (!ev.pointerType && performance.now() - dernierToucher < 700) return;
+            action();
+        });
+    }
+
     function retireChamps() {
         champs.forEach(c => c.élément.remove());
         champs.clear();
@@ -1095,7 +1115,7 @@ const Pyt = (function () {
                 e.type = 'button';
                 e.className = 'objet-canevas bouton-canevas';
                 // le bouton rend le focus : la barre d'espace d'un jeu ne le recliquera pas
-                e.addEventListener('click', () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), chaîneLispE(e.textContent)]); });
+                réagitAuClic(e, () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), chaîneLispE(e.textContent)]); });
                 return e;
             });
             o.élément.textContent = String(texte).normalize('NFC');
@@ -1129,7 +1149,7 @@ const Pyt = (function () {
                 e.addEventListener('pointerdown', () => o.montre(true));
                 ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => e.addEventListener(t, () => o.montre(false)));
                 // le bouton rend le focus : la barre d'espace d'un jeu ne le recliquera pas
-                e.addEventListener('click', () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), o.numéro]); });
+                réagitAuClic(e, () => { e.blur(); appelleBientôt(o.fonction, [chaîneLispE(o.clef), o.numéro]); });
                 return e;
             });
             o.normale = normale;

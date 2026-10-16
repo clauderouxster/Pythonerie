@@ -200,6 +200,7 @@
 (link "arccos" 'acos)                    ; arccos(x) : arc cosinus (radians)
 (link "arcsin" 'asin)                    ; arcsin(x) : arc sinus (radians)
 (link "arctan" 'atan)                    ; arctan(x) : arc tangente (radians)
+(link "arctan2" 'atan2)                  ; arctan2(y, x) : l'angle du point (x, y), entre -π et π (radians)
 (link "argch" 'acosh)                    ; argch(x) : argument cosinus hyperbolique
 (link "argsh" 'asinh)                    ; argsh(x) : argument sinus hyperbolique
 (link "argth" 'atanh)                    ; argth(x) : argument tangente hyperbolique

@@ -642,7 +642,7 @@
 
 ; Un nombre entier écrit dans le programme (3, 10...)
 (defun entier_littéral (x)
-   (and (numberp x) (= x (float (integer x)))))
+   (and (numberp x) (= x (number (integer x)))))
 
 ; Une expression dont on sait qu'elle produit une chaîne : "..." ou (string ...) ou (+ "..." ...)
 (defun chaîne_certaine (x)

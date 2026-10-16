@@ -12,7 +12,7 @@
 ; Les variantes evaljs_i, evaljs_d, evaljs_b, evaljs_j, evaljs_li… n'ont pas de cache.
 
 ; Une valeur renvoyée par JavaScript est toujours une chaîne : on la convertit en nombre
-(defun js_nombre (s) (float s))
+(defun js_nombre (s) (number s))
 
 ;------------------------------------------------------------------
 ; Console
@@ -146,13 +146,13 @@
 ;------------------------------------------------------------------
 (defun longueur (x) (size x))
 (defun entier (x) (integer x))
-(defun réel (x) (float x))
+(defun réel (x) (number x))
 ; nombre(x) : un nombre à virgule, à partir d'un texte (« 2,5 » ou « 2.5 ») ; un texte
 ; vide ou qui n'est pas un nombre donne 0.0
 (defun nombre (x)
    (if (stringp x)
       (number (replace (trim x) "," "."))
-      (float x)))
+      (number x)))
 (defun chaîne (x) (_texte x))
 (defun chaine (x) (_texte x))
 (defun type_de (x) (type x))
@@ -228,8 +228,8 @@
 
 ; Trigonométrie en degrés
 (setq pi _pi)
-(defun sinus (degrés) (sin (* (float degrés) (/ _pi 180))))
-(defun cosinus (degrés) (cos (* (float degrés) (/ _pi 180))))
+(defun sinus (degrés) (sin (radian degrés)))
+(defun cosinus (degrés) (cos (radian degrés)))
 
 ; Listes
 (defun trie (liste) (sort '< (clone liste)))
@@ -664,17 +664,17 @@
 (defun _plus (a b)
    (cond
       ((consp a) (p+ a b))
-      ((_mixte a b) (+ (float a) b))
+      ((_mixte a b) (+ (number a) b))
       (true (+ a b))))
-(defun _moins (a b) (if (_mixte a b) (- (float a) b) (- a b)))
-(defun _fois (a b) (if (_mixte a b) (* (float a) b) (* a b)))
-(defun _divise (a b) (/ (float a) b))
-(defun _inf (a b) (if (_mixte a b) (< (float a) b) (< a b)))
-(defun _infeg (a b) (if (_mixte a b) (<= (float a) b) (<= a b)))
-(defun _sup (a b) (if (_mixte a b) (> (float a) b) (> a b)))
-(defun _supeg (a b) (if (_mixte a b) (>= (float a) b) (>= a b)))
-(defun _égal (a b) (if (_mixte a b) (= (float a) b) (= a b)))
-(defun _diff (a b) (if (_mixte a b) (!= (float a) b) (!= a b)))
+(defun _moins (a b) (if (_mixte a b) (- (number a) b) (- a b)))
+(defun _fois (a b) (if (_mixte a b) (* (number a) b) (* a b)))
+(defun _divise (a b) (/ (number a) b))
+(defun _inf (a b) (if (_mixte a b) (< (number a) b) (< a b)))
+(defun _infeg (a b) (if (_mixte a b) (<= (number a) b) (<= a b)))
+(defun _sup (a b) (if (_mixte a b) (> (number a) b) (> a b)))
+(defun _supeg (a b) (if (_mixte a b) (>= (number a) b) (>= a b)))
+(defun _égal (a b) (if (_mixte a b) (= (number a) b) (= a b)))
+(defun _diff (a b) (if (_mixte a b) (!= (number a) b) (!= a b)))
 
 ; Message d'une erreur attrapée par sauf(e), sans la pile d'appels LispE
 ; ("[12] (throw ...)") ni la position dans le code LispE (", line: ...")

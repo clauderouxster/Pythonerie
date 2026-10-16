@@ -154,7 +154,7 @@
          ; 7 reste un entier, 7.0 et 1.5e3 sont des réels (0x1E est un entier hexadécimal)
          (push v (list 'anumber
             (if (or (in w ".") (and (not (in w "x")) (or (in w "e") (in w "E"))))
-               (float w)
+               (number w)
                (integer w))))
          (return true)
       )

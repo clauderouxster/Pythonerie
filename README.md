@@ -244,6 +244,12 @@ Deux remarques pour les établissements :
 - `Rien` s'affiche `[]`.
 - Pour échanger deux valeurs, on écrit `a, b = b, a`, et non `[a, b] = [b, a]`.
 
+## Crédits
+
+La Pythonerie a été créée par **Claude Roux**, qui est aussi l'auteur de [LispE](https://github.com/naver/lispe), le langage dans lequel les programmes de l'élève sont traduits puis exécutés, directement dans le navigateur (en WebAssembly). LispE : © NAVER Corp, licence BSD 3 clauses.
+
+Elle s'appuie aussi sur CodeMirror (l'éditeur, Marijn Haverbeke et ses contributeurs, MIT), three.js (la 3D, les auteurs de three.js, MIT) et les polices Inter et JetBrains Mono (SIL OFL 1.1). Les images des matériels viennent de Solar System Scope (CC BY 4.0), de la NASA (domaine public) et de Wikimedia Commons (auteurs et licences sur la dernière carte de la pile latine) : voir la licence ci-dessous.
+
 ## Licence
 
 La Pythonerie est distribuée sous licence BSD 3 clauses : voir [LICENSE](LICENSE). Elle embarque CodeMirror (MIT), les polices Inter et JetBrains Mono (SIL OFL) et three.js (MIT, `docs/vendor/three/LICENSE.txt`). Les textures du système solaire en 3D viennent de [Solar System Scope](https://www.solarsystemscope.com/textures/), sous licence CC BY 4.0 ; celle de l'astéroïde Bennu, de la NASA ([NASA/Goddard/University of Arizona](https://commons.wikimedia.org/wiki/File:Bennu_global_mosaic_reduced_size.png), domaine public).

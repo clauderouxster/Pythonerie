@@ -128,7 +128,6 @@
 (link "partie_réelle" 'real)             ; partie_réelle(z) : partie réelle d'un complexe
 (link "partie_imaginaire" 'imaginary)    ; partie_imaginaire(z) : partie imaginaire d'un complexe
 (link "octets" 'bytes)                   ; octets(s) : les octets d'une chaîne
-(link "atomes" 'atoms)                   ; atomes() : la liste des atomes connus
 (link "a_durée" 'elapse)                   ; a_durée(expression) : temps d'évaluation en millisecondes
 (link "mise_en_forme" 'prettify)         ; mise_en_forme(code) : code LispE indenté
 (link "affiche_erreur" 'printerrln)      ; affiche_erreur(a, ...) : écrit sur la sortie d'erreur

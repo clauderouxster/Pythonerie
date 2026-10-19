@@ -28,12 +28,7 @@
 )
 
 (defpat parsing ( ['alapython sep nm $ args])
-   (setq r    
-      (if args
-         (nconcn (list (atom nm)) (mapcar 'parsing args))
-         (list (atom nm))))
-   (push r (parsing sep))
-   r
+   (nconcn (list (atom nm) (parsing sep)) (mapcar 'parsing args))
 )
 
 (defpat parsing ( ['walrus nm $ d] )

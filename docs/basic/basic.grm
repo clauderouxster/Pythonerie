@@ -74,9 +74,17 @@ orand := $ou^$et^$oux
 
 comparator := [$non $dans]^[%< %>]^[%! %=]^[%< %=]^[%= %=]^[%> %=]^%<^%>^$dans^$est
 
+compinterval := [%= %=]^[%< %=]^[%> %=]^%<^%>
+
 onecomparison := $non? computing comparator computing
 
-comparing := $non? computing [comparator computing]? [orand ;18 comparison]*
+intervalcomp := compinterval computing compinterval computing
+
+compnormal := comparator computing
+
+afullcomparison := intervalcomp|compnormal
+
+comparing := $non? computing afullcomparison? [orand ;18 comparison]*
 
 negation := $non
 

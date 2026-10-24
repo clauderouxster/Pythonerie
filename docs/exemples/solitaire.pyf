@@ -1,0 +1,374 @@
+# Solitaire — le classique de Windows
+# Clique une carte, puis sa destination. Les suites se déplacent ensemble.
+# Deux clics sur une carte libre : monter aux fondations.
+# La pioche se retourne quand elle est vide. Annuler reprend le dernier coup.
+
+canevas(940, 780)
+colonnes = []
+pioche = []
+défausse = []
+fondations = [[], [], [], []]
+sélection = []
+historique = []
+tirage = 1
+coups = 0
+secondes = 0
+dernière_seconde = 0
+victoire = Faux
+message = "Bienvenue au Solitaire !"
+symboles = ["♥", "♦", "♣", "♠"]
+
+fonction horloge():
+    h, m, s, ms = heure()
+    retourne h * 3600 + m * 60 + s
+
+fonction abscisse(i):
+    retourne 26 + i * 128
+
+fonction pas_colonne(i):
+    retourne minimum(29, 280 / maximum(1, longueur(colonnes[i]) - 1))
+
+fonction rouge(carte):
+    retourne carte[1] < 2
+
+fonction nom_carte(carte):
+    noms = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "V", "D", "R"]
+    retourne noms[carte[0]]
+
+fonction centré(x, y, largeur, contenu):
+    texte(x + (largeur - largeur_texte(contenu)) / 2, y, contenu)
+
+fonction emplacement(x, y, contenu):
+    couleur("#09633f")
+    rectangle_plein(x, y, 104, 142)
+    couleur("#75aa91")
+    épaisseur(2)
+    rectangle(x, y, 104, 142)
+    taille_texte(38)
+    centré(x, y + 43, 104, contenu)
+    épaisseur(1)
+
+fonction carte_dessin(carte, x, y, choisie):
+    couleur("#03462e")
+    rectangle_plein(x + 3, y + 3, 104, 142)
+    couleur("#fffdf5")
+    rectangle_plein(x, y, 104, 142)
+    couleur("#303030")
+    rectangle(x, y, 104, 142)
+    si carte[2]:
+        couleur("#141414")
+        si rouge(carte):
+            couleur("#c32232")
+        taille_texte(21)
+        texte(x + 7, y + 3, nom_carte(carte) + " " + symboles[carte[1]])
+        taille_texte(47)
+        centré(x, y + 42, 104, symboles[carte[1]])
+        taille_texte(19)
+        texte(x + 61, y + 113, nom_carte(carte))
+        texte(x + 82, y + 113, symboles[carte[1]])
+    sinon:
+        couleur("#153e91")
+        rectangle_plein(x + 5, y + 5, 94, 132)
+        couleur("#6788c6")
+        pour n dans intervalle(8):
+            ligne(x + 8, y + 12 + n * 16, x + 96, y + 12 + n * 16)
+        pour n dans intervalle(5):
+            ligne(x + 12 + n * 20, y + 8, x + 12 + n * 20, y + 134)
+        couleur("#ffffff")
+        taille_texte(28)
+        centré(x, y + 53, 104, "✦")
+    si choisie:
+        couleur("#ffe45c")
+        épaisseur(4)
+        rectangle(x + 2, y + 2, 100, 138)
+        épaisseur(1)
+
+fonction choisie(genre, i, j):
+    si longueur(sélection) == 0:
+        retourne Faux
+    retourne sélection[0] == genre et sélection[1] == i et j >= sélection[2]
+
+fonction dessine():
+    fond("#087748")
+    couleur("#000080")
+    rectangle_plein(0, 0, 940, 35)
+    couleur("blanc")
+    taille_texte(23)
+    texte(16, 4, "♠  Solitaire")
+    taille_texte(15)
+    texte(665, 10, "KLONDIKE  •  LE GRAND CLASSIQUE")
+    couleur("#c0c0c0")
+    rectangle_plein(0, 35, 940, 52)
+    couleur("#064b32")
+    taille_texte(14)
+    texte(26, 91, "PIOCHE")
+    texte(154, 91, "DÉFAUSSE")
+    texte(410, 91, "FONDATIONS — AS → ROI")
+    emplacement(26, 113, "↻")
+    si longueur(pioche) > 0:
+        carte_dessin([0, 0, Faux], 26, 113, Faux)
+    emplacement(154, 113, "")
+    début = maximum(0, longueur(défausse) - 3)
+    pour j dans intervalle(début, longueur(défausse)):
+        carte_dessin(défausse[j], 154 + (j - début) * 16, 113, choisie("défausse", 0, j))
+    pour i dans intervalle(4):
+        x = abscisse(i + 3)
+        emplacement(x, 113, "A")
+        si longueur(fondations[i]) > 0:
+            carte_dessin(fondations[i][-1], x, 113, choisie("fondation", i, longueur(fondations[i]) - 1))
+    pour i dans intervalle(7):
+        x = abscisse(i)
+        emplacement(x, 284, "R")
+        pas = pas_colonne(i)
+        pour j dans intervalle(longueur(colonnes[i])):
+            carte_dessin(colonnes[i][j], x, 284 + j * pas, choisie("colonne", i, j))
+    couleur("#c0c0c0")
+    rectangle_plein(0, 718, 940, 62)
+    couleur("#202020")
+    taille_texte(16)
+    texte(14, 726, message)
+    minutes = entier(secondes // 60)
+    reste = secondes % 60
+    suffixe = chaîne(reste)
+    si reste < 10:
+        suffixe = "0" + suffixe
+    total = 0
+    pour pile dans fondations:
+        total += longueur(pile)
+    taille_texte(14)
+    texte(14, 753, "Clic : sélectionner puis déplacer  •  Deux clics : monter  •  Couleurs alternées")
+    texte(665, 753, f"{total}/52   |   {coups} coups   |   {minutes}:{suffixe}")
+    si victoire:
+        couleur("#000080")
+        rectangle_plein(210, 350, 520, 158)
+        couleur("#ffe45c")
+        taille_texte(34)
+        centré(210, 374, 520, "Bravo, tu as gagné !")
+        couleur("blanc")
+        taille_texte(20)
+        centré(210, 431, 520, "Nouvelle partie pour rejouer.")
+
+fonction mémorise():
+    historique.ajoute(en_json([colonnes, pioche, défausse, fondations, coups]))
+
+fonction annonce(contenu):
+    message =: contenu
+    dessine()
+
+fonction cartes_choisies():
+    si longueur(sélection) == 0:
+        retourne []
+    genre, i, j = sélection
+    si genre == "colonne":
+        retourne colonnes[i][j:]
+    si genre == "défausse":
+        retourne [défausse[-1]]
+    retourne [fondations[i][-1]]
+
+fonction enlève_source():
+    genre, i, j = sélection
+    si genre == "colonne":
+        colonnes[i] = colonnes[i][:j]
+        si longueur(colonnes[i]) > 0:
+            colonnes[i][-1][2] = Vrai
+    sinonsi genre == "défausse":
+        ramène_élément(défausse)
+    sinon:
+        ramène_élément(fondations[i])
+
+fonction termine_coup():
+    coups += 1
+    sélection =: []
+    total = 0
+    pour pile dans fondations:
+        total += longueur(pile)
+    victoire =: total == 52
+    message =: "Bien joué !"
+    si victoire:
+        message =: "Partie réussie ! Les 52 cartes sont rangées."
+    dessine()
+
+fonction vers_colonne(i):
+    cartes = cartes_choisies()
+    si longueur(cartes) == 0:
+        retourne Faux
+    si sélection[0] == "colonne" et sélection[1] == i:
+        retourne Faux
+    première = cartes[0]
+    si longueur(colonnes[i]) == 0:
+        si première[0] != 13:
+            retourne Faux
+    sinon:
+        dernière = colonnes[i][-1]
+        si dernière[0] != première[0] + 1 ou rouge(dernière) == rouge(première):
+            retourne Faux
+    mémorise()
+    enlève_source()
+    colonnes[i] = colonnes[i] + cartes
+    termine_coup()
+    retourne Vrai
+
+fonction vers_fondation(i):
+    cartes = cartes_choisies()
+    si longueur(cartes) != 1:
+        retourne Faux
+    si sélection[0] == "fondation" et sélection[1] == i:
+        retourne Faux
+    carte = cartes[0]
+    pile = fondations[i]
+    si longueur(pile) == 0:
+        si carte[0] != 1:
+            retourne Faux
+    sinon:
+        si carte[1] != pile[-1][1] ou carte[0] != pile[-1][0] + 1:
+            retourne Faux
+    mémorise()
+    enlève_source()
+    fondations[i].ajoute(carte)
+    termine_coup()
+    retourne Vrai
+
+fonction monte():
+    pour i dans intervalle(4):
+        si vers_fondation(i):
+            retourne Vrai
+    retourne Faux
+
+fonction prend(genre, i, j):
+    si longueur(sélection) > 0:
+        si sélection == [genre, i, j]:
+            si monte():
+                retourne Rien
+            sélection =: []
+            annonce("Sélection annulée. Il faut un As, puis la même famille dans l’ordre.")
+            retourne Rien
+    sélection =: [genre, i, j]
+    annonce("Carte sélectionnée : clique sur sa destination, ou à nouveau pour la monter.")
+
+fonction tire():
+    sélection =: []
+    si longueur(pioche) == 0 et longueur(défausse) == 0:
+        retourne Rien
+    mémorise()
+    si longueur(pioche) == 0:
+        tantque longueur(défausse) > 0:
+            pioche.ajoute(ramène_élément(défausse))
+    sinon:
+        pour n dans intervalle(minimum(tirage, longueur(pioche))):
+            carte = ramène_élément(pioche)
+            carte[2] = Vrai
+            défausse.ajoute(carte)
+    termine_coup()
+
+fonction clic(x, y):
+    si victoire:
+        retourne Rien
+    si 113 <= y et y <= 255:
+        si 26 <= x et x <= 130:
+            tire()
+            retourne Rien
+        si 154 <= x et x <= 290 et longueur(défausse) > 0:
+            prend("défausse", 0, longueur(défausse) - 1)
+            retourne Rien
+        pour i dans intervalle(4):
+            si abscisse(i + 3) <= x et x <= abscisse(i + 3) + 104:
+                si vers_fondation(i):
+                    retourne Rien
+                si longueur(fondations[i]) > 0:
+                    prend("fondation", i, longueur(fondations[i]) - 1)
+                sinon:
+                    annonce("Une fondation commence par un As, puis monte dans la même famille.")
+                retourne Rien
+    si 284 <= y et y < 715:
+        pour i dans intervalle(7):
+            si abscisse(i) <= x et x <= abscisse(i) + 104:
+                n = longueur(colonnes[i])
+                bas = 426 + maximum(0, n - 1) * pas_colonne(i)
+                si y > bas:
+                    continuer
+                si vers_colonne(i):
+                    retourne Rien
+                si n > 0:
+                    j = minimum(n - 1, entier((y - 284) / pas_colonne(i)))
+                    si colonnes[i][j][2]:
+                        prend("colonne", i, j)
+                    sinon:
+                        annonce("Libère les cartes cachées en déplaçant celles qui les recouvrent.")
+                sinon:
+                    annonce("Seul un Roi, seul ou à la tête d’une suite, va sur une colonne vide.")
+                retourne Rien
+    sélection =: []
+    dessine()
+
+fonction nouvelle(clef, valeur):
+    jeu = []
+    pour famille dans intervalle(4):
+        pour valeur_carte dans intervalle(1, 14):
+            jeu.ajoute([valeur_carte, famille, Faux])
+    pour i dans intervalle(51, 0, -1):
+        j = aléatoire(0, i)
+        temporaire = jeu[i]
+        jeu[i] = jeu[j]
+        jeu[j] = temporaire
+    colonnes =: [[], [], [], [], [], [], []]
+    pour i dans intervalle(7):
+        pour j dans intervalle(i + 1):
+            carte = ramène_élément(jeu)
+            carte[2] = j == i
+            colonnes[i].ajoute(carte)
+    pioche =: jeu
+    défausse =: []
+    fondations =: [[], [], [], []]
+    historique =: []
+    sélection =: []
+    coups =: 0
+    secondes =: 0
+    dernière_seconde =: horloge()
+    victoire =: Faux
+    annonce("À toi de jouer ! As aux fondations, suites alternées dans les colonnes.")
+
+fonction annule(clef, valeur):
+    si longueur(historique) == 0:
+        annonce("Il n’y a pas encore de coup à annuler.")
+        retourne Rien
+    état = analyse_json(ramène_élément(historique))
+    colonnes =: état[0]
+    pioche =: état[1]
+    défausse =: état[2]
+    fondations =: état[3]
+    coups =: état[4]
+    victoire =: Faux
+    sélection =: []
+    annonce("Dernier coup annulé.")
+
+fonction change_tirage(clef, valeur):
+    si tirage == 1:
+        tirage =: 3
+    sinon:
+        tirage =: 1
+    change_objet("tirage", f"Pioche : {tirage} carte(s)")
+    nouvelle("", "")
+
+fonction aide_montée(clef, valeur):
+    si longueur(sélection) == 0:
+        annonce("Sélectionne d’abord une carte libre à monter aux fondations.")
+    sinonsi non monte():
+        annonce("Cette carte ne peut pas encore monter aux fondations.")
+
+fonction tic():
+    maintenant = horloge()
+    écart = (maintenant - dernière_seconde + 86400) % 86400
+    dernière_seconde =: maintenant
+    si coups > 0 et non victoire:
+        secondes += écart
+        dessine()
+
+police("Arial")
+taille_texte(17)
+bouton("nouvelle", 14, 45, "Nouvelle partie", nouvelle)
+bouton("annuler", 175, 45, "↶ Annuler", annule)
+bouton("tirage", 307, 45, "Pioche : 1 carte(s)", change_tirage)
+bouton("monter", 505, 45, "Monter la sélection ↑", aide_montée)
+quand_clic(clic)
+nouvelle("", "")
+appel_dans(tic, 1000)

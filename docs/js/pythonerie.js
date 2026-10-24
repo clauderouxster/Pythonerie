@@ -670,6 +670,7 @@ const Pythonerie = (function () {
     let numéroExécution = 0;     // une exécution qui attend ses sons est abandonnée si une autre commence
     async function exécute() {
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
+        sauveFichier();                 // le fichier de données ouvert : charge_données le lira tel qu'on l'a tapé
         if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
             écritConsole(classe ? '— Connecte-toi avec ton identifiant (👤 en haut à droite), puis clique de nouveau sur ▶ Exécuter.'
                                 : '— Tape ton nom (👤 en haut à droite) pour exécuter le programme.', 'info');
@@ -755,11 +756,11 @@ const Pythonerie = (function () {
         });
     }
 
-    // En plein écran (du canevas ou de la console), un seul bouton : ▶ Exécuter quand le
-    // programme est à l'arrêt, ■ Arrêter pendant qu'il tourne
+    // Un seul bouton, dans l'éditeur comme en plein écran (du canevas ou de la console) :
+    // ▶ Exécuter quand le programme est à l'arrêt, ■ Arrêter pendant qu'il tourne
     function metAJourBoutons() {
         const enCours = Pyt.enCours();
-        $('btnArrêter').disabled = !enCours;
+        actualiseExécuter();
         ['btnExécutionPlein', 'btnExécutionConsole'].forEach(id => {
             const b = $(id);
             b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
@@ -1557,6 +1558,7 @@ const Pythonerie = (function () {
         StockageNavigateur._écrit(CLÉ_PROGRAMMES, tout);
         StockageNavigateur._écrit(CLÉ_DOSSIERS, instant.dossiers);
         await FichiersProjet.remplace(instant.fichiers || []);
+        oublieFichierOuvert();
         remplaceOnglets(instant.onglets || ['']);
         courant = null;
         sélection = new Set();
@@ -2612,7 +2614,9 @@ const Pythonerie = (function () {
                     [SVG_EXPORTER, 'Exporter « ' + nomF + ' » (le télécharger)', () => exporteFichier(f.chemin)],
                     [SVG_SUPPRIMER, 'Supprimer « ' + nomF + ' »', () => supprimeFichier(f.chemin)]
                 ]));
-                lf.addEventListener('click', () => aperçuFichier(f.chemin));
+                if (f.chemin === fichierOuvert) lf.classList.add('actif');
+                // un fichier de données s'ouvre dans l'éditeur ; une image ou un son, en aperçu
+                lf.addEventListener('click', () => rép === 'données' ? ouvreFichierDonnées(f.chemin) : aperçuFichier(f.chemin));
                 rendCible(lf, '', rép);
                 ul.appendChild(lf);
             });
@@ -2647,13 +2651,18 @@ const Pythonerie = (function () {
         const ancien = chemin.slice(chemin.indexOf('/') + 1);
         const nouveau = prompt('Nouveau nom pour « ' + ancien + ' » :', ancien);
         if (!nouveau || nfc(nouveau).trim() === ancien) return;
-        try { await FichiersProjet.renomme(chemin, nouveau); } catch (e) { écritConsole(e.message + '.', 'erreur'); }
+        if (chemin === fichierOuvert) await sauveFichier();
+        try {
+            const n = await FichiersProjet.renomme(chemin, nouveau);
+            if (chemin === fichierOuvert) { fichierOuvert = n; décritFichierOuvert(); }
+        } catch (e) { écritConsole(e.message + '.', 'erreur'); }
         afficheArbre();
     }
 
     async function supprimeFichier(chemin) {
         const nom = chemin.slice(chemin.indexOf('/') + 1);
         if (!confirm('Supprimer « ' + nom + ' » du projet ?')) return;
+        if (chemin === fichierOuvert) oublieFichierOuvert();      // sans l'enregistrer : il serait recréé
         try { await FichiersProjet.supprime(chemin); } catch (e) { écritConsole(e.message + '.', 'erreur'); }
         afficheArbre();
     }
@@ -2718,7 +2727,7 @@ const Pythonerie = (function () {
         progs.forEach(p => {
             const li = ligneArbre(profondeur, 'programme');
             li.dataset.chemin = p.chemin;
-            if (p.chemin === courant) li.classList.add('actif');
+            if (p.chemin === courant && !fichierOuvert) li.classList.add('actif');
             if (sélection.size > 1 && sélection.has(p.chemin)) li.classList.add('choisi');
             li.title = p.chemin;
             const espace = document.createElement('span');
@@ -2940,6 +2949,8 @@ const Pythonerie = (function () {
     }
 
     function afficheArbre() {
+        // le fichier de données ouvert a pu être supprimé, ou remplacé (fichier ajouté du même nom)
+        rechargeFichierOuvert();
         // la sélection ne garde que les programmes qui existent encore
         sélection = new Set([...sélection].filter(c => programmes.some(p => p.chemin === c)));
         afficheBandeau();
@@ -3104,7 +3115,160 @@ const Pythonerie = (function () {
         afficheOnglets();
     }
 
+    // ------------------------------------------------------------------
+    // Un fichier du répertoire données, ouvert dans l'éditeur par un clic dans l'arbre du projet.
+    // Il prend la place du code, comme les onglets de données ; le programme ouvert reste celui
+    // qu'exécute ▶. Chaque modification est enregistrée toute seule, un instant après la frappe :
+    // FichiersProjet.écritTexte la met aussitôt en mémoire (charge_données la relit), puis dans
+    // le navigateur (IndexedDB).
+    // ------------------------------------------------------------------
+    let éditeurFichier = null;      // un second CodeMirror, créé au premier fichier ouvert
+    let fichierOuvert = null;       // "données/notes.csv"
+    let fichierModifié = false, minuterieFichier = null, chargementFichier = false;
+
+    // Le bouton de l'éditeur : ■ Arrêter pendant que le programme tourne ; sinon ▶ Exécuter, prêt
+    // quand LispE l'est, sauf pendant qu'un fichier de données est affiché (il s'arrête quand même)
+    let titreExécuter = null;
+    function actualiseExécuter() {
+        const b = $('btnExécuter');
+        if (titreExécuter === null) titreExécuter = b.title;
+        const enCours = wasmPrêt && Pyt.enCours();
+        b.disabled = !wasmPrêt || (!!fichierOuvert && !enCours);
+        b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
+        b.classList.toggle('btn-secondaire', enCours);
+        b.title = enCours ? 'Arrêter le programme'
+            : fichierOuvert ? 'Un fichier de données ne s\'exécute pas : ✎ Code ramène au programme' : titreExécuter;
+    }
+
+    function installeÉditeurFichier() {
+        if (éditeurFichier) return;
+        éditeurFichier = CodeMirror.fromTextArea($('texteFichier'), {
+            mode: null,
+            theme: document.body.classList.contains('dark-mode') ? 'dracula' : 'default',
+            lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
+            indentWithTabs: false,
+            styleActiveLine: true,
+            extraKeys: {
+                'Ctrl-S': () => { sauveFichier(); },
+                'Cmd-S': () => { sauveFichier(); }
+            }
+        });
+        // comme dans l'éditeur du code : tout ce qui entre est mis en NFC
+        éditeurFichier.on('beforeChange', (cm, changement) => {
+            if (!changement.update) return;
+            const texte = changement.text.map(nfc);
+            if (texte.some((ligne, i) => ligne !== changement.text[i])) changement.update(changement.from, changement.to, texte);
+        });
+        éditeurFichier.on('change', () => {
+            if (chargementFichier) return;
+            fichierModifié = true;
+            étatFichier('Modifié…', '');
+            clearTimeout(minuterieFichier);
+            minuterieFichier = setTimeout(sauveFichier, 600);
+        });
+    }
+
+    function étatFichier(texte, genre) {
+        const e = $('étatFichier');
+        e.textContent = texte;
+        e.className = 'état-sauvegarde ' + (genre || '');
+    }
+
+    // Enregistre le fichier ouvert s'il a changé (le texte est en mémoire dès l'appel)
+    async function sauveFichier() {
+        clearTimeout(minuterieFichier);
+        if (!fichierOuvert || !fichierModifié) return;
+        const chemin = fichierOuvert;
+        fichierModifié = false;
+        try {
+            await FichiersProjet.écritTexte(chemin, nfc(éditeurFichier.getValue()));
+            if (chemin === fichierOuvert && !fichierModifié) étatFichier('Enregistré', 'ok');
+        } catch (e) {
+            if (chemin === fichierOuvert) étatFichier('Non enregistré', 'erreur');
+            écritConsole('Erreur d\'enregistrement : ' + e.message, 'erreur');
+        }
+    }
+
+    async function ouvreFichierDonnées(chemin) {
+        if (chemin === fichierOuvert) { éditeurFichier.focus(); return; }
+        await sauvegarde();             // le programme ouvert, et le fichier ouvert avant celui-ci
+        const texte = FichiersProjet.texte(chemin);
+        if (texte === null || texte === undefined) return;
+        installeÉditeurFichier();
+        fichierOuvert = chemin;
+        chargementFichier = true;
+        éditeurFichier.setValue(texte);
+        éditeurFichier.clearHistory();
+        chargementFichier = false;
+        fichierModifié = false;
+        décritFichierOuvert();
+        étatFichier('Enregistré', 'ok');
+        $('panneauFichier').hidden = false;
+        $('conteneurÉditeur').hidden = true;
+        $('panneauDonnées').hidden = true;
+        actualiseExécuter();
+        éditeurFichier.refresh();
+        afficheArbre();
+        éditeurFichier.focus();
+    }
+
+    function décritFichierOuvert() {
+        const nom = fichierOuvert.slice(fichierOuvert.indexOf('/') + 1);
+        $('nomFichierOuvert').textContent = '📄 ' + fichierOuvert;
+        $('nomFichierOuvert').title = fichierOuvert;
+        const note = $('noteFichier');
+        note.textContent = 'Dans un programme : ';
+        const code = document.createElement('code');
+        code.textContent = 'charge_données("' + nom + '")';
+        note.appendChild(code);
+    }
+
+    // Retour au code (ou aux onglets de données, s'ils étaient affichés) ; enregistre d'abord
+    function fermeFichier() {
+        if (!fichierOuvert) return;
+        sauveFichier();
+        oublieFichierOuvert();
+        if (!modeDonnées) { éditeur.refresh(); éditeur.focus(); }
+    }
+
+    // Le fichier n'est plus montré (fermé, supprimé, autre projet), sans rien enregistrer
+    function oublieFichierOuvert() {
+        if (!fichierOuvert) return;
+        clearTimeout(minuterieFichier);
+        fichierOuvert = null;
+        fichierModifié = false;
+        $('panneauFichier').hidden = true;
+        $('conteneurÉditeur').hidden = modeDonnées;
+        $('panneauDonnées').hidden = !modeDonnées;
+        actualiseExécuter();
+        afficheArbre();
+    }
+
+    // Le fichier ouvert a peut-être changé ailleurs (le programme, avec sauve_données) : on reprend
+    // son texte, à moins qu'on soit en train de le taper
+    function rechargeFichierOuvert(chemin) {
+        if (!fichierOuvert || (chemin && chemin !== fichierOuvert)) return;
+        if (!FichiersProjet.existe(fichierOuvert)) { oublieFichierOuvert(); return; }
+        if (fichierModifié) return;
+        const texte = FichiersProjet.texte(fichierOuvert);
+        if (texte === éditeurFichier.getValue()) return;
+        const curseur = éditeurFichier.getCursor(), haut = éditeurFichier.getScrollInfo().top;
+        chargementFichier = true;
+        éditeurFichier.setValue(texte);
+        chargementFichier = false;
+        éditeurFichier.setCursor(curseur);
+        éditeurFichier.scrollTo(null, haut);
+        étatFichier('Enregistré', 'ok');
+    }
+
     function basculeDonnées() {
+        // depuis un fichier de données : ▦ Données montre les onglets (ou y revient)
+        if (fichierOuvert) {
+            fermeFichier();
+            if (modeDonnées) { $('texteDonnées').focus(); return; }
+        }
         modeDonnées = !modeDonnées;
         $('panneauDonnées').hidden = !modeDonnées;
         $('conteneurÉditeur').hidden = modeDonnées;
@@ -3218,6 +3382,7 @@ const Pythonerie = (function () {
     function installeDonnées() {
         onglets = litOnglets();
         $('btnDonnées').addEventListener('click', basculeDonnées);
+        $('btnFermeFichier').addEventListener('click', fermeFichier);
         $('btnAjouteOnglet').addEventListener('click', ajouteOnglet);
         $('btnRetireOnglet').addEventListener('click', retireOnglet);
         $('btnAnnuleOnglet').addEventListener('click', annuleOnglet);
@@ -3251,6 +3416,7 @@ const Pythonerie = (function () {
 
     async function sauvegarde() {
         clearTimeout(minuterieSauvegarde);
+        await sauveFichier();           // le fichier de données ouvert, s'il y en a un
         if (!courant || !modifie) return;
         try {
             await stockage.écrit(courant, éditeur.getValue());
@@ -3288,6 +3454,7 @@ const Pythonerie = (function () {
 
     let chargementEnCours = false;
     async function ouvre(chemin) {
+        fermeFichier();                 // un fichier de données ouvert laisse la place au code
         if (chemin === courant) return;
         await sauvegarde();
         try {
@@ -3680,6 +3847,7 @@ const Pythonerie = (function () {
         const chemin = 'données/' + nom;
         const nouveau = !FichiersProjet.existe(chemin);
         FichiersProjet.écritTexte(chemin, texte).catch(e => écritConsole('sauve_données : « ' + nom + ' » n\'a pas pu être gardé : ' + e.message, 'erreur'));
+        rechargeFichierOuvert(chemin);
         if (nouveau) { ouvertsProjet.add('données'); enregistreOuvertsProjet(); afficheArbre(); }
         return '';
     }
@@ -3874,6 +4042,7 @@ const Pythonerie = (function () {
     function basculeThème() {
         const sombre = document.body.classList.toggle('dark-mode');
         éditeur.setOption('theme', sombre ? 'dracula' : 'default');
+        if (éditeurFichier) éditeurFichier.setOption('theme', sombre ? 'dracula' : 'default');
         try { localStorage.setItem('pythonerie.thème', sombre ? 'sombre' : 'clair'); } catch (e) { /* rien */ }
     }
 
@@ -4122,9 +4291,8 @@ const Pythonerie = (function () {
     }
 
     function installeBoutons() {
-        $('btnExécuter').addEventListener('click', exécute);
+        $('btnExécuter').addEventListener('click', basculeExécution);
         $('btnPremierProgramme').addEventListener('click', nouveau);
-        $('btnArrêter').addEventListener('click', arrête);
         $('btnLispE').addEventListener('click', basculeLispE);
         installeDonnées();
         $('btnNouveau').addEventListener('click', nouveau);
@@ -4179,7 +4347,7 @@ const Pythonerie = (function () {
         });
         $('btnEffaceConsole').addEventListener('click', effaceConsole);
         $('btnCopieConsole').addEventListener('click', (ev) => copieTexte(texteDeLaConsole(), ev.currentTarget));
-        $('btnCopieCode').addEventListener('click', (ev) => copieTexte(modeDonnées ? (onglets[ongletActif] || '') : éditeur.getValue(), ev.currentTarget));
+        $('btnCopieCode').addEventListener('click', (ev) => copieTexte(fichierOuvert ? éditeurFichier.getValue() : modeDonnées ? (onglets[ongletActif] || '') : éditeur.getValue(), ev.currentTarget));
         $('btnEffaceCanevas').addEventListener('click', () => { Pyt.stoppeTout(); Pyt.réinitialise(); metAJourBoutons(); });
         $('btnImage').addEventListener('click', téléchargeImage);
         installePleinÉcran();
@@ -4204,7 +4372,7 @@ const Pythonerie = (function () {
             }
             else if (sélection.size > 1 && ev.key === 'Escape') annuleSélection();
         });
-        window.addEventListener('beforeunload', () => { if (modifie) sauvegarde(); });
+        window.addEventListener('beforeunload', () => { if (modifie || fichierModifié) sauvegarde(); });
     }
 
     async function démarre() {
@@ -4272,7 +4440,7 @@ const Pythonerie = (function () {
             await chargeSources();
             prépareCompilateur();
             wasmPrêt = true;
-            $('btnExécuter').disabled = false;
+            actualiseExécuter();
             $('étatLispE').textContent = 'LispE prêt';
             $('étatLispE').className = 'état-lispe ok';
         } catch (e) {
@@ -4314,7 +4482,7 @@ const Pythonerie = (function () {
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         info: (texte) => écritConsole(texte, 'info'),
-        signaleAnimation: () => { if ($('btnArrêter')) metAJourBoutons(); },
+        signaleAnimation: () => { if ($('btnExécuter')) metAJourBoutons(); },
         afficheConsole, cacheConsole, poseQuestionConsole, fermeQuestionConsole,
         // pour sauve_dans_serveur (le nom de l'élève) et les lectures du mode administrateur
         élève: () => nomCourant() || '',

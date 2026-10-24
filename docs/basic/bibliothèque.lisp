@@ -207,6 +207,10 @@
 (defun hasard ()
    (evaljs_d "Pyt.hasard()"))
 
+; tri_localisé(liste) : les textes triés selon l'ordre du français (« é » avec les « e », les majuscules
+; avec les minuscules) ; tri_localisé(liste, "de") : selon une autre langue ("fr-CA", "ko"…)
+(defun tri_localisé (liste (langue "")) (evaljs_j (list "Pyt.triLocalisé" (json liste) langue)))
+
 ; Choisit un élément au hasard dans une liste
 (defun choisis (liste)
    (@ liste (aléatoire 0 (- (size liste) 1))))
@@ -283,12 +287,13 @@
    (push _n _plein))
 ; "envoyé" : le nombre de valeurs déjà envoyées au navigateur (-1 : rien) ; un dessin ne fait que
 ; grandir, sauf par vide_dessin, qui remet "envoyé" à -1
-(defun montre_dessin (_d)
+; montre_dessin(d, clef) : le dessin dans la zone_défilante clef, au lieu du canevas
+(defun montre_dessin (_d (_zone ""))
    (setq _n (_dessin _d "montre_dessin"))
    (if (= (size _n) (@ _d "envoyé"))
-      (evaljsc (list "Pyt.redessine" (@ _d "numéro")))
+      (evaljsc (list "Pyt.redessine" (@ _d "numéro") (string _zone)))
       (block
-         (evaljsc (list "Pyt.montreDessin" (@ _d "numéro") _n (@ _d "textes")))
+         (evaljsc (list "Pyt.montreDessin" (@ _d "numéro") _n (@ _d "textes") (string _zone)))
          (set@ _d "envoyé" (size _n))))
    (_erreur_navigateur)
    nil)
@@ -368,6 +373,10 @@
 ; largeur_texte(message) : la largeur (en points du canevas) qu'aurait message écrit par texte(),
 ; avec la police et la taille du moment ; la plus longue ligne pour un texte sur plusieurs lignes
 (defun largeur_texte (message) (evaljs_d (list "Pyt.largeurTexte" (string message))))
+; hauteur_texte(message) : la hauteur (en points du canevas) des lettres de message écrit par texte(),
+; du haut de la plus haute au bas de la plus basse (« a » est moins haut que « Ag ») ; sur plusieurs
+; lignes, du haut de la première au bas de la dernière
+(defun hauteur_texte (message) (evaljs_d (list "Pyt.hauteurTexte" (string message))))
 (defpat police (nom) (evaljsc (list "Pyt.police" nom)) nil)
 (defpat police ((dictionary_ _dd) nom) (push (_dessin _dd "police") 15) (push (@ _dd "textes") nom) nil)
 
@@ -411,6 +420,11 @@
 ; La fonction peut être donnée par son nom : animer(bouge, 30) ou animer("bouge", 30)
 ;------------------------------------------------------------------
 (defmacro animer (fonction délai) (block (evaljsc (list "Pyt.animer" (string (quote fonction)) délai)) nil))
+; appel_dans(f, délai) : appelle f() toutes les délai millisecondes, au rythme d'une horloge, même
+; quand l'écran n'est pas redessiné (une horloge, un compte à rebours) ; animer, lui, suit l'écran
+(defmacro appel_dans (fonction délai) (block (evaljsc (list "Pyt.appelDans" (string (quote fonction)) délai)) nil))
+; heure() : l'heure de l'appareil, [heures, minutes, secondes, millisecondes]
+(defun heure () (evaljs_li "Pyt.heure()"))
 (defmacro quand_clic (fonction) (block (evaljsc (list "Pyt.quandClic" (string (quote fonction)))) nil))
 (defmacro quand_souris (fonction) (block (evaljsc (list "Pyt.quandSouris" (string (quote fonction)))) nil))
 (defmacro quand_touche (fonction) (block (evaljsc (list "Pyt.quandTouche" (string (quote fonction)))) nil))
@@ -441,6 +455,20 @@
 (defmacro glissière (clef x y mini maxi valeur fonction) (block (evaljsc (list "Pyt.glissière" (string clef) x y mini maxi valeur (string (quote fonction)))) nil))
 ; zone_édition(clef, x, y, lignes, f) : un texte sur plusieurs lignes ; f(clef, texte) quand on la quitte (ou Ctrl+Entrée)
 (defmacro zone_édition (clef x y lignes fonction) (block (evaljsc (list "Pyt.zoneÉdition" (string clef) x y lignes (string (quote fonction)))) nil))
+; zone_défilante(clef, x, y, l, h, largeur, hauteur) : une fenêtre de l × h points sur une surface de dessin de
+; largeur × hauteur, qui défile verticalement si hauteur > h, horizontalement si largeur > l (molette, doigt,
+; barres) ; on y dessine avec montre_dessin(d, clef), d étant un dessin préparé (nouveau_dessin). Avec une
+; fonction de plus : f(clef, [x, y]) au clic, en points de la surface. valeur_objet(clef) rend la
+; position du défilement [x, y] ; change_objet(clef, [x, y]) fait défiler.
+(defmacro zone_défilante (clef x y l h largeur hauteur) (block (evaljsc (list "Pyt.zoneDéfilante" (string clef) x y l h largeur hauteur "")) (_erreur_navigateur) nil))
+(defmacro zone_défilante (clef x y l h largeur hauteur fonction) (block (evaljsc (list "Pyt.zoneDéfilante" (string clef) x y l h largeur hauteur (string (quote fonction)))) (_erreur_navigateur) nil))
+; zone_texte(clef, x, y, l, h, texte) : un texte seul, en lecture seule, qui défile verticalement, et
+; horizontalement si des lignes dépassent (elles ne sont pas coupées) ; police et taille du moment ;
+; change_objet(clef, texte) le remplace, valeur_objet(clef) le rend.
+(defun zone_texte (_c _x _y _l _h _t)
+   (evaljsc (list "Pyt.zoneTexte" (string _c) _x _y _l _h (_texte _t)))
+   (_erreur_navigateur)
+   nil)
 ; liste_déroulante(clef, x, y, éléments, f) : f(clef, choix) quand on choisit un élément
 (defmacro liste_déroulante (clef x y éléments fonction) (block (evaljsc (list "Pyt.listeDéroulante" (string clef) x y (json éléments) (string (quote fonction)))) nil))
 ; liste_hiérarchique(clef, x, y, lignes, arbre, f) : un arbre ; un élément est un texte ou [nom, [enfants]] ;
@@ -598,9 +626,21 @@
    (setq e (evaljsc "Pyt.dernièreErreur()"))
    (if (!= e "") (throw e)))
 
-; canevas(largeur, hauteur) : nouvelle taille du canevas (efface le dessin)
+; canevas(largeur, hauteur), ou portrait(largeur, hauteur) : la taille du canevas (efface le dessin).
+; paysage(largeur, hauteur) : sa taille quand l'écran est en largeur ; ainsi, sur une tablette ou un
+; téléphone qu'on tourne, le canevas prend aussitôt la taille du sens où on le tient (un ordinateur
+; est en largeur). Sans paysage, la taille de canevas vaut dans les deux sens. Le nom de l'instruction
+; sert au message d'erreur (voir Pyt.canevas et Pyt.paysage, dans js/canevas.js).
 (defun canevas (l h)
    (evaljsc (list "Pyt.canevas" l h))
+   (_erreur_navigateur)
+   nil)
+(defun portrait (l h)
+   (evaljsc (list "Pyt.canevas" l h "portrait"))
+   (_erreur_navigateur)
+   nil)
+(defun paysage (l h)
+   (evaljsc (list "Pyt.paysage" l h "paysage"))
    (_erreur_navigateur)
    nil)
 
@@ -657,28 +697,6 @@
    (_erreur_navigateur)
    nil)
 
-;------------------------------------------------------------------
-; Opérateurs « à la Python »
-; En LispE, le type du premier argument l'emporte : (+ 1 0.5) vaut 1.
-; Le transpileur utilise ces fonctions quand il ne peut pas garantir le type des valeurs.
-;------------------------------------------------------------------
-; a est un entier et b un nombre réel : il faut convertir a en réel
-(defun _mixte (a b) (and (eq (type a) 'integer_) (numberp b) (neq (type b) 'integer_)))
-
-(defun _plus (a b)
-   (cond
-      ((consp a) (p+ a b))
-      ((_mixte a b) (+ (number a) b))
-      (true (+ a b))))
-(defun _moins (a b) (if (_mixte a b) (- (number a) b) (- a b)))
-(defun _fois (a b) (if (_mixte a b) (* (number a) b) (* a b)))
-(defun _divise (a b) (/ (number a) b))
-(defun _inf (a b) (if (_mixte a b) (< (number a) b) (< a b)))
-(defun _infeg (a b) (if (_mixte a b) (<= (number a) b) (<= a b)))
-(defun _sup (a b) (if (_mixte a b) (> (number a) b) (> a b)))
-(defun _supeg (a b) (if (_mixte a b) (>= (number a) b) (>= a b)))
-(defun _égal (a b) (if (_mixte a b) (= (number a) b) (= a b)))
-(defun _diff (a b) (if (_mixte a b) (!= (number a) b) (!= a b)))
 
 ; Message d'une erreur attrapée par sauf(e), sans la pile d'appels LispE
 ; ("[12] (throw ...)") ni la position dans le code LispE (", line: ...")

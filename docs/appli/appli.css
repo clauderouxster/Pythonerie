@@ -139,6 +139,31 @@ body {
 .saisie-canevas:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 .objet-canevas { position: absolute; z-index: 2; box-sizing: border-box; margin: 0; }
 .édition-canevas { resize: none; }
+/* zone_défilante : une fenêtre sur une surface de dessin plus grande, qui défile ; zone_texte : un
+   texte seul, en lecture seule, qui défile (ses lignes ne sont pas coupées) */
+.défilante-canevas, .texte-défilant-canevas {
+    box-sizing: border-box;
+    border: 1px solid #8a8a8a;
+    border-radius: 4px;
+    background: #ffffff;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+.défilante-canevas canvas { display: block; }
+.défilante-canevas, .texte-défilant-canevas { scrollbar-width: thin; scrollbar-color: #9a9a9a transparent; }
+/* des barres fines, toujours visibles : on voit qu'il y a plus à voir (Chrome, Safari) */
+.défilante-canevas::-webkit-scrollbar, .texte-défilant-canevas::-webkit-scrollbar { width: 8px; height: 8px; }
+.défilante-canevas::-webkit-scrollbar-thumb, .texte-défilant-canevas::-webkit-scrollbar-thumb { background: #9a9a9a; border-radius: 4px; }
+.défilante-canevas::-webkit-scrollbar-track, .texte-défilant-canevas::-webkit-scrollbar-track { background: transparent; }
+.texte-défilant-canevas {
+    overflow: auto;
+    padding: 0.3em 0.5em;
+    color: #1a1a1a;
+    white-space: pre;
+    line-height: 1.3;
+    user-select: text;
+}
 .bouton-canevas {
     padding: 0.3em 0.8em;
     border: 1px solid #8a8a8a;

@@ -544,7 +544,14 @@
 
 (setq nokeyword `
 (defun nokeywords(w)
-      (not (in  '%1 (lower w)))
+     ; Les instructions de LispE que le transpileur écrit lui-même ([10, 20] -> (list 10 20), l[i] -> (at l i),
+     ; -x -> (sign x), si -> check/ife…) ne peuvent pas être des noms de l'élève : une fonction de l'élève
+     ; ainsi nommée serait renommée, et le code produit avec elle. Le mot est refusé partout (variable
+     ; comprise). Ne sont pas dans la liste : push, size et println, que la grammaire substitue à append,
+     ; len et print avant ce test (les refuser refuserait ces mots) ; trim et join, que l'élève appelle
+     ; comme des fonctions. (w est une chaîne, d'où "list" et non l'atome.)
+     (and (not (in '("list" "setq" "setg" "setqi" "defun" "defpat" "check" "loop" "block" "ife" "at" "extract" "mapcar" "filtercar" "in_it" "dictionary" "maybe" "throw" "eq" "sign" "true" "andvalue" "orvalue") w))
+      (not (in  '%1 (lower w))))
 )
    `
 )

@@ -304,7 +304,7 @@
                             écrire et faire avancer une tortue. En dessous, la <b>console</b> affiche les messages
                             de ton programme, et la ligne <code>&gt;&gt;&gt;</code> exécute tout de suite ce que tu tapes.</p></div>
                 </div>
-                <p>En haut, le bouton <b>▶ Exécuter</b> lance ton programme. Le bouton <b>■ Arrêter</b> arrête une animation.
+                <p>En haut, le bouton <b>▶ Exécuter</b> lance ton programme. Tant que le programme tourne (une animation, des boutons, une question), il devient <b>■ Arrêter</b>&nbsp;: un clic l'arrête, et il redevient <b>▶ Exécuter</b>.
                     Le bouton <b>❓ Aide</b> montre un résumé de tous les mots.</p>
                 <p>Le bouton <b>⛶</b>, au-dessus de l'éditeur, met ton programme en <b>plein écran</b>, pour avoir plus de place.
                     Celui de la console fait de même pour la console&nbsp;; la console en plein écran a alors son bouton <b>▶ Exécuter</b>, qui devient <b>■ Arrêter</b> tant que le programme tourne. Pour revenir, clique sur <b>✕</b> ou appuie sur <b>Échap</b>.
@@ -516,6 +516,7 @@ sinon:
                     <tr><td><code>!=</code></td><td>est différent de</td></tr>
                     <tr><td><code>&lt;</code> et <code>&gt;</code></td><td>est plus petit que, est plus grand que</td></tr>
                     <tr><td><code>&lt;=</code> et <code>&gt;=</code></td><td>est plus petit ou égal, est plus grand ou égal</td></tr>
+                    <tr><td><code>10 &lt; a &lt; 20</code></td><td>deux comparaisons à la suite&nbsp;: <code>a</code> est entre 10 et 20 (deux signes au plus)</td></tr>
                     <tr><td><code>et</code>, <code>ou</code>, <code>non</code></td><td>pour combiner&nbsp;: <code>si il_pleut et non parapluie:</code></td></tr>
                     <tr><td><code>dans</code></td><td>est dans la liste ou dans le texte&nbsp;: <code>si "a" dans mot:</code></td></tr>
                 </table>
@@ -1077,7 +1078,7 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                 <h3>🖼️ Les images, les sons et les données du projet</h3>
                 <p>En haut de la liste, trois répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b> et
                     <b>données</b>. Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
-                    Un clic sur un fichier te montre l'image, joue le son ou affiche le début des données.</p>
+                    Un clic sur une image te la montre, un clic sur un son le joue. Un clic sur un fichier de données l'ouvre dans l'éditeur, à la place du code&nbsp;: tu peux le modifier, il est enregistré tout seul, et <b>✎ Code</b> te ramène au programme.</p>
                 <p>Dans ton programme, tu n'as besoin que du nom du fichier&nbsp;:</p>
                 <div class="exemple"><pre>chat = charge_image("chat.png")        # dans le répertoire images
 miaou = charge_son("miaou.wav")        # dans le répertoire sons
@@ -1286,6 +1287,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>maximum(liste)</code></td><td>le plus grand (aussi <code>maximum(a, b)</code>)</td><td class="ex"><code>maximum([4, 9, 2])</code> donne 9</td></tr>
                     <tr><td><code>minimum(liste)</code></td><td>le plus petit (aussi <code>minimum(a, b)</code>)</td><td class="ex"><code>minimum(4, 9)</code> donne 4</td></tr>
                     <tr><td><code>trie(liste)</code></td><td>une copie de la liste, rangée dans l'ordre</td><td class="ex"><code>trie([3, 1, 2])</code> donne [1, 2, 3]</td></tr>
+                    <tr><td><code>tri_localisé(liste)</code></td><td>une copie des textes dans l'ordre du dictionnaire (« é » avec les « e », les majuscules avec les minuscules)</td><td class="ex"><code>tri_localisé(["Zoé", "ami", "éclair"])</code></td></tr>
                     <tr><td><code>inverse(liste)</code></td><td>la liste à l'envers</td><td class="ex"><code>inverse([1, 2, 3])</code> donne [3, 2, 1]</td></tr>
                     <tr><td><code>choisis(liste)</code></td><td>un élément au hasard</td><td class="ex"><code>choisis(["pile", "face"])</code></td></tr>
                     <tr><td><code>contient(x, y)</code></td><td>Vrai si y est dans x</td><td class="ex"><code>contient([1, 2], 2)</code> donne Vrai</td></tr>
@@ -1332,8 +1334,10 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>texte(x, y, message)</code></td><td>écrit un message sur le canevas</td><td class="ex"><code>texte(100, 50, "Bonjour")</code></td></tr>
                     <tr><td><code>taille_texte(n)</code></td><td>choisit la taille des lettres</td><td class="ex"><code>taille_texte(40)</code></td></tr>
                     <tr><td><code>largeur_texte(t)</code></td><td>la largeur qu'aura le texte t, en points, avec la police et la taille du moment&nbsp;: pour le centrer, ou pour l'encadrer</td><td class="ex"><code>texte(400 - largeur_texte(t) / 2, 280, t)</code></td></tr>
+                    <tr><td><code>hauteur_texte(t)</code></td><td>la hauteur des lettres du texte t, en points, du haut de la plus haute au bas de la plus basse</td><td class="ex"><code>h = hauteur_texte("Ag")</code></td></tr>
                     <tr><td><code>police(nom)</code></td><td>choisit la forme des lettres</td><td class="ex"><code>police("serif")</code></td></tr>
                     <tr><td><code>canevas(largeur, hauteur)</code></td><td>change la taille du canevas (800 sur 600 au départ) et efface le dessin</td><td class="ex"><code>canevas(400, 400)</code></td></tr>
+                    <tr><td><code>portrait(l, h)</code> · <code>paysage(l, h)</code></td><td>la taille du canevas quand l'écran est en hauteur, ou en largeur&nbsp;: sur une tablette qu'on tourne, il change aussitôt</td><td class="ex"><code>paysage(800, 450)</code></td></tr>
                     <tr><td><code>largeur()</code>, <code>hauteur()</code></td><td>la largeur et la hauteur du canevas (800 et 600 au départ)</td><td class="ex"><code>largeur()</code></td></tr>
                     <tr><td><code>appareil()</code></td><td>sur quoi tourne ton programme&nbsp;: <code>"ordinateur"</code>, <code>"tablette"</code> ou <code>"téléphone"</code>, puis la largeur et la hauteur de l'écran (dans le sens où tu le tiens). Pratique pour adapter un jeu&nbsp;: sur une tablette, pas de clavier&nbsp;!</td><td class="ex"><code>si appareil()[0] == "tablette":</code></td></tr>
                 </table>
@@ -1395,6 +1399,7 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>nouveau_dessin()</code></td><td>commence un dessin vide, qu'on prépare avant de le montrer</td><td class="ex"><code>décor = nouveau_dessin()</code></td></tr>
                     <tr><td><code>dessin.disque(x, y, rayon)</code></td><td>ajoute un disque au dessin, sans le dessiner tout de suite&nbsp;; toutes les instructions de dessin et de la tortue s'écrivent ainsi (<code>dessin.couleur</code>, <code>dessin.texte</code>, <code>dessin.avance</code>…)</td><td class="ex"><code>décor.disque(400, 300, 50)</code></td></tr>
                     <tr><td><code>montre_dessin(dessin)</code></td><td>dessine tout le dessin d'un coup&nbsp;; on peut le montrer à chaque image d'une animation, c'est très rapide</td><td class="ex"><code>montre_dessin(décor)</code></td></tr>
+                    <tr><td><code>montre_dessin(dessin, clef)</code></td><td>dessine le dessin dans la <code>zone_défilante</code> clef au lieu du canevas</td><td class="ex"><code>montre_dessin(carte, "carte")</code></td></tr>
                     <tr><td><code>vide_dessin(dessin)</code></td><td>enlève toutes les commandes du dessin, pour en préparer un autre</td><td class="ex"><code>vide_dessin(décor)</code></td></tr>
                 </table>
 
@@ -1452,6 +1457,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
                     <tr><td><code>animer(f, délai)</code></td><td>appelle la fonction f toutes les «&nbsp;délai&nbsp;» millisecondes</td><td class="ex"><code>animer(image, 30)</code></td></tr>
+                    <tr><td><code>appel_dans(f, délai)</code></td><td>appelle la fonction f toutes les «&nbsp;délai&nbsp;» millisecondes, comme une horloge</td><td class="ex"><code>appel_dans(tic, 1000)</code></td></tr>
+                    <tr><td><code>heure()</code></td><td>l'heure de l'appareil&nbsp;: [heures, minutes, secondes, millisecondes]</td><td class="ex"><code>h, m, s, ms = heure()</code></td></tr>
                     <tr><td><code>arrête()</code></td><td>arrête l'animation</td><td class="ex"><code>arrête()</code></td></tr>
                     <tr><td><code>quand_clic(f)</code></td><td>appelle f(x, y) à chaque clic sur le canevas</td><td class="ex"><code>quand_clic(clic)</code></td></tr>
                     <tr><td><code>quand_souris(f)</code></td><td>appelle f(x, y) quand la souris bouge sur le canevas</td><td class="ex"><code>quand_souris(suit)</code></td></tr>
@@ -1472,6 +1479,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>liste_déroulante(clef, x, y, éléments, f)</code></td><td>une liste à choix&nbsp;; f(clef, choix)</td><td class="ex"><code>liste_déroulante("forme", 20, 180, ["disque", "carré"], f)</code></td></tr>
                     <tr><td><code>liste_hiérarchique(clef, x, y, lignes, arbre, f)</code></td><td>une liste en arbre&nbsp;; f(clef, chemin)</td><td class="ex"><code>liste_hiérarchique("a", 20, 220, 6, [["Fruits", ["pomme"]]], f)</code></td></tr>
                     <tr><td><code>zone_édition(clef, x, y, lignes, f)</code></td><td>un texte sur plusieurs lignes&nbsp;; f(clef, texte) quand on la quitte</td><td class="ex"><code>zone_édition("notes", 20, 260, 4, f)</code></td></tr>
+                    <tr><td><code>zone_défilante(clef, x, y, l, h, largeur, hauteur, f)</code></td><td>un dessin de largeur × hauteur qui défile dans une fenêtre de l × h&nbsp;; on y dessine avec montre_dessin(d, clef)</td><td class="ex"><code>zone_défilante("carte", 20, 20, 360, 260, 1200, 900)</code></td></tr>
+                    <tr><td><code>zone_texte(clef, x, y, l, h, texte)</code></td><td>un texte seul, en lecture seule, qui défile</td><td class="ex"><code>zone_texte("règles", 420, 20, 340, 260, règles)</code></td></tr>
                     <tr><td><code>valeur_objet(clef)</code></td><td>la valeur actuelle d'un objet</td><td class="ex"><code>valeur_objet("taille")</code></td></tr>
                     <tr><td><code>change_objet(clef, valeur)</code></td><td>change la valeur d'un objet (sans appeler sa fonction)</td><td class="ex"><code>change_objet("son", Vrai)</code></td></tr>
                 </table>

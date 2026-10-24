@@ -27,6 +27,7 @@
    (list 'join (parsing cnt) (parsing sep))
 )
 
+; "a,b".découpe(",") -> (découpe "a,b" ",") : l'objet devant le point est le premier argument
 (defpat parsing ( ['alapython sep nm $ args])
    (nconcn (list (atom nm) (parsing sep)) (mapcar 'parsing args))
 )
@@ -34,15 +35,21 @@
 (defpat parsing ( ['walrus nm $ d] )
    (list 'setqv (atom nm) (parsing d)))
 
+; La case visée par tir[1] -= 5, m[1][0] += 10 : (@ tir 1), (@ m 1 0), avec tous ses indices
+(defun case_indexée (letype)
+   (setq indexes ())
+   (loop i (cddr letype) (nconc indexes (parsing i)))
+   (nconcn (list '@ (atom (@ letype 1))) indexes))
+
 (defpat parsing ( ['assignmenttopself $ d] )
    (setq letype (cadar d))
    (setq op (atom (join (cdr (@ d 1)))))
    (setq value (@ d 2))
    (if (consp letype)
-      (nconcn (list op) (atom (@ letype 1)) (parsing (@ letype 2)) (parsing value))
+      (list op (case_indexée letype) (parsing value))
       (list op (atom letype) (parsing value))))
 
-(setq ops_affectation {"+=":'_plus "-=":'_moins "*=":'_fois "/=":'_divise})
+(setq ops_affectation {"+=":'p+})
 
 (defpat parsing ( ['assignmentop $ d] )
    (setq letype (cadar d))
@@ -53,12 +60,13 @@
    (setq k (string op))
    (setq v (parsing value))
    (cond
-      ; x += 0.5 devient (_maj x (_plus x 0.5)) pour suivre les règles de Python.
+      ; l += [3] devient (_maj l (p+ l [3])) : sur des listes, += concatène comme en Python.
       ; _maj est remplacé par setq ou setg selon la portée de la variable (voir résout_portée)
       ((and (not (consp letype)) (in_it ops_affectation k) (not (opération_sûre (atom letype) v)))
          (list '_maj (atom letype) (list (@ ops_affectation k) (atom letype) v)))
+      ; tir[1] -= 580 * dt → (-= (@ tir 1) (* 580 dt))
       ((consp letype)
-         (nconcn (list op) (atom (@ letype 1)) (parsing (@ letype 2)) v))
+         (list op (case_indexée letype) v))
       (true
          (list op (atom letype) v))))
 
@@ -631,10 +639,12 @@
 
 ; Dépile un opérateur et ses deux opérandes, empile le résultat.
 ; On aplatit (- (- a b) c) en (- a b c), sauf pour ** (associatif à droite).
-; En LispE, le type du premier argument l'emporte : (+ 1 0.5) vaut 1 et (< 1 1.5) est faux.
-; Pour retrouver le comportement de Python, on remplace ces opérateurs par des fonctions
-; de la bibliothèque (_plus, _inf...), sauf quand les valeurs littérales garantissent le résultat.
-(setq ops_python {"+":'_plus "-":'_moins "*":'_fois "/":'_divise "<":'_inf "<=":'_infeg ">":'_sup ">=":'_supeg "=":'_égal "!=":'_diff})
+; Les opérateurs de LispE donnent le résultat de Python, même entre entiers et réels
+; ((+ 1 0.5) vaut 1.5, (< 5 5.1) est vrai, (/ 6 2) vaut 3.0). Seul + diffère : sur deux listes,
+; LispE additionne élément par élément, Python concatène. On le remplace donc par p+ (le + de
+; Python dans LispE : (p+ 10 20) vaut 30, (p+ '(10) '(20)) vaut (10 20)), sauf quand les valeurs
+; garantissent qu'il ne s'agit pas de listes.
+(setq ops_python {"+":'p+})
 
 ; Un nombre entier écrit dans le programme (3, 10...)
 (defun entier_littéral (x)
@@ -656,11 +666,21 @@
       (chaîne_certaine b)))
 
 ; Construit l'opération (o a b) en tenant compte des règles de Python
-(defun opération_python (o a b)
+(defpat opération_python (o a b)
    (setq k (string o))
    (if (and (in_it ops_python k) (not (opération_sûre a b)))
       (list (@ ops_python k) a b)
       (list o a b)))
+
+; a1 op1 a2 op2 a3 (1 < x <= 10) : comme en Python, a2 n'est calculé qu'une fois.
+; Avec deux fois le même opérateur, LispE compare directement : (< 1 x 10).
+; Sinon, une expression a2 (un appel, un calcul) passe par une lambda.
+(defun chaîne_comparaisons (op1 op2 a1 a2 a3)
+   (cond
+      ((eq op1 op2) (list op1 a1 a2 a3))
+      ((consp a2)
+         (list (list 'lambda '(_milieu) (list 'and (list op1 a1 '_milieu) (list op2 '_milieu a3))) a2))
+      (true (list 'and (list op1 a1 a2) (list op2 a2 a3)))))
 
 (defun reduce_op(vals ops)
    (setq o (last@ ops))
@@ -669,9 +689,13 @@
    (pop vals)
    (setq a (last@ vals))
    (pop vals)
-   (if (and (consp a) (eq (car a) o) (neq o '**) (opération_sûre a b))
-      (block (push a b) (push vals a))
-      (push vals (opération_python o a b))))
+   (cond
+      ; a + b + c : (p+ (p+ a b) c) devient (p+ a b c), p+ prend autant de valeurs qu'on veut
+      ((and (consp a) (eq (car a) 'p+) (eq o '+))
+         (push a b) (push vals a))
+      ((and (consp a) (eq (car a) o) (neq o '**) (opération_sûre a b))
+         (push a b) (push vals a))
+      (true (push vals (opération_python o a b)))))
 
 ; calculus expression: A + 10 - 30
 (defpat parsing ( ['computing $ reste] )
@@ -719,7 +743,17 @@
 
 ; a comparison: A < 10 or B > 10 and C <> 8
 ; Tête d'un nœud comparing : (comparaison-analysée reste-de-la-chaîne)
-(defpat cmp_split ( ['comparing "non" a1 ['comparator $ op] a2 $ d] )
+(defpat cmp_split ( ['comparing "non" a1 ['afullcomparison ['intervalcomp ['compinterval $ op1] a2 ['compinterval $ op2] a3]] $ d] )
+   (setq op1 (parsing (nconcn '(comparator) op1)))
+   (setq op2 (parsing (nconcn '(comparator) op2)))
+   (list (list 'not (chaîne_comparaisons op1 op2 (parsing a1) (parsing a2) (parsing a3))) d))
+
+(defpat cmp_split ( ['comparing a1 ['afullcomparison ['intervalcomp ['compinterval $ op1] a2 ['compinterval $ op2] a3]] $ d] )
+   (setq op1 (parsing (nconcn '(comparator) op1)))
+   (setq op2 (parsing (nconcn '(comparator) op2)))
+   (list (chaîne_comparaisons op1 op2 (parsing a1) (parsing a2) (parsing a3)) d))
+
+(defpat cmp_split ( ['comparing "non" a1 ['afullcomparison ['compnormal ['comparator $ op] a2]] $ d] )
    (setq op (parsing (nconcn '(comparator) op)))
    (list
       (if (eq op 'in)
@@ -729,7 +763,7 @@
             (list 'not (opération_python op (parsing a1) (parsing a2)))))
       d))
 
-(defpat cmp_split ( ['comparing a1 ['comparator $ op] a2 $ d] )
+(defpat cmp_split ( ['comparing a1 ['afullcomparison ['compnormal ['comparator $ op] a2]] $ d] )
    (setq op (parsing (nconcn '(comparator) op)))
    (list
       (if (eq op 'in)

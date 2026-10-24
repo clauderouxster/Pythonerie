@@ -400,6 +400,8 @@ const Pyt = (function () {
         e.style.top = (champ.y * 100 / HAUTEUR) + '%';
         // un bouton, une case ou un radio prend la largeur de son texte
         e.style.width = champ.l ? (champ.l * 100 / LARGEUR) + '%' : '';
+        // les zones (zone_défilante, zone_texte) ont aussi une hauteur
+        e.style.height = champ.h ? (champ.h * 100 / HAUTEUR) + '%' : '';
         // la police et la taille courantes (police, taille_texte) au moment de saisie() ;
         // la taille suit la largeur affichée du canevas (unités cqw)
         e.style.fontFamily = champ.police;
@@ -553,6 +555,39 @@ const Pyt = (function () {
     function retireChamps() {
         champs.forEach(c => c.élément.remove());
         champs.clear();
+    }
+
+    // portrait(l, h) — c'est canevas(l, h) — et paysage(l, h) : la taille du canevas selon le sens
+    // de l'écran, pour une tablette ou un téléphone qu'on tourne (un ordinateur est en largeur).
+    // Écran en largeur : la taille paysage, si le programme en a donné une ; sinon la taille
+    // portrait (ou 800 × 600). Quand on tourne l'appareil, l'autre taille est prise aussitôt, et le
+    // dessin est effacé, comme avec canevas(). Les deux tailles sont oubliées à chaque exécution.
+    const formats = { portrait: null, paysage: null };
+    const requêteLargeur = window.matchMedia ? window.matchMedia('(orientation: landscape)') : null;
+    const enLargeur = () => !requêteLargeur || requêteLargeur.matches;
+    const formatVoulu = () => (enLargeur() && formats.paysage) || formats.portrait || [LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT];
+    // prend la taille voulue : toujours si forcé, sinon seulement si elle change ; le dessin est effacé
+    function appliqueFormat(forcé) {
+        const [lg, ht] = formatVoulu();
+        if (!forcé && lg === LARGEUR && ht === HAUTEUR) return;
+        dimensionne(lg, ht);
+        const t = tortueInitiale();
+        tortue.x = t.x; tortue.y = t.y; tortue.cap = t.cap;
+        window.Pyt.efface();
+        prévoitTortue();
+    }
+    if (requêteLargeur) {
+        const tourne = () => { if (formats.portrait || formats.paysage) appliqueFormat(false); };
+        if (requêteLargeur.addEventListener) requêteLargeur.addEventListener('change', tourne);
+        else if (requêteLargeur.addListener) requêteLargeur.addListener(tourne);
+    }
+    // la taille donnée à canevas, portrait ou paysage ; null (et dernièreErreur) si elle ne va pas
+    function taille(l, h, nom) {
+        const lg = Math.round(nombre(l, NaN)), ht = Math.round(nombre(h, NaN));
+        if (lg >= 1 && lg <= TAILLE_MAX && ht >= 1 && ht <= TAILLE_MAX) return [lg, ht];
+        dernièreErreur = (nom || 'canevas') + ' : la largeur et la hauteur sont des nombres entre 1 et ' + TAILLE_MAX
+            + ' (« ' + l + ' », « ' + h + ' »)';
+        return null;
     }
 
     function dimensionne(lg, ht) {
@@ -717,6 +752,7 @@ const Pyt = (function () {
             retireChamps();
             relâcheTout(false);
             largeurChamp = LARGEUR_CHAMP;
+            formats.portrait = formats.paysage = null;
             dimensionne(LARGEUR_DÉFAUT, HAUTEUR_DÉFAUT);
             this.arrête();
             this.arrêteSons();
@@ -886,24 +922,35 @@ const Pyt = (function () {
             appliqueStyle();
             return Math.max(...String(message).split('\n').map(l => ctx.measureText(l).width));
         },
+        // hauteur_texte(message) : du haut de la plus haute lettre au bas de la plus basse ; sur
+        // plusieurs lignes, du haut de la première au bas de la dernière
+        hauteurTexte(message) {
+            appliqueStyle();
+            const lignes = String(message).split('\n');
+            const premier = ctx.measureText(lignes[0]), dernier = ctx.measureText(lignes[lignes.length - 1]);
+            if (lignes.length === 1 && !lignes[0]) return 0;
+            return Math.max(0, premier.actualBoundingBoxAscent + dernier.actualBoundingBoxDescent + (lignes.length - 1) * état.taille * 1.2);
+        },
         tailleTexte(n) { état.taille = Math.max(4, nombre(n, 20)); },
         police(nom) { état.police = String(nom || 'Inter, sans-serif'); },
 
         // canevas(largeur, hauteur) : change la taille du canevas (le dessin est effacé et
         // la tortue revient au centre). À chaque exécution, il reprend sa taille de 800 x 600.
-        canevas(l, h) {
+        // portrait(largeur, hauteur) est le même appel (nom : le nom de l'instruction, pour l'erreur)
+        canevas(l, h, nom) {
             dernièreErreur = '';
-            const lg = Math.round(nombre(l, NaN)), ht = Math.round(nombre(h, NaN));
-            if (!(lg >= 1 && lg <= TAILLE_MAX && ht >= 1 && ht <= TAILLE_MAX)) {
-                dernièreErreur = 'canevas : la largeur et la hauteur sont des nombres entre 1 et ' + TAILLE_MAX
-                    + ' (« ' + l + ' », « ' + h + ' »)';
-                return;
-            }
-            dimensionne(lg, ht);
-            const t = tortueInitiale();
-            tortue.x = t.x; tortue.y = t.y; tortue.cap = t.cap;
-            this.efface();
-            prévoitTortue();
+            const f = taille(l, h, nom);
+            if (!f) return;
+            formats.portrait = f;
+            appliqueFormat(formatVoulu() === f);
+        },
+        // paysage(largeur, hauteur) : la taille du canevas quand l'écran est en largeur
+        paysage(l, h, nom) {
+            dernièreErreur = '';
+            const f = taille(l, h, nom || 'paysage');
+            if (!f) return;
+            formats.paysage = f;
+            appliqueFormat(formatVoulu() === f);
         },
         largeur() { return LARGEUR; },
         hauteur() { return HAUTEUR; },
@@ -974,14 +1021,27 @@ const Pyt = (function () {
         // commande est un code suivi de ses nombres) et textes (couleurs, messages, polices, dans
         // l'ordre des commandes). Le dessin est gardé sous son numéro : redessine le rejoue sans
         // qu'il soit renvoyé. Chaque commande passe par la méthode du dessin immédiat.
-        montreDessin(numéro, nombres, textes) {
+        montreDessin(numéro, nombres, textes, zone) {
             dessins.set(numéro, { nombres, textes: Array.isArray(textes) ? textes : [] });
-            this.redessine(numéro);
+            this.redessine(numéro, zone);
         },
-        redessine(numéro) {
+        // zone : la clef d'une zone_défilante, où le dessin est rejoué (sur sa surface, à sa taille)
+        redessine(numéro, zone) {
             dernièreErreur = '';
             const d = dessins.get(numéro);
             if (!d) return;
+            if (zone !== undefined && zone !== null && String(zone) !== '') {
+                const z = champs.get(String(zone).normalize('NFC'));
+                if (!z || z.genre !== 'défilante') { dernièreErreur = 'montre_dessin : il n\'y a pas de zone_défilante « ' + zone + ' »'; return; }
+                const sauvé = { ctx, LARGEUR, HAUTEUR, mode3D };
+                ctx = z.ctx; LARGEUR = z.largeur; HAUTEUR = z.hauteur; mode3D = false;
+                try {
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.clearRect(0, 0, LARGEUR, HAUTEUR);
+                    this.redessine(numéro);
+                } finally { ({ ctx, LARGEUR, HAUTEUR, mode3D } = sauvé); }
+                return;
+            }
             const n = d.nombres, t = d.textes;
             let i = 0, k = 0;
             while (i < n.length) {
@@ -1029,6 +1089,25 @@ const Pyt = (function () {
             const id = setInterval(() => appelle(nom, []), ms);
             minuteries.push(id);
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+        },
+        // appel_dans(f, délai) : f() toutes les délai millisecondes, au rythme d'une horloge
+        appelDans(nom, délai) {
+            const id = setInterval(() => appelle(nom, []), Math.max(10, nombre(délai, 1000)));
+            minuteries.push(id);
+            if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+        },
+        // heure() : [heures, minutes, secondes, millisecondes], l'heure de l'appareil
+        heure() {
+            const d = new Date();
+            return [d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()];
+        },
+        // tri_localisé(liste, langue) : les textes dans l'ordre du dictionnaire (du français, par défaut)
+        triLocalisé(texte, locale) {
+            const liste = JSON.parse(String(texte)).map(x => String(x));
+            let ordre;
+            try { ordre = new Intl.Collator(String(locale || '').trim() || 'fr'); }
+            catch (e) { ordre = new Intl.Collator('fr'); }
+            return liste.sort(ordre.compare);
         },
         quandClic(nom) { gestionnaires.clic = nom; },
         quandClicObjet(nom) { gestionnaires.clicObjet = nom; },
@@ -1303,6 +1382,68 @@ const Pyt = (function () {
             o.élément.style.height = (o.lignes * 1.45 + 0.4) + 'em';
         },
 
+        // zone_défilante(clef, x, y, l, h, largeur, hauteur, f) : une fenêtre de l × h (en points du
+        // canevas) sur une surface de dessin de largeur × hauteur, qui défile verticalement si
+        // hauteur > h, horizontalement si largeur > l (molette, pavé tactile, doigt, barres). Le
+        // programme y dessine avec montre_dessin(d, clef). f (facultative) : f(clef, [x, y]) au clic,
+        // en coordonnées de la surface.
+        zoneDéfilante(clef, x, y, l, h, largeur, hauteur, nom) {
+            dernièreErreur = '';
+            clef = String(clef).normalize('NFC');
+            const lv = Math.round(nombre(l, NaN)), hv = Math.round(nombre(h, NaN));
+            const lc = Math.round(nombre(largeur, NaN)), hc = Math.round(nombre(hauteur, NaN));
+            if (!(lv >= 1 && hv >= 1 && lc >= 1 && hc >= 1 && lc <= TAILLE_MAX && hc <= TAILLE_MAX * 4)) {
+                dernièreErreur = 'zone_défilante : les tailles sont des nombres plus grands que 0 (« ' + l + ' », « ' + h + ' », « ' + largeur + ' », « ' + hauteur + ' »)';
+                return;
+            }
+            const o = objetDe(clef, 'défilante', (o) => {
+                const e = document.createElement('div');
+                e.className = 'objet-canevas défilante-canevas';
+                e.setAttribute('aria-label', clef);
+                const c = document.createElement('canvas');
+                e.appendChild(c);
+                o.surface = c;
+                o.ctx = c.getContext('2d');
+                c.addEventListener('click', (ev) => {
+                    if (!o.rappel) return;
+                    const r = c.getBoundingClientRect();
+                    const px = (ev.clientX - r.left) * o.largeur / r.width, py = (ev.clientY - r.top) * o.hauteur / r.height;
+                    appelle(o.rappel, [chaîneLispE(clef), '(list ' + Math.round(px) + ' ' + Math.round(py) + ')']);
+                });
+                return e;
+            });
+            const c = o.surface;
+            if (c.width !== lc || c.height !== hc) { c.width = lc; c.height = hc; }
+            o.largeur = lc; o.hauteur = hc;
+            // la surface, à l'échelle du canevas : largeur / l de la zone, hauteur / h
+            c.style.width = (lc * 100 / lv) + '%';
+            c.style.height = (hc * 100 / hv) + '%';
+            o.élément.style.overflowX = lc > lv ? 'auto' : 'hidden';
+            o.élément.style.overflowY = hc > hv ? 'auto' : 'hidden';
+            o.rappel = String(nom || '') || null;
+            o.h = hv;
+            poseObjet(o, nom || '', x, y, lv);
+        },
+        // zone_texte(clef, x, y, l, h, texte) : un texte seul, en lecture seule, qui défile
+        // verticalement, et horizontalement si des lignes dépassent (elles ne sont pas coupées)
+        zoneTexte(clef, x, y, l, h, texte) {
+            dernièreErreur = '';
+            clef = String(clef).normalize('NFC');
+            const lv = Math.round(nombre(l, NaN)), hv = Math.round(nombre(h, NaN));
+            if (!(lv >= 1 && hv >= 1)) { dernièreErreur = 'zone_texte : la largeur et la hauteur sont des nombres plus grands que 0 (« ' + l + ' », « ' + h + ' »)'; return; }
+            const o = objetDe(clef, 'texte', () => {
+                const e = document.createElement('div');
+                e.className = 'objet-canevas texte-défilant-canevas';
+                e.setAttribute('role', 'document');
+                e.setAttribute('aria-label', clef);
+                e.tabIndex = 0;
+                return e;
+            });
+            o.élément.textContent = String(texte === undefined || texte === null ? '' : texte).normalize('NFC');
+            o.h = hv;
+            poseObjet(o, '', x, y, lv);
+        },
+
         // valeur_objet(clef) : le texte d'une saisie, d'une zone ou d'un bouton, le nombre
         // d'une glissière, Vrai / Faux pour une case ou un radio, le chemin d'une liste hiérarchique
         valeurObjet(clef) {
@@ -1315,6 +1456,12 @@ const Pyt = (function () {
             if (o.genre === 'bouton') return o.élément.textContent;
             if (o.genre === 'bouton_image') return o.numéro;
             if (o.genre === 'arbre') return o.chemin;
+            // une zone défilante : la position du défilement, [x, y] en points de sa surface
+            if (o.genre === 'défilante') {
+                const k = o.surface.clientWidth ? o.largeur / o.surface.clientWidth : 1;
+                return [Math.round(o.élément.scrollLeft * k), Math.round(o.élément.scrollTop * k)];
+            }
+            if (o.genre === 'texte') return o.élément.textContent;
             return o.élément.value.normalize('NFC');
         },
         genreObjet(clef) {
@@ -1329,6 +1476,13 @@ const Pyt = (function () {
             if (o.genre === 'case' || o.genre === 'radio') o.entrée.checked = !!valeur;
             else if (o.genre === 'glissière') o.élément.value = nombre(valeur, Number(o.élément.min));
             else if (o.genre === 'bouton') o.élément.textContent = String(valeur);
+            else if (o.genre === 'texte') o.élément.textContent = String(valeur).normalize('NFC');
+            else if (o.genre === 'défilante') {
+                // valeur : [x, y], la position où faire défiler (en points de la surface)
+                const [px, py] = lisJSON(valeur, [0, 0]);
+                const k = o.largeur ? o.surface.clientWidth / o.largeur : 1;
+                o.élément.scrollTo(nombre(px, 0) * k, nombre(py, 0) * k);
+            }
             else if (o.genre === 'bouton_image') {
                 // valeur : le numéro d'une autre image, qui devient l'aspect du bouton
                 if (!images[valeur]) dernièreErreur = 'change_objet : l\'image ' + valeur + ' n\'existe pas';

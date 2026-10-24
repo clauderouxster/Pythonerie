@@ -1,4 +1,4 @@
-;Date: 2026/10/12 14:41:38
+;Date: 2026/10/22 14:09:19
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -470,6 +470,43 @@
    )
 )
 
+;compinterval := [%= %=]^[%< %=]^[%> %=]^%<^%>
+(defun C_compinterval (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (or
+            (and
+               (setq i1 (clone i0))
+               (setq v1 ())
+               (compare tokens "=" i1 v1 true)
+               (compare tokens "=" i1 v1 true)
+               (set@ i0 0 (car i1))
+               (setq v0 v1)
+            )
+            (and
+               (setq i1 (clone i0))
+               (setq v1 ())
+               (compare tokens "<" i1 v1 true)
+               (compare tokens "=" i1 v1 true)
+               (set@ i0 0 (car i1))
+               (setq v0 v1)
+            )
+            (and
+               (setq i1 (clone i0))
+               (setq v1 ())
+               (compare tokens ">" i1 v1 true)
+               (compare tokens "=" i1 v1 true)
+               (set@ i0 0 (car i1))
+               (setq v0 v1)
+            )
+            (compare tokens "<" i0 v0 true)
+            (compare tokens ">" i0 v0 true)
+         )
+         (push v (cons 'compinterval v0))
+      )
+   )
+)
+
 ;onecomparison := $non? computing comparator computing
 (defun C_onecomparison (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
@@ -496,7 +533,68 @@
    )
    true)
 
-;comparing := $non? computing [comparator computing]? [orand ;18 comparison]*
+;intervalcomp := compinterval computing compinterval computing
+(defun C_intervalcomp (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_compinterval tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (C_compinterval tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'intervalcomp v0))
+      )
+   )
+)
+
+;compnormal := comparator computing
+(defun C_compnormal (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_comparator tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'compnormal v0))
+      )
+   )
+)
+
+;afullcomparison := intervalcomp|compnormal
+(defun C_afullcomparison (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1
+               (maybe (C_intervalcomp tokens i0 v0) false)
+            )
+            (setq a2
+               (maybe (C_compnormal tokens i1 v1) false)
+            )
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
+         )
+         (push v (cons 'afullcomparison v0))
+      )
+   )
+)
+
+;comparing := $non? computing afullcomparison? [orand ;18 comparison]*
 (defun C_comparing (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -524,14 +622,7 @@
 
 (defun O_comparing_1 (tokens i1 vp)
    (setq v1 ())
-   (check (and
-         (setq i2 (clone i1))
-         (setq v2 ())
-         (C_comparator tokens i2 v2)
-         (C_computing tokens i2 v2)
-         (set@ i1 0 (car i2))
-         (setq v1 v2)
-      )
+   (check (C_afullcomparison tokens i1 v1)
       (nconc vp v1)
    )
    true)
@@ -2878,7 +2969,14 @@
 
 
 (defun nokeywords(w)
-      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w)))
+     ; Les instructions de LispE que le transpileur écrit lui-même ([10, 20] -> (list 10 20), l[i] -> (at l i),
+     ; -x -> (sign x), si -> check/ife…) ne peuvent pas être des noms de l'élève : une fonction de l'élève
+     ; ainsi nommée serait renommée, et le code produit avec elle. Le mot est refusé partout (variable
+     ; comprise). Ne sont pas dans la liste : push, size et println, que la grammaire substitue à append,
+     ; len et print avant ce test (les refuser refuserait ces mots) ; trim et join, que l'élève appelle
+     ; comme des fonctions. (w est une chaîne, d'où "list" et non l'atome.)
+     (and (not (in '("list" "setq" "setg" "setqi" "defun" "defpat" "check" "loop" "block" "ife" "at" "extract" "mapcar" "filtercar" "in_it" "dictionary" "maybe" "throw" "eq" "sign" "true" "andvalue" "orvalue") w))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w))))
 )
    (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
 (setq parser_tok (tokenizer_rules))

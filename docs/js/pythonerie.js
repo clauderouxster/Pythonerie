@@ -765,7 +765,7 @@ const Pythonerie = (function () {
             const b = $(id);
             b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
             b.title = enCours ? 'Arrêter le programme' : 'Exécuter le programme';
-            b.classList.toggle('btn-secondaire', enCours);
+            b.classList.toggle('danger', enCours);      // ■ Arrêter, en rouge
         });
     }
 
@@ -3135,7 +3135,7 @@ const Pythonerie = (function () {
         const enCours = wasmPrêt && Pyt.enCours();
         b.disabled = !wasmPrêt || (!!fichierOuvert && !enCours);
         b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
-        b.classList.toggle('btn-secondaire', enCours);
+        b.classList.toggle('danger', enCours);      // ■ Arrêter, en rouge
         b.title = enCours ? 'Arrêter le programme'
             : fichierOuvert ? 'Un fichier de données ne s\'exécute pas : ✎ Code ramène au programme' : titreExécuter;
     }

@@ -210,6 +210,8 @@ a.btn { text-decoration: none; display: inline-block; }
 .barre-programmes { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
 .btn-large { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .btn-icône { padding: 3px 6px; display: flex; align-items: center; }
+/* ＋ au-dessus de l'éditeur : un nouveau programme dans le projet */
+.bouton-nouveau-fichier { font-size: 16px; font-weight: 700; padding: 1px 9px; }
 #listeProgrammes { min-height: 40px; border-radius: var(--radius-sm); }
 #listeProgrammes.cible, #titreProgrammes.cible { outline: 1px dashed var(--accent); outline-offset: 2px; }
 .liste li.arbre-ligne {

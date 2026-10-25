@@ -677,7 +677,7 @@ const Pythonerie = (function () {
             return;
         }
         if (!courant) {
-            écritConsole('— Ton projet est vide : crée d\'abord un programme (bouton ＋ Nouveau).', 'info');
+            écritConsole('— Ton projet est vide : crée d\'abord un programme (bouton ＋ au-dessus de l\'éditeur).', 'info');
             return;
         }
         // en plein écran du code, on ne verrait ni la console ni le canevas
@@ -1247,6 +1247,7 @@ const Pythonerie = (function () {
     const ongletsDeLExemple = (nom) => (ongletsExemples()[nomCourant() || ''] || {})[nom] || null;
 
     function afficheNomProjet() {
+        titreNouveau();
         const e = $('nomProjet');
         e.textContent = nomDuProjet + ' ▾';
         e.classList.toggle('sans-nom', nomDuProjet === SANS_NOM);
@@ -1389,6 +1390,17 @@ const Pythonerie = (function () {
             } catch (e) { écritConsole('La liste des projets n\'a pas pu suivre : ' + e.message, 'erreur'); }
             await rafraîchitListeProjets();
         })();
+    }
+
+    // ＋ Nouveau : un projet « Sans Nom » reçoit un nom ; sinon, un nouveau projet
+    function nouveauDepuisBouton() {
+        if (nomDuProjet === SANS_NOM && !exempleOuvert()) renommeProjet();
+        else nouveauProjet();
+    }
+
+    // son titre dit ce que fera le bouton
+    function titreNouveau() {
+        $('btnNouveau').title = nomDuProjet === SANS_NOM && !exempleOuvert() ? 'Donner un nom à ce projet' : 'Nouveau projet';
     }
 
     // Un nouveau projet, vide, avec un nom ; le projet ouvert est rangé dans la liste
@@ -2965,7 +2977,9 @@ const Pythonerie = (function () {
         }
         afficheDossier(ul, '', 0);
         const ici = dossierCourant ? '« ' + dossierCourant + ' »' : 'la racine';
-        $('btnNouveau').title = 'Nouveau programme dans ' + ici;
+        $('btnNouveauFichier').title = 'Nouveau programme dans ' + ici;
+        $('btnNouveauFichier').setAttribute('aria-label', $('btnNouveauFichier').title);
+        titreNouveau();
         $('btnNouveauDossier').title = 'Nouveau répertoire dans ' + ici;
         $('genreStockage').textContent = 'Enregistrés dans ce navigateur'
             + (serveurProjets ? ' — projets exportés aussi conservés sur le serveur de la classe' : '') + (dossierCourant ? ' — nouveaux programmes dans « ' + dossierCourant + ' »' : '');
@@ -4295,7 +4309,8 @@ const Pythonerie = (function () {
         $('btnPremierProgramme').addEventListener('click', nouveau);
         $('btnLispE').addEventListener('click', basculeLispE);
         installeDonnées();
-        $('btnNouveau').addEventListener('click', nouveau);
+        $('btnNouveau').addEventListener('click', nouveauDepuisBouton);
+        $('btnNouveauFichier').addEventListener('click', nouveau);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
         installeDéroulantes();
         $('btnNouveauDossier').addEventListener('click', nouveauDossier);

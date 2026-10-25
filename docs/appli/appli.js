@@ -326,7 +326,7 @@ const Pythonerie = (function () {
         élève: () => '',
         jetonAdmin: () => null,
         jetonÉlève: () => null,
-        // les médias du site emportés avec l'application (exemples/médias/...)
+        // les médias du site emportés avec l'application (médias/...)
         médias: () => APPLI.médias
     };
 })();

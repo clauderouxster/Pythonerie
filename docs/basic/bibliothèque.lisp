@@ -380,6 +380,27 @@
 (defpat police (nom) (evaljsc (list "Pyt.police" nom)) nil)
 (defpat police ((dictionary_ _dd) nom) (push (_dessin _dd "police") 15) (push (@ _dd "textes") nom) nil)
 
+;------------------------------------------------------------------
+; Les graphiques d'un tableur : graphique(genre, valeurs, étiquettes, options)
+; genre : "colonnes", "barres", "colonnes_empilées", "barres_empilées", "courbes", "aires",
+; "aires_empilées", "camembert", "anneau", "nuage", "bulles", "radar", "répartition", "boîte",
+; "cascade", "entonnoir" ou "mosaïque" ; valeurs : une liste de nombres, ou une liste de listes
+; (une par série) ; étiquettes : les noms des catégories (facultatives) ; options : un
+; dictionnaire {"titre": …, "séries": […], "zone": [x, y, l, h], "valeurs": Vrai…}, qui peut
+; aussi venir à la place des étiquettes. Tout part en un seul texte JSON vers Pyt.graphique
+; (js/canevas.js), qui dessine et renvoie les erreurs. Avec un dessin devant le point,
+; d.graphique(...) ajoute la commande 26 au dessin, rejouée par montre_dessin.
+;------------------------------------------------------------------
+(defun graphique (_a _b (_c nil) (_e nil) (_f nil))
+   (if (eq (type _a) 'dictionary_)
+      (block
+         (push (_dessin _a "graphique") 26)
+         (push (@ _a "textes") (json (list _b _c _e _f))))
+      (block
+         (evaljsc (list "Pyt.graphique" (json (list _a _b _c _e))))
+         (_erreur_navigateur)))
+   nil)
+
 ; Dimensions du canevas : 800 x 600, sauf si le programme appelle canevas(largeur, hauteur)
 ; (défini plus bas, avec les autres fonctions qui peuvent signaler une erreur)
 (defun largeur () (evaljs_d "Pyt.largeur()"))
@@ -500,7 +521,7 @@
 ;------------------------------------------------------------------
 ; Images et sons
 ; charge_image et charge_son renvoient un numéro, à donner ensuite à place_image et joue_son.
-; L'adresse est celle d'un fichier du site (exemples/médias/étoile.svg) ou une adresse
+; L'adresse est celle d'un fichier du site (médias/images/étoile.svg) ou une adresse
 ; complète (https://...).
 ;------------------------------------------------------------------
 (defun charge_image (adresse) (evaljs_i (list "Pyt.chargeImage" (string adresse))))
@@ -521,8 +542,8 @@
 
 ; liste_sons(), liste_images(), liste_données() : les noms des fichiers du projet, triés,
 ; à donner tels quels à charge_son, charge_image ou charge_données ; liste_sons() et
-; liste_images() y ajoutent les sons et les images des médias du site (« exemples/médias/ding.wav »,
-; « exemples/médias/étoile.svg »). evaljs_j rend une liste de textes.
+; liste_images() y ajoutent les sons et les images des médias du site (« médias/sounds/ding.wav »,
+; « médias/images/étoile.svg »). evaljs_j rend une liste de textes.
 (defun liste_sons () (evaljs_j "Pyt.listeFichiers('sons', true)"))
 (defun liste_images () (evaljs_j "Pyt.listeFichiers('images', true)"))
 (defun liste_données () (evaljs_j "Pyt.listeFichiers('données', false)"))

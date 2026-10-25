@@ -4,7 +4,8 @@
 #   touches blanches : q s d f g h j k     touches noires : z e t y u
 
 noms = ["do", "do♯", "ré", "ré♯", "mi", "fa", "fa♯", "sol", "sol♯", "la", "la♯", "si"]
-fichiers = ["do", "do_dièse", "ré", "ré_dièse", "mi", "fa", "fa_dièse", "sol", "sol_dièse", "la", "la_dièse", "si"]
+# les fichiers portent les noms anglais des notes : C = do, C_sharp = do dièse… (médias/sounds/piano/C_4.wav)
+fichiers = ["C", "C_sharp", "D", "D_sharp", "E", "F", "F_sharp", "G", "G_sharp", "A", "A_sharp", "B"]
 # les degrés des touches blanches dans une octave : do, ré, mi, fa, sol, la, si
 blanches = [0, 2, 4, 5, 7, 9, 11]
 
@@ -19,7 +20,7 @@ largeur_noire = largeur_blanche * 0.6
 sons = []
 pour n dans intervalle(nombre_de_notes):
     octave = n // 12 + 3
-    sons.ajoute(charge_son(f"exemples/médias/piano/{fichiers[n % 12]}_{octave}.wav"))
+    sons.ajoute(charge_son(f"médias/sounds/piano/{fichiers[n % 12]}_{octave}.wav"))
 
 # 2. On calcule la place de chaque touche : [note, x, largeur, noire ?]
 touches = []

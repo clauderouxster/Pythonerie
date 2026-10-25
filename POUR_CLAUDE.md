@@ -86,6 +86,19 @@ Pour une suite de questions (un quiz), une fonction pose la question suivante, e
 - Pixels : `couleur_pixel(x, y)` rend `[rouge, vert, bleu, opacité]` (0 à 255 ; `[0, 0, 0, 0]` hors du canevas). `pixels(x, y, l, h)` rend les points d'un rectangle ligne après ligne, 4 valeurs par point (une liste de `l * h * 4` entiers ; le point (c, ligne) commence à l'indice `(ligne * l + c) * 4`) ; `pose_pixels(x, y, l, h, valeurs)` les redessine (même rangement, valeurs ramenées entre 0 et 255). Les noms de couleur ne donnent pas des valeurs « rondes » (`"rouge"` vaut `[229, 57, 53, 255]`) : pour tester une couleur, compare avec un point dessiné en `rgb(…)`. Reposer tout le canevas prend presque une seconde : à éviter dans `animer`.
 - Couleurs : `rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris, cyan, magenta, turquoise, beige, or, argent, bleu marine`, et les nuances avec `clair` ou `foncé` (invariables) : `rouge clair, rouge foncé, vert clair, vert foncé, bleu clair, bleu foncé, jaune clair, jaune foncé, orange clair, orange foncé, violet clair, violet foncé, rose clair, rose foncé, marron clair, marron foncé, gris clair, gris foncé`. Toute couleur CSS marche aussi (`"#ff8800"`). Un nom inconnu (`"vert pomme"`) ne fait rien : utilise `rgb(…)`.
 
+### Graphiques (comme dans un tableur)
+```python
+mois = ["Janv.", "Févr.", "Mars", "Avril"]
+graphique("colonnes", [[120, 135, 160, 150], [80, 95, 90, 120]], mois, {"titre": "Ventes et achats", "séries": ["Ventes", "Achats"], "zone": [0, 0, 400, 300]})
+graphique("camembert", [45, 25, 15, 15], ["Chats", "Chiens", "Lapins", "Poissons"], {"titre": "Animaux", "zone": [400, 0, 400, 300]})
+graphique("courbes", [12, 15, 14, 18], mois, {"titre": "Températures", "axe_y": "°C", "zone": [0, 300, 800, 300]})
+```
+- `graphique(genre, valeurs, étiquettes, options)` dessine un graphique dans tout le canevas, ou dans la zone de l'option `"zone"`. Une seule instruction pour tous les genres. `étiquettes` (les noms des catégories) et `options` (un dictionnaire) sont facultatives, et les options peuvent venir à la place des étiquettes : `graphique("camembert", parts, {"titre": "Parts"})`.
+- **Les genres** : `"colonnes"` (ou `"histogramme"`, le nom d'Excel), `"barres"` (horizontales), `"colonnes_empilées"`, `"barres_empilées"`, `"courbes"`, `"aires"`, `"aires_empilées"`, `"camembert"`, `"anneau"`, `"nuage"` (nuage de points), `"bulles"`, `"radar"`, `"répartition"` (l'histogramme des statisticiens : les valeurs brutes comptées par classes), `"boîte"` (boîte à moustaches), `"cascade"`, `"entonnoir"`, `"mosaïque"` (carte proportionnelle). Accents, majuscules et espaces sont indifférents (`"colonnes empilees"`) ; les noms anglais marchent aussi (`"column"`, `"pie"`…).
+- **Les valeurs** : une liste de nombres (une série) ou une liste de listes (une série chacune, 8 au plus) ; `Rien` fait un trou. `nuage` prend des points `[x, y]` (ou une liste de listes de points, une par série) ; `bulles` des `[x, y, taille]` ; `répartition` et `boîte` les valeurs brutes (`boîte` : une liste par boîte) ; `cascade` les variations (+ ou −), le total s'ajoute au bout ; `camembert`, `anneau`, `entonnoir` et `mosaïque` une seule série de nombres positifs.
+- **Les options** : `"titre"` ; `"séries"` (les noms des séries, pour la légende) ; `"zone": [x, y, largeur, hauteur]` (plusieurs graphiques sur un canevas) ; `"couleurs"` (une liste de couleurs ; sinon une palette lisible par les daltoniens) ; `"axe_x"`, `"axe_y"` (titres des axes) ; `"valeurs": Vrai` (les nombres sur les colonnes, les barres, les courbes ; sur un camembert, la valeur au lieu du pourcentage) ; `"légende": Vrai` ou `Faux` ; `"pourcentage": Vrai` (empilées à 100 %) ; `"classes": n` (répartition) ; `"tendance": Vrai` (nuage : la droite des moindres carrés) ; `"total": Faux` ou un texte (cascade) ; `"min"`, `"max"` (l'axe des valeurs) ; `"fond"` (une couleur, ou `Rien` pour un fond transparent ; blanc par défaut) ; `"survol": Faux` ; `"points": Vrai` ou `Faux` (les points d'une courbe). Une option inconnue est une erreur qui donne la liste.
+- Le graphique efface sa zone avant de se dessiner : dessine-le **avant** ce que tu veux poser par-dessus. Quand la souris passe sur une colonne, une part ou un point, une bulle montre les valeurs. Les nombres s'écrivent à la française (1 234,5). Dans un dessin : `d.graphique(…)`, puis `montre_dessin(d)` (aussi dans une `zone_défilante`). Au-delà de 8 parts, un camembert regroupe les plus petites dans « Autre ». Voir `24_graphiques.pyf` et `25_sondage.pyf`.
+
 ### Tortue (part du centre, regarde vers la droite)
 `avance(d)`, `recule(d)`, `gauche(angle)`, `droite(angle)`, `lève_crayon()`, `baisse_crayon()`, `va_à(x, y)`, `oriente(angle)` (0 = droite, 90 = bas), `origine()`, `montre_tortue()`, `cache_tortue()`, `position_x()`, `position_y()`, `position()` (la liste `[x, y]`), `cap()`. La tortue n'apparaît qu'à sa première commande ; dans un jeu, appelle `cache_tortue()`.
 
@@ -132,7 +145,7 @@ fonction image():
 
 animer(image, 30)
 ```
-- `d = nouveau_dessin()` rend un dessin vide. Les instructions de dessin (`efface`, `fond`, `couleur`, `couleur_trait`, `couleur_remplissage`, `épaisseur`, `point`, `ligne`, `rectangle`, `carré`, `cercle`, `disque`, `ellipse`, `triangle`, `polygone` et leurs formes pleines, `texte`, `taille_texte`, `police`, `place_image`) et celles de la tortue (`avance`, `recule`, `droite`, `gauche`, `va_à`, `oriente`, `origine`, `lève_crayon`, `baisse_crayon`, `montre_tortue`, `cache_tortue`) acceptent un dessin devant le point : `d.disque(x, y, r)` ne dessine rien, il ajoute sa commande au dessin. Écris-les en méthode, comme en 3D ; `disque(d, x, y, r)` est le même appel. Sans dessin, elles dessinent tout de suite, comme avant : c'est la forme simple, à garder pour quelques formes.
+- `d = nouveau_dessin()` rend un dessin vide. Les instructions de dessin (`efface`, `fond`, `couleur`, `couleur_trait`, `couleur_remplissage`, `épaisseur`, `point`, `ligne`, `rectangle`, `carré`, `cercle`, `disque`, `ellipse`, `triangle`, `polygone` et leurs formes pleines, `texte`, `taille_texte`, `police`, `place_image`, `graphique`) et celles de la tortue (`avance`, `recule`, `droite`, `gauche`, `va_à`, `oriente`, `origine`, `lève_crayon`, `baisse_crayon`, `montre_tortue`, `cache_tortue`) acceptent un dessin devant le point : `d.disque(x, y, r)` ne dessine rien, il ajoute sa commande au dessin. Écris-les en méthode, comme en 3D ; `disque(d, x, y, r)` est le même appel. Sans dessin, elles dessinent tout de suite, comme avant : c'est la forme simple, à garder pour quelques formes.
 - `montre_dessin(d)` dessine toutes les commandes, dans l'ordre, en un seul appel au navigateur. Le navigateur garde le dessin : le montrer de nouveau (à chaque image d'`animer`) ne renvoie pas ses commandes tant qu'il n'a pas changé, et ne coûte presque rien. `vide_dessin(d)` retire toutes ses commandes, pour le reconstruire. `montre_dessin(d, clef)` le dessine dans la `zone_défilante` clef au lieu du canevas.
 - Les commandes rejouent les mêmes instructions : une couleur, une épaisseur ou une police choisie dans le dessin reste choisie après lui, et la tortue d'un dessin repart d'où elle se trouve à chaque `montre_dessin`. Un dessin qui commence par `fond(…)` remplace `efface()`.
 - Les fonctions qui rendent une valeur (`position_x`, `couleur_pixel`, `largeur_texte`…) et les objets (`bouton`, `saisie`…) n'entrent pas dans un dessin.
@@ -164,7 +177,7 @@ animer(image, 16)
 - Pour un jeu : crée tous les objets au départ (des « réserves » : des listes d'objets cachés avec `objet.cache_objet()`), puis prends-en un quand il en faut (`objet = ramène_élément(réserve)`, puis `objet.montre_objet()`) et rends-le quand il disparaît (`objet.cache_objet()`, `réserve.ajoute(objet)`). Ne crée pas d'objet à chaque image : la scène les garderait tous. Une caméra au-dessus du centre, `scène.caméra(0, h, 0.01, 0, 0, 0)`, voit un plan horizontal de `1,07 × h` sur `0,93 × h` (sur un canevas 4/3) : les coordonnées de la souris se ramènent alors simplement à ce plan.
 
 ### Images et sons
-`img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. `liste_sons()`, `liste_images()` et `liste_données()` rendent les noms des fichiers du projet (triés, à donner tels quels à `charge_son`, `charge_image`, `charge_données`) ; `liste_sons()` et `liste_images()` y ajoutent ceux des médias du site (`"exemples/médias/ding.wav"`, `"exemples/médias/piano/do_4.wav"`, `"exemples/médias/étoile.svg"`…). Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable. Écris le nom du son **en toutes lettres** dans `charge_son("…")` (pas une variable ni un calcul) : la Pythonerie décode alors ce son avant de lancer le programme, et il est prêt à jouer tout de suite. Un nom seul (`"chat.png"`, `"bravo.wav"`) désigne un fichier des répertoires images ou sons du projet ; un chemin (`exemples/médias/ding.wav`) un fichier du site ; `https://…` une adresse Internet : une image ou un son en ligne s'utilise directement, `charge_image("https://upload.wikimedia.org/…")`, même si le site ne permet pas de télécharger le fichier.
+`img = charge_image(adresse)`, `place_image(img, x, y)` ou `place_image(img, x, y, l, h)` ; `snd = charge_son(adresse)`, `joue_son(snd)`. `liste_sons()`, `liste_images()` et `liste_données()` rendent les noms des fichiers du projet (triés, à donner tels quels à `charge_son`, `charge_image`, `charge_données`) ; `liste_sons()` et `liste_images()` y ajoutent ceux des médias du site (`"médias/sounds/ding.wav"`, `"médias/sounds/piano/do_4.wav"`, `"médias/images/étoile.svg"`…). Charge les médias **une fois, au début** du programme, puis garde le numéro dans une variable. Écris le nom du son **en toutes lettres** dans `charge_son("…")` (pas une variable ni un calcul) : la Pythonerie décode alors ce son avant de lancer le programme, et il est prêt à jouer tout de suite. Un nom seul (`"chat.png"`, `"bravo.wav"`) désigne un fichier des répertoires images ou sons du projet ; un chemin (`médias/sounds/ding.wav`) un fichier du site ; `https://…` une adresse Internet : une image ou un son en ligne s'utilise directement, `charge_image("https://upload.wikimedia.org/…")`, même si le site ne permet pas de télécharger le fichier.
 
 ### Fichiers et données
 - `don0`, `don1`… : le texte des onglets de données du projet (bouton « Données » de l'éditeur) : tous les programmes du projet, et ceux qu'ils importent, voient les mêmes. Un onglet vide ne crée pas de variable. À utiliser quand l'élève colle ses propres données.
@@ -179,9 +192,10 @@ animer(image, 16)
 
 ### Médias disponibles sur le site
 Chemins à donner tels quels à `charge_image` / `charge_son` :
-- images : `exemples/médias/étoile.svg`, `exemples/médias/La Pythonerie.png` (le logo de la Pythonerie, 1254 × 1254)
-- sons : `exemples/médias/ding.wav`, `pop.wav`, `tir.wav` (laser), `explosion.wav`, `boum.wav` (gros choc), `pas_1.wav` à `pas_4.wav` (notes graves brèves)
-- piano, trois octaves (3, 4 et 5) : `exemples/médias/piano/<note>_<octave>.wav`, les notes étant `do`, `do_dièse`, `ré`, `ré_dièse`, `mi`, `fa`, `fa_dièse`, `sol`, `sol_dièse`, `la`, `la_dièse`, `si` (de `do_3.wav` à `si_5.wav`, `fa_dièse_4.wav`…)
+- images : `médias/images/étoile.svg`, `médias/images/La Pythonerie.png` (le logo de la Pythonerie, 1254 × 1254)
+- sons : `médias/sounds/ding.wav`, `pop.wav`, `tir.wav` (laser), `explosion.wav`, `boum.wav` (gros choc), `pas_1.wav` à `pas_4.wav` (notes graves brèves)
+- piano, trois octaves (3, 4 et 5) : `médias/sounds/piano/<note>_<octave>.wav`, les notes portant leur nom anglais : `C` (do), `C_sharp` (do dièse), `D` (ré), `D_sharp`, `E` (mi), `F` (fa), `F_sharp`, `G` (sol), `G_sharp`, `A` (la), `A_sharp`, `B` (si) (de `C_3.wav` à `B_5.wav`, `F_sharp_4.wav`…)
+- le bouton **🎨 Médias**, sous **🧪 Exemples**, liste tous ces fichiers, dans deux répertoires, sounds et images, : un clic fait écouter le son ou voir l'image, et **📋 Copier** donne la ligne qui le charge
 
 ## Projets
 
@@ -206,7 +220,7 @@ C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul 
   "version": 3,
   "nom": "La fusée",
   "programmes": {
-    "Décollage": "# La fusée\nimporte \"outils/moteur\"\nfusée = charge_image(\"fusée.svg\")\nbip = charge_son(\"exemples/médias/ding.wav\")\naffiche(poussée(3))\n",
+    "Décollage": "# La fusée\nimporte \"outils/moteur\"\nfusée = charge_image(\"fusée.svg\")\nbip = charge_son(\"médias/sounds/ding.wav\")\naffiche(poussée(3))\n",
     "outils/moteur": "fonction poussée(n):\n    retourne n * 10\n"
   },
   "dossiers": ["outils"],
@@ -228,7 +242,7 @@ C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul 
   - **du texte**, tel quel, pour les données et les images SVG ;
   - `{ "url": "https://…" }` : la Pythonerie télécharge le fichier et le range dans le projet, **si le site le permet** (GitHub `raw.githubusercontent.com` et Wikimedia `upload.wikimedia.org` le permettent ; beaucoup d'autres sites non). Sinon le fichier est laissé de côté, et l'élève le voit dans la console : pour une image ou un son en ligne, il est plus sûr d'écrire l'adresse dans le programme, `charge_image("https://…")` ;
   - `{ "base64": "…" }` pour un autre fichier binaire, quand tu peux le calculer réellement (n'invente jamais du base64).
-- Préfère les médias du site (`exemples/médias/…`, voir plus haut), désignés par leur chemin dans le programme : ils n'ont pas besoin d'être dans le projet.
+- Préfère les médias du site (`médias/…`, voir plus haut), désignés par leur chemin dans le programme : ils n'ont pas besoin d'être dans le projet.
 - Un fichier mal placé, mal nommé ou mal écrit est laissé de côté, et la console le nomme.
 
 ## Des piles de cartes (à la HyperCard)
@@ -244,7 +258,7 @@ Le projet **« Les cartes (à la HyperCard) »** des Matériels (`docs/matériel
   "titre": "Les déclinaisons latines",
   "largeur": 720, "hauteur": 540,
   "cartes": [
-    {"nom": "Accueil", "fond": "beige", "son": "exemples/médias/ding.wav", "éléments": [
+    {"nom": "Accueil", "fond": "beige", "son": "médias/sounds/ding.wav", "éléments": [
       {"genre": "texte", "x": 40, "y": 26, "couleur": "rouge foncé", "taille": 40, "texte": "Les déclinaisons latines"},
       {"genre": "texte", "x": 40, "y": 88, "couleur": "noir", "taille": 18, "texte": "Première ligne,\net la deuxième."},
       {"genre": "bouton", "x": 520, "y": 480, "couleur": "noir", "taille": 24, "texte": "Commencer ▶", "action": "suivante"}]},
@@ -264,7 +278,7 @@ Le projet **« Les cartes (à la HyperCard) »** des Matériels (`docs/matériel
   - `"texte"` : les lignes de `"texte"`, séparées par `\n`, en lettres de `taille` points ; `"police"` (facultatif) pour du code ou un tableau aligné : `"Menlo, Consolas, 'DejaVu Sans Mono', monospace"` (pas JetBrains Mono, qui dessine `>=` comme `≥`). Une ligne vide garde sa place.
   - `"rectangle"` : plein, de `"l"` sur `"h"` (sinon 3 × taille sur 2 × taille).
   - `"disque"` : plein, de rayon `taille`.
-  - `"image"` : large de **4 × taille**, la hauteur suit les proportions de l'image. `"image"` est le nom d'un fichier du répertoire `images` du projet (`"rosa.jpg"`), un média du site (`"exemples/médias/étoile.svg"`) ou une adresse `https://…`.
+  - `"image"` : large de **4 × taille**, la hauteur suit les proportions de l'image. `"image"` est le nom d'un fichier du répertoire `images` du projet (`"rosa.jpg"`), un média du site (`"médias/images/étoile.svg"`) ou une adresse `https://…`.
   - `"bouton"` : un vrai bouton, qui porte `"texte"` ; `"action"` dit où il mène : `"suivante"`, `"précédente"`, `"première"`, `"dernière"`, le nom d'une carte, `"pile : apprendre.json"` (la première carte d'une autre pile du projet), ou `"aucune"` (on reste : pour un bouton qui n'a qu'un script). `"son"` (facultatif) est joué au clic.
 - Les flèches gauche et droite du clavier passent à la carte précédente ou suivante ; la suivante de la dernière est la première.
 - Le JSON doit être valide : guillemets doubles, pas de commentaire, `\n` pour aller à la ligne dans un texte, pas de virgule après le dernier élément d'une liste.
@@ -282,7 +296,7 @@ Le texte ne passe jamais à la ligne tout seul : coupe toi-même les lignes, et 
 ### Images et sons
 
 - Une image en ligne s'utilise directement par son adresse. Les vignettes de Wikimedia Commons marchent : l'adresse que Commons donne pour une vignette de 500 points (`https://thumb.wikimedia.org/wikipedia/commons/thumb/…/500px-….jpg`, vérifié) : choisis des images à **licence libre** (domaine public, CC0, CC BY, CC BY-SA) et ajoute une dernière carte « Crédits » qui donne, pour chacune, l'auteur, la licence et le nom du fichier sur Commons (CC BY et CC BY-SA l'exigent). Une image en ligne doit rester en ligne : pour une pile qui marche sans Internet, l'élève met les fichiers dans `images/` et la pile les désigne par leur seul nom.
-- Les sons : un son du projet (`"bravo.wav"`, répertoire `sons`) ou du site (`"exemples/médias/ding.wav"`, `"pop.wav"`… voir « Médias »).
+- Les sons : un son du projet (`"bravo.wav"`, répertoire `sons`) ou du site (`"médias/sounds/ding.wav"`, `"pop.wav"`… voir « Médias »).
 
 ### Les scripts
 
@@ -372,9 +386,9 @@ animer(image, 20)
 
 ## Exemples complets à lire
 
-Les exemples du site montrent le style attendu ; lis-les avant d'écrire un programme du même genre. Ils sont dans `docs/exemples/` (adresse brute : `https://raw.githubusercontent.com/clauderouxster/Pythonerie/main/docs/exemples/<fichier>`), et la liste est dans `docs/exemples/index.json` ; dans la Pythonerie, un clic sur un exemple l'ouvre dans un projet à son nom, ses images et ses sons restant dans `exemples/médias/` :
+Les exemples du site montrent le style attendu ; lis-les avant d'écrire un programme du même genre. Ils sont dans `docs/exemples/` (adresse brute : `https://raw.githubusercontent.com/clauderouxster/Pythonerie/main/docs/exemples/<fichier>`), et la liste est dans `docs/exemples/index.json` ; dans la Pythonerie, un clic sur un exemple l'ouvre dans un projet à son nom, ses images et ses sons restant dans `médias/` :
 
-`01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas).
+`01_bonjour.pyf`, `02_conditions.pyf`, `03_boucles.pyf`, `04_fonctions.pyf`, `05_listes.pyf`, `06_dessin.pyf`, `07_tortue.pyf`, `08_animation.pyf` (balle qui rebondit), `09_interaction.pyf` (souris et clavier), `10_classes.pyf` (classes, essaie/sauf), `11_courbe.pyf` (courbe mathématique), `12_images_sons.pyf`, `13_dessin_souris.pyf` (`quand_glisse`), `14_piano.pyf`, `15_casse_briques.pyf`, `16_serpent.pyf`, `17_envahisseurs.pyf`, `18_tableur.pyf` (champs de saisie, flèches, totaux), `19_asteroides.pyf` (pilotage avec `touche_enfoncée`, astéroïdes qui se cassent), `20_atelier.pyf` (tous les objets du canevas), trois versions avec des dessins préparés (`21_casse_briques_dessins.pyf`, `22_envahisseurs_dessins.pyf`, `23_asteroides_dessins.pyf`), `24_graphiques.pyf` (les 17 genres de graphique, choisis dans une `liste_déroulante`) et `25_sondage.pyf` (des boutons qui votent, un camembert et des colonnes redessinés à chaque vote).
 
 Trois **projets** complets sont dans `docs/matériels/` : `quiz_des_capitales.zip` (importe, données, sons), `zaxxon.zip` (un jeu en perspective isométrique : trois programmes, dont `outils/projection`, des boîtes en relief avec `polygone_plein` ; un plan de niveau lu dans `données/forteresse.txt` ; des sons du projet) et `cartes.zip` (les piles de cartes à la HyperCard : voir « Des piles de cartes ») ; `systeme_solaire_3d.zip` montre la 3D (groupes emboîtés, textures, inclinaisons, clic sur un objet) ; `asteroides_3d.zip`, un jeu en 3D (logique en points, montrée sur un plan vu d'en haut ; objets créés au départ dans des réserves, puis cachés et réutilisés).
 

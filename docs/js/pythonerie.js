@@ -257,10 +257,10 @@ const Pythonerie = (function () {
             lit('basic/français.lisp')
         ]);
         ajouteNomsFrançais(sources.français);
-        // les médias du site (exemples/médias/...), pour liste_sons() et les applications Web ;
+        // les médias du site (médias/...), pour liste_sons() et les applications Web ;
         // la liste est écrite par version.py
         try {
-            const r = await fetch('exemples/médias/index.json', { cache: 'no-cache' });
+            const r = await fetch('médias/index.json', { cache: 'no-cache' });
             médiasSite = r.ok ? (await r.json()).map(nfc) : [];
         } catch (e) { médiasSite = []; }
     }
@@ -1707,10 +1707,10 @@ const Pythonerie = (function () {
                 // les sons cités dans le code sont décodés avant de commencer (voir exécute)
                 sons: [...new Set([...assemblé.source.matchAll(/charge_son\s*\(\s*(["'])([^"'\n]+)\1\s*\)/g)].map(m => m[2]))],
                 fichiers: fichiers.map(f => f.chemin),
-                // les médias du site (exemples/médias/...) partent tous si le programme s'en sert :
-                // le piano compose leurs noms (f"exemples/médias/piano/{note}.wav"), et liste_sons()
+                // les médias du site (médias/...) partent tous si le programme s'en sert :
+                // le piano compose leurs noms (f"médias/sounds/piano/{note}.wav"), et liste_sons()
                 // ou liste_images() les citent ; ou les données du projet (une pile de cartes qui montre étoile.svg)
-                médias: /exemples\/médias\/|liste_(sons|images)\s*\(/.test(assemblé.source + '\n' + Object.values(données).join('\n')) ? médiasSite.slice() : [],
+                médias: /médias\/|liste_(sons|images)\s*\(/.test(assemblé.source + '\n' + Object.values(données).join('\n')) ? médiasSite.slice() : [],
                 données,
                 onglets: onglets.slice()
             };
@@ -1752,7 +1752,7 @@ const Pythonerie = (function () {
             }
             if (appli.médias.length) {
                 const octetsMédias = await Promise.all(appli.médias.map(m => lit(encodeURI(m), true)));
-                // les répertoires : exemples/, exemples/médias/, exemples/médias/piano/...
+                // les répertoires : exemples/, médias/, médias/sounds/piano/...
                 const répertoiresMédias = new Set();
                 appli.médias.forEach(m => {
                     const morceaux = m.split('/').slice(0, -1);
@@ -1976,7 +1976,8 @@ const Pythonerie = (function () {
                 const bouton = document.createElement('button');
                 bouton.className = 'btn' + (b.genre === 'danger' ? ' danger' : b.genre === 'principal' ? '' : ' btn-secondaire');
                 bouton.textContent = b.texte;
-                bouton.addEventListener('click', () => ferme(b.valeur));
+                // action : le bouton agit sans fermer la fenêtre (« 📋 Copier »)
+                bouton.addEventListener('click', () => (b.action ? b.action(bouton) : ferme(b.valeur)));
                 zone.appendChild(bouton);
             });
             document.addEventListener('keydown', clavier, true);
@@ -2480,6 +2481,12 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     let dossiers = [];           // chemins des répertoires
     let dossierCourant = '';     // où vont les nouveaux programmes ('' = racine)
+    // le répertoire données, choisi d'un clic (sur lui ou sur l'un de ses fichiers) : ＋ y crée
+    // alors un fichier de données (Données.txt), pas un programme. Une seule ligne de l'arbre est
+    // surlignée comme choisie : le programme ouvert, le fichier de données ouvert, ou le répertoire
+    // données lui-même (surRépertoireDonnées) ; un clic sur un programme le choisit de nouveau
+    let dansDonnées = false;
+    let surRépertoireDonnées = false;
     let pliés = new Set();       // répertoires repliés
     try { pliés = new Set(JSON.parse(localStorage.getItem('pythonerie.pliés') || '[]')); } catch (e) { /* rien */ }
     function enregistrePliés() {
@@ -2578,6 +2585,7 @@ const Pythonerie = (function () {
             const contenu = tous.filter(f => f.chemin.startsWith(rép + '/'));
             const ouvert = ouvertsProjet.has(rép);
             const li = ligneArbre(0, 'dossier répertoire-projet');
+            if (rép === 'données' && dansDonnées && surRépertoireDonnées) li.classList.add('actif');
             li.title = EXPLICATIONS[rép];
             const chevron = document.createElement('span');
             chevron.className = 'arbre-chevron' + (ouvert ? ' ouvert' : '');
@@ -2597,6 +2605,7 @@ const Pythonerie = (function () {
             li.addEventListener('click', () => {
                 if (ouvert) ouvertsProjet.delete(rép); else ouvertsProjet.add(rép);
                 enregistreOuvertsProjet();
+                dansDonnées = surRépertoireDonnées = rép === 'données';
                 afficheArbre();
             });
             rendCible(li, '', rép);
@@ -2626,9 +2635,14 @@ const Pythonerie = (function () {
                     [SVG_EXPORTER, 'Exporter « ' + nomF + ' » (le télécharger)', () => exporteFichier(f.chemin)],
                     [SVG_SUPPRIMER, 'Supprimer « ' + nomF + ' »', () => supprimeFichier(f.chemin)]
                 ]));
-                if (f.chemin === fichierOuvert) lf.classList.add('actif');
+                if (f.chemin === fichierOuvert && !surRépertoireDonnées) lf.classList.add('actif');
                 // un fichier de données s'ouvre dans l'éditeur ; une image ou un son, en aperçu
-                lf.addEventListener('click', () => rép === 'données' ? ouvreFichierDonnées(f.chemin) : aperçuFichier(f.chemin));
+                lf.addEventListener('click', () => {
+                    if (rép === 'données') { ouvreFichierDonnées(f.chemin); return; }
+                    // une image ou un son : un aperçu, et ＋ revient aux programmes
+                    if (dansDonnées) { dansDonnées = surRépertoireDonnées = false; afficheArbre(); }
+                    aperçuFichier(f.chemin);
+                });
                 rendCible(lf, '', rép);
                 ul.appendChild(lf);
             });
@@ -2638,25 +2652,47 @@ const Pythonerie = (function () {
     // Un clic sur un fichier : l'image en grand, le son joué, ou le début des données
     function aperçuFichier(chemin) {
         const nom = chemin.slice(chemin.indexOf('/') + 1);
-        if (chemin.startsWith('sons/')) {
-            const son = new Audio(FichiersProjet.url(chemin));
-            son.play().catch(() => écritConsole('Le navigateur refuse de jouer « ' + nom + ' ».', 'erreur'));
+        if (chemin.startsWith('sons/') || chemin.startsWith('images/')) {
+            aperçuMédia(nom, FichiersProjet.url(chemin), nom, chemin.startsWith('sons/'));
             return;
         }
-        let contenu;
-        if (chemin.startsWith('images/')) {
-            contenu = document.createElement('img');
-            contenu.src = FichiersProjet.url(chemin);
-            contenu.className = 'aperçu-image';
-            contenu.alt = nom;
+        const texte = FichiersProjet.texte(chemin) || '';
+        const contenu = document.createElement('pre');
+        contenu.className = 'aperçu-données';
+        contenu.textContent = texte.length > 4000 ? texte.slice(0, 4000) + '\n…' : texte;
+        dialogue(nom, 'Dans un programme : charge_données("' + nom + '")', [{ texte: 'Fermer', valeur: null, genre: 'principal' }], contenu);
+    }
+
+    // L'aperçu d'un son ou d'une image (du projet, ou des médias du site) : le son s'écoute avec
+    // ses commandes (▶ : il ne part pas tout seul), l'image se montre ; dessous, la ligne qui le charge dans un programme
+    // (son_ding = charge_son("médias/sounds/ding.wav")), que « 📋 Copier » met dans le presse-papiers,
+    // pour la coller dans l'éditeur. adresse : ce qu'écrit le programme (un nom, ou médias/…)
+    function aperçuMédia(nom, url, adresse, estSon) {
+        const base = nfc(nom).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'média';
+        const ligne = (estSon ? 'son_' : 'image_') + base + ' = ' + (estSon ? 'charge_son' : 'charge_image') + '("' + adresse + '")';
+        const contenu = document.createElement('div');
+        let lecteur = null;
+        if (estSon) {
+            lecteur = document.createElement('audio');
+            lecteur.controls = true;
+            lecteur.src = url;
+            lecteur.className = 'aperçu-son';
+            contenu.appendChild(lecteur);
         } else {
-            const texte = FichiersProjet.texte(chemin) || '';
-            contenu = document.createElement('pre');
-            contenu.className = 'aperçu-données';
-            contenu.textContent = texte.length > 4000 ? texte.slice(0, 4000) + '\n…' : texte;
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'aperçu-image';
+            img.alt = nom;
+            contenu.appendChild(img);
         }
-        const appel = chemin.startsWith('images/') ? 'charge_image("' + nom + '")' : 'charge_données("' + nom + '")';
-        dialogue(nom, 'Dans un programme : ' + appel, [{ texte: 'Fermer', valeur: null, genre: 'principal' }], contenu);
+        const code = document.createElement('pre');
+        code.className = 'aperçu-données aperçu-ligne';
+        code.textContent = ligne;
+        contenu.appendChild(code);
+        dialogue(nom, 'Dans un programme :', [
+            { texte: '📋 Copier', action: (bouton) => copieTexte(ligne, bouton) },
+            { texte: 'Fermer', valeur: null, genre: 'principal' }
+        ], contenu).then(() => { if (lecteur) lecteur.pause(); });
     }
 
     async function renommeFichier(chemin) {
@@ -2708,7 +2744,7 @@ const Pythonerie = (function () {
         enfants.forEach(d => {
             const plié = pliés.has(d);
             const li = ligneArbre(profondeur, 'dossier');
-            if (d === dossierCourant) li.classList.add('sélection');
+            if (d === dossierCourant && !dansDonnées) li.classList.add('sélection');
             li.title = d;
             const chevron = document.createElement('span');
             chevron.className = 'arbre-chevron' + (plié ? '' : ' ouvert');
@@ -2728,6 +2764,7 @@ const Pythonerie = (function () {
                 if (plié) pliés.delete(d); else pliés.add(d);
                 enregistrePliés();
                 dossierCourant = d;
+                dansDonnées = surRépertoireDonnées = false;
                 afficheArbre();
             });
             rendGlissable(li, 'dossier', d);
@@ -2739,7 +2776,7 @@ const Pythonerie = (function () {
         progs.forEach(p => {
             const li = ligneArbre(profondeur, 'programme');
             li.dataset.chemin = p.chemin;
-            if (p.chemin === courant && !fichierOuvert) li.classList.add('actif');
+            if (p.chemin === courant && !fichierOuvert && !dansDonnées) li.classList.add('actif');
             if (sélection.size > 1 && sélection.has(p.chemin)) li.classList.add('choisi');
             li.title = p.chemin;
             const espace = document.createElement('span');
@@ -2807,6 +2844,7 @@ const Pythonerie = (function () {
         sélection = new Set();
         ancre = chemin;
         dossierCourant = parentDe(chemin);
+        if (dansDonnées) { dansDonnées = surRépertoireDonnées = false; afficheArbre(); }
         ouvre(chemin);
     }
 
@@ -2977,7 +3015,7 @@ const Pythonerie = (function () {
         }
         afficheDossier(ul, '', 0);
         const ici = dossierCourant ? '« ' + dossierCourant + ' »' : 'la racine';
-        $('btnNouveauFichier').title = 'Nouveau programme dans ' + ici;
+        $('btnNouveauFichier').title = dansDonnées ? 'Nouveau fichier de données dans « données »' : 'Nouveau programme dans ' + ici;
         $('btnNouveauFichier').setAttribute('aria-label', $('btnNouveauFichier').title);
         titreNouveau();
         $('btnNouveauDossier').title = 'Nouveau répertoire dans ' + ici;
@@ -3206,7 +3244,11 @@ const Pythonerie = (function () {
     }
 
     async function ouvreFichierDonnées(chemin) {
-        if (chemin === fichierOuvert) { éditeurFichier.focus(); return; }
+        // le fichier devient la ligne choisie (et ＋ crée un fichier de données)
+        const surRépertoire = surRépertoireDonnées;
+        dansDonnées = true;
+        surRépertoireDonnées = false;
+        if (chemin === fichierOuvert) { if (surRépertoire) afficheArbre(); éditeurFichier.focus(); return; }
         await sauvegarde();             // le programme ouvert, et le fichier ouvert avant celui-ci
         const texte = FichiersProjet.texte(chemin);
         if (texte === null || texte === undefined) return;
@@ -3250,6 +3292,7 @@ const Pythonerie = (function () {
     // Le fichier n'est plus montré (fermé, supprimé, autre projet), sans rien enregistrer
     function oublieFichierOuvert() {
         if (!fichierOuvert) return;
+        dansDonnées = surRépertoireDonnées = false;
         clearTimeout(minuterieFichier);
         fichierOuvert = null;
         fichierModifié = false;
@@ -3511,10 +3554,41 @@ const Pythonerie = (function () {
     }
 
     async function nouveau() {
+        if (dansDonnées) { await nouveauFichierDonnées(); return; }
         const ici = dossierCourant ? ' (dans « ' + dossierCourant + ' »)' : '';
         const nom = nomValide(prompt('Nom du nouveau programme' + ici + ' :', nomDe(cheminLibre(dossierCourant, 'Programme'))));
         if (!nom) return;
         await crée(dossierCourant, nom, '# ' + nom + '\n\n');
+    }
+
+    // ＋ quand le répertoire données est choisi : un fichier de données vide (Données.txt,
+    // Données 2.txt…), ouvert aussitôt dans l'éditeur ; son extension est celle d'un fichier de
+    // données (.txt si on n'en donne pas), jamais celle d'un programme
+    async function nouveauFichierDonnées() {
+        const extensions = FichiersProjet.RÉPERTOIRES.données.extensions;
+        let défaut = 'Données.txt';
+        for (let i = 2; FichiersProjet.existe('données/' + défaut); i++) défaut = 'Données ' + i + '.txt';
+        const réponse = prompt('Nom du nouveau fichier de données :', défaut);
+        if (réponse === null) return;
+        let nom = nfc(réponse).trim();
+        if (!nom) return;
+        if (!/\.[^.\s]+$/.test(nom)) nom += '.txt';
+        const ext = nom.slice(nom.lastIndexOf('.') + 1).toLowerCase();
+        if (nom.includes('/') || !extensions.includes(ext)) {
+            alert('Un fichier de données a un simple nom qui finit par ' + extensions.map(e => '.' + e).join(', '));
+            return;
+        }
+        const chemin = 'données/' + nom;
+        if (FichiersProjet.existe(chemin)) { alert('Ce nom existe déjà ici.'); return; }
+        try {
+            await FichiersProjet.écritTexte(chemin, '');
+        } catch (e) {
+            écritConsole('Impossible de créer « ' + chemin + ' » : ' + ((e && e.message) || e), 'erreur');
+            return;
+        }
+        ouvertsProjet.add('données');
+        enregistreOuvertsProjet();
+        await ouvreFichierDonnées(chemin);
     }
 
     async function nouveauDossier() {
@@ -3719,7 +3793,7 @@ const Pythonerie = (function () {
     // Exemples (enProjet), chaque programme est un projet à lui seul, qui porte son nom
     // (« 15. Casse-briques » : le projet et le programme « Casse-briques » ; le champ "programme"
     // de index.json nomme le programme quand le titre ne convient pas) ; ses images et
-    // ses sons restent dans exemples/médias, où il les désigne par leur chemin.
+    // ses sons restent dans médias, où il les désigne par leur chemin.
     // ------------------------------------------------------------------
     const SVG_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M2 4.5L8 1.5l6 3v7L8 14.5l-6-3z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2 4.5l6 3 6-3M8 7.5v7" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
 
@@ -3818,7 +3892,47 @@ const Pythonerie = (function () {
     function chargeRépertoiresSite() {
         chargeRépertoireSite({ idBouton: 'btnMatériels', répertoire: 'matériels', nom: 'Matériels de ton enseignant', masquéSiVide: true });
         chargeRépertoireSite({ idBouton: 'btnExemples', répertoire: 'exemples', nom: 'Exemples', masquéSiVide: false, enProjet: true });
+        installeMédiasSite();
     }
+
+    // « 🎨 Médias » : les sons et les images du site (docs/médias, liste dans médias/index.json),
+    // que tous les programmes partagent : charge_son("médias/sounds/ding.wav"). La liste a deux
+    // répertoires, sounds et images (le piano dans sounds), comme dans l'Atelier ; un clic ouvre
+    // l'aperçu du son ou de l'image, avec la ligne qui le charge dans un programme (voir aperçuMédia).
+    const SONS_SITE = /\.(wav|mp3|ogg)$/i;
+    async function installeMédiasSite() {
+        const bouton = $('btnMédias');
+        // la liste est d'habitude déjà lue au démarrage (voir plus haut) ; sinon on la lit ici
+        if (!médiasSite.length) {
+            try {
+                const r = await fetch('médias/index.json', { cache: 'no-cache' });
+                if (r.ok) médiasSite = (await r.json()).map(nfc);
+            } catch (e) { /* rien */ }
+        }
+        const sons = médiasSite.filter(m => SONS_SITE.test(m));
+        const images = médiasSite.filter(m => !SONS_SITE.test(m));
+        bouton.disabled = !médiasSite.length;
+        bouton.querySelector('.nombre-exemples').textContent = médiasSite.length || '';
+        const nom = (m) => m.slice(m.lastIndexOf('/') + 1);
+        const élément = (m, son) => ({
+            texte: nom(m),
+            icône: son ? SVG_SON : SVG_IMAGE,
+            titre: (son ? 'Écouter' : 'Voir') + ' — dans un programme : ' + (son ? 'charge_son' : 'charge_image') + '("' + m + '")',
+            action: () => aperçuMédia(nom(m), m.split('/').map(encodeURIComponent).join('/'), m, son)
+        });
+        const piano = sons.filter(m => m.startsWith('médias/sounds/piano/'));
+        const autres = sons.filter(m => !m.startsWith('médias/sounds/piano/'));
+        bouton.onclick = (ev) => {
+            ev.stopPropagation();
+            basculeDéroulante(bouton, () => ouvreDéroulante(bouton, [
+                { section: 'Médias du site (médias/…)' },
+                { groupe: 'sounds (' + sons.length + ')', éléments: autres.map(m => élément(m, true))
+                    .concat(piano.length ? [{ groupe: 'piano (' + piano.length + ')', éléments: piano.map(m => élément(m, true)) }] : []) },
+                { groupe: 'images (' + images.length + ')', éléments: images.map(m => élément(m, false)) }
+            ]));
+        };
+    }
+
 
     // charge_données(nom) : le texte d'un fichier du répertoire données du projet.
     // { contenu } ou { erreur }
@@ -4319,7 +4433,7 @@ const Pythonerie = (function () {
         rendCible($('titreProgrammes'), '');
         // Un clic dans la zone vide de l'arbre : les nouveaux programmes iront à la racine
         $('listeProgrammes').addEventListener('click', (ev) => {
-            if (ev.target === $('listeProgrammes')) { dossierCourant = ''; afficheArbre(); }
+            if (ev.target === $('listeProgrammes')) { dossierCourant = ''; dansDonnées = surRépertoireDonnées = false; afficheArbre(); }
         });
         $('btnRenommer').addEventListener('click', () => renomme());
         $('btnDupliquer').addEventListener('click', duplique);

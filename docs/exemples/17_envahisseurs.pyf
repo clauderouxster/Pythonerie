@@ -16,11 +16,11 @@ LARGEUR_ENV = 36
 HAUTEUR_ENV = 24
 COULEURS = ["magenta", "violet clair", "bleu clair", "turquoise", "vert clair"]
 
-son_tir = charge_son("exemples/médias/tir.wav")
-son_explosion = charge_son("exemples/médias/explosion.wav")
-son_boum = charge_son("exemples/médias/boum.wav")
+son_tir = charge_son("médias/sounds/tir.wav")
+son_explosion = charge_son("médias/sounds/explosion.wav")
+son_boum = charge_son("médias/sounds/boum.wav")
 # la marche des envahisseurs : quatre notes graves, jouées l'une après l'autre
-pas_de_marche = [charge_son(f"exemples/médias/pas_{i}.wav") pour i dans intervalle(1, 5)]
+pas_de_marche = [charge_son(f"médias/sounds/pas_{i}.wav") pour i dans intervalle(1, 5)]
 
 # Le vaisseau
 vaisseau_x = 400

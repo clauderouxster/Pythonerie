@@ -118,5 +118,17 @@
     "titre": "23. Astéroïdes, avec des dessins",
     "description": "les astéroïdes de l'exemple 19 dans un ciel de nébuleuses et une galaxie tracée par la tortue, préparé une fois dans un dessin (touche C : comparer)",
     "programme": "Astéroïdes avec dessins"
+  },
+  {
+    "fichier": "24_graphiques.pyf",
+    "titre": "24. Les graphiques",
+    "description": "graphique(genre, valeurs, étiquettes, options) : les 17 graphiques d'un tableur, choisis dans une liste",
+    "programme": "Graphiques"
+  },
+  {
+    "fichier": "25_sondage.pyf",
+    "titre": "25. Le sondage",
+    "description": "des boutons qui votent ; un camembert et des colonnes redessinés à chaque vote",
+    "programme": "Sondage"
   }
 ]

@@ -1,0 +1,28 @@
+# 25. Le sondage
+# Quel est ton fruit préféré ? Clique sur un fruit pour voter :
+# le camembert et les colonnes se redessinent à chaque vote.
+# « Recommencer » remet les votes à zéro.
+
+FRUITS = ["Pomme", "Banane", "Fraise", "Kiwi", "Orange"]
+votes = [3, 5, 4, 1, 2]
+
+fonction dessine():
+    graphique("camembert", votes, FRUITS, {"titre": "Les parts des votes", "zone": [0, 70, 400, 530]})
+    graphique("colonnes", votes, FRUITS, {"titre": "Le nombre de votes", "valeurs": Vrai, "zone": [400, 70, 400, 530]})
+
+fonction vote(clef, nom):
+    pour i dans intervalle(longueur(FRUITS)):
+        si FRUITS[i] == clef:
+            votes[i] += 1
+    dessine()
+
+fonction recommence(clef, nom):
+    pour i dans intervalle(longueur(votes)):
+        votes[i] = 0
+    dessine()
+
+taille_texte(16)
+pour i dans intervalle(longueur(FRUITS)):
+    bouton(FRUITS[i], 20 + i * 110, 20, FRUITS[i], vote)
+bouton("recommencer", 610, 20, "Recommencer", recommence)
+dessine()

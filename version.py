@@ -10,8 +10,8 @@ modifiés, que GitHub Pages garde 10 minutes en cache.
 
 À lancer après chaque modification du code.
 
-Il écrit aussi docs/exemples/médias/index.json, la liste des médias du site (sons et images
-des exemples) : un site comme GitHub Pages ne sait pas lister un répertoire, et liste_sons()
+Il écrit aussi docs/médias/index.json, la liste des médias du site (sons et images
+partagés par tous les programmes) : un site comme GitHub Pages ne sait pas lister un répertoire, et liste_sons()
 ou « Créer une application Web » ont besoin de connaître ces fichiers.
 """
 
@@ -24,11 +24,11 @@ from pathlib import Path
 
 DOCS = Path(__file__).resolve().parent / "docs"
 INDEX = DOCS / "index.html"
-MÉDIAS = DOCS / "exemples" / "médias"
+MÉDIAS = DOCS / "médias"
 
 
 def liste_médias():
-    """Les chemins des médias, depuis docs/ : exemples/médias/piano/do_4.wav..."""
+    """Les chemins des médias, depuis docs/ : médias/sounds/piano/C_4.wav, médias/images/étoile.svg..."""
     chemins = sorted(
         unicodedata.normalize("NFC", f.relative_to(DOCS).as_posix())
         for f in MÉDIAS.rglob("*")

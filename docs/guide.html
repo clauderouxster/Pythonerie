@@ -296,6 +296,7 @@
                     <div class="zone"><div class="icone">🗂️</div><h4>À gauche : tes programmes</h4>
                         <p>Tous tes programmes sont rangés ici. Clique sur un nom pour l'ouvrir.
                             En dessous, la liste <b>🧪 Exemples</b> contient des programmes à essayer&nbsp;: clique dessus pour l'ouvrir, dans un projet à son nom.
+                            Plus bas, <b>🎨 Médias</b> range les sons et les images de la Pythonerie, dans deux répertoires, <b>sounds</b> et <b>images</b>.
                             Pour élargir cette colonne, fais glisser son bord droit. Sur un téléphone, elle est en haut&nbsp;: le bouton <b>▴</b> la replie.</p></div>
                     <div class="zone"><div class="icone">✏️</div><h4>Au milieu : l'éditeur</h4>
                         <p>C'est ici que tu écris ton programme.</p></div>
@@ -943,11 +944,14 @@ quand_glisse(peint)    # appuie, et fais glisser la souris sur le canevas</pre><
                     Le plus simple est de mettre tes images et tes sons dans les répertoires <b>images</b> et <b>sons</b> de ton
                     projet (voir <a href="#ranger">Ton projet</a>)&nbsp;: tu donnes alors simplement leur nom,
                     <code>charge_image("chat.png")</code>. Tu peux aussi utiliser les fichiers de la Pythonerie, avec leur
-                    chemin (<code>exemples/médias/étoile.svg</code>), ou une adresse Internet qui commence par <code>https://</code>.</p>
+                    chemin (<code>médias/images/étoile.svg</code>), ou une adresse Internet qui commence par <code>https://</code>.</p>
+                <p>Pour les trouver, ouvre <b>🎨 Médias</b>, à gauche, sous les exemples, ou clique sur un son ou une image de ton projet&nbsp;:
+                    une fenêtre fait écouter le son ou montre l'image, avec la ligne qui le charge, par exemple
+                    <code>son_ding = charge_son("médias/sounds/ding.wav")</code>. Le bouton <b>📋 Copier</b> la copie&nbsp;: colle-la dans l'éditeur (Ctrl+V, ou Cmd+V sur un Mac).</p>
                 <p>Le chargement te donne un <b>numéro</b>. Range-le dans une boîte&nbsp;: c'est grâce à lui
                     que tu retrouves ton image ou ton son.</p>
-                <div class="exemple"><pre data-essai>étoile = charge_image("exemples/médias/étoile.svg")
-ding = charge_son("exemples/médias/ding.wav")
+                <div class="exemple"><pre data-essai>étoile = charge_image("médias/images/étoile.svg")
+ding = charge_son("médias/sounds/ding.wav")
 
 fond("bleu marine")
 place_image(étoile, 100, 100)            # le coin en haut à gauche est en (100, 100)
@@ -1063,7 +1067,9 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     pour le garder. Dans le menu <b>☰</b>, <b>↶ Revenir au projet précédent</b> rouvre le projet que tu viens de quitter.</p>
                 <ul>
                     <li><b>＋ Nouveau</b> crée un nouveau projet. Si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», il te propose seulement de lui donner un nom.
-                        Pour ajouter un programme au projet, clique sur le bouton <b>＋</b>, au-dessus de l'éditeur.</li>
+                        Pour ajouter un programme au projet, clique sur le bouton <b>＋</b>, au-dessus de l'éditeur.
+                        Si tu viens de cliquer sur le répertoire <b>données</b> (ou sur l'un de ses fichiers), <b>＋</b> crée à la place
+                        un fichier de données, <code>Données.txt</code>, qui s'ouvre aussitôt dans l'éditeur.</li>
                     <li>Le bouton avec un dossier crée un <b>répertoire</b>, comme un tiroir pour ranger tes programmes.</li>
                     <li>Pour mettre un programme dans un répertoire, fais-le <b>glisser</b> dessus avec la souris.</li>
                     <li>Pour recopier un programme, une image, un son ou des données dans <b>un autre projet</b>, clique sur sa petite icône
@@ -1343,6 +1349,39 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>appareil()</code></td><td>sur quoi tourne ton programme&nbsp;: <code>"ordinateur"</code>, <code>"tablette"</code> ou <code>"téléphone"</code>, puis la largeur et la hauteur de l'écran (dans le sens où tu le tiens). Pratique pour adapter un jeu&nbsp;: sur une tablette, pas de clavier&nbsp;!</td><td class="ex"><code>si appareil()[0] == "tablette":</code></td></tr>
                 </table>
 
+                <h3 id="g-graphiques">Les graphiques</h3>
+                <p>Comme dans un tableur, une seule instruction dessine tous les graphiques&nbsp;: des colonnes, un camembert,
+                    des courbes… Tu lui donnes le genre de graphique, les nombres, les noms des catégories et, si tu veux, des options.
+                    Quand la souris passe sur une colonne, une part ou un point, une bulle montre les valeurs.</p>
+<pre>mois = ["Janv.", "Févr.", "Mars", "Avril"]
+graphique("colonnes", [120, 135, 160, 150], mois, {"titre": "Les ventes"})
+graphique("camembert", [9, 6, 4], ["Chats", "Chiens", "Lapins"], {"titre": "Nos animaux", "zone": [400, 0, 400, 300]})</pre>
+                <table class="glossaire">
+                    <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
+                    <tr><td><code>graphique(genre, valeurs, étiquettes, options)</code></td><td>dessine un graphique dans tout le canevas (ou dans la zone de l'option <code>"zone"</code>)&nbsp;; les étiquettes et les options peuvent manquer&nbsp;; plusieurs séries&nbsp;: une liste de listes</td><td class="ex"><code>graphique("courbes", [[3, 5, 4], [2, 4, 6]], ["L", "M", "M"], {"séries": ["Lou", "Max"]})</code></td></tr>
+                </table>
+                <table class="glossaire">
+                    <tr><th>Genre</th><th>Ce qu'il montre</th><th>Valeurs</th></tr>
+                    <tr><td><code>"colonnes"</code> (ou <code>"histogramme"</code>) · <code>"barres"</code></td><td>des colonnes debout · des barres couchées, côte à côte pour plusieurs séries</td><td class="ex"><code>[120, 135, 160]</code></td></tr>
+                    <tr><td><code>"colonnes_empilées"</code> · <code>"barres_empilées"</code></td><td>les séries posées les unes sur les autres (avec <code>"pourcentage": Vrai</code>&nbsp;: à 100&nbsp;%)</td><td class="ex"><code>[[3, 5], [2, 4]]</code></td></tr>
+                    <tr><td><code>"courbes"</code> · <code>"aires"</code> · <code>"aires_empilées"</code></td><td>des lignes qui relient les points · avec la surface dessous</td><td class="ex"><code>[12, 15, 14, 18]</code></td></tr>
+                    <tr><td><code>"camembert"</code> · <code>"anneau"</code></td><td>les parts d'un tout, en pourcentage&nbsp;; l'anneau montre le total au milieu</td><td class="ex"><code>[9, 6, 4]</code></td></tr>
+                    <tr><td><code>"nuage"</code> · <code>"bulles"</code></td><td>des points placés par leurs deux nombres (<code>"tendance": Vrai</code>&nbsp;: la droite qui les suit au mieux) · des bulles dont la taille est un troisième nombre</td><td class="ex"><code>[[150, 45], [170, 63]]</code> · <code>[[1, 20, 30]]</code></td></tr>
+                    <tr><td><code>"radar"</code></td><td>une toile d'araignée&nbsp;: une branche par catégorie</td><td class="ex"><code>[8, 6, 9, 4, 7]</code></td></tr>
+                    <tr><td><code>"répartition"</code></td><td>l'histogramme des statisticiens&nbsp;: combien de valeurs tombent dans chaque classe</td><td class="ex"><code>[12, 15, 8, 9, 14, 17]</code></td></tr>
+                    <tr><td><code>"boîte"</code></td><td>la boîte à moustaches&nbsp;: le minimum, les quartiles, la médiane, le maximum</td><td class="ex"><code>[[12, 15, 8], [5, 9, 20]]</code></td></tr>
+                    <tr><td><code>"cascade"</code></td><td>ce qui s'ajoute et ce qui s'enlève, puis le total</td><td class="ex"><code>[50, -12, 20, -8]</code></td></tr>
+                    <tr><td><code>"entonnoir"</code></td><td>des étapes de plus en plus étroites</td><td class="ex"><code>[1000, 600, 350, 120]</code></td></tr>
+                    <tr><td><code>"mosaïque"</code></td><td>des rectangles dont la taille suit la valeur</td><td class="ex"><code>[40, 25, 15, 10]</code></td></tr>
+                </table>
+                <p>Les options, dans un dictionnaire&nbsp;: <code>"titre"</code>, <code>"séries"</code> (les noms des séries),
+                    <code>"zone": [x, y, largeur, hauteur]</code> (pour mettre plusieurs graphiques sur le canevas), <code>"couleurs"</code>,
+                    <code>"axe_x"</code> et <code>"axe_y"</code> (les titres des axes), <code>"valeurs": Vrai</code> (les nombres écrits sur le graphique),
+                    <code>"légende"</code>, <code>"pourcentage"</code>, <code>"classes"</code>, <code>"tendance"</code>, <code>"total"</code>,
+                    <code>"min"</code>, <code>"max"</code>, <code>"fond"</code>, <code>"survol"</code> et <code>"points"</code>.
+                    Le graphique efface sa zone avant de se dessiner&nbsp;: dessine-le avant ce que tu poses par-dessus.
+                    Les exemples <b>24. Les graphiques</b> et <b>25. Le sondage</b> les montrent tous.</p>
+
                 <h3 id="g-pixels">Les pixels</h3>
                 <p>Le dessin est fait de petits points, les <em>pixels</em>. Chaque point a quatre valeurs, de 0 à 255&nbsp;:
                     le rouge, le vert, le bleu et l'opacité (255 = bien visible, 0 = transparent). On peut lire ces valeurs,
@@ -1429,8 +1468,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>capture_image(x, y, largeur, hauteur)</code></td><td>copie un rectangle du dessin en une nouvelle image et donne son numéro&nbsp;: pour dessiner soi-même les aspects d'un <code>bouton_image</code></td><td class="ex"><code>normal = capture_image(0, 0, 80, 80)</code></td></tr>
                     <tr><td><code>charge_son(nom)</code></td><td>charge un son du répertoire sons du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>snd = charge_son("miaou.wav")</code></td></tr>
                     <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
-                    <tr><td><code>liste_sons()</code></td><td>la liste des noms des sons du projet, puis de ceux du site (<code>"exemples/médias/ding.wav"</code>…)&nbsp;: chaque nom se donne tel quel à <code>charge_son</code></td><td class="ex"><code>charge_son(liste_sons()[0])</code></td></tr>
-                    <tr><td><code>liste_images()</code></td><td>la liste des noms des images du projet, puis de celles du site (<code>"exemples/médias/étoile.svg"</code>…)</td><td class="ex"><code>pour nom dans liste_images():</code></td></tr>
+                    <tr><td><code>liste_sons()</code></td><td>la liste des noms des sons du projet, puis de ceux du site (<code>"médias/sounds/ding.wav"</code>…)&nbsp;: chaque nom se donne tel quel à <code>charge_son</code></td><td class="ex"><code>charge_son(liste_sons()[0])</code></td></tr>
+                    <tr><td><code>liste_images()</code></td><td>la liste des noms des images du projet, puis de celles du site (<code>"médias/images/étoile.svg"</code>…)</td><td class="ex"><code>pour nom dans liste_images():</code></td></tr>
                 </table>
 
                 <h3 id="g-fichiers">Fichiers</h3>

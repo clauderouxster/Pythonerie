@@ -1,0 +1,84 @@
+# 24. Les graphiques
+# Choisis un genre de graphique dans la liste, en haut : le graphique se redessine.
+# Passe la souris sur une colonne, une part ou un point : une bulle montre les valeurs.
+# Une seule instruction pour tous les graphiques d'un tableur :
+#     graphique(genre, valeurs, étiquettes, options)
+
+GENRES = ["colonnes", "barres", "colonnes_empilées", "barres_empilées", "courbes", "aires", "aires_empilées", "camembert", "anneau", "nuage", "bulles", "radar", "répartition", "boîte", "cascade", "entonnoir", "mosaïque"]
+ZONE = [0, 60, 800, 540]          # le graphique occupe le canevas sous la liste
+
+mois = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin"]
+ventes = [120, 135, 160, 150, 190, 210]
+achats = [80, 95, 90, 120, 110, 140]
+notes = [12, 15, 8, 9, 14, 17, 11, 10, 13, 12, 16, 18, 7, 11, 12, 14, 9, 13, 15, 10]
+
+fonction montre(genre):
+    # les options communes : la zone et les noms des séries
+    o = {"zone": ZONE, "séries": ["Ventes", "Achats"]}
+    si genre == "colonnes":
+        o["titre"] = "Ventes et achats du semestre"
+        o["axe_y"] = "euros"
+        graphique(genre, [ventes, achats], mois, o)
+    sinonsi genre == "barres":
+        o["titre"] = "Ventes du semestre"
+        o["valeurs"] = Vrai
+        graphique(genre, ventes, mois, o)
+    sinonsi genre == "colonnes_empilées" ou genre == "aires_empilées":
+        o["titre"] = "Ventes et achats, empilés"
+        graphique(genre, [ventes, achats], mois, o)
+    sinonsi genre == "barres_empilées":
+        o["titre"] = "Part des ventes et des achats, chaque mois"
+        o["pourcentage"] = Vrai
+        graphique(genre, [ventes, achats], mois, o)
+    sinonsi genre == "courbes":
+        o["titre"] = "Ventes et achats"
+        graphique(genre, [ventes, achats], mois, o)
+    sinonsi genre == "aires":
+        o["titre"] = "Ventes du semestre"
+        graphique(genre, ventes, mois, o)
+    sinonsi genre == "camembert" ou genre == "anneau":
+        o["titre"] = "Les animaux de la classe"
+        graphique(genre, [9, 6, 4, 3, 2], ["Chats", "Chiens", "Lapins", "Poissons", "Oiseaux"], o)
+    sinonsi genre == "nuage":
+        o["titre"] = "Taille et poids"
+        o["axe_x"] = "taille (cm)"
+        o["axe_y"] = "poids (kg)"
+        o["tendance"] = Vrai
+        graphique(genre, [[150, 45], [160, 52], [165, 60], [170, 63], [175, 70], [180, 72], [185, 80], [158, 50], [172, 68]], o)
+    sinonsi genre == "bulles":
+        # [x, y, taille] : la taille donne l'aire de la bulle
+        o["titre"] = "Pays : habitants (millions), surface et villes"
+        o["axe_x"] = "nombre de grandes villes"
+        o["axe_y"] = "surface (milliers de km²)"
+        graphique(genre, [[10, 550, 68], [8, 500, 48], [9, 300, 59], [12, 357, 84], [3, 41, 9]], o)
+    sinonsi genre == "radar":
+        o["titre"] = "Le héros et le dragon"
+        o["séries"] = ["Héros", "Dragon"]
+        graphique(genre, [[8, 6, 9, 4, 7], [5, 9, 6, 8, 6]], ["Vitesse", "Force", "Agilité", "Magie", "Défense"], o)
+    sinonsi genre == "répartition":
+        # les notes brutes, comptées par classes de même largeur
+        o["titre"] = "Répartition des notes de la classe"
+        o["axe_x"] = "note sur 20"
+        graphique(genre, notes, o)
+    sinonsi genre == "boîte":
+        o["titre"] = "Les notes de trois classes"
+        graphique(genre, [notes, [5, 8, 9, 10, 11, 12, 20], [14, 15, 15, 16, 17, 18, 19]], ["Classe A", "Classe B", "Classe C"], o)
+    sinonsi genre == "cascade":
+        # des variations : le total s'ajoute au bout
+        o["titre"] = "L'argent de poche du mois"
+        graphique(genre, [50, -12, 20, -8, -15], ["Départ", "Cinéma", "Anniversaire", "Bonbons", "Livre"], o)
+    sinonsi genre == "entonnoir":
+        o["titre"] = "Du visiteur au client"
+        graphique(genre, [1000, 600, 350, 120], ["Visiteurs", "Inscrits", "Actifs", "Clients"], o)
+    sinonsi genre == "mosaïque":
+        o["titre"] = "Les langues parlées dans l'école"
+        graphique(genre, [40, 25, 15, 10, 6, 4], ["Français", "Arabe", "Espagnol", "Portugais", "Anglais", "Coréen"], o)
+
+fonction choisi(clef, genre):
+    montre(genre)
+
+fond("blanc")
+taille_texte(18)
+texte(20, 20, "Genre :")
+liste_déroulante("genre", 100, 16, GENRES, choisi)
+montre("colonnes")

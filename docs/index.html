@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Pythonerie</title>
-    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.25.10.19">
-    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.25.10.19">
+    <link rel="icon" type="image/png" href="images/logo-64.png?v=2026.10.25.15.27">
+    <link rel="apple-touch-icon" href="images/logo-180.png?v=2026.10.25.15.27">
 
     <link href="vendor/fonts/polices.css" rel="stylesheet">
 
@@ -25,17 +25,17 @@
     <script src="vendor/codemirror/addon/search/searchcursor.min.js"></script>
     <script src="vendor/codemirror/addon/search/search.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2026.10.25.10.19">
+    <link rel="stylesheet" href="style.css?v=2026.10.25.15.27">
 </head>
 
 <body>
     <!-- ===================== En-tête ===================== -->
     <header class="en-tête">
         <div class="marque">
-            <img class="logo" src="images/logo-96.png?v=2026.10.25.10.19" alt="" width="36" height="36">
+            <img class="logo" src="images/logo-96.png?v=2026.10.25.15.27" alt="" width="36" height="36">
             <span class="titre">La Pythonerie</span>
             <span class="sous-titre">apprendre à programmer en français</span>
-            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.25.10.19</span>
+            <span class="version" title="Version : année.mois.jour.heure.minute">v. 2026.10.25.15.27</span>
         </div>
         <div class="actions-en-tête">
             <span id="étatLispE" class="état-lispe">Chargement de LispE…</span>
@@ -111,6 +111,8 @@
             <div class="section répertoires-site">
                 <button id="btnMatériels" class="btn btn-secondaire bouton-déroulant" aria-haspopup="true" aria-expanded="false" hidden>📚 Matériels <span class="nombre-exemples"></span> ▾</button>
                 <button id="btnExemples" class="btn btn-secondaire bouton-déroulant" aria-haspopup="true" aria-expanded="false">🧪 Exemples <span class="nombre-exemples"></span> ▾</button>
+                <!-- les sons et les images du site, partagés par tous les programmes (voir installeMédiasSite) -->
+                <button id="btnMédias" class="btn btn-secondaire bouton-déroulant" aria-haspopup="true" aria-expanded="false" title="Les sons et les images que tous les programmes peuvent utiliser : médias/sounds/ding.wav">🎨 Médias <span class="nombre-exemples"></span> ▾</button>
             </div>
         </aside>
         <div id="séparateurProgrammes" class="séparateur" title="Glisser pour changer la largeur"></div>
@@ -140,7 +142,7 @@
                 <div id="signature" class="signature" hidden></div>
                 <!-- Un projet sans programme : l'éditeur est verrouillé -->
                 <div id="éditeurVide" class="éditeur-vide" hidden>
-                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.25.10.19" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
+                    <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.10.25.15.27" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
                     <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
@@ -243,7 +245,7 @@
         <div class="modal">
             <div class="modal-tête">
                 <div class="aide-marque">
-                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.25.10.19" alt="" width="44" height="44">
+                    <img class="aide-logo" src="images/logo-96.png?v=2026.10.25.15.27" alt="" width="44" height="44">
                     <div>
                         <h2>Aide de la Pythonerie</h2>
                         <p class="aide-sous-titre">L'aide-mémoire : l'essentiel en un coup d'œil</p>
@@ -413,6 +415,8 @@ selon (nom):
                         <td><code>taille_texte(30)</code> · <code>police("serif")</code></td><td>style du texte ; <code>largeur_texte(t)</code> : sa largeur en points</td></tr>
                     <tr><td><code>couleur_pixel(x, y)</code></td><td>la couleur d'un point : [rouge, vert, bleu, opacité]</td>
                         <td><code>pixels(x, y, l, h)</code> · <code>pose_pixels(…)</code></td><td>lit les points d'un rectangle · les redessine</td></tr>
+                    <tr><td><code>graphique("colonnes", valeurs, étiquettes)</code></td><td>un graphique de tableur : colonnes, barres, courbes, camembert, nuage, radar…</td>
+                        <td><code>graphique("camembert", parts, {"titre": "Parts"})</code></td><td>avec des options : titre, séries, zone [x, y, l, h]…</td></tr>
                 </table>
                 <p class="note">Couleurs : rouge, vert, bleu, jaune, orange, violet, rose, marron, noir, blanc, gris, cyan, magenta, turquoise,
                     beige, or, argent, bleu marine, et leurs nuances « clair » et « foncé » — ou une couleur CSS (<code>"#ff8800"</code>).</p>
@@ -495,7 +499,7 @@ quand_clic(clic)</pre>
                         <td></td><td></td></tr>
                 </table>
                 <p class="note">Un nom seul (<code>"chat.png"</code>) désigne un fichier des répertoires images ou sons du projet ; un chemin,
-                    un fichier du site (<code>exemples/médias/ding.wav</code>) ; <code>https://…</code>, une adresse Internet.</p>
+                    un fichier du site (<code>médias/sounds/ding.wav</code>) ; <code>https://…</code>, une adresse Internet.</p>
 
                 <!-- ============================================================ -->
                 <h3 id="aide-données">Fichiers et données</h3>
@@ -520,6 +524,7 @@ quand_clic(clic)</pre>
                     <li>Le <b>projet</b> réunit les programmes et trois répertoires : <b>images</b>, <b>sons</b> et <b>données</b>. On y glisse des fichiers, ou on clique sur <b>＋</b>.</li>
                     <li>Un clic sur le <b>nom du projet</b> ouvre <b>Mes projets</b> : les projets gardés dans ce navigateur. Le projet que l'on quitte y est rangé tout seul.</li>
                     <li><b>📚 Matériels</b> et <b>🧪 Exemples</b>, au bas de la colonne : le matériel de l'enseignant, et vingt exemples : un clic en ouvre un, dans un projet à son nom, qui n'entre dans Mes projets que si tu le renommes.</li>
+                    <li><b>🎨 Médias</b>, sous les exemples : les sons et les images de la Pythonerie (<code>médias/sounds/ding.wav</code>). Un clic fait écouter le son ou voir l'image ; <b>📋 Copier</b> donne la ligne qui le charge, à coller dans l'éditeur.</li>
                     <li>L'icône <b>⧉</b> copie un programme ou un fichier ; dans un autre projet, <b>📋 Coller</b> (ou Cmd/Ctrl+V) le recopie.</li>
                 </ul>
                 <details class="aide-détails">
@@ -587,7 +592,7 @@ quand_clic(clic)</pre>
             },
             // lispe.wasm reçoit le même numéro de version que les scripts
             locateFile: function (fichier, répertoire) {
-                return répertoire + fichier + '?v=2026.10.25.10.19';
+                return répertoire + fichier + '?v=2026.10.25.15.27';
             },
             onRuntimeInitialized: function () {
                 if (window.Pythonerie) window.Pythonerie.lispePrêt();
@@ -595,16 +600,16 @@ quand_clic(clic)</pre>
             }
         };
     </script>
-    <script src="js/mode-pythonerie.js?v=2026.10.25.10.19"></script>
-    <script src="js/zip.js?v=2026.10.25.10.19"></script>
-    <script src="js/fichiers-projet.js?v=2026.10.25.10.19"></script>
-    <script src="js/erreurs.js?v=2026.10.25.10.19"></script>
-    <script src="js/scene3d.js?v=2026.10.25.10.19"></script>
-    <script src="js/canevas.js?v=2026.10.25.10.19"></script>
-    <script src="js/pythonerie.js?v=2026.10.25.10.19"></script>
+    <script src="js/mode-pythonerie.js?v=2026.10.25.15.27"></script>
+    <script src="js/zip.js?v=2026.10.25.15.27"></script>
+    <script src="js/fichiers-projet.js?v=2026.10.25.15.27"></script>
+    <script src="js/erreurs.js?v=2026.10.25.15.27"></script>
+    <script src="js/scene3d.js?v=2026.10.25.15.27"></script>
+    <script src="js/canevas.js?v=2026.10.25.15.27"></script>
+    <script src="js/pythonerie.js?v=2026.10.25.15.27"></script>
     <script>Pythonerie.démarre();</script>
-    <script src="lispe/lispe.js?v=2026.10.25.10.19"></script>
-    <script src="lispe/lispe_functions.js?v=2026.10.25.10.19"></script>
+    <script src="lispe/lispe.js?v=2026.10.25.15.27"></script>
+    <script src="lispe/lispe_functions.js?v=2026.10.25.15.27"></script>
 </body>
 
 </html>

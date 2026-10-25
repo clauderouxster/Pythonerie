@@ -161,6 +161,7 @@ const PYTHONERIE_FONCTIONS = {
     'largeur_texte': 'largeur_texte(message) — la largeur du texte en points, avec la police et la taille du moment (pour centrer : 400 - largeur_texte(t) / 2)',
     'hauteur_texte': 'hauteur_texte(message) — la hauteur des lettres du texte, en points (du haut de la plus haute au bas de la plus basse)',
     'tri_localisé': 'tri_localisé(liste) — les textes dans l\'ordre du dictionnaire (« é » avec les « e », les majuscules avec les minuscules)',
+    'graphique': 'graphique(genre, valeurs, étiquettes, options) — un graphique de tableur : "colonnes", "barres", "courbes", "aires", "camembert", "anneau", "nuage", "bulles", "radar", "répartition", "boîte", "cascade", "entonnoir", "mosaïque"… ; options : {"titre": …, "séries": […], "zone": [x, y, l, h]}',
     'nouveau_dessin': 'nouveau_dessin() — un dessin vide : d.disque(...), d.couleur(...), d.avance(...) y ajoutent leurs commandes',
     'montre_dessin': 'montre_dessin(d, clef) — dessine tout le dessin d\'un coup (presque rien à chaque nouvelle image) ; clef : dans une zone_défilante',
     'vide_dessin': 'vide_dessin(d) — retire toutes les commandes du dessin',

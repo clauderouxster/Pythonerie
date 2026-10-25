@@ -25,8 +25,8 @@ COULEURS = [["#e53935", "#ff8a80", "#8e1c1a"], ["#fb8c00", "#ffcc80", "#9a5200"]
             ["#fdd835", "#fff59d", "#9e8500"], ["#43a047", "#a5d6a7", "#1b5e20"],
             ["#1e88e5", "#90caf9", "#0d47a1"]]
 
-ding = charge_son("exemples/médias/ding.wav")
-pop = charge_son("exemples/médias/pop.wav")
+ding = charge_son("médias/sounds/ding.wav")
+pop = charge_son("médias/sounds/pop.wav")
 
 raquette_l = 110
 raquette_h = 14

@@ -14,8 +14,8 @@ HAUTEUR_BRIQUE = 24
 HAUT_DU_MUR = 60
 COULEURS = ["rouge", "orange", "jaune", "vert", "bleu"]
 
-ding = charge_son("exemples/médias/ding.wav")
-pop = charge_son("exemples/médias/pop.wav")
+ding = charge_son("médias/sounds/ding.wav")
+pop = charge_son("médias/sounds/pop.wav")
 
 raquette_l = 110
 raquette_h = 14

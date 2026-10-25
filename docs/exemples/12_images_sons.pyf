@@ -2,9 +2,9 @@
 # charge_image et charge_son renvoient un numéro : on le garde dans une variable,
 # puis on le donne à place_image et à joue_son.
 
-étoile = charge_image("exemples/médias/étoile.svg")
-ding = charge_son("exemples/médias/ding.wav")
-pop = charge_son("exemples/médias/pop.wav")
+étoile = charge_image("médias/images/étoile.svg")
+ding = charge_son("médias/sounds/ding.wav")
+pop = charge_son("médias/sounds/pop.wav")
 
 fond("bleu marine")
 couleur("blanc")

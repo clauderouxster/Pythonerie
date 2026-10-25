@@ -18,11 +18,11 @@
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 # Sur une tablette ou un téléphone : le bouton 🔥 Feu tire, et le doigt pilote.
 
-son_tir = charge_son("exemples/médias/tir.wav")
-son_explosion = charge_son("exemples/médias/explosion.wav")
-son_boum = charge_son("exemples/médias/boum.wav")
+son_tir = charge_son("médias/sounds/tir.wav")
+son_explosion = charge_son("médias/sounds/explosion.wav")
+son_boum = charge_son("médias/sounds/boum.wav")
 # le cœur qui bat de plus en plus vite : deux notes graves, l'une après l'autre
-sons_battement = [charge_son("exemples/médias/pas_1.wav"), charge_son("exemples/médias/pas_3.wav")]
+sons_battement = [charge_son("médias/sounds/pas_1.wav"), charge_son("médias/sounds/pas_3.wav")]
 
 # la taille d'un astéroïde (1, 2 ou 3) donne son rayon et ses points
 rayons = [0, 12, 22, 40]

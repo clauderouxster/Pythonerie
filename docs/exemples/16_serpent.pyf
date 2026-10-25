@@ -11,8 +11,8 @@ CASE = 40
 COLONNES = 20
 LIGNES = 15
 
-croque = charge_son("exemples/médias/pop.wav")
-perdu = charge_son("exemples/médias/ding.wav")
+croque = charge_son("médias/sounds/pop.wav")
+perdu = charge_son("médias/sounds/ding.wav")
 
 # Le serpent est une liste de cases [colonne, ligne] : sa tête est la dernière
 serpent = [[3, 7], [4, 7], [5, 7]]

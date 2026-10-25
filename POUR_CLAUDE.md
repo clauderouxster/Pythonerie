@@ -202,6 +202,7 @@ Chemins à donner tels quels à `charge_image` / `charge_son` :
 Les programmes de l'élève forment un **projet**, qui a un nom (« Sans Nom » au départ) et trois répertoires fixes : `images` (png, jpg, gif, svg, webp), `sons` (wav, mp3, ogg) et `données` (txt, csv, tsv, json, md), 5 Mo au plus par fichier.
 
 - `importe "outils"`, seul sur sa ligne, ajoute au programme le code du programme « outils » du projet (fonctions, variables). `importe "jeux/outils"` désigne un programme d'un dossier ; le chemin est cherché depuis le dossier du programme qui importe, puis à la racine. Seuls les programmes du projet s'importent (pas de module Python), pas de `comme`, pas de `from … import`. Une fonction définie dans deux programmes importés est une erreur.
+- **Le programme principal peut commencer par la ligne `#__main__`**, avant la ligne du titre (`#__main__`, puis `# La fusée`). « 🌐 Créer une application Web » lance alors ce programme sans rien demander ; s'il y en a plusieurs, il ne propose qu'eux ; sans repère, il propose tous les programmes. C'est facultatif, mais utile dans un projet de plusieurs programmes : mets-le en tête du programme principal, jamais en tête d'un programme importé.
 - Si ton programme a besoin de données, d'images ou de sons qui ne sont pas sur le site, dis à l'élève de les glisser dans le bon répertoire du projet, et désigne-les par leur seul nom. Un fichier du répertoire `données` s'ouvre dans l'éditeur d'un clic dans l'arbre du projet : l'élève peut y taper ou corriger ses données, qui sont enregistrées toutes seules.
 - Le projet exporté par la Pythonerie est un fichier `.zip` qui contient
   - `projet.json` : `{"format": "projet-pythonerie", "version": 3, "nom": "Le quiz des capitales", "élève": "", "créé": "2026-10-10T09:00:00Z"}` ;
@@ -220,7 +221,7 @@ C'est la façon la plus simple, pour toi, de rendre un projet complet : un seul 
   "version": 3,
   "nom": "La fusée",
   "programmes": {
-    "Décollage": "# La fusée\nimporte \"outils/moteur\"\nfusée = charge_image(\"fusée.svg\")\nbip = charge_son(\"médias/sounds/ding.wav\")\naffiche(poussée(3))\n",
+    "Décollage": "#__main__\n# La fusée\nimporte \"outils/moteur\"\nfusée = charge_image(\"fusée.svg\")\nbip = charge_son(\"médias/sounds/ding.wav\")\naffiche(poussée(3))\n",
     "outils/moteur": "fonction poussée(n):\n    retourne n * 10\n"
   },
   "dossiers": ["outils"],

@@ -420,6 +420,9 @@ const Pythonerie = (function () {
     const LIGNE_IMPORTE = /^importe\s+(["'])(.+?)\1\s*(#.*)?$/;
 
     // le code d'un programme du projet (celui qui est ouvert : tel qu'il est dans l'éditeur)
+    // « #__main__ » en première ligne : le programme principal (un commentaire, ignoré à l'exécution)
+    const estPrincipal = (code) => /^\uFEFF?\s*#\s*__main__\s*$/.test(String(code || '').split('\n', 1)[0]);
+
     function codeDuProgramme(chemin) {
         if (chemin === courant) return éditeur.getValue();
         const tout = StockageNavigateur._tout();
@@ -1645,7 +1648,11 @@ const Pythonerie = (function () {
 
     // Le programme principal : celui qui est ouvert s'il est le seul, sinon on le demande
     async function choisitProgrammePrincipal() {
-        const liste = programmes.map(p => p.chemin).sort((a, b) => a.localeCompare(b, 'fr'));
+        let liste = programmes.map(p => p.chemin).sort((a, b) => a.localeCompare(b, 'fr'));
+        // un programme principal peut le dire : « #__main__ » en première ligne (le même repère
+        // que dans l'Atelier) ; le seul qui le porte part sans question, plusieurs sont proposés
+        const repérés = liste.filter(c => estPrincipal(codeDuProgramme(c)));
+        if (repérés.length) liste = repérés;
         if (liste.length === 1) return liste[0];
         const choix = document.createElement('select');
         choix.className = 'choix-programme';

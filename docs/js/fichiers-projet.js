@@ -212,8 +212,13 @@ const FichiersProjet = (function () {
         await transaction(PROJETS, 'readwrite', m => m.put(projet));
     }
 
+    // Les fichiers d'un projet lu dans la base sont recopiés en mémoire (voir détache) : le projet
+    // peut être gardé de nouveau sans réécrire des blobs attachés à l'ancien enregistrement, que
+    // Safari perd (image illisible) ou recopie (la place grossit)
     async function litProjet(utilisateur, nom) {
-        return (await transaction(PROJETS, 'readonly', m => m.get([nfc(utilisateur), nfc(nom)]))) || null;
+        const p = (await transaction(PROJETS, 'readonly', m => m.get([nfc(utilisateur), nfc(nom)]))) || null;
+        if (p && p.fichiers) p.fichiers = await Promise.all(p.fichiers.map(async f => ({ ...f, blob: await détache(f.blob, p.nom + ' · ' + f.chemin) })));
+        return p;
     }
 
     async function supprimeProjet(utilisateur, nom) {

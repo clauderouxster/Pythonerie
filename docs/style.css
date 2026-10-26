@@ -106,6 +106,8 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .btn-secondaire:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-color); }
 .btn-secondaire.actif { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
+/* « Principal » : blanc pour un programme ordinaire, bleu pour le programme principal (#__main__) */
+.bouton-principal.principal-actif, .bouton-principal.principal-actif:hover:not(:disabled) { background: #2563eb; border-color: #2563eb; color: #ffffff; }
 .btn-secondaire.danger { color: var(--danger); }
 .btn-secondaire.danger:hover:not(:disabled) { border-color: var(--danger); }
 .btn-petit { font-size: 12px; padding: 4px 10px; }
@@ -394,6 +396,10 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .barre-gauche, .barre-droite { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .nom-programme { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* la barre de l'éditeur : quand la place manque, les boutons de droite passent dessous plutôt
+   que d'écraser le nom du programme (à côté de « Principal ») */
+.zone-édition > .barre { flex-wrap: wrap; row-gap: 6px; }
+.zone-édition > .barre > .barre-gauche { flex: 1 1 16em; }
 .état-sauvegarde { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 .état-sauvegarde.ok { color: var(--success); }
 .état-sauvegarde.erreur { color: var(--danger); }

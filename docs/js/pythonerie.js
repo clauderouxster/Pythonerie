@@ -3044,7 +3044,31 @@ const Pythonerie = (function () {
         afficheArbre();
     }
 
+    // « Principal » : bleu si le programme ouvert commence par #__main__ (le programme que lancent
+    // « Créer une application Web ») ; caché sans programme, avec un fichier de
+    // données ou les onglets de données
+    function actualisePrincipal() {
+        const b = $('btnPrincipal');
+        if (!b) return;
+        b.hidden = !courant || !!fichierOuvert || modeDonnées;
+        const oui = !!courant && estPrincipal(éditeur.getLine(0));
+        b.classList.toggle('principal-actif', oui);
+        b.setAttribute('aria-pressed', String(oui));
+        b.title = oui ? 'Programme principal (#__main__ en première ligne) : un clic retire cette mention'
+            : 'Marquer ce programme comme le programme principal (#__main__ en première ligne)';
+    }
+
+    // un clic : ajoute #__main__ en tête du programme, ou retire cette ligne (Ctrl+Z l'annule aussi)
+    function basculePrincipal() {
+        if (!courant || éditeur.getOption('readOnly')) return;
+        if (estPrincipal(éditeur.getLine(0))) éditeur.replaceRange('', { line: 0, ch: 0 }, { line: 1, ch: 0 });
+        else éditeur.replaceRange('#__main__\n', { line: 0, ch: 0 });
+        actualisePrincipal();
+        éditeur.focus();
+    }
+
     function afficheTitre() {
+        actualisePrincipal();
         const titre = $('nomProgramme');
         titre.textContent = '';
         if (!courant) { titre.textContent = '—'; return; }
@@ -3189,6 +3213,7 @@ const Pythonerie = (function () {
     // quand LispE l'est, sauf pendant qu'un fichier de données est affiché (il s'arrête quand même)
     let titreExécuter = null;
     function actualiseExécuter() {
+        actualisePrincipal();
         const b = $('btnExécuter');
         if (titreExécuter === null) titreExécuter = b.title;
         const enCours = wasmPrêt && Pyt.enCours();
@@ -3334,6 +3359,7 @@ const Pythonerie = (function () {
             if (modeDonnées) { $('texteDonnées').focus(); return; }
         }
         modeDonnées = !modeDonnées;
+        actualisePrincipal();
         $('panneauDonnées').hidden = !modeDonnées;
         $('conteneurÉditeur').hidden = modeDonnées;
         $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'Les données du projet : don0, don1...';
@@ -4046,7 +4072,7 @@ const Pythonerie = (function () {
                 changement.update(changement.from, changement.to, texte);
             }
         });
-        éditeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); });
+        éditeur.on('change', () => { if (!chargementEnCours) sauvegardePlusTard(); actualisePrincipal(); });
         éditeur.on('cursorActivity', montreSignature);
         éditeur.getWrapperElement().addEventListener('contextmenu', allerÀLaDéfinition);
         $('btnRetourDéfinition').addEventListener('click', revientDuSaut);
@@ -4432,6 +4458,7 @@ const Pythonerie = (function () {
         installeDonnées();
         $('btnNouveau').addEventListener('click', nouveauDepuisBouton);
         $('btnNouveauFichier').addEventListener('click', nouveau);
+        $('btnPrincipal').addEventListener('click', basculePrincipal);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
         installeDéroulantes();
         $('btnNouveauDossier').addEventListener('click', nouveauDossier);

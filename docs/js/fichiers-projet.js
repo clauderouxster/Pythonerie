@@ -68,9 +68,19 @@ const FichiersProjet = (function () {
     }
 
     // La copie en mémoire d'un fichier : adresse blob: (image, son) ou texte (données)
+    // Un blob lu dans IndexedDB, recopié en mémoire. Safari le laisse attaché au fichier qu'il range
+    // sur le disque pour la base : si l'enregistrement est réécrit, ce fichier disparaît, et une
+    // adresse blob: déjà donnée ne se lit plus (« WebKitBlobResource erreur 1 » : l'image manque).
+    async function détache(blob, chemin) {
+        if (!blob || typeof blob.arrayBuffer !== 'function') return blob;
+        try { return new Blob([await blob.arrayBuffer()], { type: blob.type }); }
+        catch (e) { console.warn('[Pythonerie · IndexedDB] fichier illisible dans la base :', chemin || '?', e && e.name, e && e.message); return blob; }
+    }
+
     async function enMémoire(entrée) {
         const ancien = fichiers.get(entrée.chemin);
         if (ancien && ancien.url) URL.revokeObjectURL(ancien.url);
+        entrée = { ...entrée, blob: await détache(entrée.blob, entrée.chemin) };
         const f = { chemin: entrée.chemin, type: entrée.type, taille: entrée.blob.size, blob: entrée.blob, modifie: entrée.modifie, url: null, texte: null };
         if (entrée.chemin.startsWith('données/')) f.texte = nfc(await entrée.blob.text()).replace(/\r\n?/g, '\n');
         else f.url = URL.createObjectURL(entrée.blob);

@@ -320,7 +320,7 @@ Dans un script, `va_vers_carte("Rosa")` montre une autre carte de la pile.
 
 ## Pièges (vérifiés) : à éviter absolument
 
-1. **Pas d'expression conditionnelle** : `x = a si c sinon b` est refusé. Écris un `si` / `sinon`.
+1. **L'expression conditionnelle est permise**, comme en Python : `x = a si c sinon b`. Elle marche aussi en argument (`affiche("un" si n == 1 sinon "plusieurs")`), dans une liste, un dictionnaire, en tête d'une compréhension (`[v si v > 0 sinon 0 pour v dans l]`, à ne pas confondre avec le filtre `[v pour v dans l si v > 0]`), et enchaînée (`a si c1 sinon b si c2 sinon d`). Le `sinon` est obligatoire ; seule la branche choisie est évaluée.
 2. **Pas de `non` juste après une parenthèse ouvrante** : `x = (non (a == 2)) et b == 2` est refusé. Écris `non (a == 2) et b == 2`, qui marche, comme toutes les autres combinaisons de parenthèses, `et`, `ou` et `non`.
 3. **Pas de boucle sans fin** (`tantque Vrai:` sans `sortir`) : la page ne réagit plus pendant qu'elle tourne, et la Pythonerie l'arrête au bout de 10 millions de tours, avec une erreur. Un `tantque` ne doit donc jamais dépasser 10 millions de tours. Pour tout ce qui bouge, utilise `animer`.
 4. **`intervalle` est limité** (quelques centaines de milliers d'éléments au plus) : pour de très grandes boucles, imbrique deux boucles.

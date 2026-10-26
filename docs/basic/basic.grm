@@ -55,6 +55,7 @@
 ;16 erreur dans la définition d'une classe >>>
 ;17 erreur dans une lambda >>>
 ;18 erreur dans une expression booléenne
+;19 erreur dans une expression conditionnelle (a si c sinon b) >>>
 
 # Le ° indique le point d'entrée de la grammaire (la règle de tête)
 °analyse := [importing^classedef^function^rule^patternrule^prologrule^expressions]+
@@ -91,7 +92,11 @@ negation := $non
 !comppar := negation? %( comparing %) [orand ;18 comparison]*
 
 ^comparison := comppar|comparing
-^compareorcompute := comparison|computing
+# x si c sinon y, l'expression conditionnelle de Python (x if c else y) ; le & garde une valeur
+# sans « si » telle quelle (pas d'étiquette ternaire) ; l'appel à ternaire après sinon permet
+# l'enchaînement : a si c1 sinon b si c2 sinon d
+!&ternaire := computing [$si comparison $sinon ;19 ternaire]?
+^compareorcompute := comparison|ternaire
 
 !powerforminus := callitem %* %* callitem [%* %* callitem]*
 !minus := %- [powerforminus^callitem]
@@ -101,9 +106,9 @@ interval := %[ computing? %: ;10 computing? %]
 
 !indexes := %[ ;1 computing [%, computing]* %]
 
-!valuelist := %[ ;3 [ computing [%, computing]* ]? %]
+!valuelist := %[ ;3 [ ternaire [%, ternaire]* ]? %]
 
-!itemdictionary := [astring^minus^anumber^variable] %: computing
+!itemdictionary := [astring^minus^anumber^variable] %: ternaire
 !valuedictionary := %{ ;11 [itemdictionary [%, itemdictionary]* ]? %}
 
 !dimvariable :=  Word [interval^indexes]+
@@ -116,7 +121,7 @@ variable := dimvariable^Word
 
 !multiassignment := %[ variables %]
 
-argcompute := comparing^computing
+argcompute := comparing|ternaire
 
 !arguments := argcompute [%, argcompute]*
 
@@ -191,7 +196,7 @@ pattern := patternlist^patterndictionary^astring^minus^anumber^variable
 !prologrule := $prolog Word %( ;4 patterns %) predicates+ $finprolog
 
 !lambda := %[ [$lambda^$λ] ;17 %( variables? %) body %]
-!comprehension := %[ computing $pour ;12 Word $dans computing [$si comparison]? %]
+!comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 
 !elif := $sinonsi ;5 comparison then [elif^else]?
 !if := $si ;5 comparison then [elif^else]? $finsi

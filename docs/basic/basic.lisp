@@ -1,4 +1,4 @@
-;Date: 2026/10/22 14:09:19
+;Date: 2026/10/26 07:45:14
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -735,7 +735,47 @@
    )
 )
 
-;^compareorcompute := comparison|computing
+;!&ternaire := computing [$si comparison $sinon ;19 ternaire]?
+(defun C_ternaire (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_computing tokens i1 v1)
+            (O_ternaire_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (if (eq (size v0) 1)
+            (nconc v v0)
+            (push v (cons 'ternaire v0))
+         )
+      )
+   )
+)
+
+(defun O_ternaire_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "si" i2 v2 nil)
+         (C_comparison tokens i2 v2)
+         (compare tokens "sinon" i2 v2 nil)
+         (push error_id 19)
+         (if (C_ternaire tokens i2 v2)
+            (pop error_id)
+            (setg do_not_stop false)
+         )
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;^compareorcompute := comparison|ternaire
 (defun C_compareorcompute (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -745,9 +785,7 @@
             (setq a1
                (maybe (C_comparison tokens i0 v0) false)
             )
-            (setq a2
-               (maybe (C_computing tokens i1 v1) false)
-            )
+            (setq a2 (maybe (C_ternaire tokens i1 v1) false))
             (check (or a1 a2)
                (check (< (car i0) (car i1))
                   (set@ i0 0 (car i1))
@@ -900,7 +938,7 @@
    )
    true)
 
-;!valuelist := %[ ;3 [ computing [%, computing]* ]? %]
+;!valuelist := %[ ;3 [ ternaire [%, ternaire]* ]? %]
 (defun C_valuelist (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -930,7 +968,7 @@
          (setq i3 (clone i2))
          (setq v3 ())
          (compare tokens "," i3 v3 nil)
-         (C_computing tokens i3 v3)
+         (C_ternaire tokens i3 v3)
          (set@ i2 0 (car i3))
          (setq v2 v3)
       )
@@ -946,7 +984,7 @@
    (check (and
          (setq i2 (clone i1))
          (setq v2 ())
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (S_valuelist_0 tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
@@ -955,7 +993,7 @@
    )
    true)
 
-;!itemdictionary := [astring^minus^anumber^variable] %: computing
+;!itemdictionary := [astring^minus^anumber^variable] %: ternaire
 (defun C_itemdictionary (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -969,7 +1007,7 @@
                (C_variable tokens i1 v1)
             )
             (compare tokens ":" i1 v1 nil)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -1149,13 +1187,23 @@
    )
 )
 
-;argcompute := comparing^computing
+;argcompute := comparing|ternaire
 (defun C_argcompute (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
-      (if (or
-            (C_comparing tokens i0 v0)
-            (C_computing tokens i0 v0)
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1
+               (maybe (C_comparing tokens i0 v0) false)
+            )
+            (setq a2 (maybe (C_ternaire tokens i1 v1) false))
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
          )
          (push v (cons 'argcompute v0))
       )
@@ -2625,7 +2673,7 @@
    )
    true)
 
-;!comprehension := %[ computing $pour ;12 Word $dans computing [$si comparison]? %]
+;!comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 (defun C_comprehension (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2633,7 +2681,7 @@
             (setq i1 (clone i0))
             (setq v1 ())
             (compare tokens "[" i1 v1 nil)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (compare tokens "pour" i1 v1 nil)
             (push error_id 12)
             (if (and
@@ -2976,9 +3024,9 @@
      ; len et print avant ce test (les refuser refuserait ces mots) ; trim et join, que l'élève appelle
      ; comme des fonctions. (w est une chaîne, d'où "list" et non l'atome.)
      (and (not (in '("list" "setq" "setg" "setqi" "defun" "defpat" "check" "loop" "block" "ife" "at" "extract" "mapcar" "filtercar" "in_it" "dictionary" "maybe" "throw" "eq" "sign" "true" "andvalue" "orvalue") w))
-      (not (in  '("ou" "et" "oux" "non" "dans" "est" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "sinon" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "si" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w))))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "si" "sinon" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w))))
 )
-   (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
+   (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "19":"erreur dans une expression conditionnelle ( a si c sinon b ) > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
 (setq parser_tok (tokenizer_rules))
 
 (setq rg «1:{%d #A-F #a-f}

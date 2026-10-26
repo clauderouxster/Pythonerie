@@ -826,6 +826,11 @@
    (parsing code)
 )
 
+; x si c sinon y (x if c else y) -> (if c x y) : voir ternaire dans basic.grm
+(defpat parsing ( ['ternaire x c y] )
+   (list 'if (parsing c) (parsing x) (parsing y))
+)
+
 ; a simple atom, might be a variable
 (defpat parsing ( [ [atom_ x] $ d] )
    (parsing d)

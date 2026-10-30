@@ -59,13 +59,21 @@ const Pyt = (function () {
     let enLecture = [];        // lecteurs <audio> en cours (solution de repli)
     let sourcesActives = [];   // sons Web Audio en cours
     let audio = null;
-    // Le contexte Web Audio est créé au premier son (pendant le clic sur « Exécuter »)
+    // Le contexte Web Audio est créé au premier son (pendant le clic sur « Exécuter »), et refait
+    // si le navigateur l'a fermé (les sons déjà décodés servent dans le nouveau)
     function contexteAudio() {
-        if (!audio) {
+        if (!audio || audio.state === 'closed') {
             const Contexte = window.AudioContext || window.webkitAudioContext;
-            if (Contexte) audio = new Contexte({ latencyHint: 'interactive' });
+            audio = Contexte ? new Contexte({ latencyHint: 'interactive' }) : null;
         }
         return audio;
+    }
+    // Réveille le son : le navigateur le garde « suspendu » tant que la page n'a pas reçu de geste,
+    // et Safari le met en plus « interrompu » (interrupted, un état à lui) quand on change d'onglet,
+    // quand l'ordinateur se met en veille, quand une autre application prend le son ou qu'un casque
+    // se branche : sans resume(), il resterait muet jusqu'au rechargement de la page
+    function réveilleAudio() {
+        if (audio && audio.state !== 'running' && audio.state !== 'closed') audio.resume().catch(() => {});
     }
     // Augmente à chaque efface() ou fond() : une image qui finit de se charger après
     // un effacement n'est plus dessinée
@@ -1613,11 +1621,11 @@ const Pyt = (function () {
                 erreur: (m) => signaleErreur(m)
             });
             installeÉvénements();
-            // Le navigateur peut garder le son « suspendu » tant que la page n'a pas reçu de geste :
-            // le premier clic ou la première touche, n'importe où, le réveille
-            ['pointerdown', 'keydown', 'touchend'].forEach(type => window.addEventListener(type, () => {
-                if (audio && audio.state === 'suspended') audio.resume();
-            }, { capture: true }));
+            // Le son suspendu ou interrompu (voir réveilleAudio) : un clic ou une touche, n'importe où,
+            // le réveille, comme le retour sur la page
+            ['pointerdown', 'keydown', 'touchend'].forEach(type => window.addEventListener(type, réveilleAudio, { capture: true }));
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) réveilleAudio(); });
+            window.addEventListener('pageshow', réveilleAudio);
             this.réinitialise();
         },
 
@@ -2608,7 +2616,7 @@ const Pyt = (function () {
             const ctx = contexteAudio();
             if (!ctx) return null;
             // appelé pendant le clic sur « Exécuter » : le navigateur autorise alors le son
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            réveilleAudio();
             const àDécoder = [...new Set(noms.map(n => adresseMédia(n, 'sons')).filter(a => a && !sonsDécodés.has(a)))];
             if (!àDécoder.length) return null;
             const tous = Promise.all(àDécoder.map(a => téléchargeAvecReprise(a)
@@ -2624,8 +2632,7 @@ const Pyt = (function () {
             if (!entrée) throw new Error('Son inconnu : ' + numéro + ' (utilise le numéro renvoyé par charge_son)');
             const ctx = contexteAudio();
             if (entrée.tampon && ctx) {
-                // le navigateur suspend l'audio tant qu'on n'a pas cliqué : un clic le réveille
-                if (ctx.state === 'suspended') ctx.resume();
+                réveilleAudio();
                 const source = ctx.createBufferSource();
                 source.buffer = entrée.tampon;
                 source.connect(ctx.destination);

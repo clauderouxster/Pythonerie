@@ -604,6 +604,14 @@
    (_nouveau_3d s "cylindre" (dictionary "genre" "cylindre" "x" x "y" y "z" z "rayon" r "hauteur" h "couleur" c)))
 (defun cône (s x y z r h (c "blanc"))
    (_nouveau_3d s "cône" (dictionary "genre" "cône" "x" x "y" y "z" z "rayon" r "hauteur" h "couleur" c)))
+; scène.arbre(x, y, z[, essence, hauteur]) : un arbre de js/arbres3d.js, le pied en (x, y, z) ;
+; hauteur 0 : sa taille réelle, en mètres ; les noms anglais (oak…) et sans accents sont acceptés
+(setq _essences_arbres (dictionary "chene" "oak" "peuplier" "poplar" "saule_pleureur" "weeping_willow" "bouleau" "birch" "sapin" "fir" "erable" "maple" "cerisier" "cherry_tree" "pommier" "apple_tree" "palmier" "palm_tree" "cypres" "cypress" "oak" "oak" "poplar" "poplar" "weeping_willow" "weeping_willow" "birch" "birch" "fir" "fir" "maple" "maple" "cherry_tree" "cherry_tree" "apple_tree" "apple_tree" "palm_tree" "palm_tree" "cypress" "cypress"))
+(defun arbre (s x y z (_e "chêne") (_h 0))
+   (setq _n (deaccentuate (lower (string _e))))
+   (if (not (in_it _essences_arbres _n))
+      (throw (+ "arbre : il n'y a pas d'arbre « " _e " » ; les essences : chêne, peuplier, saule_pleureur, bouleau, sapin, érable, cerisier, pommier, palmier, cyprès")))
+   (_nouveau_3d s "arbre" (dictionary "genre" "arbre" "x" x "y" y "z" z "essence" (@ _essences_arbres _n) "hauteur" _h)))
 (defun anneau (s x y z intérieur extérieur (c "blanc"))
    (_nouveau_3d s "anneau" (dictionary "genre" "anneau" "x" x "y" y "z" z "intérieur" intérieur "extérieur" extérieur "couleur" c)))
 (defun lumière (s x y z (intensité 2.5) (c "blanc"))

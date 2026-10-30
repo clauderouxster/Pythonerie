@@ -172,6 +172,7 @@ const PYTHONERIE_FONCTIONS = {
     'cylindre': 'scène.cylindre(x, y, z, rayon, hauteur, couleur) — un cylindre dans la scène 3D',
     'cône': 'scène.cône(x, y, z, rayon, hauteur, couleur) — un cône dans la scène 3D',
     'anneau': 'scène.anneau(x, y, z, rayon_intérieur, rayon_extérieur, couleur) — un anneau couché à plat (Saturne)',
+    'arbre': 'scène.arbre(x, y, z, essence, hauteur) — un arbre : chêne, peuplier, saule_pleureur, bouleau, sapin, érable, cerisier, pommier, palmier, cyprès',
     'groupe': 'scène.groupe(x, y, z) — un nouveau groupe d\'objets 3D qui bougent et tournent ensemble',
     'lumière': 'scène.lumière(x, y, z, intensité) — une lampe dans la scène 3D',
     'caméra': 'scène.caméra(x, y, z, vx, vy, vz) — la position de la caméra, et le point qu\'elle regarde',

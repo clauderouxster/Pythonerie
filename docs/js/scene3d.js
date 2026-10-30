@@ -17,7 +17,7 @@
 // =====================================================================
 
 const Scène3D = (function () {
-    let THREE = null, OrbitControls = null, chargement = null;
+    let THREE = null, OrbitControls = null, Arbres = null, chargement = null;
     let options = null;           // { cadre, élémentÉvénements, couleurCSS, image(numéro), largeur(), hauteur() }
     let rendu = null, scène = null, caméra = null, contrôles = null, couche = null;
     let cible = null;             // le point que regarde la caméra
@@ -34,8 +34,9 @@ const Scène3D = (function () {
     function charge() {
         if (!chargement) {
             const base = new URL('vendor/three/', document.baseURI).href;
-            chargement = Promise.all([import(base + 'three.module.min.js'), import(base + 'OrbitControls.js')])
-                .then(([t, o]) => { THREE = t; OrbitControls = o.OrbitControls; })
+            chargement = Promise.all([import(base + 'three.module.min.js'), import(base + 'OrbitControls.js'),
+                                      import(new URL('js/arbres3d.js', document.baseURI).href)])
+                .then(([t, o, a]) => { THREE = t; OrbitControls = o.OrbitControls; Arbres = a; })
                 .catch((e) => { chargement = null; throw e; });
         }
         return chargement;
@@ -90,6 +91,15 @@ const Scène3D = (function () {
             case 'cône':
                 o = new THREE.Mesh(new THREE.ConeGeometry(nombre(e.rayon, 1), nombre(e.hauteur, 1), 48), matériau(e));
                 break;
+            case 'arbre': {
+                // un arbre de js/arbres3d.js, le pied en (x, y, z) ; sa graine vient de sa place (deux
+                // chênes voisins diffèrent un peu) ; hauteur : la sienne, sinon sa taille réelle en mètres
+                const a = Arbres.ARBRES[e.essence] ? e.essence : 'oak';
+                o = Arbres.fabriqueArbre(THREE, a, Math.round(nombre(e.x) * 73 + nombre(e.z) * 151 + nombre(e.y) * 7));
+                const h = nombre(e.hauteur, 0);
+                if (h > 0) o.scale.setScalar(h / Arbres.ARBRES[a].hauteur);
+                break;
+            }
             case 'anneau': {
                 // couché à plat (dans le plan horizontal), comme l'anneau de Saturne
                 const ri = nombre(e.intérieur, 1), re = nombre(e.extérieur, 2);

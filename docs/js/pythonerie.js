@@ -1200,6 +1200,17 @@ const Pythonerie = (function () {
     // on le charge, mais l'export se fait toujours en .zip.
     // ------------------------------------------------------------------
     const FORMAT_PROJET = 'projet-pythonerie';
+    // Un projet de The Atelier of the Apps (format « projet-atelier ») écrit en français se lit
+    // tel quel : même langage, mêmes répertoires ; son LispE déjà traduit (lispe/…) est laissé
+    // de côté, la Pythonerie le refait. Un projet de l'Atelier dans une autre langue est refusé.
+    const FORMAT_ATELIER = 'projet-atelier';
+    function formatAccepté(p) {
+        if (!p || typeof p !== 'object') return false;
+        if (p.format === FORMAT_PROJET) return true;
+        if (p.format !== FORMAT_ATELIER) return false;
+        if (p.langue && p.langue !== 'French') throw new Error('ce projet de l\'Atelier est écrit en ' + ({ English: 'anglais', Korean: 'coréen' }[p.langue] || p.langue) + ' : la Pythonerie ne lit que les projets en français');
+        return true;
+    }
 
     // Le nom du projet : « Sans Nom » au départ ; il est affiché en tête de la colonne des
     // programmes (un clic ouvre la liste « Mes projets »), demandé à la création d'un
@@ -1925,7 +1936,7 @@ const Pythonerie = (function () {
         const texte = (octets) => nfc(new TextDecoder().decode(octets)).replace(/\r\n?/g, '\n');
         let info = null;
         try { info = JSON.parse(texte(fiche.octets)); } catch (e) { /* info reste null */ }
-        if (!info || info.format !== FORMAT_PROJET) throw new Error('son fichier projet.json ne décrit pas un projet de la Pythonerie');
+        if (!formatAccepté(info)) throw new Error('son fichier projet.json ne décrit pas un projet de la Pythonerie');
         const racine = fiche.nom.slice(0, -'projet.json'.length);
         const instant = { programmes: {}, dossiers: [], fichiers: [], onglets: [] };
         const ignorés = [];
@@ -1933,6 +1944,7 @@ const Pythonerie = (function () {
             if (e === fiche || !e.nom.startsWith(racine)) continue;
             const nom = e.nom.slice(racine.length);
             let m;
+            if (/^lispe\//.test(nom)) continue;                    // le LispE d'un projet de l'Atelier
             if (!e.octets) {                                        // un répertoire
                 if ((m = /^programmes\/(.+)\/$/.exec(nom))) {
                     const c = cheminValide(m[1]);
@@ -2050,7 +2062,7 @@ const Pythonerie = (function () {
     async function lisProjetJSON(texte) {
         let p;
         try { p = JSON.parse(nfc(texte)); } catch (e) { throw new Error('ce n\'est pas du JSON valide (' + e.message + ')'); }
-        if (!p || typeof p !== 'object' || p.format !== FORMAT_PROJET) throw new Error('il y manque "format": "projet-pythonerie"');
+        if (!formatAccepté(p)) throw new Error('il y manque "format": "projet-pythonerie"');
         if (!p.programmes || typeof p.programmes !== 'object' || Array.isArray(p.programmes)) throw new Error('il y manque "programmes"');
         const instant = { programmes: {}, dossiers: [], fichiers: [], onglets: [] };
         const ignorés = [];
@@ -3795,7 +3807,9 @@ const Pythonerie = (function () {
             if (/\.(json|txt)$/i.test(f.name)) {
                 let p = null;
                 try { p = JSON.parse(await f.text()); } catch (e) { /* des données ordinaires */ }
-                if (p && p.format === FORMAT_PROJET) { await chargeProjetFichier(f); continue; }
+                let projet = false;
+                try { projet = formatAccepté(p); } catch (e) { projet = true; }      // chargeProjetFichier dira pourquoi
+                if (projet) { await chargeProjetFichier(f); continue; }
             }
             if (/\.pyf?$/i.test(f.name) && !répertoire) {
                 const nom = nomValide(f.name.replace(/\.[^.]+$/, '')) || 'Programme importé';

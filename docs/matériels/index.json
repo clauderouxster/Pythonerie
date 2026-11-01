@@ -1,13 +1,13 @@
 [
   {
-    "fichier": "quiz_des_capitales.zip",
-    "titre": "Le quiz des capitales",
-    "description": "Un quiz pour découvrir les projets : deux programmes, des données et des sons. Ouvre « Quiz » et exécute-le."
+    "fichier": "asteroides_3d.zip",
+    "titre": "Astéroïdes 3D",
+    "description": "Le jeu d'Astéroïdes (l'exemple 19), en relief : des rochers habillés de la vraie surface de l'astéroïde Bennu (NASA, domaine public) et de la Lune, qui tournoient ; un vaisseau qui penche dans les virages ; une caméra en perspective. Mêmes commandes (souris ou clavier), même meilleur score dans don0. Le programme montre comment garder des objets 3D en réserve et les réutiliser."
   },
   {
-    "fichier": "zaxxon.zip",
-    "titre": "Zaxxon",
-    "description": "Le jeu d'arcade en perspective : vole au-dessus de la forteresse, passe par les fenêtres des murs, fais le plein en tirant sur les réservoirs. Le plan de la forteresse est dans données/forteresse.txt : change-le !"
+    "fichier": "Canopée.zip",
+    "titre": "Canopée",
+    "description": "Un shoot'em up en 3D : pilote un vaisseau en rase-mottes au-dessus des forêts, des falaises et des quartiers, abats l'escadrille ennemie et les missiles qui sortent des silos (eux sont indestructibles), et laisse le vaisseau de secours te soigner. Flèches ou ZQSD pour piloter, Espace pour tirer, Entrée pour une bombe (gagnée tous les 50 vaisseaux ou missiles détruits), P pour la pause, M pour le son ; R ou un clic lance la partie. Le meilleur score est gardé dans don0. Le programme est découpé en petits modules (répertoire vol) et recycle ses objets 3D : rien n'est créé pendant le vol."
   },
   {
     "fichier": "cartes.zip",
@@ -20,13 +20,18 @@
     "description": "En mode administrateur (port 8001 de serveur.py), une fois connecté : la liste des élèves autorisés pour le mode classe. Colle une liste d'un coup depuis un tableur (identifiant et nom) : elle s'ajoute au tableau, sans doublon ; corrige-la, vide-la au besoin, puis enregistre-la sur le serveur (élèves.json)."
   },
   {
+    "fichier": "quiz_des_capitales.zip",
+    "titre": "Le quiz des capitales",
+    "description": "Un quiz pour découvrir les projets : deux programmes, des données et des sons. Ouvre « Quiz » et exécute-le."
+  },
+  {
     "fichier": "systeme_solaire_3d.zip",
     "titre": "Le système solaire en 3D",
     "description": "La 3D de la Pythonerie : les huit planètes et la Lune, avec leurs vraies textures (Solar System Scope, CC BY 4.0), tournent autour du Soleil et sur elles-mêmes. La souris fait tourner la caméra, un clic sur une planète affiche son nom."
   },
   {
-    "fichier": "asteroides_3d.zip",
-    "titre": "Astéroïdes 3D",
-    "description": "Le jeu d'Astéroïdes (l'exemple 19), en relief : des rochers habillés de la vraie surface de l'astéroïde Bennu (NASA, domaine public) et de la Lune, qui tournoient ; un vaisseau qui penche dans les virages ; une caméra en perspective. Mêmes commandes (souris ou clavier), même meilleur score dans don0. Le programme montre comment garder des objets 3D en réserve et les réutiliser."
+    "fichier": "zaxxon.zip",
+    "titre": "Zaxxon",
+    "description": "Le jeu d'arcade en perspective : vole au-dessus de la forteresse, passe par les fenêtres des murs, fais le plein en tirant sur les réservoirs. Le plan de la forteresse est dans données/forteresse.txt : change-le !"
   }
 ]

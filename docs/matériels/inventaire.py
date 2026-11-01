@@ -40,6 +40,9 @@ ICI = Path(__file__).resolve().parent
 INDEX = ICI / "index.json"
 IGNORÉS = {"index.json", Path(__file__).name}
 FORMAT_PROJET = "projet-pythonerie"
+# un projet de The Atelier of the Apps écrit en français se lit tel quel (voir formatAccepté
+# dans js/pythonerie.js)
+FORMAT_ATELIER = "projet-atelier"
 
 
 def nfc(texte):
@@ -52,15 +55,22 @@ def tri_naturel(nom):
     return [int(m) if m.isdigit() else m.casefold() for m in re.split(r"(\d+)", nom)]
 
 
+def accepté(fiche):
+    if not isinstance(fiche, dict):
+        return False
+    return fiche.get("format") == FORMAT_PROJET or (fiche.get("format") == FORMAT_ATELIER and fiche.get("langue", "French") == "French")
+
+
 def fiche_projet(fichier):
     """La description d'un projet : projet.json d'un .zip (à la racine, ou dans un dossier),
-    ou le projet .json lui-même ; None si ce n'est pas un projet de la Pythonerie."""
+    ou le projet .json lui-même ; None si ce n'est pas un projet de la Pythonerie (ou de
+    l'Atelier, en français)."""
     if fichier.suffix.lower() == ".json":
         try:
             fiche = json.loads(fichier.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             return None
-        return fiche if isinstance(fiche, dict) and fiche.get("format") == FORMAT_PROJET else None
+        return fiche if accepté(fiche) else None
     try:
         with zipfile.ZipFile(fichier) as archive:
             noms = sorted((n for n in archive.namelist() if n == "projet.json" or n.endswith("/projet.json")), key=len)
@@ -69,7 +79,7 @@ def fiche_projet(fichier):
             fiche = json.loads(archive.read(noms[0]).decode("utf-8"))
     except (OSError, zipfile.BadZipFile, UnicodeDecodeError, json.JSONDecodeError):
         return None
-    return fiche if isinstance(fiche, dict) and fiche.get("format") == FORMAT_PROJET else None
+    return fiche if accepté(fiche) else None
 
 
 def genre(fichier):

@@ -117,35 +117,7 @@
 ; ------------------------------------------------------------------
 ; La lecture de basic.lisp : chaque (defun …) de premier niveau, avec sa place dans le texte
 ; ------------------------------------------------------------------
-; l'indice qui suit la parenthèse fermante de la forme qui commence en i (chaînes, «…» et
-; commentaires sautés)
-(defun fin_de_forme (txt i)
-   (setq prof 0)
-   (setq n (size txt))
-   (setq j i)
-   (setq fini nil)
-   (while (and (< j n) (not fini))
-      (setq c (@ txt j))
-      (cond
-         ((eq c "\"")
-            (+= j 1)
-            (while (and (< j n) (neq (@ txt j) "\""))
-               (if (eq (@ txt j) "\\") (+= j 1))
-               (+= j 1)))
-         ((eq c "«") (setq j (select (find txt "»" j) n)))
-         ((eq c ";") (setq j (- (select (find txt "\n" j) n) 1)))
-         ((eq c "(") (+= prof 1))
-         ((eq c ")")
-            (-= prof 1)
-            (if (eq prof 0) (setq fini true))))
-      (+= j 1))
-   j)
-
-; le nom d'une fonction : après « (defun », jusqu'à l'espace ou la parenthèse
-(defun nom_de (txt i)
-   (setq j (+ i 7))
-   (while (not (in '(" " "(" "\n") (@ txt j))) (+= j 1))
-   (@@ txt (+ i 7) j))
+(setq lecteur (tokenizer_main))
 
 ; ------------------------------------------------------------------
 ; Les tables, remplies par lit_grammaire
@@ -156,17 +128,36 @@
 (setq formes {})          ; nom -> la forme lue
 (setq stats {"fusions":0 "aiguillages":0 "gardes":0})
 
+; tokenize_full découpe comme le lecteur de LispE (les chaînes et les «…» sont des jetons entiers,
+; les commentaires disparaissent) et rend les jetons, leurs bornes (début, fin exclue ; en
+; caractères pour une string_) et leurs lignes. Une forme de premier niveau qui commence par
+; « (defun » va de sa parenthèse ouvrante à celle qui la referme ; le texte entre les formes
+; (commentaires, link…) est recopié tel quel. (La borne droite d'un jeton qui touche la fin du
+; texte vaut sa borne gauche : la fin du texte la remplace.)
 (defun lit_grammaire (txt)
-   (setq i (find txt "\n(defun "))
-   (while i
-      (+= i 1)
-      (setq nom (nom_de txt i))
-      (setq fin (fin_de_forme txt i))
-      (push noms nom)
-      (set@ débuts nom i)
-      (set@ fins nom fin)
-      (set@ formes nom (eval (+ "(quote " (@@ txt i fin) ")")))
-      (setq i (find txt "\n(defun " fin))))
+   (setq lu (tokenize_full lecteur txt))
+   (setq jetons (@ lu 0))
+   (setq bornes (@ lu 1))
+   (setq profondeur 0)
+   (setq ouverture -1)
+   (loop k (range 0 (size jetons) 1)
+      (setq jt (@ jetons k))
+      (cond
+         ((eq jt "(")
+            (if (and (eq profondeur 0) (eq (@ jetons (+ k 1)) "defun")) (setq ouverture k))
+            (+= profondeur 1))
+         ((eq jt ")")
+            (-= profondeur 1)
+            (check (and (eq profondeur 0) (>= ouverture 0))
+               (setq nom (@ jetons (+ ouverture 2)))
+               (setq d (@ bornes (* 2 ouverture)))
+               (setq f (@ bornes (+ 1 (* 2 k))))
+               (if (<= f (@ bornes (* 2 k))) (setq f (size txt)))
+               (push noms nom)
+               (set@ débuts nom d)
+               (set@ fins nom f)
+               (set@ formes nom (eval (+ "(quote " (@@ txt d f) ")")))
+               (setq ouverture -1))))))
 
 (defun compte_stat (clé) (set@ stats clé (+ 1 (@ stats clé))))
 
@@ -329,43 +320,40 @@
       ((eq (size l) 1) (car l))
       (true (cons 'or l))))
 
-; (and, or et check rendent un booléen, pas la valeur de leur dernière expression : le résultat
-; passe donc par une variable ; not s'applique élément par élément à une liste : nullp la teste)
+; le switch qui remplace (or alts…), ou nil s'il ne s'applique pas : andvalue rend la valeur de
+; sa dernière expression (and rend un booléen) ; not s'applique élément par élément à une liste,
+; nullp la teste
 (defun aiguille (alts)
-   (setq résultat nil)
    (setq pos (position_de (car alts)))
    (setq ok (and pos (atomp pos) (> (size alts) 1)))
    (loop a alts (if (not (eq (position_de a) pos)) (setq ok nil)))
-   (if ok
+   (andvalue ok
       (block
          ; les jetons qui peuvent ouvrir chaque alternative (tout : n'importe lequel)
          (setq ensembles (mapcar (λ (a) (setq p (premiers a)) (if (@ p 0) 'tout (@ p 1))) alts))
-         (setq gardées (size (filterlist (λ (x) (neq x 'tout)) ensembles)))
          (setq littéraux ())
          (loop x ensembles (if (neq x 'tout) (setq littéraux (réunit littéraux x))))
-         (if (>= gardées 2)
-            (block
-               (setq cas ())
-               (loop l littéraux
-                  (setq choisies ())
-                  (loop k (range 0 (size alts) 1)
-                     (setq x (@ ensembles k))
-                     (if (or (eq x 'tout) (in x l)) (push choisies (@ alts k))))
-                  (push cas (list l (ou_de choisies))))
-               (setq autres ())
-               (loop k (range 0 (size alts) 1)
-                  (if (eq (@ ensembles k) 'tout) (push autres (@ alts k))))
-               (push cas (list true (ou_de autres)))
-               (compte_stat "aiguillages")
-               ; le jeton n'est mis en minuscules que si un littéral a des lettres
-               (setq jeton (list '@ 'tokens (list 'car pos)))
-               (if (filterlist (λ (l) (neq (upper l) (lower l))) littéraux)
-                  (setq jeton (list 'lower jeton)))
-               (setq résultat
-                  (cons 'switch
-                     (cons (list 'if (list '< (list 'car pos) (list 'size 'tokens)) jeton "")
-                        cas)))))))
-   résultat)
+         (>= (size (filterlist (λ (x) (neq x 'tout)) ensembles)) 2))
+      (block
+         (setq cas ())
+         (loop l littéraux
+            (setq choisies ())
+            (loop k (range 0 (size alts) 1)
+               (setq x (@ ensembles k))
+               (if (or (eq x 'tout) (in x l)) (push choisies (@ alts k))))
+            (push cas (list l (ou_de choisies))))
+         (setq autres ())
+         (loop k (range 0 (size alts) 1)
+            (if (eq (@ ensembles k) 'tout) (push autres (@ alts k))))
+         (push cas (list true (ou_de autres)))
+         (compte_stat "aiguillages")
+         ; le jeton n'est mis en minuscules que si un littéral a des lettres
+         (setq jeton (list '@ 'tokens (list 'car pos)))
+         (if (filterlist (λ (l) (neq (upper l) (lower l))) littéraux)
+            (setq jeton (list 'lower jeton)))
+         (cons 'switch
+            (cons (list 'if (list '< (list 'car pos) (list 'size 'tokens)) jeton "")
+               cas)))))
 
 ; la forme réécrite (une liste) : les sous-listes d'abord, puis l'aiguillage de ce or, puis les
 ; gardes ; les atomes restent dans la boucle (voir renomme)
@@ -373,11 +361,7 @@
    (setq r ())
    (loop x e
       (if (consp x) (push r (transforme x)) (push r x)))
-   (if (eq (car r) 'or)
-      (block
-         (setq a (aiguille (cdr r)))
-         (if a (setq r a))))
-   (garde r))
+   (garde (orvalue (andvalue (eq (car r) 'or) (aiguille (cdr r))) r)))
 
 (defun garde_p (e)
    (and (consp e) (atomp (car e)) (startwith (string (car e)) "G_")))

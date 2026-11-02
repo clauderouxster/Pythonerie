@@ -13,6 +13,9 @@ modifiés, que GitHub Pages garde 10 minutes en cache.
 Il écrit aussi docs/médias/index.json, la liste des médias du site (sons et images
 partagés par tous les programmes) : un site comme GitHub Pages ne sait pas lister un répertoire, et liste_sons()
 ou « Créer une application Web » ont besoin de connaître ces fichiers.
+
+Il vérifie enfin que docs/basic/basic_opt.lisp (le parseur que charge le site, accéléré par
+optimise.lisp) correspond toujours à docs/basic/basic.lisp (celui de compiler.lisp).
 """
 
 import json
@@ -38,6 +41,24 @@ def liste_médias():
     return len(chemins)
 
 
+def état_parseur(basic):
+    """basic_opt.lisp (le parseur accéléré par optimise.lisp, que le site charge) correspond-il à
+    basic.lisp (celui de compiler.lisp) ? Son en-tête donne la date de sa source (compiler.lisp
+    la renouvelle à chaque génération) et son nombre de fonctions.
+    Rend '' si oui, sinon ce qui ne va pas."""
+    opt = basic / "basic_opt.lisp"
+    if not opt.is_file():
+        return "basic_opt.lisp manque"
+    source = (basic / "basic.lisp").read_text(encoding="utf-8").replace("\r", "")
+    tête = opt.read_text(encoding="utf-8").split("\n", 1)[0]
+    if tête.startswith(";Non optimisé"):
+        return "basic_opt.lisp n'est pas optimisé (optimise.lisp a refusé sa version)"
+    attendu = f"({source.count(chr(10) + '(defun ')} fonctions, {source.split(chr(10), 1)[0].strip()})"
+    if not tête.startswith(";Optimisé") or not tête.endswith(attendu):
+        return "basic_opt.lisp ne correspond plus à basic.lisp"
+    return ""
+
+
 def main():
     numéro = datetime.now().strftime("%Y.%m.%d.%H.%M")
     texte = INDEX.read_text(encoding="utf-8")
@@ -48,6 +69,9 @@ def main():
         raise SystemExit("Numéro de version introuvable dans l'en-tête de docs/index.html")
     INDEX.write_text(texte, encoding="utf-8")
     print(f"Version v. {numéro} ({n_cache} fichiers marqués pour le cache, {liste_médias()} médias listés)")
+    problème = état_parseur(DOCS / "basic")
+    if problème:
+        print(f"ATTENTION : {problème} ; relancer : cd docs/basic && lispe optimise.lisp . ../exemples/*.pyf")
 
 
 if __name__ == "__main__":

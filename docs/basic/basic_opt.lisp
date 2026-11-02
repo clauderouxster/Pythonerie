@@ -1,0 +1,3715 @@
+;Optimisé par optimise.lisp, d'après basic.lisp (157 fonctions, ;Date: 2026/10/26 07:45:14)
+;Date: 2026/10/26 07:45:14
+;Description: Parser for basic description
+;Generated with compiler.lisp
+
+(defun C_any(tokens i v)
+   (check (< (car i) (size tokens))
+      (setq w (@ tokens (car i)))
+      (check (neq w ";") 
+         (+= i 1)
+         (push v w)
+         (return true)
+      )
+   )
+)
+
+(defun compare (tokens value i v keep)
+   (check 
+      (and
+         (< (car i) (size tokens))      
+         (eq (lower (@ tokens (car i))) (lower value))
+      )
+      (+= i 1)
+      (if keep
+         (push v value)
+      )
+      (return true)
+   )
+)
+
+(setq pythonmode false)
+(link "True" true)
+(link "False" false)
+(link "None" nil)
+(link "Vrai" true)
+(link "Faux" false)
+(link "Rien" nil)
+
+(defun C_Pythonjoin (tokens i v)
+   (check (< (car i) (size tokens))
+      (setq w (@ tokens (car i)))
+      (check 
+         (and pythonmode
+            (or (= w "join") (= w "joindre")))
+         (+= i 1)
+         (return true)))
+)
+
+(defun C_Pythonword (tokens i v)
+   (check (< (car i) (size tokens))
+      (setq w (@ tokens (car i)))
+      (check 
+         (and pythonmode
+            (rgx "{%a%h}{%a%h%d_@}*" w)
+            (nokeywords w))
+         (+= i 1)
+         (push v w)
+         (return true)))
+)
+
+(defun C_Word (tokens i v)
+   (check (< (car i) (size tokens))
+      (setq w (@ tokens (car i)))
+      (check 
+         (and
+            (rgx "{%a%h}{%a%h%d_@}*" w)
+            (nokeywords w)
+         )
+         (+= i 1)
+         (push v w)
+         (return true)
+      )
+   )
+)
+
+(defun C_lispe(tokens i v)
+   (check (< (car i) (size tokens))
+      (setq m (@ tokens (car i)))
+      (check 
+            (and
+               (>= (size m) 2)
+               (eq (@ m 0) "`")
+               (eq (@ m -1) "`")
+            )
+         (+= i 1)
+         (push v (list 'lispexp (@@ m 1 -1)))
+         (return true)
+      )
+   )
+)
+
+(defun C_astring(tokens i v)
+   (check (< (car i) (size tokens))
+      (setq m (@ tokens (car i)))
+      (setq sz (size m))
+      (check 
+            (and
+               (>= sz 3)
+               (eq (@ m 0) "f")
+               (eq (@ m 1) "\"")
+               (eq (@ m -1) "\"")
+            )
+         (+= i 1)
+         (push v (list 'f_ (list 'string (@@ m 2 -1))))
+         (return true)
+      )
+      (check 
+            (and
+               (>= sz 6)
+               (eq (@@ m 0 3) "\"\"\"")
+               (eq (@@ m -3) "\"\"\"")
+            )
+         (+= i 1)
+         (push v (list 'longstring (@@ m 3 -3)))
+         (return true)
+      )
+      (check 
+            (and
+               (>= sz 6)
+               (eq (@@ m 0 3) "'''")
+               (eq (@@ m -3) "'''")
+            )
+         (+= i 1)
+         (push v (list 'longstring (@@ m 3 -3)))
+         (return true)
+      )
+      (check 
+            (and
+               (>= sz 2)
+               (eq (@ m 0) "\"")
+               (eq (@ m -1) "\"")
+            )
+         (+= i 1)
+         (push v (list 'string (@@ m 1 -1)))
+         (return true)
+      )
+      (check 
+            (and
+               (>= sz 2)
+               (eq (@ m 0) "'")
+               (eq (@ m -1) "'")
+            )
+         (+= i 1)
+         (push v (list 'string (@@ m 1 -1)))
+         (return true)
+      )
+   )
+)
+
+(defun C_anumber (tokens i v)
+   (check (< (car i) (size tokens))
+      (setq w (@ tokens (car i)))
+      (check ( (or (= w "0") (= w "0.0") (= w "00") (= w "0.00") (integer w) (number w)))
+         (+= i 1)
+         ; 7 reste un entier, 7.0 et 1.5e3 sont des réels (0x1E est un entier hexadécimal)
+         (push v (list 'anumber
+            (if (or (in w ".") (and (not (in w "x")) (or (in w "e") (in w "E"))))
+               (number w)
+               (integer w))))
+         (return true)
+      )
+   )
+)
+
+;°analyse := [importing^classedef^function^rule^patternrule^prologrule^expressions]+ (entry point)
+(defun C_analyse (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (P_analyse_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (cons 'analyse v0)
+      )
+   )
+)
+
+(defun P_analyse_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (switch
+         (if (< (car i1) (size tokens))
+            (lower (at tokens (car i1)))
+            "")
+         (
+            "importe"
+            (or
+               (C_importing tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "classe"
+            (or
+               (C_classedef tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "fonction"
+            (or
+               (C_function tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "def"
+            (or
+               (C_function tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "règle"
+            (or
+               (C_rule tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "motif"
+            (or
+               (C_patternrule tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (
+            "prolog"
+            (or
+               (C_prologrule tokens i1 v1)
+               (C_expressions tokens i1 v1)
+            )
+         )
+         (true (C_expressions tokens i1 v1))
+      )
+      (push v v1)
+      (setq v1 ())
+      (while (switch
+            (if (< (car i1) (size tokens))
+               (lower (at tokens (car i1)))
+               "")
+            (
+               "importe"
+               (or
+                  (C_importing tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "classe"
+               (or
+                  (C_classedef tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "fonction"
+               (or
+                  (C_function tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "def"
+               (or
+                  (C_function tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "règle"
+               (or
+                  (C_rule tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "motif"
+               (or
+                  (C_patternrule tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (
+               "prolog"
+               (or
+                  (C_prologrule tokens i1 v1)
+                  (C_expressions tokens i1 v1)
+               )
+            )
+            (true (C_expressions tokens i1 v1))
+         )
+         (nconc v v1)
+         (setq v1 ())
+      )
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+
+(link "append" 'push)
+(link "ajoute" 'push)
+(link "len" 'size)
+(link "strip" 'trim)
+(link "affiche" 'println)
+;operator := [%< %<]^[%> %>]^[%^ %^]^[%* %*]^[%/ %/]^%&^%|^%+^%-^%*^%/^%%^%^
+(defun C_operator (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (at tokens (car i0))
+               "")
+            (
+               "<"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "<" i1 v1 true)
+                  (compare tokens "<" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               ">"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens ">" i1 v1 true)
+                  (compare tokens ">" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "^"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "^" i1 v1 true)
+                     (compare tokens "^" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "^" i0 v0 true)
+               )
+            )
+            (
+               "*"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "*" i1 v1 true)
+                     (compare tokens "*" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "*" i0 v0 true)
+               )
+            )
+            (
+               "/"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "/" i1 v1 true)
+                     (compare tokens "/" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "/" i0 v0 true)
+               )
+            )
+            ("&" (compare tokens "&" i0 v0 true))
+            ("|" (compare tokens "|" i0 v0 true))
+            ("+" (compare tokens "+" i0 v0 true))
+            ("-" (compare tokens "-" i0 v0 true))
+            ("%" (compare tokens "%" i0 v0 true))
+            (true nil)
+         )
+         (push v (cons 'operator v0))
+      )
+   )
+)
+
+
+;operatorop := [%< %< %=]^[%> %> %=]^[%^ %^ %=]^[%* %* %=]^[%/ %/ %=]^[%& %=]^[%| %=]^[%+ %=]^[%- %=]^[%* %=]^[%/ %=]^[%% %=]^[%^ %=]
+(defun C_operatorop (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (at tokens (car i0))
+               "")
+            (
+               "<"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "<" i1 v1 true)
+                  (compare tokens "<" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               ">"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens ">" i1 v1 true)
+                  (compare tokens ">" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "^"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "^" i1 v1 true)
+                     (compare tokens "^" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "^" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+               )
+            )
+            (
+               "*"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "*" i1 v1 true)
+                     (compare tokens "*" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "*" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+               )
+            )
+            (
+               "/"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "/" i1 v1 true)
+                     (compare tokens "/" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "/" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+               )
+            )
+            (
+               "&"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "&" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "|"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "|" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "+"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "+" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "-"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "-" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "%"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "%" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (true nil)
+         )
+         (push v (cons 'operatorop v0))
+      )
+   )
+)
+
+
+;orand := $ou^$et^$oux
+(defun C_orand (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            ("ou" (compare tokens "ou" i0 v0 true))
+            ("et" (compare tokens "et" i0 v0 true))
+            ("oux" (compare tokens "oux" i0 v0 true))
+            (true nil)
+         )
+         (push v (cons 'orand v0))
+      )
+   )
+)
+
+
+;comparator := [$non $dans]^[%< %>]^[%! %=]^[%< %=]^[%= %=]^[%> %=]^%<^%>^$dans^$est
+(defun C_comparator (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            (
+               "non"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "non" i1 v1 true)
+                  (compare tokens "dans" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "<"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "<" i1 v1 true)
+                     (compare tokens ">" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "<" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "<" i0 v0 true)
+               )
+            )
+            (
+               "!"
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "!" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "="
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "=" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               ">"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens ">" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens ">" i0 v0 true)
+               )
+            )
+            ("dans" (compare tokens "dans" i0 v0 true))
+            ("est" (compare tokens "est" i0 v0 true))
+            (true nil)
+         )
+         (push v (cons 'comparator v0))
+      )
+   )
+)
+
+
+;compinterval := [%= %=]^[%< %=]^[%> %=]^%<^%>
+(defun C_compinterval (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (at tokens (car i0))
+               "")
+            (
+               "="
+               (and
+                  (setq i1 (clone i0))
+                  (setq v1 ())
+                  (compare tokens "=" i1 v1 true)
+                  (compare tokens "=" i1 v1 true)
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+            )
+            (
+               "<"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "<" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "<" i0 v0 true)
+               )
+            )
+            (
+               ">"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens ">" i1 v1 true)
+                     (compare tokens "=" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens ">" i0 v0 true)
+               )
+            )
+            (true nil)
+         )
+         (push v (cons 'compinterval v0))
+      )
+   )
+)
+
+
+;onecomparison := $non? computing comparator computing
+(defun C_onecomparison (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (O_onecomparison_0 tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (C_comparator tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'onecomparison v0))
+      )
+   )
+)
+
+(defun O_onecomparison_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (compare tokens "non" i1 v1 true)
+      (nconc vp v1)
+   )
+   true)
+
+;intervalcomp := compinterval computing compinterval computing
+(defun C_intervalcomp (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_compinterval tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (C_compinterval tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'intervalcomp v0))
+      )
+   )
+)
+
+;compnormal := comparator computing
+(defun C_compnormal (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_comparator tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'compnormal v0))
+      )
+   )
+)
+
+;afullcomparison := intervalcomp|compnormal
+(defun C_afullcomparison (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1
+               (maybe (C_intervalcomp tokens i0 v0) false)
+            )
+            (setq a2
+               (maybe (C_compnormal tokens i1 v1) false)
+            )
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
+         )
+         (push v (cons 'afullcomparison v0))
+      )
+   )
+)
+
+;comparing := $non? computing afullcomparison? [orand ;18 comparison]*
+(defun C_comparing (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (O_onecomparison_0 tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (O_comparing_1 tokens i1 v1)
+            (S_comparing_2 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'comparing v0))
+      )
+   )
+)
+
+
+; O_comparing_0 : identique à O_onecomparison_0 (optimise.lisp)
+
+(defun O_comparing_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_afullcomparison tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+(defun S_comparing_2 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_orand tokens i2 v2)
+         (push error_id 18)
+         (if (C_comparison tokens i2 v2)
+            (pop error_id)
+            (setg do_not_stop false)
+         )
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;negation := $non
+(defun C_negation (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "non" i1 v1 true)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'negation v0))
+      )
+   )
+)
+
+;!comppar := negation? %( comparing %) [orand ;18 comparison]*
+(defun C_comppar (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (O_comppar_0 tokens i1 v1)
+            (compare tokens "(" i1 v1 nil)
+            (C_comparing tokens i1 v1)
+            (compare tokens ")" i1 v1 nil)
+            (S_comparing_2 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'comppar v0))
+      )
+   )
+)
+
+
+(defun O_comppar_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_negation tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+; S_comppar_1 : identique à S_comparing_2 (optimise.lisp)
+
+;^comparison := comppar|comparing
+(defun C_comparison (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1 (maybe (C_comppar tokens i0 v0) false))
+            (setq a2
+               (maybe (C_comparing tokens i1 v1) false)
+            )
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+;!&ternaire := computing [$si comparison $sinon ;19 ternaire]?
+(defun C_ternaire (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_computing tokens i1 v1)
+            (O_ternaire_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (if (eq (size v0) 1)
+            (nconc v v0)
+            (push v (cons 'ternaire v0))
+         )
+      )
+   )
+)
+
+(defun O_ternaire_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "si" i2 v2 nil)
+         (C_comparison tokens i2 v2)
+         (compare tokens "sinon" i2 v2 nil)
+         (push error_id 19)
+         (if (C_ternaire tokens i2 v2)
+            (pop error_id)
+            (setg do_not_stop false)
+         )
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;^compareorcompute := comparison|ternaire
+(defun C_compareorcompute (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1
+               (maybe (C_comparison tokens i0 v0) false)
+            )
+            (setq a2 (maybe (C_ternaire tokens i1 v1) false))
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+;!powerforminus := callitem %* %* callitem [%* %* callitem]*
+(defun C_powerforminus (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_callitem tokens i1 v1)
+            (compare tokens "*" i1 v1 nil)
+            (compare tokens "*" i1 v1 nil)
+            (C_callitem tokens i1 v1)
+            (S_powerforminus_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'powerforminus v0))
+      )
+   )
+)
+
+(defun S_powerforminus_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "*" i2 v2 nil)
+         (compare tokens "*" i2 v2 nil)
+         (C_callitem tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!minus := %- [powerforminus^callitem]
+(defun C_minus (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "-" i1 v1 nil)
+            (or
+               (C_powerforminus tokens i1 v1)
+               (C_callitem tokens i1 v1)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'minus v0))
+      )
+   )
+)
+
+;interval := %[ computing? %: ;10 computing? %]
+(defun C_interval (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 true)
+            (O_interval_0 tokens i1 v1)
+            (compare tokens ":" i1 v1 true)
+            (push error_id 10)
+            (if (and
+                  (O_interval_0 tokens i1 v1)
+                  (compare tokens "]" i1 v1 true)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'interval v0))
+      )
+   )
+)
+
+
+(defun O_interval_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_computing tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+; O_interval_1 : identique à O_interval_0 (optimise.lisp)
+
+;!indexes := %[ ;1 computing [%, computing]* %]
+(defun C_indexes (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (push error_id 1)
+            (if (and
+                  (C_computing tokens i1 v1)
+                  (S_indexes_0 tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'indexes v0))
+      )
+   )
+)
+
+(defun S_indexes_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_computing tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!valuelist := %[ ;3 [ ternaire [%, ternaire]* ]? %]
+(defun C_valuelist (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (push error_id 3)
+            (if (and
+                  (O_valuelist_1 tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'valuelist v0))
+      )
+   )
+)
+
+(defun S_valuelist_0 (tokens i2 vp)
+   (setq v ())
+   (while (and
+         (setq i3 (clone i2))
+         (setq v3 ())
+         (compare tokens "," i3 v3 nil)
+         (C_ternaire tokens i3 v3)
+         (set@ i2 0 (car i3))
+         (setq v2 v3)
+      )
+      (nconc v v2)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+(defun O_valuelist_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_ternaire tokens i2 v2)
+         (S_valuelist_0 tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!itemdictionary := [astring^minus^anumber^variable] %: ternaire
+(defun C_itemdictionary (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_astring tokens i1 v1)
+               (C_minus tokens i1 v1)
+               (C_anumber tokens i1 v1)
+               (C_variable tokens i1 v1)
+            )
+            (compare tokens ":" i1 v1 nil)
+            (C_ternaire tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'itemdictionary v0))
+      )
+   )
+)
+
+;!valuedictionary := %{ ;11 [itemdictionary [%, itemdictionary]* ]? %}
+(defun C_valuedictionary (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "{" i1 v1 nil)
+            (push error_id 11)
+            (if (and
+                  (O_valuedictionary_1 tokens i1 v1)
+                  (compare tokens "}" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'valuedictionary v0))
+      )
+   )
+)
+
+(defun S_valuedictionary_0 (tokens i2 vp)
+   (setq v ())
+   (while (and
+         (setq i3 (clone i2))
+         (setq v3 ())
+         (compare tokens "," i3 v3 nil)
+         (C_itemdictionary tokens i3 v3)
+         (set@ i2 0 (car i3))
+         (setq v2 v3)
+      )
+      (nconc v v2)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+(defun O_valuedictionary_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_itemdictionary tokens i2 v2)
+         (S_valuedictionary_0 tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!dimvariable :=  Word [interval^indexes]+
+(defun C_dimvariable (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (P_dimvariable_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'dimvariable v0))
+      )
+   )
+)
+
+(defun P_dimvariable_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (switch
+         (if (< (car i1) (size tokens))
+            (at tokens (car i1))
+            "")
+         (
+            "["
+            (or
+               (and
+                  (G_interval tokens (car i1))
+                  (C_interval tokens i1 v1)
+               )
+               (C_indexes tokens i1 v1)
+            )
+         )
+         (true nil)
+      )
+      (push v v1)
+      (setq v1 ())
+      (while (switch
+            (if (< (car i1) (size tokens))
+               (at tokens (car i1))
+               "")
+            (
+               "["
+               (or
+                  (and
+                     (G_interval tokens (car i1))
+                     (C_interval tokens i1 v1)
+                  )
+                  (C_indexes tokens i1 v1)
+               )
+            )
+            (true nil)
+         )
+         (nconc v v1)
+         (setq v1 ())
+      )
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+
+;!selfvariable := $soi %. [dimvariable^Word]
+(defun C_selfvariable (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "soi" i1 v1 nil)
+            (compare tokens "." i1 v1 nil)
+            (or
+               (C_dimvariable tokens i1 v1)
+               (C_Word tokens i1 v1)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'selfvariable v0))
+      )
+   )
+)
+
+;variable := dimvariable^Word
+(defun C_variable_brut (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (or
+            (C_dimvariable tokens i0 v0)
+            (C_Word tokens i0 v0)
+         )
+         (push v (cons 'variable v0))
+      )
+   )
+)
+
+
+;!variables := Word [%, Word]*
+(defun C_variables (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (S_variables_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'variables v0))
+      )
+   )
+)
+
+(defun S_variables_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_Word tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!multiassignment := %[ variables %]
+(defun C_multiassignment (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (C_variables tokens i1 v1)
+            (compare tokens "]" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'multiassignment v0))
+      )
+   )
+)
+
+;argcompute := comparing|ternaire
+(defun C_argcompute (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq v1 ())
+            (setq i1 (clone i0))
+            (setq a1
+               (maybe (C_comparing tokens i0 v0) false)
+            )
+            (setq a2 (maybe (C_ternaire tokens i1 v1) false))
+            (check (or a1 a2)
+               (check (< (car i0) (car i1))
+                  (set@ i0 0 (car i1))
+                  (setq v0 v1)
+               )
+               true)
+         )
+         (push v (cons 'argcompute v0))
+      )
+   )
+)
+
+;!arguments := argcompute [%, argcompute]*
+(defun C_arguments (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_argcompute tokens i1 v1)
+            (S_arguments_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'arguments v0))
+      )
+   )
+)
+
+(defun S_arguments_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_argcompute tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!callmethod := %. Word %( ;2 [computing [%, computing]*]? %)
+(defun C_callmethod (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "." i1 v1 nil)
+            (C_Word tokens i1 v1)
+            (compare tokens "(" i1 v1 nil)
+            (push error_id 2)
+            (if (and
+                  (O_callmethod_1 tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'callmethod v0))
+      )
+   )
+)
+
+(defun S_callmethod_0 (tokens i2 vp)
+   (setq v ())
+   (while (and
+         (setq i3 (clone i2))
+         (setq v3 ())
+         (compare tokens "," i3 v3 nil)
+         (C_computing tokens i3 v3)
+         (set@ i2 0 (car i3))
+         (setq v2 v3)
+      )
+      (nconc v v2)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+(defun O_callmethod_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_computing tokens i2 v2)
+         (S_callmethod_0 tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;callinterval := %[ computing? %: ;10 computing? %]
+(defun C_callinterval (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 true)
+            (O_interval_0 tokens i1 v1)
+            (compare tokens ":" i1 v1 true)
+            (push error_id 10)
+            (if (and
+                  (O_interval_0 tokens i1 v1)
+                  (compare tokens "]" i1 v1 true)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'callinterval v0))
+      )
+   )
+)
+
+
+; O_callinterval_0 : identique à O_interval_0 (optimise.lisp)
+
+; O_callinterval_1 : identique à O_interval_0 (optimise.lisp)
+
+;!callindexes := %[ ;1 computing [%, computing]* %]
+(defun C_callindexes (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (push error_id 1)
+            (if (and
+                  (C_computing tokens i1 v1)
+                  (S_indexes_0 tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'callindexes v0))
+      )
+   )
+)
+
+
+; S_callindexes_0 : identique à S_indexes_0 (optimise.lisp)
+
+;call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
+(defun C_call (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or (C_λ tokens i1 v1) (C_Word tokens i1 v1))
+            (compare tokens "(" i1 v1 true)
+            (O_call_0 tokens i1 v1)
+            (compare tokens ")" i1 v1 true)
+            (S_call_1 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'call v0))
+      )
+   )
+)
+
+(defun O_call_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_arguments tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+(defun S_call_1 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (while (switch
+         (if (< (car i1) (size tokens))
+            (at tokens (car i1))
+            "")
+         (
+            "["
+            (or
+               (C_callinterval tokens i1 v1)
+               (C_callindexes tokens i1 v1)
+            )
+         )
+         ("." (C_callmethod tokens i1 v1))
+         (true nil)
+      )
+      (nconc v v1)
+      (setq v1 ())
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+
+;method := variable callmethod [callinterval^callindexes^callmethod]*
+(defun C_method (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_variable tokens i1 v1)
+            (C_callmethod tokens i1 v1)
+            (S_call_1 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'method v0))
+      )
+   )
+)
+
+
+; S_method_0 : identique à S_call_1 (optimise.lisp)
+
+;catching := [$sauf^$attrape] [%( Word %)]? expressions+
+(defun C_catching (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               ("sauf" (compare tokens "sauf" i1 v1 true))
+               ("attrape" (compare tokens "attrape" i1 v1 true))
+               (true nil)
+            )
+            (O_catching_0 tokens i1 v1)
+            (P_catching_1 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'catching v0))
+      )
+   )
+)
+
+
+(defun O_catching_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "(" i2 v2 true)
+         (C_Word tokens i2 v2)
+         (compare tokens ")" i2 v2 true)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+(defun P_catching_1 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_expressions tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_expressions tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+;!amaybe := $essaie ;15  expressions+ catching $finessaie
+(defun C_amaybe (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "essaie" i1 v1 nil)
+            (push error_id 15)
+            (if (and
+                  (P_catching_1 tokens i1 v1)
+                  (C_catching tokens i1 v1)
+                  (compare tokens "finessaie" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'amaybe v0))
+      )
+   )
+)
+
+
+; P_amaybe_0 : identique à P_catching_1 (optimise.lisp)
+
+;!assignmenttopself :=  selfvariable operatorop computing
+(defun C_assignmenttopself (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_selfvariable tokens i1 v1)
+            (C_operatorop tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'assignmenttopself v0))
+      )
+   )
+)
+
+;!assignmentself :=  selfvariable %= compareorcompute
+(defun C_assignmentself (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_selfvariable tokens i1 v1)
+            (compare tokens "=" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'assignmentself v0))
+      )
+   )
+)
+
+;!assignmentop :=  variable operatorop computing
+(defun C_assignmentop (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_variable tokens i1 v1)
+            (C_operatorop tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'assignmentop v0))
+      )
+   )
+)
+
+;!assignment := [multiassignment^variable] %= compareorcompute
+(defun C_assignment (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_multiassignment tokens i1 v1)
+               (C_variable tokens i1 v1)
+            )
+            (compare tokens "=" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'assignment v0))
+      )
+   )
+)
+
+;!tupleassign := Word %, variables %= computing [%, computing]*
+(defun C_tupleassign (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (compare tokens "," i1 v1 nil)
+            (C_variables tokens i1 v1)
+            (compare tokens "=" i1 v1 nil)
+            (C_computing tokens i1 v1)
+            (S_indexes_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'tupleassign v0))
+      )
+   )
+)
+
+
+; S_tupleassign_0 : identique à S_indexes_0 (optimise.lisp)
+
+;!assignmentg := [multiassignment^variable] %= %: compareorcompute
+(defun C_assignmentg (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_multiassignment tokens i1 v1)
+               (C_variable tokens i1 v1)
+            )
+            (compare tokens "=" i1 v1 nil)
+            (compare tokens ":" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'assignmentg v0))
+      )
+   )
+)
+
+;!walrus := Word %: %=  compareorcompute
+(defun C_walrus (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (compare tokens ":" i1 v1 nil)
+            (compare tokens "=" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'walrus v0))
+      )
+   )
+)
+
+;!parenthetic := %( computing %)
+(defun C_parenthetic (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (C_computing tokens i1 v1)
+            (compare tokens ")" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'parenthetic v0))
+      )
+   )
+)
+
+;!tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)
+(defun C_tojoin (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_variable tokens i1 v1)
+               (C_astring tokens i1 v1)
+            )
+            (compare tokens "." i1 v1 nil)
+            (C_Pythonjoin tokens i1 v1)
+            (push error_id 13)
+            (if (and
+                  (compare tokens "(" i1 v1 nil)
+                  (C_computing tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'tojoin v0))
+      )
+   )
+)
+
+;!alapython := [astring^anumber] %. Pythonword ;13 %( [computing [%, computing]*]? %)
+(defun C_alapython (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_astring tokens i1 v1)
+               (C_anumber tokens i1 v1)
+            )
+            (compare tokens "." i1 v1 nil)
+            (C_Pythonword tokens i1 v1)
+            (push error_id 13)
+            (if (and
+                  (compare tokens "(" i1 v1 nil)
+                  (O_callmethod_1 tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'alapython v0))
+      )
+   )
+)
+
+
+; S_alapython_0 : identique à S_callmethod_0 (optimise.lisp)
+
+; O_alapython_1 : identique à O_callmethod_1 (optimise.lisp)
+
+;^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable
+(defun C_callitem (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            (
+               "["
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (C_λ tokens i0 v0)
+                  (C_comprehension tokens i0 v0)
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_valuelist tokens i0 v0)
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "soi"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (C_selfvariable tokens i0 v0)
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "{"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_valuedictionary tokens i0 v0)
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "("
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_parenthetic tokens i0 v0)
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "-"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_minus tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "retourne"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_returning tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "renvoie"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_returning tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "sortir"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_returning tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "continuer"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_returning tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "lever"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_returning tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               true
+               (or
+                  (C_lispe tokens i0 v0)
+                  (and
+                     (G_walrus tokens (car i0))
+                     (C_walrus tokens i0 v0)
+                  )
+                  (and
+                     (G_tojoin tokens (car i0))
+                     (C_tojoin tokens i0 v0)
+                  )
+                  (and
+                     (G_alapython tokens (car i0))
+                     (C_alapython tokens i0 v0)
+                  )
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+
+;&computing := callitem  [operator callitem]*
+(defun C_computing_brut (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_callitem tokens i1 v1)
+            (S_computing_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (if (eq (size v0) 1)
+            (nconc v v0)
+            (push v (cons 'computing v0))
+         )
+      )
+   )
+)
+
+
+(defun S_computing_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_operator tokens i2 v2)
+         (C_callitem tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!importing := $importe [astring^Word] [$comme Word]?
+(defun C_importing (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "importe" i1 v1 nil)
+            (or
+               (C_astring tokens i1 v1)
+               (C_Word tokens i1 v1)
+            )
+            (O_importing_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'importing v0))
+      )
+   )
+)
+
+(defun O_importing_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "comme" i2 v2 nil)
+         (C_Word tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!multiop := Word computing [%, computing]*
+(defun C_multiop (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (C_computing tokens i1 v1)
+            (S_indexes_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'multiop v0))
+      )
+   )
+)
+
+
+; S_multiop_0 : identique à S_indexes_0 (optimise.lisp)
+
+;returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
+(defun C_returning (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               (
+                  "retourne"
+                  (compare tokens "retourne" i1 v1 true)
+               )
+               ("renvoie" (compare tokens "renvoie" i1 v1 true))
+               ("sortir" (compare tokens "sortir" i1 v1 true))
+               (
+                  "continuer"
+                  (compare tokens "continuer" i1 v1 true)
+               )
+               ("lever" (compare tokens "lever" i1 v1 true))
+               (true nil)
+            )
+            (O_returning_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'returning v0))
+      )
+   )
+)
+
+
+(defun O_returning_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_compareorcompute tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+;^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+(defun C_expressions (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            (
+               "soi"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmenttopself tokens i0 v0)
+                  (C_assignmentself tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               "selon"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_switch tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               "essaie"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_amaybe tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               "pour"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_forin tokens i0 v0)
+                  (C_for tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               "si"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_if tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               "tantque"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_while tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+            (
+               true
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_computing tokens i0 v0)
+               )
+            )
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+
+;^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+(defun C_predicates (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            (
+               "soi"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmenttopself tokens i0 v0)
+                  (C_assignmentself tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               "selon"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_switch tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               "essaie"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_amaybe tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               "pour"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_forin tokens i0 v0)
+                  (C_for tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               "si"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_if tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               "tantque"
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_while tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+            (
+               true
+               (or
+                  (C_lispe tokens i0 v0)
+                  (C_tupleassign tokens i0 v0)
+                  (C_assignmentop tokens i0 v0)
+                  (C_assignmentg tokens i0 v0)
+                  (C_assignment tokens i0 v0)
+                  (C_compareorcompute tokens i0 v0)
+               )
+            )
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+
+;^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+; C_body : identique à C_predicates (optimise.lisp)
+
+;!classedef := $classe Word ;16 classfunc+ $finclasse
+(defun C_classedef (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "classe" i1 v1 nil)
+            (C_Word tokens i1 v1)
+            (push error_id 16)
+            (if (and
+                  (P_classedef_0 tokens i1 v1)
+                  (compare tokens "finclasse" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'classedef v0))
+      )
+   )
+)
+
+(defun P_classedef_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_classfunc tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_classfunc tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+;!methparams := %( $soi ;4 [%, variables]? %)
+(defun C_methparams (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (compare tokens "soi" i1 v1 nil)
+            (push error_id 4)
+            (if (and
+                  (O_methparams_0 tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'methparams v0))
+      )
+   )
+)
+
+(defun O_methparams_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_variables tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!classfunc := [$fonction^$def] Word methparams expressions+ [$finfonction^$findef]
+(defun C_classfunc (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               (
+                  "fonction"
+                  (compare tokens "fonction" i1 v1 nil)
+               )
+               ("def" (compare tokens "def" i1 v1 nil))
+               (true nil)
+            )
+            (C_Word tokens i1 v1)
+            (C_methparams tokens i1 v1)
+            (P_catching_1 tokens i1 v1)
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               (
+                  "finfonction"
+                  (compare tokens "finfonction" i1 v1 nil)
+               )
+               ("findef" (compare tokens "findef" i1 v1 nil))
+               (true nil)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'classfunc v0))
+      )
+   )
+)
+
+
+; P_classfunc_0 : identique à P_catching_1 (optimise.lisp)
+
+;!then := $alors? expressions+
+(defun C_then (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (O_then_0 tokens i1 v1)
+            (P_catching_1 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'then v0))
+      )
+   )
+)
+
+
+(defun O_then_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (compare tokens "alors" i1 v1 nil)
+      (nconc vp v1)
+   )
+   true)
+
+; P_then_1 : identique à P_catching_1 (optimise.lisp)
+
+;!else := $sinon expressions+
+(defun C_else (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "sinon" i1 v1 nil)
+            (P_catching_1 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'else v0))
+      )
+   )
+)
+
+
+; P_else_0 : identique à P_catching_1 (optimise.lisp)
+
+;!tail := %$ variable
+(defun C_tail (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "$" i1 v1 nil)
+            (C_variable tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'tail v0))
+      )
+   )
+)
+
+;!patternlist := %[ ;3 [ pattern [%, pattern]* tail? ]? %]
+(defun C_patternlist (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (push error_id 3)
+            (if (and
+                  (O_patternlist_2 tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'patternlist v0))
+      )
+   )
+)
+
+(defun S_patternlist_0 (tokens i2 vp)
+   (setq v ())
+   (while (and
+         (setq i3 (clone i2))
+         (setq v3 ())
+         (compare tokens "," i3 v3 nil)
+         (C_pattern tokens i3 v3)
+         (set@ i2 0 (car i3))
+         (setq v2 v3)
+      )
+      (nconc v v2)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+(defun O_patternlist_1 (tokens i2 vp)
+   (setq v2 ())
+   (check (C_tail tokens i2 v2)
+      (nconc vp v2)
+   )
+   true)
+
+(defun O_patternlist_2 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_pattern tokens i2 v2)
+         (S_patternlist_0 tokens i2 v2)
+         (O_patternlist_1 tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!itempattern := [astring^minus^anumber^variable] %: pattern
+(defun C_itempattern (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_astring tokens i1 v1)
+               (C_minus tokens i1 v1)
+               (C_anumber tokens i1 v1)
+               (C_variable tokens i1 v1)
+            )
+            (compare tokens ":" i1 v1 nil)
+            (C_pattern tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'itempattern v0))
+      )
+   )
+)
+
+;!patterndictionary := %{ ;11 [itempattern [%, itempattern]* tail? ]? %}
+(defun C_patterndictionary (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "{" i1 v1 nil)
+            (push error_id 11)
+            (if (and
+                  (O_patterndictionary_2 tokens i1 v1)
+                  (compare tokens "}" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'patterndictionary v0))
+      )
+   )
+)
+
+(defun S_patterndictionary_0 (tokens i2 vp)
+   (setq v ())
+   (while (and
+         (setq i3 (clone i2))
+         (setq v3 ())
+         (compare tokens "," i3 v3 nil)
+         (C_itempattern tokens i3 v3)
+         (set@ i2 0 (car i3))
+         (setq v2 v3)
+      )
+      (nconc v v2)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+; O_patterndictionary_1 : identique à O_patternlist_1 (optimise.lisp)
+
+(defun O_patterndictionary_2 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (C_itempattern tokens i2 v2)
+         (S_patterndictionary_0 tokens i2 v2)
+         (O_patternlist_1 tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+
+;pattern := patternlist^patterndictionary^astring^minus^anumber^variable
+(defun C_pattern (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (at tokens (car i0))
+               "")
+            (
+               "["
+               (or
+                  (C_patternlist tokens i0 v0)
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "{"
+               (or
+                  (C_patterndictionary tokens i0 v0)
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "-"
+               (or
+                  (C_astring tokens i0 v0)
+                  (C_minus tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               true
+               (or
+                  (C_astring tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+         )
+         (push v (cons 'pattern v0))
+      )
+   )
+)
+
+
+;!patterns := pattern [%, pattern]*
+(defun C_patterns (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_pattern tokens i1 v1)
+            (S_patterns_0 tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'patterns v0))
+      )
+   )
+)
+
+(defun S_patterns_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_pattern tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
+;!parameters := %( ;4 variables? %)
+(defun C_parameters (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (push error_id 4)
+            (if (and
+                  (O_parameters_0 tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'parameters v0))
+      )
+   )
+)
+
+(defun O_parameters_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_variables tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+;!function := [$fonction^$def] Word parameters expressions+ [$finfonction^$findef]
+(defun C_function (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               (
+                  "fonction"
+                  (compare tokens "fonction" i1 v1 nil)
+               )
+               ("def" (compare tokens "def" i1 v1 nil))
+               (true nil)
+            )
+            (C_Word tokens i1 v1)
+            (C_parameters tokens i1 v1)
+            (P_catching_1 tokens i1 v1)
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               (
+                  "finfonction"
+                  (compare tokens "finfonction" i1 v1 nil)
+               )
+               ("findef" (compare tokens "findef" i1 v1 nil))
+               (true nil)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'function v0))
+      )
+   )
+)
+
+
+; P_function_0 : identique à P_catching_1 (optimise.lisp)
+
+;!rule := $règle Word %( ;4 patterns %) predicates+ $finrègle
+(defun C_rule (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "règle" i1 v1 nil)
+            (C_Word tokens i1 v1)
+            (compare tokens "(" i1 v1 nil)
+            (push error_id 4)
+            (if (and
+                  (C_patterns tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+                  (P_rule_0 tokens i1 v1)
+                  (compare tokens "finrègle" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'rule v0))
+      )
+   )
+)
+
+(defun P_rule_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_predicates tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_predicates tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+;!patternrule := $motif Word %( ;4 patterns %) predicates+ $finmotif
+(defun C_patternrule (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "motif" i1 v1 nil)
+            (C_Word tokens i1 v1)
+            (compare tokens "(" i1 v1 nil)
+            (push error_id 4)
+            (if (and
+                  (C_patterns tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+                  (P_rule_0 tokens i1 v1)
+                  (compare tokens "finmotif" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'patternrule v0))
+      )
+   )
+)
+
+
+; P_patternrule_0 : identique à P_rule_0 (optimise.lisp)
+
+;!prologrule := $prolog Word %( ;4 patterns %) predicates+ $finprolog
+(defun C_prologrule (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "prolog" i1 v1 nil)
+            (C_Word tokens i1 v1)
+            (compare tokens "(" i1 v1 nil)
+            (push error_id 4)
+            (if (and
+                  (C_patterns tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+                  (P_rule_0 tokens i1 v1)
+                  (compare tokens "finprolog" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'prologrule v0))
+      )
+   )
+)
+
+
+; P_prologrule_0 : identique à P_rule_0 (optimise.lisp)
+
+;!lambda := %[ [$lambda^$λ] ;17 %( variables? %) body %]
+(defun C_λ (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (switch
+               (if (< (car i1) (size tokens))
+                  (lower (at tokens (car i1)))
+                  "")
+               ("lambda" (compare tokens "lambda" i1 v1 nil))
+               ("λ" (compare tokens "λ" i1 v1 nil))
+               (true nil)
+            )
+            (push error_id 17)
+            (if (and
+                  (compare tokens "(" i1 v1 nil)
+                  (O_parameters_0 tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+                  (C_predicates tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'λ v0))
+      )
+   )
+)
+
+
+; O_λ_0 : identique à O_parameters_0 (optimise.lisp)
+
+;!comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
+(defun C_comprehension (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "[" i1 v1 nil)
+            (C_ternaire tokens i1 v1)
+            (compare tokens "pour" i1 v1 nil)
+            (push error_id 12)
+            (if (and
+                  (C_Word tokens i1 v1)
+                  (compare tokens "dans" i1 v1 nil)
+                  (C_computing tokens i1 v1)
+                  (O_comprehension_0 tokens i1 v1)
+                  (compare tokens "]" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'comprehension v0))
+      )
+   )
+)
+
+(defun O_comprehension_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "si" i2 v2 nil)
+         (C_comparison tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+;!elif := $sinonsi ;5 comparison then [elif^else]?
+(defun C_elif (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "sinonsi" i1 v1 nil)
+            (push error_id 5)
+            (if (and
+                  (C_comparison tokens i1 v1)
+                  (C_then tokens i1 v1)
+                  (O_elif_0 tokens i1 v1)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'elif v0))
+      )
+   )
+)
+
+(defun O_elif_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (switch
+         (if (< (car i1) (size tokens))
+            (lower (at tokens (car i1)))
+            "")
+         ("sinonsi" (C_elif tokens i1 v1))
+         ("sinon" (C_else tokens i1 v1))
+         (true nil)
+      )
+      (nconc vp v1)
+   )
+   true)
+
+
+;!if := $si ;5 comparison then [elif^else]? $finsi
+(defun C_if (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "si" i1 v1 nil)
+            (push error_id 5)
+            (if (and
+                  (C_comparison tokens i1 v1)
+                  (C_then tokens i1 v1)
+                  (O_elif_0 tokens i1 v1)
+                  (compare tokens "finsi" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'if v0))
+      )
+   )
+)
+
+
+; O_if_0 : identique à O_elif_0 (optimise.lisp)
+
+;!while := $tantque ;6 comparison expressions+ $fintantque
+(defun C_while (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "tantque" i1 v1 nil)
+            (push error_id 6)
+            (if (and
+                  (C_comparison tokens i1 v1)
+                  (P_catching_1 tokens i1 v1)
+                  (compare tokens "fintantque" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'while v0))
+      )
+   )
+)
+
+
+; P_while_0 : identique à P_catching_1 (optimise.lisp)
+
+;!forin := $pour variable $dans ;7 callitem expressions+ $finpour
+(defun C_forin (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "pour" i1 v1 nil)
+            (C_variable tokens i1 v1)
+            (compare tokens "dans" i1 v1 nil)
+            (push error_id 7)
+            (if (and
+                  (C_callitem tokens i1 v1)
+                  (P_catching_1 tokens i1 v1)
+                  (compare tokens "finpour" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'forin v0))
+      )
+   )
+)
+
+
+; P_forin_0 : identique à P_catching_1 (optimise.lisp)
+
+;!for := $pour ;8 assignment %, comparison %, assignment expressions+ $finpour
+(defun C_for (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "pour" i1 v1 nil)
+            (push error_id 8)
+            (if (and
+                  (C_assignment tokens i1 v1)
+                  (compare tokens "," i1 v1 nil)
+                  (C_comparison tokens i1 v1)
+                  (compare tokens "," i1 v1 nil)
+                  (C_assignment tokens i1 v1)
+                  (P_catching_1 tokens i1 v1)
+                  (compare tokens "finpour" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'for v0))
+      )
+   )
+)
+
+
+; P_for_0 : identique à P_catching_1 (optimise.lisp)
+
+;!acase := $cas [astring^anumber] expressions+ $fincas
+(defun C_acase (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "cas" i1 v1 nil)
+            (or
+               (C_astring tokens i1 v1)
+               (C_anumber tokens i1 v1)
+            )
+            (P_catching_1 tokens i1 v1)
+            (compare tokens "fincas" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'acase v0))
+      )
+   )
+)
+
+
+; P_acase_0 : identique à P_catching_1 (optimise.lisp)
+
+;!default := $défaut expressions+ $findéfaut
+(defun C_default (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "défaut" i1 v1 nil)
+            (P_catching_1 tokens i1 v1)
+            (compare tokens "findéfaut" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'default v0))
+      )
+   )
+)
+
+
+; P_default_0 : identique à P_catching_1 (optimise.lisp)
+
+;!switch := $selon ;14 %( variable %) acase+ default? $finselon
+(defun C_switch (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "selon" i1 v1 nil)
+            (push error_id 14)
+            (if (and
+                  (compare tokens "(" i1 v1 nil)
+                  (C_variable tokens i1 v1)
+                  (compare tokens ")" i1 v1 nil)
+                  (P_switch_0 tokens i1 v1)
+                  (O_switch_1 tokens i1 v1)
+                  (compare tokens "finselon" i1 v1 nil)
+               )
+               (pop error_id)
+               (setg do_not_stop false)
+            )
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'switch v0))
+      )
+   )
+)
+
+(defun P_switch_0 (tokens i1 vp)
+   (setq v ())
+   (setq v1 ())
+   (check (C_acase tokens i1 v1)
+      (push v v1)
+      (setq v1 ())
+      (while (C_acase tokens i1 v1) (nconc v v1) (setq v1 ()))
+   )
+   (if v
+      (nconc vp v)
+   )
+)
+
+(defun O_switch_1 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_default tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+
+(defun nokeywords(w)
+     ; Les instructions de LispE que le transpileur écrit lui-même ([10, 20] -> (list 10 20), l[i] -> (at l i),
+     ; -x -> (sign x), si -> check/ife…) ne peuvent pas être des noms de l'élève : une fonction de l'élève
+     ; ainsi nommée serait renommée, et le code produit avec elle. Le mot est refusé partout (variable
+     ; comprise). Ne sont pas dans la liste : push, size et println, que la grammaire substitue à append,
+     ; len et print avant ce test (les refuser refuserait ces mots) ; trim et join, que l'élève appelle
+     ; comme des fonctions. (w est une chaîne, d'où "list" et non l'atome.)
+     (and (not (in '("list" "setq" "setg" "setqi" "defun" "defpat" "check" "loop" "block" "ife" "at" "extract" "mapcar" "filtercar" "in_it" "dictionary" "maybe" "throw" "eq" "sign" "true" "andvalue" "orvalue") w))
+      (not (in  '("ou" "et" "oux" "non" "dans" "est" "si" "sinon" "soi" "sauf" "attrape" "essaie" "finessaie" "importe" "comme" "retourne" "renvoie" "sortir" "continuer" "lever" "classe" "finclasse" "fonction" "def" "finfonction" "findef" "alors" "règle" "finrègle" "motif" "finmotif" "prolog" "finprolog" "lambda" "λ" "pour" "sinonsi" "finsi" "tantque" "fintantque" "finpour" "cas" "fincas" "défaut" "findéfaut" "selon" "finselon") (lower w))))
+)
+   (setq error_messages {"16":"erreur dans la définition d ' une classe > > >" "15":"erreur dans un essaie / sauf > > >" "14":"erreur dans un \"selon\" > > >" "13":"erreur dans un \"joindre\" ( style Python ) > > >" "12":"erreur dans une liste en compréhension > > >" "17":"erreur dans une lambda > > >" "10":"erreur dans un intervalle , on ne peut pas enchaîner les intervalles > > >" "8":"il manque la fin d ' un \"pour\" > > >" "3":"il manque un \"]\" fermant pour une \"liste\" > > >" "7":"il manque la fin d ' un \"pour ... dans\" > > >" "6":"il manque la fin d ' un \"tantque\" > > >" "9":"erreur dans l ' analyse d ' une méthode > > >" "18":"erreur dans une expression booléenne" "1":"il manque un \"]\" fermant > > >" "4":"il manque la fin d ' une \"fonction\" > > >" "19":"erreur dans une expression conditionnelle ( a si c sinon b ) > > >" "5":"il manque la fin d ' un \"si\" > > >" "11":"erreur dans l ' analyse d ' un dictionnaire > > >" "2":"il manque un \")\" fermant pour une \"méthode\" > > >"})
+(setq parser_tok (tokenizer_rules))
+
+(setq rg «1:{%d #A-F #a-f}
+#9=#
+#10=#
+#32=#
+`?*`=:34
+f"{[\"] ~%r}*"=34
+"""?*"""=:34
+'''?*'''=:34
+"{[\"] ~%r}*"=34
+'~%r*'=34
+0b{1 0}+=57
+0x%1+(.%1+({p P}({%- %+})%d+))=57
+%d+(.%d+)(({eE}({%- %+})%d+))=57
+%o=63
+%p=32
+%h{%h %d}*=65
+%a{%a %d @}*=65
+»
+)
+
+(setq rg (replace rg "\r" ""))
+(setq rg (split rg "\n"))
+
+(set_tokenizer_rules parser_tok rg)
+
+(defun abstract_tree (code)
+   (setq code (replace code "\r" ""))
+   (setg error_id '(0))
+   (setg do_not_stop true)
+   (key@ error_messages 0 "Erreur de syntaxe")
+   ; The magic of LispE. A one-liner to get rid of lines that starts with REM
+   ; (splite, and not split, keeps the empty lines, for instance inside a """...""" string ;
+   ; the final "\n" is needed: splite drops the last piece when the string does not end with the separator)
+   (setq code (join (filterlist (\(x) (neq (lower (@@ (trim x) 0 4)) "rem ")) (splite (+ code "\n") "\n")) "\n"))
+   (setq tokens (tokenize_rules parser_tok (+ code "\n")))
+   (setg mémo_C_computing (rho (+ 1 (size tokens)) (list 0)))
+   (setg mémo_C_variable (rho (+ 1 (size tokens)) (list 0)))
+   (setq i '(0))
+   (setq res (C_analyse tokens i ()))
+   (setq i (car i))
+   (if (< i (size tokens))
+       (block
+          (insert tokens "ERROR>>>" i)
+	       (list (join (maplist (\(x) (@ error_messages x)) error_id) ", ") "dans \"" (join (@@ tokens (if (< i 10) 0 (- i 10)) (+ 20 i)) " ") "\"")
+       )
+      res
+   )
+)
+
+
+
+
+; --- Les gardes (optimise.lisp, "Les heuristiques") ---
+(defun _suivant (tokens p)
+   (if (< (+ p 1) (size tokens)) (@ tokens (+ p 1)) ""))
+
+; walrus := Word %: %= …
+(defun G_walrus (tokens p)
+   (eq (_suivant tokens p) ":"))
+
+; tojoin := [variable^astring] %. … (variable : Word, ou Word suivi de [ … ])
+(defun G_tojoin (tokens p)
+   (in '("." "[") (_suivant tokens p)))
+
+; alapython := [astring^anumber] %. …
+(defun G_alapython (tokens p)
+   (eq (_suivant tokens p) "."))
+
+; call := [lambda^Word] %( … (lambda commence par [)
+(defun G_call (tokens p)
+   (and (< p (size tokens))
+      (or (eq (@ tokens p) "[") (eq (_suivant tokens p) "("))))
+
+; method := variable callmethod … (callmethod commence par un point)
+(defun G_method (tokens p)
+   (in '("." "[") (_suivant tokens p)))
+
+; interval := %[ computing? %: … %] : un ":" avant le "]" qui ferme ce crochet
+(defun G_interval (tokens p)
+   (setq trouvé nil)
+   (if (and (< p (size tokens)) (eq (@ tokens p) "["))
+      (block
+         (setq prof 0)
+         (setq n (size tokens))
+         (+= p 1)
+         (while (and (< p n) (not trouvé) (>= prof 0))
+            (setq t (@ tokens p))
+            (cond
+               ((in '("[" "(" "{") t) (+= prof 1))
+               ((in '("]" ")" "}") t) (-= prof 1))
+               ((and (eq t ":") (eq prof 0)) (setq trouvé true)))
+            (+= p 1))))
+   trouvé)
+
+(defun C_variable (tokens i v)
+   (check do_not_stop
+      (setq p (car i))
+      (setq m (@ mémo_C_variable p))
+      (cond
+         ((eq m 0)
+            (setq w ())
+            (ife (C_variable_brut tokens i w)
+               (block
+                  (set@ mémo_C_variable p (list (car i) w))
+                  (nconc v (clone w))
+                  true)
+               (block
+                  (set@ mémo_C_variable p 1)
+                  nil)))
+         ((eq m 1) nil)
+         (true
+            (set@ i 0 (car m))
+            (nconc v (clone (@ m 1)))
+            true))))
+
+(defun C_computing (tokens i v)
+   (check do_not_stop
+      (setq p (car i))
+      (setq m (@ mémo_C_computing p))
+      (cond
+         ((eq m 0)
+            (setq w ())
+            (ife (C_computing_brut tokens i w)
+               (block
+                  (set@ mémo_C_computing p (list (car i) w))
+                  (nconc v (clone w))
+                  true)
+               (block
+                  (set@ mémo_C_computing p 1)
+                  nil)))
+         ((eq m 1) nil)
+         (true
+            (set@ i 0 (car m))
+            (nconc v (clone (@ m 1)))
+            true))))

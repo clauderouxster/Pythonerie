@@ -252,8 +252,9 @@ const Pythonerie = (function () {
             if (!r.ok) throw new Error('Impossible de charger ' + chemin);
             return nfc(await r.text());
         };
+        // basic_opt.lisp : le parseur de basic.lisp (compiler.lisp), accéléré par optimise.lisp
         [sources.basic, sources.transpileur, sources.bibliothèque, sources.français] = await Promise.all([
-            lit('basic/basic.lisp'), lit('basic/transpiler.lisp'), lit('basic/bibliothèque.lisp'),
+            lit('basic/basic_opt.lisp'), lit('basic/transpiler.lisp'), lit('basic/bibliothèque.lisp'),
             lit('basic/français.lisp')
         ]);
         ajouteNomsFrançais(sources.français);

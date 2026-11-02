@@ -132,10 +132,11 @@
 ; les commentaires disparaissent) et rend les jetons, leurs bornes (début, fin exclue ; en
 ; caractères pour une string_) et leurs lignes. Une forme de premier niveau qui commence par
 ; « (defun » va de sa parenthèse ouvrante à celle qui la referme ; le texte entre les formes
-; (commentaires, link…) est recopié tel quel. (La borne droite d'un jeton qui touche la fin du
-; texte vaut sa borne gauche : la fin du texte la remplace.)
+; (commentaires, link…) est recopié tel quel. Un retour à la ligne est ajouté avant de tokeniser,
+; comme dans abstract_tree : sans lui, la borne droite d'un jeton qui touche la fin du texte
+; vaudrait sa borne gauche.
 (defun lit_grammaire (txt)
-   (setq lu (tokenize_full lecteur txt))
+   (setq lu (tokenize_full lecteur (+ txt "\n")))
    (setq jetons (@ lu 0))
    (setq bornes (@ lu 1))
    (setq profondeur 0)
@@ -152,7 +153,6 @@
                (setq nom (@ jetons (+ ouverture 2)))
                (setq d (@ bornes (* 2 ouverture)))
                (setq f (@ bornes (+ 1 (* 2 k))))
-               (if (<= f (@ bornes (* 2 k))) (setq f (size txt)))
                (push noms nom)
                (set@ débuts nom d)
                (set@ fins nom f)

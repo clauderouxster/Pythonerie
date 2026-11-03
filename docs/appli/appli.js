@@ -1,7 +1,7 @@
 // =====================================================================
 // Application Web créée par la Pythonerie (menu ☰ : « Créer une application Web »).
 // Le programme a été traduit en LispE au moment de l'export (programme.js : APPLI.lispe,
-// avec ses programmes importés et les onglets de données). Il s'exécute ici avec la
+// avec ses programmes importés et les onglets de la base). Il s'exécute ici avec la
 // bibliothèque de la Pythonerie (APPLI.bibliothèque) et le canevas (js/canevas.js, le même
 // fichier que dans la Pythonerie), sans éditeur ni transpileur.
 // Ce fichier tient, pour canevas.js et bibliothèque.lisp, le rôle de pythonerie.js : la
@@ -140,10 +140,10 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Les données du projet : les fichiers du répertoire données (charge_données), et les
-    // onglets don0, don1… (prend_données, range_données), gardés le temps de la visite
+    // La base du projet : les fichiers du répertoire données (charge_données), et les
+    // onglets don0, don1… (prend_base, range_base), gardés le temps de la visite
     // ------------------------------------------------------------------
-    const ONGLETS_MAX = 20;
+    const ONGLETS_MAX = 100;
     const onglets = APPLI.onglets.slice();
     let erreurDonnées = '';
 
@@ -168,10 +168,10 @@ const Pythonerie = (function () {
 
     function rangeDonnées(nom, texte) {
         const m = /^don(\d+)$/i.exec(nfc(nom).trim());
-        if (!m) return 'range_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
+        if (!m) return 'range_base : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
         const n = Number(m[1]);
         if (n > onglets.length || n >= ONGLETS_MAX) {
-            return 'range_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don'
+            return 'range_base : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don'
                 + (onglets.length - 1) + ', on peut seulement créer don' + onglets.length;
         }
         if (n === onglets.length) onglets.push('');
@@ -182,13 +182,23 @@ const Pythonerie = (function () {
     function prendDonnées(nom) {
         erreurDonnées = '';
         const m = /^don(\d+)$/i.exec(nfc(nom).trim());
-        if (!m) { erreurDonnées = 'prend_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)'; return ''; }
+        if (!m) { erreurDonnées = 'prend_base : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)'; return ''; }
         const n = Number(m[1]);
         if (n >= onglets.length) {
-            erreurDonnées = 'prend_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don' + (onglets.length - 1);
+            erreurDonnées = 'prend_base : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don' + (onglets.length - 1);
             return '';
         }
         return onglets[n];
+    }
+
+    // ajoute_base(valeur) : un nouvel onglet après le dernier, avec la valeur ; rend son nom
+    // (don3). L'erreur éventuelle (plus de place) est lue ensuite par erreurDonnées().
+    function ajouteDonnées(texte) {
+        erreurDonnées = '';
+        if (onglets.length >= ONGLETS_MAX) { erreurDonnées = 'ajoute_base : la base a déjà ' + ONGLETS_MAX + ' onglets, le maximum'; return ''; }
+        const nom = 'don' + onglets.length;
+        erreurDonnées = rangeDonnées(nom, texte);
+        return erreurDonnées ? '' : nom;
     }
 
     // ------------------------------------------------------------------
@@ -316,7 +326,7 @@ const Pythonerie = (function () {
 
     return {
         lispePrêt, sortie, effaceConsole, écrisPartiel,
-        chargeDonnées, sauveDonnées, rangeDonnées, prendDonnées,
+        chargeDonnées, sauveDonnées, rangeDonnées, prendDonnées, ajouteDonnées,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         info: (texte) => écritConsole(texte, 'info'),

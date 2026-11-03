@@ -700,19 +700,33 @@
    nil)
 (defun vérifie_code (code) (evaljsc (list "Pyt.vérifieCode" (string code))))
 
-; range_données("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
-; l'onglet don0 de la section Données ; l'onglet est créé s'il vient juste après le dernier
-(defun range_données (nom valeur)
+; range_base("don0", valeur) : range la valeur (écrite comme affiche l'écrirait) dans
+; l'onglet don0 de la section Base ; l'onglet est créé s'il vient juste après le dernier
+(defun range_base (nom valeur)
    (setq e (evaljsc (list "Pythonerie.rangeDonnées" (string nom) (_texte valeur))))
    (if (!= e "") (throw e))
    nil)
 
-; prend_données("don0") : le texte actuel de l'onglet don0 de la section Données ("" s'il est vide)
-(defun prend_données (nom)
+; prend_base("don0") : le texte actuel de l'onglet don0 de la section Base ("" s'il est vide)
+(defun prend_base (nom)
    (setq contenu (evaljsc (list "Pythonerie.prendDonnées" (string nom))))
    (setq e (evaljsc "Pythonerie.erreurDonnées()"))
    (if (!= e "") (throw e))
    contenu)
+
+; anciens noms (range_données, prend_données), gardés pour les programmes déjà écrits
+(defun range_données (nom valeur) (range_base nom valeur))
+(defun prend_données (nom) (prend_base nom))
+
+; ajoute_base(valeur) : un nouvel onglet de la base, après le dernier, avec la valeur ("" sans
+; valeur) ; rend le nom du nouvel onglet ("don3")
+(defun _ajoute_base (valeur)
+   (setq nom (evaljsc (list "Pythonerie.ajouteDonnées" (_texte valeur))))
+   (setq e (evaljsc "Pythonerie.erreurDonnées()"))
+   (if (!= e "") (throw e))
+   nom)
+(defmacro ajoute_base () (_ajoute_base ""))
+(defmacro ajoute_base (valeur) (_ajoute_base valeur))
 
 ; ouvre_page(adresse) : ouvre la page https://... dans un nouvel onglet ; le navigateur ne
 ; l'accepte que juste après un clic ou une touche (sinon, une erreur le dit)

@@ -4,7 +4,7 @@
 Déposez dans ce répertoire le matériel de cours de vos élèves :
 
 - des projets (.zip), exportés depuis la Pythonerie (menu ☰, « Exporter le projet ») :
-  un projet réunit des programmes, ses onglets de données et les fichiers de ses
+  un projet réunit des programmes, ses onglets de la base et les fichiers de ses
   répertoires images, sons et données. Un clic de l'élève le charge dans son espace,
   pour bien commencer. On peut aussi en préparer un à la main : un dossier qui contient
   projet.json ({"format": "projet-pythonerie", "version": 3, "nom": "Mon projet"}),

@@ -53,7 +53,7 @@ clignote = 0          # le vaisseau clignote après avoir été touché
 état = "attente"      # "attente", "jeu" ou "perdu"
 
 # --- Le meilleur score ---
-# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Données), en JSON :
+# Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Base), en JSON :
 # un dictionnaire qui donne le record de chaque jeu, par exemple {"Astéroïdes": 1250, "Serpent": 18}.
 # Si don0 contient déjà autre chose (tes propres données), on n'y touche pas :
 # le record ne vaut alors que le temps de l'exécution.
@@ -62,7 +62,7 @@ records_rangés = Vrai     # Faux si don0 contient autre chose que les records
 
 # le dictionnaire des records ({} si don0 est vide)
 fonction lit_records():
-    t = prend_données("don0")
+    t = prend_base("don0")
     si t == "":
         retourne {}
     essaie:
@@ -85,7 +85,7 @@ fonction range_record(valeur):
     d = lit_records()
     si records_rangés:
         d[JEU] = valeur
-        range_données("don0", en_json(d))
+        range_base("don0", en_json(d))
 
 record = record_du_jeu()
 nouveau_record = Faux

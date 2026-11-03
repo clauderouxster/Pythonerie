@@ -259,7 +259,7 @@
                 <a href="#animer">🎬 Animer</a>
                 <a href="#souris">🖱️ Souris et clavier</a>
                 <a href="#medias">🖼️ Images et sons</a>
-                <a href="#donnees-programme">▦ Les données du programme</a>
+                <a href="#donnees-programme">▦ La base du programme</a>
                 <a href="#ranger">🗂️ Ton projet</a>
                 <a href="#donnees">🔒 Tes programmes restent chez toi</a>
                 <a href="#astuces">💡 Astuces</a>
@@ -1000,12 +1000,12 @@ lit_fichier(liste)</pre></div>
 
             <!-- ================================================================ -->
             <section id="donnees-programme">
-                <h2>▦ Les données de ton projet</h2>
+                <h2>▦ La base de ton projet</h2>
                 <p>Ton programme a parfois besoin de beaucoup de données&nbsp;: une liste de mots, des notes, des pays…
                     Plutôt que de les écrire dans le programme, range-les à côté, dans des <b>onglets</b>. Ces onglets appartiennent à ton
                     <b>projet</b>&nbsp;: tous tes programmes, et ceux qu'ils importent, y trouvent les mêmes données.</p>
                 <ul>
-                    <li>Au-dessus de l'éditeur, clique sur <b>▦ Données</b>. Le programme laisse la place aux onglets
+                    <li>Au-dessus de l'éditeur, clique sur <b>▦ Base</b>. Le programme laisse la place aux onglets
                         <b>Don0</b>, <b>Don1</b>, <b>Don2</b>… Le bouton s'appelle alors <b>✎ Code</b>&nbsp;: clique dessus pour revenir à ton programme.</li>
                     <li>Tape ou colle tes données dans un onglet, ou clique sur <b>📂 Charger un fichier…</b> pour y mettre
                         le contenu d'un fichier de ton ordinateur.</li>
@@ -1029,26 +1029,28 @@ pour ligne dans don0.découpe("\n")[1:]:     # la première ligne donne les titr
                         Pense à changer leurs noms dans ton programme, ou clique sur <b>↶</b>.</p>
                 </div>
                 <h3>Ranger et reprendre des données depuis ton programme</h3>
-                <p><code>range_données("don1", valeur)</code> écrit la valeur dans l'onglet <b>Don1</b>, à la place de ce qu'il
+                <p><code>range_base("don1", valeur)</code> écrit la valeur dans l'onglet <b>Don1</b>, à la place de ce qu'il
                     contenait. Une liste ou un nombre y est écrit comme <code>affiche</code> l'écrirait. Tu peux aussi créer
                     l'onglet qui vient juste après le dernier&nbsp;: avec <b>Don0</b>, <b>Don1</b> et <b>Don2</b>,
-                    <code>range_données("don3", …)</code> crée <b>Don3</b>. Plus loin (<code>"don5"</code>), c'est une erreur.</p>
+                    <code>range_base("don3", …)</code> crée <b>Don3</b>. Plus loin (<code>"don5"</code>), c'est une erreur.</p>
                 <div class="exemple"><pre data-essai>carrés = [n * n pour n dans intervalle(1, 11)]
-range_données("don0", carrés)
-range_données("don1", "Bravo, tu as rangé des données !")
-affiche("Regarde les onglets Don0 et Don1 (bouton ▦ Données).")</pre></div>
+range_base("don0", carrés)
+range_base("don1", "Bravo, tu as rangé des données !")
+affiche("Regarde les onglets Don0 et Don1 (bouton ▦ Base).")</pre></div>
                 <p>Les données rangées sont enregistrées avec ton projet. Dans le programme qui tourne, <code>don0</code>
                     garde sa valeur du départ&nbsp;: il prendra la nouvelle valeur à la prochaine exécution. Si ton programme a
                     écrasé des données par erreur, clique sur <b>↶</b>, dans les onglets&nbsp;: elles reviennent.</p>
                 <p>Pour relire un onglet tel qu'il est maintenant, même juste après l'avoir changé, utilise
-                    <code>prend_données("don1")</code>&nbsp;: tu obtiens son texte (<code>""</code> s'il est vide).</p>
-                <div class="exemple"><pre data-essai>range_données("don0", "pomme")
-fruit = prend_données("don0")
+                    <code>prend_base("don1")</code>&nbsp;: tu obtiens son texte (<code>""</code> s'il est vide).</p>
+                <p><code>ajoute_base(valeur)</code> crée l'onglet qui suit le dernier, avec la valeur, et renvoie son nom
+                    (<code>"don3"</code>)&nbsp;: pratique pour ajouter des données sans compter les onglets.</p>
+                <div class="exemple"><pre data-essai>range_base("don0", "pomme")
+fruit = prend_base("don0")
 affiche("Dans Don0, il y a :", fruit)</pre></div>
                 <div class="encadre astuce">
                     <p class="titre-encadre">🏆 Le meilleur score des jeux</p>
                     <p>Les quatre jeux des exemples (casse-briques, serpent, envahisseurs, astéroïdes) gardent leur record dans
-                        <b>Don0</b>, avec <code>prend_données</code> et <code>range_données</code>. Ils y écrivent un dictionnaire en JSON,
+                        <b>Don0</b>, avec <code>prend_base</code> et <code>range_base</code>. Ils y écrivent un dictionnaire en JSON,
                         qui donne le record de chaque jeu&nbsp;: <code>{"Astéroïdes": 1250, "Serpent": 18}</code>. Plusieurs jeux peuvent ainsi
                         partager le même projet. Si Don0 contient déjà autre chose (tes propres données), les jeux n'y touchent pas&nbsp;:
                         leur record ne dure alors que le temps de la partie. Regarde la partie «&nbsp;Le meilleur score&nbsp;» au début de chaque jeu.</p>
@@ -1124,7 +1126,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <li>Dans le menu <b>☰</b>, choisis <b>📦 Exporter le projet</b>. Le fichier s'appelle par exemple
                         <code>Mon_jardin_2026_10_08_14_30.zip</code>&nbsp;: le nom du projet, puis l'année, le mois, le jour, l'heure et la minute.
                         Si plusieurs élèves partagent l'ordinateur, ton nom s'ajoute après celui du projet&nbsp;: <code>Mon_jardin_Léa_2026_10_08_14_30.zip</code>.
-                        C'est un fichier <b>zip</b>&nbsp;: une boîte qui contient tes programmes, tes onglets de données, tes images, tes sons et tes données.
+                        C'est un fichier <b>zip</b>&nbsp;: une boîte qui contient tes programmes, tes onglets de la base, tes images, tes sons et tes données.
                         Si ton projet s'appelle encore «&nbsp;Sans Nom&nbsp;», la Pythonerie te demande d'abord de lui en donner un.
                         Tu le trouves dans le dossier <b>Téléchargements</b>. Dans certaines classes, une copie est aussi
                         envoyée à ton enseignant&nbsp;: la Pythonerie te le dit dans la console.</li>
@@ -1479,9 +1481,10 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                 <h3 id="g-fichiers">Fichiers</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
-                    <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Données)&nbsp;; un onglet vide ne crée pas de variable</td><td class="ex"><code>don0.découpe("\n")</code></td></tr>
-                    <tr><td><code>range_données(nom, valeur)</code></td><td>écrit la valeur dans un onglet de données (il peut créer l'onglet qui suit le dernier)</td><td class="ex"><code>range_données("don1", scores)</code></td></tr>
-                    <tr><td><code>prend_données(nom)</code></td><td>le texte actuel d'un onglet de données (<code>""</code> s'il est vide)</td><td class="ex"><code>t = prend_données("don1")</code></td></tr>
+                    <tr><td><code>don0</code>, <code>don1</code>…</td><td>le texte des onglets Don0, Don1… (bouton ▦ Base)&nbsp;; un onglet vide ne crée pas de variable</td><td class="ex"><code>don0.découpe("\n")</code></td></tr>
+                    <tr><td><code>range_base(nom, valeur)</code></td><td>écrit la valeur dans un onglet de la base (il peut créer l'onglet qui suit le dernier)</td><td class="ex"><code>range_base("don1", scores)</code></td></tr>
+                    <tr><td><code>prend_base(nom)</code></td><td>le texte actuel d'un onglet de la base (<code>""</code> s'il est vide)</td><td class="ex"><code>t = prend_base("don1")</code></td></tr>
+                    <tr><td><code>ajoute_base(valeur)</code></td><td>crée l'onglet qui suit le dernier, avec la valeur, et renvoie son nom</td><td class="ex"><code>nom = ajoute_base(scores)</code></td></tr>
                     <tr><td><code>lit_fichier(f)</code></td><td>tu choisis un fichier de ton ordinateur dans une fenêtre, puis <code>f(texte)</code> reçoit son texte (<code>lit_fichier(f, a)</code> : <code>f(texte, a)</code>)</td><td class="ex"><code>lit_fichier(liste)</code></td></tr>
                     <tr><td><code>écrit_fichier(nom, texte)</code></td><td>enregistre le texte dans un fichier du dossier Téléchargements</td><td class="ex"><code>écrit_fichier("scores", "12 points")</code></td></tr>
                     <tr><td><code>login()</code></td><td>ton nom, ou l'identifiant que tu as tapé en arrivant (« Unique » si la Pythonerie n'a qu'un utilisateur)</td><td class="ex"><code>affiche("Bonjour", login())</code></td></tr>

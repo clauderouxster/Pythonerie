@@ -1195,7 +1195,7 @@ const Pythonerie = (function () {
     //   projet.json                  { format, version, nom, élève, créé }
     //   programmes/Quiz.pyf          les programmes, rangés dans leurs répertoires
     //   programmes/jeux/outils.pyf
-    //   onglets/don0.txt, don1.txt…  les onglets de données (bouton « Données »)
+    //   onglets/don0.txt, don1.txt…  les onglets de la base (bouton « Base »)
     //   images/, sons/, données/     les fichiers du projet
     // Un projet peut aussi être écrit en JSON (par Claude, par exemple : voir lisProjetJSON) ;
     // on le charge, mais l'export se fait toujours en .zip.
@@ -1233,7 +1233,7 @@ const Pythonerie = (function () {
     // Un exemple ouvert (voir chargeRépertoireSite) est un projet de passage : il n'entre pas
     // dans « Mes projets » tant qu'il garde son nom ; on le garde en le renommant. On retient
     // { nom, signature } : la signature de ses programmes et de ses fichiers au chargement,
-    // pour savoir, quand on le quitte, s'il a changé. Ses onglets de données (le meilleur
+    // pour savoir, quand on le quitte, s'il a changé. Ses onglets de la base (le meilleur
     // score d'un jeu, dans don0) sont gardés à part, pour chaque exemple et chaque utilisateur.
     const CLÉ_EXEMPLE = 'pythonerie.exemple';
     const CLÉ_ONGLETS_EXEMPLES = 'pythonerie.ongletsExemples';
@@ -1315,7 +1315,7 @@ const Pythonerie = (function () {
     async function gardeProjetOuvert(instant) {
         const u = nomCourant();
         if (!u || nomDuProjet === SANS_NOM) return;
-        // un exemple n'entre pas dans la liste : seuls ses onglets de données sont gardés
+        // un exemple n'entre pas dans la liste : seuls ses onglets de la base sont gardés
         if (exempleOuvert()) { gardeOngletsExemple(nomDuProjet, (instant || { onglets }).onglets); return; }
         await FichiersProjet.gardeProjet(u, nomDuProjet, instant || await instantané());
         try { localStorage.setItem(CLÉ_PROPRIÉTAIRE, u); } catch (e) { /* rien */ }
@@ -1649,7 +1649,7 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     // Créer une application Web : un .zip avec tout ce qu'il faut pour faire tourner un
     // programme du projet sans la Pythonerie. Le programme principal (choisi s'il y en a
-    // plusieurs) est assemblé comme pour ▶ Exécuter (programmes importés, onglets de données)
+    // plusieurs) est assemblé comme pour ▶ Exécuter (programmes importés, onglets de la base)
     // et traduit en LispE dès maintenant : l'application n'a besoin ni du transpileur ni de
     // l'éditeur, seulement de LispE, de bibliothèque.lisp, de canevas.js et d'appli/appli.js,
     // qui joue le rôle de ce fichier. Les fichiers images, sons et données du projet suivent.
@@ -1692,7 +1692,7 @@ const Pythonerie = (function () {
         const principal = await choisitProgrammePrincipal();
         if (!principal) return null;
 
-        // le programme, comme pour ▶ Exécuter : programmes importés et onglets de données
+        // le programme, comme pour ▶ Exécuter : programmes importés et onglets de la base
         let assemblé;
         try { assemblé = assembleProgramme(codeDuProgramme(principal), principal, définitionsDonnées()); }
         catch (e) { écritConsole('Impossible de créer l\'application : ' + e.message, 'erreur'); return null; }
@@ -2318,7 +2318,7 @@ const Pythonerie = (function () {
             if (choix === 'autre') nom = libre;
         }
         if (!(await rangeProjetOuvert())) return false;
-        // un exemple chargé sous son nom reste un exemple ; il retrouve ses onglets de données
+        // un exemple chargé sous son nom reste un exemple ; il retrouve ses onglets de la base
         const enExemple = exemple && nom === nomLu;
         if (enExemple && ongletsDeLExemple(nom)) instant = { ...instant, onglets: ongletsDeLExemple(nom) };
         try {
@@ -3059,7 +3059,7 @@ const Pythonerie = (function () {
 
     // « Principal » : bleu si le programme ouvert commence par #__main__ (le programme que lancent
     // « Créer une application Web ») ; caché sans programme, avec un fichier de
-    // données ou les onglets de données
+    // données ou les onglets de la base
     function actualisePrincipal() {
         const b = $('btnPrincipal');
         if (!b) return;
@@ -3107,14 +3107,14 @@ const Pythonerie = (function () {
     }
 
     // ------------------------------------------------------------------
-    // Les données du projet (bouton « Données ») : des onglets Don0, Don1...
+    // Les données du projet (bouton « Base ») : des onglets Don0, Don1...
     // À l'exécution, chaque onglet non vide devient une variable : don0 = """...""".
     // Ils appartiennent au projet, pas à un programme : tous les programmes (et ceux
     // qu'ils importent) voient les mêmes don0, don1... Ils sont enregistrés à part dans
     // le navigateur, et rangés dans le projet exporté (onglets/don0.txt, onglets/don1.txt...).
     // ------------------------------------------------------------------
     const CLÉ_ONGLETS = 'pythonerie.onglets';
-    const ONGLETS_MAX = 20;
+    const ONGLETS_MAX = 100;
     let onglets = [''];
     let ongletActif = 0;
     let modeDonnées = false;
@@ -3191,7 +3191,7 @@ const Pythonerie = (function () {
     // En mode Données, le bouton ramène au code : il s'appelle alors « Code »
     function libelléBoutonDonnées() {
         const pleins = onglets.filter(t => t !== '').length;
-        $('btnDonnées').textContent = modeDonnées ? '✎ Code' : '▦ Données' + (pleins ? ' (' + pleins + ')' : '');
+        $('btnDonnées').textContent = modeDonnées ? '✎ Code' : '▦ Base' + (pleins ? ' (' + pleins + ')' : '');
     }
 
     function afficheNoteDonnées() {
@@ -3213,7 +3213,7 @@ const Pythonerie = (function () {
 
     // ------------------------------------------------------------------
     // Un fichier du répertoire données, ouvert dans l'éditeur par un clic dans l'arbre du projet.
-    // Il prend la place du code, comme les onglets de données ; le programme ouvert reste celui
+    // Il prend la place du code, comme les onglets de la base ; le programme ouvert reste celui
     // qu'exécute ▶. Chaque modification est enregistrée toute seule, un instant après la frappe :
     // FichiersProjet.écritTexte la met aussitôt en mémoire (charge_données la relit), puis dans
     // le navigateur (IndexedDB).
@@ -3326,7 +3326,7 @@ const Pythonerie = (function () {
         note.appendChild(code);
     }
 
-    // Retour au code (ou aux onglets de données, s'ils étaient affichés) ; enregistre d'abord
+    // Retour au code (ou aux onglets de la base, s'ils étaient affichés) ; enregistre d'abord
     function fermeFichier() {
         if (!fichierOuvert) return;
         sauveFichier();
@@ -3366,7 +3366,7 @@ const Pythonerie = (function () {
     }
 
     function basculeDonnées() {
-        // depuis un fichier de données : ▦ Données montre les onglets (ou y revient)
+        // depuis un fichier de données : ▦ Base montre les onglets (ou y revient)
         if (fichierOuvert) {
             fermeFichier();
             if (modeDonnées) { $('texteDonnées').focus(); return; }
@@ -3375,7 +3375,7 @@ const Pythonerie = (function () {
         actualisePrincipal();
         $('panneauDonnées').hidden = !modeDonnées;
         $('conteneurÉditeur').hidden = modeDonnées;
-        $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'Les données du projet : don0, don1...';
+        $('btnDonnées').title = modeDonnées ? 'Revenir au code du programme' : 'La base du projet : don0, don1...';
         libelléBoutonDonnées();
         if (modeDonnées) $('texteDonnées').focus();
         else { éditeur.refresh(); éditeur.focus(); }
@@ -3400,16 +3400,16 @@ const Pythonerie = (function () {
         if (annulationsOnglets.length > 30) annulationsOnglets.shift();
     }
 
-    // range_données("don3", valeur) : le programme écrit dans un onglet de la section Données.
+    // range_base("don3", valeur) : le programme écrit dans un onglet de la section Base.
     // L'onglet doit exister, ou venir juste après le dernier (on le crée). Renvoie "" ou un
     // message d'erreur. La première écriture d'une exécution est mémorisée pour ↶.
     let donnéesRetenues = false;
     function rangeDonnées(nom, texte) {
         const m = /^don(\d+)$/i.exec(nfc(String(nom)).trim());
-        if (!m) return 'range_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
+        if (!m) return 'range_base : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)';
         const n = Number(m[1]);
         if (n > onglets.length || n >= ONGLETS_MAX) {
-            return 'range_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don'
+            return 'range_base : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don'
                 + (onglets.length - 1) + ', on peut seulement créer don' + onglets.length;
         }
         if (!donnéesRetenues) { retientOnglets(); donnéesRetenues = true; }
@@ -3420,20 +3420,30 @@ const Pythonerie = (function () {
         return '';
     }
 
-    // prend_données("don0") : le contenu actuel d'un onglet (y compris ce que range_données
+    // prend_base("don0") : le contenu actuel d'un onglet (y compris ce que range_base
     // vient d'y ranger) ; "" pour un onglet vide. L'erreur éventuelle est lue ensuite par
     // erreurDonnées() (evaljs ne renvoie qu'une valeur).
     let erreurDonnées = '';
     function prendDonnées(nom) {
         erreurDonnées = '';
         const m = /^don(\d+)$/i.exec(nfc(String(nom)).trim());
-        if (!m) { erreurDonnées = 'prend_données : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)'; return ''; }
+        if (!m) { erreurDonnées = 'prend_base : « ' + nom + ' » n\'est pas un nom d\'onglet (don0, don1…)'; return ''; }
         const n = Number(m[1]);
         if (n >= onglets.length) {
-            erreurDonnées = 'prend_données : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don' + (onglets.length - 1);
+            erreurDonnées = 'prend_base : l\'onglet « ' + nom + ' » n\'existe pas ; le dernier est don' + (onglets.length - 1);
             return '';
         }
         return onglets[n];
+    }
+
+    // ajoute_base(valeur) : un nouvel onglet après le dernier, avec la valeur ; rend son nom
+    // (don3). L'erreur éventuelle (plus de place) est lue ensuite par erreurDonnées().
+    function ajouteDonnées(texte) {
+        erreurDonnées = '';
+        if (onglets.length >= ONGLETS_MAX) { erreurDonnées = 'ajoute_base : la base a déjà ' + ONGLETS_MAX + ' onglets, le maximum'; return ''; }
+        const nom = 'don' + onglets.length;
+        erreurDonnées = rangeDonnées(nom, texte);
+        return erreurDonnées ? '' : nom;
     }
 
     function annuleOnglet() {
@@ -4656,7 +4666,7 @@ const Pythonerie = (function () {
     function oubliePile() { aprèsPile = false; }
 
     return {
-        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, chargeDonnées, sauveDonnées, chargeProgramme, sauveProgramme, vérifieCode, rangeDonnées, prendDonnées,
+        démarre, lispePrêt, exécute, effaceConsole, sortie, écrisPartiel, chargeDonnées, sauveDonnées, chargeProgramme, sauveProgramme, vérifieCode, rangeDonnées, prendDonnées, ajouteDonnées,
         erreurDonnées: () => erreurDonnées,
         erreur: (texte) => écritConsole(texte, 'erreur'),
         info: (texte) => écritConsole(texte, 'info'),

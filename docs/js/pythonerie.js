@@ -3055,6 +3055,7 @@ const Pythonerie = (function () {
         }
         if (dossierCourant && !dossiers.includes(dossierCourant)) dossierCourant = '';
         afficheArbre();
+        actualisePrincipal();      // la flèche ↑ suit les programmes ajoutés ou retirés
     }
 
     // « Principal » : bleu si le programme ouvert commence par #__main__ (le programme que lancent
@@ -3069,6 +3070,30 @@ const Pythonerie = (function () {
         b.setAttribute('aria-pressed', String(oui));
         b.title = oui ? 'Programme principal (#__main__ en première ligne) : un clic retire cette mention'
             : 'Marquer ce programme comme le programme principal (#__main__ en première ligne)';
+
+        // ↑ : va au programme principal du projet (le premier qui porte #__main__), quand ce n'est
+        // pas celui qui est ouvert
+        const v = $('btnVersPrincipal');
+        if (v) {
+            const principal = programmePrincipalDuProjet();
+            v.hidden = !principal || (principal === courant && !fichierOuvert && !modeDonnées);
+            if (principal) v.title = 'Aller au programme principal du projet : ' + principal;
+        }
+    }
+
+    function programmePrincipalDuProjet() {
+        const chemins = programmes.map(p => p.chemin).filter(c => estPrincipal(codeDuProgramme(c)));
+        return chemins.sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }))[0] || null;
+    }
+
+    function vaAuPrincipal() {
+        const principal = programmePrincipalDuProjet();
+        if (!principal) return;
+        if (principal !== courant) { choisitProgramme(principal, {}); return; }
+        // déjà ouvert, mais caché par un fichier de données ou les onglets de la base : retour au code
+        fermeFichier();
+        if (modeDonnées) basculeDonnées();
+        éditeur.focus();
     }
 
     // un clic : ajoute #__main__ en tête du programme, ou retire cette ligne (Ctrl+Z l'annule aussi)
@@ -4484,6 +4509,7 @@ const Pythonerie = (function () {
         $('btnNouveau').addEventListener('click', nouveauDepuisBouton);
         $('btnNouveauFichier').addEventListener('click', nouveau);
         $('btnPrincipal').addEventListener('click', basculePrincipal);
+        $('btnVersPrincipal').addEventListener('click', vaAuPrincipal);
         installeMenu('btnMenuProgrammes', 'menuProgrammes');
         installeDéroulantes();
         $('btnNouveauDossier').addEventListener('click', nouveauDossier);

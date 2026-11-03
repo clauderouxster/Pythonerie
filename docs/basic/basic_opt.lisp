@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (157 fonctions, ;Date: 2026/10/26 07:45:14)
-;Date: 2026/10/26 07:45:14
+;Optimisé par optimise.lisp, d'après basic.lisp (157 fonctions, ;Date: 2026/11/03 20:56:37)
+;Date: 2026/11/03 20:56:37
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1873,7 +1873,7 @@
    )
 )
 
-;!parenthetic := %( computing %)
+;!parenthetic := %( ternaire %)
 (defun C_parenthetic (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1881,7 +1881,7 @@
             (setq i1 (clone i0))
             (setq v1 ())
             (compare tokens "(" i1 v1 nil)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (compare tokens ")" i1 v1 nil)
             (set@ i0 0 (car i1))
             (setq v0 v1)

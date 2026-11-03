@@ -151,7 +151,8 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 
 !walrus := Word %: %=  compareorcompute
 
-!parenthetic := %( computing %)
+# (x si c sinon y) entre parenthèses, au milieu d'un calcul : a + (c + 1 si c < 10 sinon 20)
+!parenthetic := %( ternaire %)
 
 # Style Python : ", ".joindre(liste) ou ", ".join(liste)
 !tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)

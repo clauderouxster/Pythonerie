@@ -4529,7 +4529,24 @@ const Pythonerie = (function () {
         $('btnÉlève').addEventListener('click', () => { if (élève) déconnecte(); else demandeÉlève(); });
         $('btnExporteProjet').addEventListener('click', exporteProjet);
         $('btnExporteProjetTexte').addEventListener('click', exporteProjetTexte);
-        $('btnPartageProjet').addEventListener('click', partageProjet);
+        // à côté du nom du projet, les mêmes icônes que sur les fichiers : renommer, exporter
+        // (le .zip), envoyer (le bouton de la page, repris dans le groupe), supprimer le projet
+        // ouvert (en dernier : l'icône rougit au survol)
+        const partage = $('btnPartageProjet');
+        // fermer : une croix dans le style des autres icônes (16 × 16, currentColor)
+        const SVG_FERMER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" width="14" height="14"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
+        // la croix, collée au nom du projet ; les autres icônes, à droite
+        const fermeture = boutonsActions([[SVG_FERMER, 'Fermer le projet (il reste dans « Mes projets »)', fermeProjet]]);
+        fermeture.id = 'fermetureProjet';
+        $('nomProjet').after(fermeture);
+        const actionsProjet = boutonsActions([
+            [SVG_RENOMMER, 'Renommer le projet', renommeProjet],
+            [SVG_EXPORTER, 'Exporter le projet (le télécharger en .zip)', exporteProjet],
+            [partage.innerHTML, partage.title, partageProjet],
+            [SVG_SUPPRIMER, 'Supprimer le projet', () => supprimeProjet(nomDuProjet)]
+        ]);
+        actionsProjet.id = 'actionsProjet';
+        partage.replaceWith(actionsProjet);
         $('btnMenuPartage').addEventListener('click', partageProjet);
         $('btnApplicationWeb').addEventListener('click', créeApplicationWeb);
         $('btnNouveauProjet').addEventListener('click', nouveauProjet);

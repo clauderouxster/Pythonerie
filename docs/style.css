@@ -275,6 +275,13 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .liste li.arbre-ligne:hover .programme-actions,
 .liste li.arbre-ligne:focus-within .programme-actions { opacity: 1; }
+/* les actions du projet, à côté de son nom (sans étiquette « Projet » : le nom, à gauche, prend
+   toute la place que les icônes lui laissent) : toujours visibles */
+.section-tête .programme-actions { opacity: 1; }
+#titreProgrammes { gap: 4px; }
+#titreProgrammes .nom-projet { margin-left: 0; padding: 1px 3px; }
+#fermetureProjet { margin-right: auto; }
+#actionsProjet button, #fermetureProjet button { width: 20px; }
 .programme-actions button {
     background: none;
     border: none;

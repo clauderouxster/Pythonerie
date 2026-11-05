@@ -772,6 +772,7 @@ const Pythonerie = (function () {
             b.title = enCours ? 'Arrêter le programme' : 'Exécuter le programme';
             b.classList.toggle('danger', enCours);      // ■ Arrêter, en rouge
         });
+        $('btnExécutionCanevas').disabled = !wasmPrêt;
         // sur un téléphone : un point sur l'onglet Exécution tant que le programme tourne
         const onglet = document.querySelector('#ongletsTéléphone [data-ecran="exécution"]');
         if (onglet) onglet.classList.toggle('en-cours', enCours);
@@ -786,14 +787,20 @@ const Pythonerie = (function () {
     // ------------------------------------------------------------------
     const ÉCRANS = ['projet', 'code', 'exécution'];
     let surTéléphone = false;
+    let écranCourant = null;
 
-    function montreÉcran(nom) {
-        if (!surTéléphone || !ÉCRANS.includes(nom)) return;
-        const avant = ÉCRANS.find(é => document.body.classList.contains('écran-' + é));
+    // les trois écrans sont côte à côte dans .espace, qui défile en largeur (style.css)
+    function panneauÉcran(nom) {
+        return document.querySelector(['.programmes', '.zone-édition', '.zone-canevas'][ÉCRANS.indexOf(nom)]);
+    }
+
+    // l'écran affiché change : les onglets, le clavier, le plein écran
+    function prendÉcran(nom) {
+        if (nom === écranCourant) return;
+        écranCourant = nom;
         ÉCRANS.forEach(é => document.body.classList.toggle('écran-' + é, é === nom));
         document.querySelectorAll('#ongletsTéléphone [data-ecran]').forEach(b =>
             b.setAttribute('aria-selected', String(b.dataset.ecran === nom)));
-        if (avant === nom) return;
         // en quittant l'écran du code, le clavier du téléphone se range
         if (nom !== 'code' && document.activeElement && document.activeElement.blur) document.activeElement.blur();
         if (nom !== 'exécution' && enPleinÉcran()) quittePleinÉcran();
@@ -803,6 +810,41 @@ const Pythonerie = (function () {
             if (éditeurFichier) éditeurFichier.refresh();
             if (nom === 'exécution') $('console').scrollTop = $('console').scrollHeight;
         });
+    }
+
+    // montreÉcran : fait défiler jusqu'à l'écran voulu (sans animation : immédiat)
+    function montreÉcran(nom, animé) {
+        if (!surTéléphone || !ÉCRANS.includes(nom)) return;
+        const espace = $('espace'), panneau = panneauÉcran(nom);
+        if (panneau) espace.scrollTo({ left: panneau.offsetLeft - espace.offsetLeft, behavior: animé ? 'smooth' : 'auto' });
+        prendÉcran(nom);
+    }
+
+    // après un balayage : l'écran le plus visible devient l'écran courant
+    function écranVisible() {
+        const espace = $('espace');
+        const i = Math.round(espace.scrollLeft / Math.max(1, espace.clientWidth));
+        return ÉCRANS[Math.max(0, Math.min(ÉCRANS.length - 1, i))];
+    }
+
+    // le fond de la scène, en plein écran, prend la couleur du coin du canevas : ses limites
+    // ne se voient plus (relevée deux fois par seconde, le programme peut changer de fond)
+    let relèveFond = null;
+    function suisFondCanevas() {
+        const scène = $('scèneCanevas');
+        clearInterval(relèveFond);
+        relèveFond = null;
+        if (!surTéléphone || !enPleinÉcran()) { scène.style.removeProperty('--fond-canevas'); return; }
+        const relève = () => {
+            if (!enPleinÉcran()) { clearInterval(relèveFond); relèveFond = null; scène.style.removeProperty('--fond-canevas'); return; }
+            try {
+                const [r, v, b, a] = $('canevas').getContext('2d').getImageData(0, 0, 1, 1).data;
+                if (a > 0) scène.style.setProperty('--fond-canevas', 'rgb(' + r + ',' + v + ',' + b + ')');
+                else scène.style.removeProperty('--fond-canevas');      // en 3D : le canevas 2D est transparent
+            } catch (e) { /* canevas illisible : le fond sombre reste */ }
+        };
+        relève();
+        relèveFond = setInterval(relève, 500);
     }
 
     function montreConsoleTéléphone(oui) {
@@ -815,11 +857,28 @@ const Pythonerie = (function () {
     function installeTéléphone() {
         let forcé = false;
         try { forcé = new URLSearchParams(location.search).has('téléphone') || new URLSearchParams(location.search).has('telephone'); } catch (e) { /* rien */ }
-        surTéléphone = forcé || Pyt.appareil()[0] === 'téléphone';
+        // un téléphone se dit téléphone ; sinon (« version pour ordinateur » demandée…), un écran
+        // tactile, sans souris, dont le petit côté est celui d'un téléphone
+        const doigt = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+        const petitCôté = Math.min(screen.width || 9999, screen.height || 9999, Math.max(window.innerWidth, 1), Math.max(window.innerHeight, 1));
+        surTéléphone = forcé || Pyt.appareil()[0] === 'téléphone' || (doigt && petitCôté < 520);
         if (!surTéléphone) return;
         document.body.classList.add('téléphone');
+        // sur un petit écran, les longues lignes passent à la ligne : pas de défilement en largeur
+        // dans l'éditeur, et le balayage va d'un écran à l'autre
+        if (éditeur) éditeur.setOption('lineWrapping', true);
         document.querySelectorAll('#ongletsTéléphone [data-ecran]').forEach(b =>
-            b.addEventListener('click', () => montreÉcran(b.dataset.ecran)));
+            b.addEventListener('click', () => montreÉcran(b.dataset.ecran, true)));
+        const espace = $('espace');
+        let attente = null;
+        espace.addEventListener('scroll', () => {
+            clearTimeout(attente);
+            attente = setTimeout(() => prendÉcran(écranVisible()), 80);
+        }, { passive: true });
+        // en tournant le téléphone, on reste sur le même écran
+        window.addEventListener('resize', () => { if (écranCourant) montreÉcran(écranCourant); });
+        // le fond du plein écran suit la couleur du canevas
+        new MutationObserver(suisFondCanevas).observe($('scèneCanevas'), { attributes: true, attributeFilter: ['class'] });
         $('btnExécutionCanevas').addEventListener('click', basculeExécution);
         $('btnConsoleTéléphone').addEventListener('click', () =>
             montreConsoleTéléphone(document.body.classList.contains('console-cachée')));

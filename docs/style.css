@@ -896,14 +896,36 @@ body.téléphone .actions-en-tête { flex-wrap: nowrap; gap: 4px; margin-left: a
 body.téléphone .actions-en-tête .btn { padding: 4px 8px; }
 body.téléphone .btn.élève { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 
-body.téléphone .espace { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; overflow: hidden; }
+/* Les trois écrans, côte à côte : un balayage du doigt passe de l'un à l'autre (défilement
+   horizontal aimanté) ; les onglets du bas y mènent aussi */
+body.téléphone .espace {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+body.téléphone .espace::-webkit-scrollbar { display: none; }
 body.téléphone .séparateur, body.téléphone .seulement-étroit { display: none; }
 body.téléphone .espace > .programmes,
 body.téléphone .espace > .zone-édition,
-body.téléphone .espace > .zone-canevas { display: none; flex: 1 1 0; min-height: 0; max-height: none; height: auto; }
-body.téléphone.écran-projet .espace > .programmes,
-body.téléphone.écran-code .espace > .zone-édition,
-body.téléphone.écran-exécution .espace > .zone-canevas { display: flex; }
+body.téléphone .espace > .zone-canevas {
+    display: flex;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    box-sizing: border-box;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
 
 /* La barre d'onglets, en bas de l'écran, à portée du pouce */
 body.téléphone .onglets-téléphone {
@@ -975,17 +997,56 @@ body.téléphone .scène-canevas:not(.plein) .cadre-canevas {
 }
 /* les limites du canevas ne sont plus marquées d'un trait, ni à l'écran ni en plein écran */
 body.téléphone .cadre-canevas,
-body.téléphone .scène-canevas.plein .cadre-canevas { border: none; border-radius: 0; box-shadow: none; }
-body.téléphone .scène-canevas.plein { padding: 6px; gap: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
-body.téléphone .scène-canevas.plein .cadre-canevas { width: min(100%, calc((100dvh - 56px) * var(--ratio, 1.3333))); }
-body.téléphone .scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100dvh - 56px - 32dvh) * var(--ratio, 1.3333))); }
+body.téléphone .scène-canevas.plein .cadre-canevas { border: none; outline: none; border-radius: 0; box-shadow: none; }
+
+/* Plein écran sur un téléphone : le fond prend la couleur du canevas (--fond-canevas, relevée
+   par pythonerie.js), pour que ses limites ne se voient plus ; les boutons sont en bas
+   (à droite quand le téléphone est en largeur), toujours visibles */
+body.téléphone .scène-canevas.plein {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    justify-items: center;
+    align-items: center;
+    gap: 6px;
+    width: 100vw;
+    height: 100dvh;
+    padding: 4px 4px max(8px, env(safe-area-inset-bottom));
+    background: var(--fond-canevas, #101010);
+}
+body.téléphone .scène-canevas.plein .cadre-canevas {
+    grid-row: 1;
+    width: min(100%, calc((100dvh - 64px) * var(--ratio, 1.3333)));
+}
+body.téléphone .scène-canevas.plein > .zone-console { grid-row: 2; width: 100%; height: 30dvh; }
+body.téléphone .scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100dvh - 70px - 30dvh) * var(--ratio, 1.3333))); }
+body.téléphone .scène-canevas.plein .barre-plein-écran {
+    grid-row: 3;
+    align-self: end;
+    justify-self: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+body.téléphone .barre-plein-écran .btn { padding: 8px 12px; font-size: 14px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+@media (orientation: landscape) {
+    body.téléphone .scène-canevas.plein {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(0, 1fr) auto;
+        padding: 4px max(8px, env(safe-area-inset-right)) 4px max(4px, env(safe-area-inset-left));
+    }
+    body.téléphone .scène-canevas.plein .cadre-canevas { grid-column: 1; grid-row: 1 / -1; width: min(100%, calc((100dvh - 8px) * var(--ratio, 1.3333))); }
+    body.téléphone .scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100dvh - 8px) * var(--ratio, 1.3333))); }
+    body.téléphone .scène-canevas.plein > .zone-console { grid-column: 2; grid-row: 1; width: 36vw; height: 100%; }
+    body.téléphone .scène-canevas.plein .barre-plein-écran { grid-column: 2; grid-row: 2; flex-direction: column; align-items: stretch; align-self: end; }
+}
 body.téléphone .zone-canevas > .zone-console { flex: 1 1 0; min-height: 30%; }
 body.téléphone.console-cachée .zone-canevas > .zone-console { display: none; }
 body.téléphone.console-cachée .scène-canevas:not(.plein) { flex: 1 1 0; }
 body.téléphone .console { font-size: 12px; padding: 8px 10px; }
 /* en largeur : la console passe à droite du canevas */
 @media (orientation: landscape) {
-    body.téléphone.écran-exécution .espace > .zone-canevas {
+    body.téléphone .espace > .zone-canevas {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
         grid-template-rows: auto minmax(0, 1fr);

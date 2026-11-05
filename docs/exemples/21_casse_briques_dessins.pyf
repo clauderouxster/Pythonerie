@@ -367,7 +367,7 @@ fonction dessine():
             texte_centré(milieu + 140, f"Meilleur score : {record}")
 
 # On a tourné le téléphone : le canevas a changé de taille.
-# On refait le mur et le décor à la nouvelle taille, et on ramène la raquette et la balle dedans.
+# On refait le mur et le décor à la nouvelle taille, et on ramène la raquette dedans.
 ancienne_largeur = largeur()
 ancienne_hauteur = hauteur()
 
@@ -377,8 +377,10 @@ fonction recale():
     LARGEUR_BRIQUE =: (largeur() - 10) // COLONNES - ÉCART
     raquette_y =: hauteur() - 40
     place_raquette(raquette_x + raquette_l / 2)
-    balle_x =: minimum(balle_x, largeur() - rayon)
-    balle_y =: minimum(balle_y, raquette_y - rayon - 1)
+    # la balle en jeu revient sur la raquette (sans perdre de vie)
+    si état == "jeu":
+        état =: "attente"
+        pose_balle()
     bulles =: tire_bulles()
     prépare_décor()
     mur_à_refaire =: Vrai

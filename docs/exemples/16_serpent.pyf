@@ -206,11 +206,11 @@ fonction centre(y, t):
 # Sans clavier, on joue avec le doigt
 début = "Une flèche ou Espace pour commencer"
 rejouer = "Une flèche ou Espace : rejouer"
-continuer = "Une flèche ou Espace pour continuer"
+suite = "Une flèche ou Espace pour continuer"
 si écran[0] != "ordinateur":
     début = "Touche l'écran pour commencer"
     rejouer = "Touche l'écran pour rejouer"
-    continuer = "Touche l'écran pour continuer"
+    suite = "Touche l'écran pour continuer"
 
 fonction dessine():
     fond(rgb(30, 95, 30))
@@ -246,7 +246,7 @@ fonction dessine():
     si état == "attente":
         centre(hauteur() - 200, début)
     sinonsi état == "pause":
-        centre(hauteur() - 200, continuer)
+        centre(hauteur() - 200, suite)
     sinonsi état == "perdu":
         # en français, 0 et 1 sont au singulier : « 0 pomme », « 1 pomme », « 2 pommes »
         mot = "pommes"

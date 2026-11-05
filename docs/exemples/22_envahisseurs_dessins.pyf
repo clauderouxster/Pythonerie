@@ -15,10 +15,23 @@
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 # Sur une tablette ou un téléphone : le bouton 🔥 Feu tire, et le doigt pilote.
 
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
 # La flotte : 5 rangées de 10 envahisseurs
 COLONNES = 10
 RANGÉES = 5
-PAS_X = 56            # distance entre deux envahisseurs
+# distance entre deux envahisseurs : 56, un peu moins si le canevas est étroit
+PAS_X = minimum(56, largeur() * 7 // 100)
 PAS_Y = 44
 LARGEUR_ENV = 36
 HAUTEUR_ENV = 24
@@ -31,8 +44,12 @@ son_boum = charge_son("médias/sounds/boum.wav")
 pas_de_marche = [charge_son(f"médias/sounds/pas_{i}.wav") pour i dans intervalle(1, 5)]
 
 # Le vaisseau
-vaisseau_x = 400
-VAISSEAU_Y = 550
+vaisseau_x = largeur() // 2
+VAISSEAU_Y = hauteur() - 50
+
+# la taille du canevas à l'image précédente (elle change quand on tourne le téléphone)
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
 
 # vivants[i] vaut Vrai tant que l'envahisseur numéro i n'est pas détruit
 vivants = []
@@ -109,7 +126,7 @@ fonction restants():
 # Une nouvelle vague : plus elle est loin, plus la flotte part bas
 fonction nouvelle_vague():
     vivants =: [Vrai pour i dans intervalle(COLONNES * RANGÉES)]
-    flotte_x =: 100
+    flotte_x =: largeur() // 8
     flotte_y =: 70 + minimum(vague - 1, 4) * 15
     sens =: 1
     bombes =: []
@@ -266,8 +283,9 @@ fonction vérifie_vague():
             sortir
 
 # --- Les boucliers : 12 x 6 blocs de 6 points, avec une arche en bas ---
-BOUCLIER_X = [110, 290, 470, 650]
-BOUCLIER_Y = 470
+# (placés pour un canevas de 800 × 600, puis étirés à la taille du canevas)
+BOUCLIER_X = [largeur() * x // 800 pour x dans [110, 290, 470, 650]]
+BOUCLIER_Y = hauteur() - 130
 BLOC = 6
 VERTS = ["#43a047", "#66bb6a"]
 boucliers = []        # pour chaque bouclier, Vrai tant que le bloc est là (ligne après ligne)
@@ -306,16 +324,23 @@ fonction touche_bouclier(x, y):
 
 # --- Les dessins ---
 # Le décor est tiré une fois au hasard : il est le même à chaque image
-étoiles = [[aléatoire(0, 800), aléatoire(0, 470), 0.5 + hasard() * 1.5, choisis(["#ffffff", "#bbdefb", "#fff9c4", "#f8bbd0"])] pour i dans intervalle(260)]
-nuages = [[480 + (hasard() - 0.5) * 300, 150 + (hasard() - 0.5) * 160, 15 + hasard() * 45, choisis(["150, 80, 200", "80, 120, 220", "200, 80, 160"])] pour i dans intervalle(110)]
+étoiles = []
+nuages = []
 immeubles = []        # chaque immeuble : [x, largeur, hauteur, fenêtres allumées]
-x_imm = 0
-tantque x_imm < 800:
-    l_imm = aléatoire(20, 44)
-    h_imm = aléatoire(18, 60)
-    fenêtres = [[aléatoire(0, l_imm // 7 - 1) * 7 + 3, aléatoire(0, h_imm // 8 - 1) * 8 + 3] pour k dans intervalle(aléatoire(2, 9))]
-    immeubles.ajoute([x_imm, l_imm, h_imm, fenêtres])
-    x_imm += l_imm + aléatoire(0, 4)
+
+fonction tire_décor():
+    étoiles =: [[aléatoire(0, largeur()), aléatoire(0, hauteur() - 130), 0.5 + hasard() * 1.5, choisis(["#ffffff", "#bbdefb", "#fff9c4", "#f8bbd0"])] pour i dans intervalle(260)]
+    nuages =: [[largeur() * 0.6 + (hasard() - 0.5) * 300, 150 + (hasard() - 0.5) * 160, 15 + hasard() * 45, choisis(["150, 80, 200", "80, 120, 220", "200, 80, 160"])] pour i dans intervalle(110)]
+    immeubles =: []
+    x_imm = 0
+    tantque x_imm < largeur():
+        l_imm = aléatoire(20, 44)
+        h_imm = aléatoire(18, 60)
+        fenêtres = [[aléatoire(0, l_imm // 7 - 1) * 7 + 3, aléatoire(0, h_imm // 8 - 1) * 8 + 3] pour k dans intervalle(aléatoire(2, 9))]
+        immeubles.ajoute([x_imm, l_imm, h_imm, fenêtres])
+        x_imm += l_imm + aléatoire(0, 4)
+
+tire_décor()
 
 décor = nouveau_dessin()
 flotte = nouveau_dessin()
@@ -330,9 +355,10 @@ temps_moyen = 0.0
 fonction prépare_décor():
     vide_dessin(décor)
     # le ciel : 60 bandes, du bleu nuit au violet
+    bande = hauteur() / 60
     pour i dans intervalle(60):
         décor.couleur(rgb(4 + i * 0.5, 4 + i * 0.3, 20 + i * 0.9))
-        décor.rectangle_plein(0, i * 10, 800, 10)
+        décor.rectangle_plein(0, i * bande, largeur(), bande + 1)
     pour n dans nuages:
         décor.couleur(f"rgba({n[3]}, 0.05)")
         décor.disque(n[0], n[1], n[2])
@@ -351,15 +377,16 @@ fonction prépare_décor():
     décor.épaisseur(3)
     décor.ellipse(120, 130, 80, 14)
     décor.épaisseur(1)
-    # la ville, et ses fenêtres allumées
+    # la ville, et ses fenêtres allumées, posées sur le sol
+    sol = hauteur() - 25
     pour imm dans immeubles:
         décor.couleur("#1a1a2e")
-        décor.rectangle_plein(imm[0], 575 - imm[2], imm[1], imm[2])
+        décor.rectangle_plein(imm[0], sol - imm[2], imm[1], imm[2])
         décor.couleur("rgba(255, 213, 79, 0.8)")
         pour f dans imm[3]:
-            décor.rectangle_plein(imm[0] + f[0], 575 - imm[2] + f[1], 3, 4)
+            décor.rectangle_plein(imm[0] + f[0], sol - imm[2] + f[1], 3, 4)
     décor.couleur("vert clair")
-    décor.ligne(0, 575, 800, 575)
+    décor.ligne(0, sol, largeur(), sol)
 
 # Le nombre de formes du décor (le ciel, les nuages, les étoiles, la planète, la ville)
 fonction compte_décor():
@@ -431,6 +458,32 @@ fonction montre_dessins():
     montre_dessin(défenses)
     montre_dessin(flotte)
 
+# On a tourné le téléphone : le canevas a changé de taille, on recale le jeu dedans
+fonction recale():
+    ancienne_largeur =: largeur()
+    ancienne_hauteur =: hauteur()
+    PAS_X =: minimum(56, largeur() * 7 // 100)
+    VAISSEAU_Y =: hauteur() - 50
+    place_vaisseau(vaisseau_x)
+    BOUCLIER_X =: [largeur() * x // 800 pour x dans [110, 290, 470, 650]]
+    BOUCLIER_Y =: hauteur() - 130
+    # la flotte doit tenir en largeur, et rester assez loin du vaisseau
+    flotte_x =: minimum(flotte_x, largeur() - 12 - (COLONNES - 1) * PAS_X - LARGEUR_ENV)
+    flotte_y =: minimum(flotte_y, VAISSEAU_Y - 100 - RANGÉES * PAS_Y)
+    # un nouveau décor, à la nouvelle taille
+    tire_décor()
+    prépare_décor()
+    formes_décor =: compte_décor()
+    flotte_à_refaire =: Vrai
+    boucliers_à_refaire =: Vrai
+    si TACTILE:
+        taille_texte(26)
+        bouton("feu", 10, hauteur() - 180, "🔥 Feu", bouton_feu)
+
+# Un texte centré dans le canevas, à la hauteur y
+fonction centre(y, t):
+    texte(largeur() / 2 - largeur_texte(t) / 2, y, t)
+
 fonction dessine_vaisseau():
     # après un choc, le vaisseau clignote : on ne le dessine qu'une image sur deux
     si clignote > 0 et (clignote // 5) % 2 == 0:
@@ -470,34 +523,37 @@ fonction dessine():
     couleur("blanc")
     taille_texte(18)
     texte(10, 20, f"Score : {score}")
-    texte(340, 20, f"Vague {vague}")
+    texte(largeur() / 2 - 60, 20, f"Vague {vague}")
     texte(largeur() - 100, 20, f"Vies : {vies}")
     formes = formes_décor + 10 * restants() + blocs_restants()
     taille_texte(14)
     couleur("rgba(255, 255, 255, 0.8)")
     si préparé:
-        texte(10, 580, f"Dessins préparés : {formes} formes en 3 appels par image, {arrondi(temps_moyen, 1)} ms (D : comparer)")
+        texte(10, hauteur() - 20, f"Dessins préparés : {formes} formes en 3 appels par image, {arrondi(temps_moyen, 1)} ms (D : comparer)")
     sinon:
-        texte(10, 580, f"Refaits à chaque image : {formes} formes une par une, {arrondi(temps_moyen, 1)} ms (D : revenir)")
+        texte(10, hauteur() - 20, f"Refaits à chaque image : {formes} formes une par une, {arrondi(temps_moyen, 1)} ms (D : revenir)")
     taille_texte(26)
     couleur("blanc")
+    m = hauteur() // 2       # le milieu du canevas, en hauteur
     si état == "attente":
-        texte(165, 330, f"{TIRER} : défendre la Terre !")
+        centre(m + 30, f"{TIRER} : défendre la Terre !")
         si record > 0:
-            texte(270, 380, f"Meilleur score : {record}")
+            centre(m + 80, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         couleur("rouge clair")
-        texte(240, 300, f"La Terre est envahie !")
+        centre(m, f"La Terre est envahie !")
         couleur("blanc")
-        texte(270, 345, f"Score : {score}, vague {vague}")
-        texte(255, 390, f"{TIRER} : rejouer")
+        centre(m + 45, f"Score : {score}, vague {vague}")
+        centre(m + 90, f"{TIRER} : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            centre(m + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            centre(m + 140, f"Meilleur score : {record}")
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        recale()
     si état == "jeu":
         pilote_clavier()
         avance_flotte()
@@ -520,7 +576,7 @@ quand_glisse(souris)      # sur une tablette : glisser le doigt
 # sur une tablette ou un téléphone, le bouton qui tire, à la place du clic
 si TACTILE:
     taille_texte(26)
-    bouton("feu", 10, 420, "🔥 Feu", bouton_feu)
+    bouton("feu", 10, hauteur() - 180, "🔥 Feu", bouton_feu)
 quand_clic(clic)
 quand_touche(clavier)
 animer(image, 20)

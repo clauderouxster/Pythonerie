@@ -148,7 +148,7 @@
                     <img class="éditeur-vide-logo" src="images/logo-320.png?v=2026.11.03.22.07" alt="Le logo de la Pythonerie : son serpent, à son bureau" width="200" height="200">
                     <p>Ton projet est vide.</p>
                     <button id="btnPremierProgramme" class="btn">＋ Créer un programme</button>
-                    <p class="éditeur-vide-note">ou ouvre un exemple de la liste, à gauche, ou charge un projet (menu ☰).</p>
+                    <p class="éditeur-vide-note">ou ouvre un exemple de la liste, <span class="texte-ordinateur">à gauche</span><span class="texte-téléphone">dans l'onglet 📁 Projet</span>, ou charge un projet (menu ☰).</p>
                 </div>
             </div>
             <!-- Les données du projet (bouton « Base ») : des onglets Don0, Don1...
@@ -191,9 +191,12 @@
             <div class="barre">
                 <span class="étiquette">Canevas <span id="tailleCanevas" class="note-dim">800 × 600</span></span>
                 <div class="barre-droite">
+                    <!-- sur un téléphone seulement : on exécute depuis l'écran du canevas, et la console se cache -->
+                    <button id="btnExécutionCanevas" class="btn btn-petit seulement-téléphone" title="Exécuter le programme" disabled>▶ Exécuter</button>
+                    <button id="btnConsoleTéléphone" class="btn btn-secondaire btn-petit seulement-téléphone" title="Montrer ou cacher la console" aria-pressed="true">▤</button>
                     <button id="btnEffaceCanevas" class="btn btn-secondaire btn-petit">Effacer</button>
                     <button id="btnImage" class="btn btn-secondaire btn-petit" title="Télécharger le dessin en PNG">Image</button>
-                    <button id="btnPleinÉcran" class="btn btn-secondaire btn-petit" title="Afficher le canevas en plein écran (Échap pour revenir)">⛶ Plein écran</button>
+                    <button id="btnPleinÉcran" class="btn btn-secondaire btn-petit" title="Afficher le canevas en plein écran (Échap pour revenir)">⛶<span class="libellé-plein"> Plein écran</span></button>
                 </div>
             </div>
             <!-- La scène : le canevas, et en plein écran une barre pour arrêter le programme et revenir -->
@@ -231,6 +234,13 @@
             </div>
         </section>
     </main>
+
+    <!-- Sur un téléphone seulement : un écran à la fois, choisi ici (voir montreÉcran) -->
+    <nav id="ongletsTéléphone" class="onglets-téléphone" role="tablist" aria-label="Les écrans">
+        <button role="tab" data-ecran="projet" aria-selected="false"><span class="icône-onglet">📁</span>Projet</button>
+        <button role="tab" data-ecran="code" aria-selected="true"><span class="icône-onglet">✎</span>Code</button>
+        <button role="tab" data-ecran="exécution" aria-selected="false"><span class="icône-onglet">▶</span>Exécution</button>
+    </nav>
 
     <!-- ===================== Aide ===================== -->
     <!-- Fenêtre de dialogue à boutons (déconnexion) -->

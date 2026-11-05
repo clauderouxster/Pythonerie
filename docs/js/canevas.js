@@ -605,6 +605,8 @@ const Pyt = (function () {
         if (canevas.height !== ht) canevas.height = couche.height = ht;
         canevas.parentElement.style.aspectRatio = lg + ' / ' + ht;
         canevas.parentElement.style.setProperty('--ratio', String(lg / ht));
+        // aussi sur la scène : sur un téléphone, sa hauteur suit celle du canevas (style.css)
+        if (canevas.parentElement.parentElement) canevas.parentElement.parentElement.style.setProperty('--ratio', String(lg / ht));
         if (scène3D()) scène3D().dimensionne(lg, ht);
         const étiquette = document.getElementById('tailleCanevas');
         if (étiquette) étiquette.textContent = lg + ' × ' + ht;

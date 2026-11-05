@@ -876,3 +876,122 @@ pre.exemple {
 
 /* La couche 3D (voir js/scene3d.js) : sous le canevas 2D, qui devient transparent */
 .cadre-canevas canvas.couche-3d { pointer-events: none; }
+
+/* ---------------- Téléphone ----------------
+   Sur un téléphone seulement (body.téléphone, posé par pythonerie.js d'après appareil()),
+   l'espace de travail devient trois écrans, un seul à la fois, choisis par la barre d'onglets
+   du bas : 📁 Projet (la liste des programmes), ✎ Code (l'éditeur) et ▶ Exécution (le canevas
+   et la console). ▶ Exécuter est sur l'écran d'exécution, pas sur celui du code. Les autres
+   appareils gardent l'organisation habituelle. */
+.onglets-téléphone, .seulement-téléphone, .texte-téléphone { display: none; }
+body.téléphone .texte-téléphone { display: inline; }
+body.téléphone .texte-ordinateur { display: none; }
+body.téléphone { height: 100dvh; overflow: hidden; }
+body.téléphone .en-tête { padding: 4px 10px; gap: 6px; flex-wrap: nowrap; }
+body.téléphone .logo { width: 28px; height: 28px; }
+body.téléphone .titre { font-size: 15px; }
+body.téléphone .version, body.téléphone .sous-titre, body.téléphone .libellé, body.téléphone .libellé-plein, body.téléphone .état-lispe:not(.erreur) { display: none; }
+body.téléphone .titre { white-space: nowrap; }
+body.téléphone .actions-en-tête { flex-wrap: nowrap; gap: 4px; margin-left: auto; min-width: 0; }
+body.téléphone .actions-en-tête .btn { padding: 4px 8px; }
+body.téléphone .btn.élève { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+
+body.téléphone .espace { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; overflow: hidden; }
+body.téléphone .séparateur, body.téléphone .seulement-étroit { display: none; }
+body.téléphone .espace > .programmes,
+body.téléphone .espace > .zone-édition,
+body.téléphone .espace > .zone-canevas { display: none; flex: 1 1 0; min-height: 0; max-height: none; height: auto; }
+body.téléphone.écran-projet .espace > .programmes,
+body.téléphone.écran-code .espace > .zone-édition,
+body.téléphone.écran-exécution .espace > .zone-canevas { display: flex; }
+
+/* La barre d'onglets, en bas de l'écran, à portée du pouce */
+body.téléphone .onglets-téléphone {
+    display: flex;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-sidebar);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.onglets-téléphone button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px 7px;
+    border: none;
+    border-top: 2px solid transparent;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.onglets-téléphone button .icône-onglet { font-size: 18px; line-height: 1; }
+.onglets-téléphone button[aria-selected="true"] { color: var(--accent); border-top-color: var(--accent); }
+/* un programme qui tourne : un point sur l'onglet Exécution */
+.onglets-téléphone button { position: relative; }
+.onglets-téléphone button.en-cours::after {
+    content: ''; position: absolute; top: 6px; left: calc(50% + 12px);
+    width: 7px; height: 7px; border-radius: 50%; background: var(--success);
+}
+
+/* Écran Projet : la liste prend toute la place */
+body.téléphone .programmes { border: none; padding: 10px 12px; overflow-y: auto; }
+body.téléphone .liste li { padding-top: 9px; padding-bottom: 9px; }
+
+/* Écran Code : l'éditeur occupe tout l'écran ; on n'y exécute pas (▶ est sur l'écran d'exécution) */
+body.téléphone .zone-édition { padding: 6px 8px 8px; gap: 6px; }
+body.téléphone #btnExécuter, body.téléphone #btnPleinCode, body.téléphone #btnPleinConsole { display: none; }
+body.téléphone .conteneur-éditeur { min-height: 0; }
+body.téléphone .conteneur-éditeur .CodeMirror { font-size: 13px; }
+
+/* Écran Exécution : la barre (▶ Exécuter…), le canevas aussi grand que possible, sans bord,
+   puis la console */
+body.téléphone .seulement-téléphone { display: inline-block; }
+body.téléphone .zone-canevas { padding: 6px 8px 8px; gap: 6px; overflow: hidden; }
+body.téléphone .zone-canevas > .barre { flex-wrap: nowrap; }
+body.téléphone .zone-canevas > .barre .étiquette { display: none; }
+body.téléphone .zone-canevas > .barre .barre-droite { flex: 1; }
+body.téléphone #btnExécutionCanevas { margin-right: auto; }
+body.téléphone #btnConsoleTéléphone[aria-pressed="true"] { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
+body.téléphone .coordonnées { display: none; }
+/* la scène prend la hauteur du canevas (--ratio, posé par canevas.js), la console le reste */
+/* (pas en plein écran : un conteneur retiendrait la scène « secours », en position fixe, de l'iPhone) */
+body.téléphone .zone-canevas:not(:has(.scène-canevas.plein)) { container-type: inline-size; }
+body.téléphone .scène-canevas:not(.plein) {
+    flex: 0 1 calc(100cqw / var(--ratio, 1.3333));
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    container-type: size;
+}
+body.téléphone .scène-canevas:not(.plein) .cadre-canevas {
+    flex: none;
+    width: min(100cqw, 100cqh * var(--ratio, 1.3333));
+}
+/* les limites du canevas ne sont plus marquées d'un trait, ni à l'écran ni en plein écran */
+body.téléphone .cadre-canevas,
+body.téléphone .scène-canevas.plein .cadre-canevas { border: none; border-radius: 0; box-shadow: none; }
+body.téléphone .scène-canevas.plein { padding: 6px; gap: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+body.téléphone .scène-canevas.plein .cadre-canevas { width: min(100%, calc((100dvh - 56px) * var(--ratio, 1.3333))); }
+body.téléphone .scène-canevas.plein.avec-console .cadre-canevas { width: min(100%, calc((100dvh - 56px - 32dvh) * var(--ratio, 1.3333))); }
+body.téléphone .zone-canevas > .zone-console { flex: 1 1 0; min-height: 30%; }
+body.téléphone.console-cachée .zone-canevas > .zone-console { display: none; }
+body.téléphone.console-cachée .scène-canevas:not(.plein) { flex: 1 1 0; }
+body.téléphone .console { font-size: 12px; padding: 8px 10px; }
+/* en largeur : la console passe à droite du canevas */
+@media (orientation: landscape) {
+    body.téléphone.écran-exécution .espace > .zone-canevas {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 38%);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+    body.téléphone .zone-canevas > .barre { grid-column: 1 / -1; }
+    body.téléphone .zone-canevas > .scène-canevas:not(.plein) { grid-column: 1; grid-row: 2; min-height: 0; height: 100%; }
+    body.téléphone .zone-canevas > .zone-console { grid-column: 2; grid-row: 2; min-height: 0; }
+    body.téléphone.console-cachée .zone-canevas > .scène-canevas:not(.plein) { grid-column: 1 / -1; }
+}

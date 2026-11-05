@@ -673,6 +673,7 @@ const Pythonerie = (function () {
 
     let numéroExécution = 0;     // une exécution qui attend ses sons est abandonnée si une autre commence
     async function exécute() {
+        montreÉcran('exécution');       // sur un téléphone : le canevas et la console
         if (!wasmPrêt) { écritConsole('LispE est encore en cours de chargement…', 'info'); return; }
         sauveFichier();                 // le fichier de données ouvert : charge_données le lira tel qu'on l'a tapé
         if (!exigeÉlève('Pour exécuter un programme, il faut d\'abord dire qui tu es.')) {
@@ -765,12 +766,66 @@ const Pythonerie = (function () {
     function metAJourBoutons() {
         const enCours = Pyt.enCours();
         actualiseExécuter();
-        ['btnExécutionPlein', 'btnExécutionConsole'].forEach(id => {
+        ['btnExécutionPlein', 'btnExécutionConsole', 'btnExécutionCanevas'].forEach(id => {
             const b = $(id);
             b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
             b.title = enCours ? 'Arrêter le programme' : 'Exécuter le programme';
             b.classList.toggle('danger', enCours);      // ■ Arrêter, en rouge
         });
+        // sur un téléphone : un point sur l'onglet Exécution tant que le programme tourne
+        const onglet = document.querySelector('#ongletsTéléphone [data-ecran="exécution"]');
+        if (onglet) onglet.classList.toggle('en-cours', enCours);
+    }
+
+    // ------------------------------------------------------------------
+    // Sur un téléphone (appareil() : « téléphone ») : trois écrans, un seul à la fois, choisis
+    // par les onglets du bas : 📁 Projet (les programmes), ✎ Code (l'éditeur), ▶ Exécution
+    // (le canevas et la console). On exécute depuis l'écran d'exécution ; ouvrir un programme
+    // mène à l'écran du code. Ailleurs, rien ne change : montreÉcran ne fait rien.
+    // ?téléphone dans l'adresse impose cet affichage (pour l'essayer sur un ordinateur).
+    // ------------------------------------------------------------------
+    const ÉCRANS = ['projet', 'code', 'exécution'];
+    let surTéléphone = false;
+
+    function montreÉcran(nom) {
+        if (!surTéléphone || !ÉCRANS.includes(nom)) return;
+        const avant = ÉCRANS.find(é => document.body.classList.contains('écran-' + é));
+        ÉCRANS.forEach(é => document.body.classList.toggle('écran-' + é, é === nom));
+        document.querySelectorAll('#ongletsTéléphone [data-ecran]').forEach(b =>
+            b.setAttribute('aria-selected', String(b.dataset.ecran === nom)));
+        if (avant === nom) return;
+        // en quittant l'écran du code, le clavier du téléphone se range
+        if (nom !== 'code' && document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        if (nom !== 'exécution' && enPleinÉcran()) quittePleinÉcran();
+        try { sessionStorage.setItem('pythonerie.écran', nom); } catch (e) { /* rien */ }
+        requestAnimationFrame(() => {
+            if (éditeur) éditeur.refresh();
+            if (éditeurFichier) éditeurFichier.refresh();
+            if (nom === 'exécution') $('console').scrollTop = $('console').scrollHeight;
+        });
+    }
+
+    function montreConsoleTéléphone(oui) {
+        document.body.classList.toggle('console-cachée', !oui);
+        $('btnConsoleTéléphone').setAttribute('aria-pressed', String(oui));
+        $('btnConsoleTéléphone').title = oui ? 'Cacher la console' : 'Montrer la console';
+        if (oui) $('console').scrollTop = $('console').scrollHeight;
+    }
+
+    function installeTéléphone() {
+        let forcé = false;
+        try { forcé = new URLSearchParams(location.search).has('téléphone') || new URLSearchParams(location.search).has('telephone'); } catch (e) { /* rien */ }
+        surTéléphone = forcé || Pyt.appareil()[0] === 'téléphone';
+        if (!surTéléphone) return;
+        document.body.classList.add('téléphone');
+        document.querySelectorAll('#ongletsTéléphone [data-ecran]').forEach(b =>
+            b.addEventListener('click', () => montreÉcran(b.dataset.ecran)));
+        $('btnExécutionCanevas').addEventListener('click', basculeExécution);
+        $('btnConsoleTéléphone').addEventListener('click', () =>
+            montreConsoleTéléphone(document.body.classList.contains('console-cachée')));
+        let écran = 'code';
+        try { écran = sessionStorage.getItem('pythonerie.écran') || 'code'; } catch (e) { /* rien */ }
+        montreÉcran(ÉCRANS.includes(écran) ? écran : 'code');
     }
 
     function basculeExécution(ev) {
@@ -887,6 +942,7 @@ const Pythonerie = (function () {
     // affiche_console() : la console devient visible, quel que soit l'affichage
     function afficheConsole() {
         if (zonePleine === 'code') quitteZonePleine();
+        if (surTéléphone) { montreConsoleTéléphone(true); if (!enPleinÉcran()) montreÉcran('exécution'); }
         if (enPleinÉcran()) consoleSousLeCanevas(true);
         else $('zoneConsole').scrollIntoView({ block: 'nearest' });
     }
@@ -3256,6 +3312,7 @@ const Pythonerie = (function () {
         if (titreExécuter === null) titreExécuter = b.title;
         const enCours = wasmPrêt && Pyt.enCours();
         b.disabled = !wasmPrêt || (!!fichierOuvert && !enCours);
+        $('btnExécutionCanevas').disabled = !wasmPrêt;     // sur un téléphone, l'écran d'exécution
         b.textContent = enCours ? '■ Arrêter' : '▶ Exécuter';
         b.classList.toggle('danger', enCours);      // ■ Arrêter, en rouge
         b.title = enCours ? 'Arrêter le programme'
@@ -3314,6 +3371,7 @@ const Pythonerie = (function () {
     }
 
     async function ouvreFichierDonnées(chemin) {
+        montreÉcran('code');
         // le fichier devient la ligne choisie (et ＋ crée un fichier de données)
         const surRépertoire = surRépertoireDonnées;
         dansDonnées = true;
@@ -3592,6 +3650,7 @@ const Pythonerie = (function () {
 
     let chargementEnCours = false;
     async function ouvre(chemin) {
+        montreÉcran('code');            // sur un téléphone : le programme ouvert se voit
         fermeFichier();                 // un fichier de données ouvert laisse la place au code
         if (chemin === courant) return;
         await sauvegarde();
@@ -4612,6 +4671,7 @@ const Pythonerie = (function () {
         } catch (e) { /* rien */ }
         installeÉditeur();
         installeBoutons();
+        installeTéléphone();
         installeLigneDeCommande();
         installeSéparateur();
         effaceConsole();

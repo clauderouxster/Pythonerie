@@ -1033,7 +1033,11 @@ const Pythonerie = (function () {
         // en plein écran, glisser le doigt (vers le bas surtout) ne doit pas le faire quitter
         Pyt.retientGlissés($('scèneCanevas'), enPleinÉcran);
         $('btnConsolePlein').addEventListener('click', () => consoleSousLeCanevas(!$('scèneCanevas').classList.contains('avec-console')));
-        $('btnQuittePlein').addEventListener('click', quittePleinÉcran);
+        // sur un téléphone, la croix (seul bouton du plein écran) arrête aussi le programme
+        $('btnQuittePlein').addEventListener('click', () => {
+            if (surTéléphone && Pyt.enCours()) arrête();
+            quittePleinÉcran();
+        });
         $('btnExécutionPlein').addEventListener('click', basculeExécution);
         $('btnExécutionConsole').addEventListener('click', basculeExécution);
         // sortie par Échap (ou par le navigateur) du vrai plein écran
@@ -4741,7 +4745,16 @@ const Pythonerie = (function () {
         window.addEventListener('beforeunload', () => { if (modifie || fichierModifié) sauvegarde(); });
     }
 
+    // Une erreur au démarrage est écrite dans la console, au lieu de laisser une page à moitié prête
     async function démarre() {
+        try { await démarrage(); }
+        catch (e) {
+            console.error(e);
+            try { écritConsole('Erreur au démarrage de la Pythonerie : ' + ((e && e.message) || e), 'erreur'); } catch (e2) { /* rien */ }
+        }
+    }
+
+    async function démarrage() {
         try {
             if (localStorage.getItem('pythonerie.thème') === 'sombre') document.body.classList.add('dark-mode');
         } catch (e) { /* rien */ }
@@ -4753,6 +4766,9 @@ const Pythonerie = (function () {
         effaceConsole();
         Pyt.installe($('canevas'), $('coucheTortue'), rappel);
         metAJourBoutons();
+        // Matériels, Exemples et Médias ne dépendent que du site : ils se chargent tout de suite,
+        // sans attendre la base du navigateur (lente, voire muette, dans certains navigateurs)
+        chargeRépertoiresSite();
 
         stockage = StockageNavigateur;
         // les fichiers du projet (images, sons, données), rangés dans IndexedDB
@@ -4792,7 +4808,6 @@ const Pythonerie = (function () {
         if (nomCourant()) await prendPossession(nomCourant());
         else await rafraîchitListeProjets();
         await rafraichitListe();
-        chargeRépertoiresSite();
 
         let dernier = null;
         try { dernier = localStorage.getItem('pythonerie.dernier'); } catch (e) { /* rien */ }

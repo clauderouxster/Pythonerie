@@ -13,12 +13,25 @@
 # à dessiner chaque forme une par une. Le temps de dessin s'affiche en bas.
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
 # Le mur de briques : 5 rangées de 10 briques
 COLONNES = 10
 RANGÉES = 5
-LARGEUR_BRIQUE = 75
 HAUTEUR_BRIQUE = 24
 ÉCART = 4
+# les briques se partagent la largeur du canevas (75 points sur 800)
+LARGEUR_BRIQUE = (largeur() - 10) // COLONNES - ÉCART
 HAUT_DU_MUR = 60
 # chaque rangée : la couleur du corps, celle du reflet (en haut), celle de l'ombre (en bas)
 COULEURS = [["#e53935", "#ff8a80", "#8e1c1a"], ["#fb8c00", "#ffcc80", "#9a5200"],
@@ -30,8 +43,8 @@ pop = charge_son("médias/sounds/pop.wav")
 
 raquette_l = 110
 raquette_h = 14
-raquette_x = 345
-raquette_y = 560
+raquette_x = (largeur() - raquette_l) // 2
+raquette_y = hauteur() - 40
 rayon = 9
 
 # briques[i] vaut Vrai tant que la brique numéro i n'est pas cassée
@@ -218,7 +231,10 @@ fonction avance_balle():
 
 # --- Les dessins ---
 # Les bulles de lumière sont tirées une fois au hasard : le décor est le même à chaque image
-bulles = [[aléatoire(0, 800), aléatoire(0, 600), 2 + hasard() * 12, arrondi(0.03 + hasard() * 0.12, 2)] pour i dans intervalle(220)]
+fonction tire_bulles():
+    retourne [[aléatoire(0, largeur()), aléatoire(0, hauteur()), 2 + hasard() * 12, arrondi(0.03 + hasard() * 0.12, 2)] pour i dans intervalle(220)]
+
+bulles = tire_bulles()
 
 décor = nouveau_dessin()
 mur = nouveau_dessin()
@@ -228,21 +244,25 @@ temps_cumulé = 0
 images_comptées = 0
 temps_moyen = 0.0
 
-# Le décor : un ciel en dégradé de 75 bandes, des bulles de lumière, et un cadre
+# Le décor : un ciel en dégradé de 75 bandes, des bulles de lumière, et un cadre,
+# à la taille du canevas
 fonction prépare_décor():
     vide_dessin(décor)
+    l = largeur()
+    h = hauteur()
+    bande = h / 75          # 8 points sur 600
     pour i dans intervalle(75):
         décor.couleur(rgb(8 + i, 12 + i * 0.8, 50 + i * 1.6))
-        décor.rectangle_plein(0, i * 8, 800, 8)
+        décor.rectangle_plein(0, i * bande, l, bande + 1)
     pour b dans bulles:
         décor.couleur(f"rgba(255, 255, 255, {b[3]})")
         décor.disque(b[0], b[1], b[2])
     décor.couleur("#37474f")
-    décor.rectangle_plein(0, 0, 800, 4)
-    décor.rectangle_plein(0, 0, 4, 600)
-    décor.rectangle_plein(796, 0, 4, 600)
+    décor.rectangle_plein(0, 0, l, 4)
+    décor.rectangle_plein(0, 0, 4, h)
+    décor.rectangle_plein(l - 4, 0, 4, h)
     décor.couleur("#90a4ae")
-    pour k dans intervalle(20):
+    pour k dans intervalle(l // 40):
         décor.disque(20 + k * 40, 2, 1.5)
 
 # Une brique en relief : l'ombre, le corps, le reflet du haut et une petite brillance
@@ -277,6 +297,10 @@ fonction montre_dessins():
     montre_dessin(décor)
     montre_dessin(mur)
 
+# Un texte centré dans la largeur, à la hauteur y
+fonction texte_centré(y, t):
+    texte((largeur() - largeur_texte(t)) / 2, y, t)
+
 fonction dessine():
     # le temps des dessins, en moyenne sur 30 images
     temps_cumulé += a_durée(montre_dessins())
@@ -310,38 +334,58 @@ fonction dessine():
     texte(10, 20, f"Score : {score}")
     texte(largeur() - 100, 20, f"Vies : {vies}")
     # ce que coûtent les dessins
-    formes = 75 + longueur(bulles) + 23 + 4 * restantes
+    formes = 75 + longueur(bulles) + 3 + largeur() // 40 + 4 * restantes
     taille_texte(14)
     couleur("rgba(255, 255, 255, 0.8)")
     si préparé:
-        texte(10, 578, f"Dessins préparés : {formes} formes en 2 appels par image, {arrondi(temps_moyen, 1)} ms (D : comparer)")
+        texte(10, hauteur() - 22, f"Dessins préparés : {formes} formes en 2 appels par image, {arrondi(temps_moyen, 1)} ms (D : comparer)")
     sinon:
-        texte(10, 578, f"Refaits à chaque image : {formes} formes une par une, {arrondi(temps_moyen, 1)} ms (D : revenir)")
+        texte(10, hauteur() - 22, f"Refaits à chaque image : {formes} formes une par une, {arrondi(temps_moyen, 1)} ms (D : revenir)")
     taille_texte(26)
+    milieu = hauteur() // 2
     couleur("blanc")
     si état == "attente":
-        texte(215, 380, "Clic ou Espace : lancer la balle")
+        texte_centré(milieu + 80, "Clic ou Espace : lancer la balle")
         si record > 0:
-            texte(270, 430, f"Meilleur score : {record}")
+            texte_centré(milieu + 130, f"Meilleur score : {record}")
     sinonsi état == "perdu":
-        texte(240, 340, f"Perdu ! Score : {score}")
-        texte(255, 390, "Clic ou Espace : rejouer")
+        texte_centré(milieu + 40, f"Perdu ! Score : {score}")
+        texte_centré(milieu + 90, "Clic ou Espace : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            texte_centré(milieu + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            texte_centré(milieu + 140, f"Meilleur score : {record}")
     sinonsi état == "gagné":
         couleur("jaune")
-        texte(195, 340, f"Bravo, tout est cassé ! Score : {score}")
-        texte(255, 390, "Clic ou Espace : rejouer")
+        texte_centré(milieu + 40, f"Bravo, tout est cassé ! Score : {score}")
+        texte_centré(milieu + 90, "Clic ou Espace : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            texte_centré(milieu + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            texte_centré(milieu + 140, f"Meilleur score : {record}")
+
+# On a tourné le téléphone : le canevas a changé de taille.
+# On refait le mur et le décor à la nouvelle taille, et on ramène la raquette et la balle dedans.
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
+
+fonction recale():
+    ancienne_largeur =: largeur()
+    ancienne_hauteur =: hauteur()
+    LARGEUR_BRIQUE =: (largeur() - 10) // COLONNES - ÉCART
+    raquette_y =: hauteur() - 40
+    place_raquette(raquette_x + raquette_l / 2)
+    balle_x =: minimum(balle_x, largeur() - rayon)
+    balle_y =: minimum(balle_y, raquette_y - rayon - 1)
+    bulles =: tire_bulles()
+    prépare_décor()
+    mur_à_refaire =: Vrai
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        recale()
     pilote_clavier()
     si état == "jeu":
         avance_balle()

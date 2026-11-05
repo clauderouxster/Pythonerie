@@ -6,10 +6,26 @@
 # ou passe en plein écran.)
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
-# Le terrain : une grille de 20 cases sur 15, chaque case mesure 40 points
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
+# Le terrain : une grille de cases de 40 points, autant qu'il en tient dans le canevas
+# (20 cases sur 15 pour un canevas de 800 × 600)
 CASE = 40
-COLONNES = 20
-LIGNES = 15
+COLONNES = entier(largeur() / CASE)
+LIGNES = entier(hauteur() / CASE)
+# la taille du canevas à l'image précédente
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
 
 croque = charge_son("médias/sounds/pop.wav")
 perdu = charge_son("médias/sounds/ding.wav")
@@ -22,7 +38,7 @@ pomme = [12, 7]
 score = 0
 lenteur = 8               # le serpent avance toutes les "lenteur" images
 compteur = 0
-état = "attente"          # "attente", "jeu" ou "perdu"
+état = "attente"          # "attente", "jeu", "pause" ou "perdu"
 
 # --- Le meilleur score ---
 # Les records des jeux sont rangés dans l'onglet don0 (bouton ▦ Base), en JSON :
@@ -84,6 +100,34 @@ fonction place_pomme():
         y = aléatoire(0, LIGNES - 1)
     pomme =: [x, y]
 
+# On a tourné le téléphone : le canevas a changé de taille, donc la grille aussi.
+# On glisse le serpent pour qu'il reste dans la grille ; s'il est trop long
+# pour y tenir, il repart du début. La pomme hors de la grille est replacée.
+fonction nouvelle_grille():
+    COLONNES =: entier(largeur() / CASE)
+    LIGNES =: entier(hauteur() / CASE)
+    # de combien faut-il glisser le serpent vers la gauche et vers le haut ?
+    dx = 0
+    dy = 0
+    pour morceau dans serpent:
+        dx = maximum(dx, morceau[0] - COLONNES + 1)
+        dy = maximum(dy, morceau[1] - LIGNES + 1)
+    nouveau = []
+    pour morceau dans serpent:
+        nouveau.ajoute([morceau[0] - dx, morceau[1] - dy])
+    serpent =: nouveau
+    # s'il sort maintenant par la gauche ou par le haut, il ne tient pas : on recommence
+    pour morceau dans serpent:
+        si morceau[0] < 0 ou morceau[1] < 0:
+            serpent =: [[3, 7], [4, 7], [5, 7]]
+            direction =: [1, 0]
+            prochaine =: [1, 0]
+    si pomme[0] >= COLONNES ou pomme[1] >= LIGNES ou sur_le_serpent(pomme[0], pomme[1]):
+        place_pomme()
+    # le temps de regarder la nouvelle grille, le jeu attend
+    si état == "jeu":
+        état =: "pause"
+
 fonction recommence():
     serpent =: [[3, 7], [4, 7], [5, 7]]
     direction =: [1, 0]
@@ -96,7 +140,9 @@ fonction recommence():
 
 # On ne peut pas faire demi-tour d'un coup
 fonction tourne(dx, dy):
-    si état != "jeu":
+    si état == "pause":
+        état =: "jeu"
+    sinonsi état != "jeu":
         recommence()
     si dx != -direction[0] ou dy != -direction[1]:
         prochaine =: [dx, dy]
@@ -110,6 +156,8 @@ fonction clavier(t):
         tourne(0, -1)
     sinonsi t == "bas" ou t == "s":
         tourne(0, 1)
+    sinonsi t == "espace" et état == "pause":
+        état =: "jeu"
     sinonsi t == "espace" et état != "jeu":
         recommence()
 
@@ -151,6 +199,19 @@ fonction avance():
         # Sinon, il avance : la queue suit
         serpent =: serpent[1:]
 
+# Un texte centré dans la largeur du canevas
+fonction centre(y, t):
+    texte(largeur() / 2 - largeur_texte(t) / 2, y, t)
+
+# Sans clavier, on joue avec le doigt
+début = "Une flèche ou Espace pour commencer"
+rejouer = "Une flèche ou Espace : rejouer"
+continuer = "Une flèche ou Espace pour continuer"
+si écran[0] != "ordinateur":
+    début = "Touche l'écran pour commencer"
+    rejouer = "Touche l'écran pour rejouer"
+    continuer = "Touche l'écran pour continuer"
+
 fonction dessine():
     fond(rgb(30, 95, 30))
     # un damier léger, pour voir les cases
@@ -183,19 +244,25 @@ fonction dessine():
     texte(largeur() - 170, 20, f"Meilleur : {record}")
     taille_texte(26)
     si état == "attente":
-        texte(150, 400, "Une flèche ou Espace pour commencer")
+        centre(hauteur() - 200, début)
+    sinonsi état == "pause":
+        centre(hauteur() - 200, continuer)
     sinonsi état == "perdu":
         # en français, 0 et 1 sont au singulier : « 0 pomme », « 1 pomme », « 2 pommes »
         mot = "pommes"
         si score <= 1:
             mot = "pomme"
-        texte(200, 260, f"Perdu ! Tu as mangé {score} {mot}.")
-        texte(210, 310, "Une flèche ou Espace : rejouer")
+        centre(hauteur() / 2 - 40, f"Perdu ! Tu as mangé {score} {mot}.")
+        centre(hauteur() / 2 + 10, rejouer)
         si nouveau_record:
             couleur("jaune")
-            texte(300, 360, "Nouveau record !")
+            centre(hauteur() / 2 + 60, "Nouveau record !")
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        ancienne_largeur =: largeur()
+        ancienne_hauteur =: hauteur()
+        nouvelle_grille()
     si état == "jeu":
         compteur += 1
         si compteur >= lenteur:

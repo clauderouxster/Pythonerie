@@ -7,10 +7,23 @@
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 # Sur une tablette ou un téléphone : le bouton 🔥 Feu tire, et le doigt pilote.
 
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
 # La flotte : 5 rangées de 10 envahisseurs
 COLONNES = 10
 RANGÉES = 5
-PAS_X = 56            # distance entre deux envahisseurs
+# distance entre deux envahisseurs : 56, un peu moins si le canevas est étroit
+PAS_X = minimum(56, largeur() * 7 // 100)
 PAS_Y = 44
 LARGEUR_ENV = 36
 HAUTEUR_ENV = 24
@@ -23,8 +36,12 @@ son_boum = charge_son("médias/sounds/boum.wav")
 pas_de_marche = [charge_son(f"médias/sounds/pas_{i}.wav") pour i dans intervalle(1, 5)]
 
 # Le vaisseau
-vaisseau_x = 400
-VAISSEAU_Y = 550
+vaisseau_x = largeur() // 2
+VAISSEAU_Y = hauteur() - 50
+
+# la taille du canevas à l'image précédente (elle change quand on tourne le téléphone)
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
 
 # vivants[i] vaut Vrai tant que l'envahisseur numéro i n'est pas détruit
 vivants = []
@@ -37,7 +54,7 @@ tir_actif = Faux
 tir_x = 0
 tir_y = 0
 bombes = []           # chaque bombe est [x, y]
-étoiles = [[aléatoire(0, 800), aléatoire(0, 600)] pour i dans intervalle(60)]
+étoiles = [[aléatoire(0, largeur()), aléatoire(0, hauteur())] pour i dans intervalle(60)]
 explosions = []       # [x, y, durée] : le petit éclat d'un envahisseur touché
 vies = 3
 score = 0
@@ -102,7 +119,7 @@ fonction restants():
 # Une nouvelle vague : plus elle est loin, plus la flotte part bas
 fonction nouvelle_vague():
     vivants =: [Vrai pour i dans intervalle(COLONNES * RANGÉES)]
-    flotte_x =: 100
+    flotte_x =: largeur() // 8
     flotte_y =: 70 + minimum(vague - 1, 4) * 15
     sens =: 1
     bombes =: []
@@ -249,6 +266,25 @@ fonction vérifie_vague():
             joue_son(son_boum)
             sortir
 
+# On a tourné le téléphone : le canevas a changé de taille, on recale le jeu dedans
+fonction recale():
+    ancienne_largeur =: largeur()
+    ancienne_hauteur =: hauteur()
+    PAS_X =: minimum(56, largeur() * 7 // 100)
+    VAISSEAU_Y =: hauteur() - 50
+    place_vaisseau(vaisseau_x)
+    étoiles =: [[aléatoire(0, largeur()), aléatoire(0, hauteur())] pour i dans intervalle(60)]
+    # la flotte doit tenir en largeur, et rester assez loin du vaisseau
+    flotte_x =: minimum(flotte_x, largeur() - 12 - (COLONNES - 1) * PAS_X - LARGEUR_ENV)
+    flotte_y =: minimum(flotte_y, VAISSEAU_Y - 100 - RANGÉES * PAS_Y)
+    si TACTILE:
+        taille_texte(26)
+        bouton("feu", 10, hauteur() - 180, "🔥 Feu", bouton_feu)
+
+# Un texte centré dans le canevas, à la hauteur y
+fonction centre(y, t):
+    texte(largeur() / 2 - largeur_texte(t) / 2, y, t)
+
 # Un envahisseur : un corps, deux yeux, et des pattes qui bougent à chaque pas
 fonction dessine_envahisseur(x, y, c):
     couleur(c)
@@ -294,30 +330,33 @@ fonction dessine():
         rectangle_plein(b[0] - 2, b[1], 4, 10)
     # le sol, le score, les vies
     couleur("vert clair")
-    ligne(0, 575, largeur(), 575)
+    ligne(0, hauteur() - 25, largeur(), hauteur() - 25)
     couleur("blanc")
     taille_texte(18)
     texte(10, 20, f"Score : {score}")
-    texte(340, 20, f"Vague {vague}")
+    texte(largeur() / 2 - 60, 20, f"Vague {vague}")
     texte(largeur() - 100, 20, f"Vies : {vies}")
     taille_texte(26)
+    m = hauteur() // 2       # le milieu du canevas, en hauteur
     si état == "attente":
-        texte(165, 330, f"{TIRER} : défendre la Terre !")
+        centre(m + 30, f"{TIRER} : défendre la Terre !")
         si record > 0:
-            texte(270, 380, f"Meilleur score : {record}")
+            centre(m + 80, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         couleur("rouge clair")
-        texte(240, 300, f"La Terre est envahie !")
+        centre(m, f"La Terre est envahie !")
         couleur("blanc")
-        texte(270, 345, f"Score : {score}, vague {vague}")
-        texte(255, 390, f"{TIRER} : rejouer")
+        centre(m + 45, f"Score : {score}, vague {vague}")
+        centre(m + 90, f"{TIRER} : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            centre(m + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            centre(m + 140, f"Meilleur score : {record}")
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        recale()
     si état == "jeu":
         pilote_clavier()
         avance_flotte()
@@ -338,7 +377,7 @@ quand_glisse(souris)      # sur une tablette : glisser le doigt
 # sur une tablette ou un téléphone, le bouton qui tire, à la place du clic
 si TACTILE:
     taille_texte(26)
-    bouton("feu", 10, 420, "🔥 Feu", bouton_feu)
+    bouton("feu", 10, hauteur() - 180, "🔥 Feu", bouton_feu)
 quand_clic(clic)
 quand_touche(clavier)
 animer(image, 20)

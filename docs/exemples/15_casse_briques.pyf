@@ -5,12 +5,25 @@
 # que le clavier fonctionne.)
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
 # Le mur de briques : 5 rangées de 10 briques
 COLONNES = 10
 RANGÉES = 5
-LARGEUR_BRIQUE = 75
 HAUTEUR_BRIQUE = 24
 ÉCART = 4
+# les briques se partagent la largeur du canevas (75 points sur 800)
+LARGEUR_BRIQUE = (largeur() - 10) // COLONNES - ÉCART
 HAUT_DU_MUR = 60
 COULEURS = ["rouge", "orange", "jaune", "vert", "bleu"]
 
@@ -19,8 +32,8 @@ pop = charge_son("médias/sounds/pop.wav")
 
 raquette_l = 110
 raquette_h = 14
-raquette_x = 345
-raquette_y = 560
+raquette_x = (largeur() - raquette_l) // 2
+raquette_y = hauteur() - 40
 rayon = 9
 
 # briques[i] vaut Vrai tant que la brique numéro i n'est pas cassée
@@ -196,6 +209,10 @@ fonction avance_balle():
             état =: "attente"
             pose_balle()
 
+# Un texte centré dans la largeur, à la hauteur y
+fonction texte_centré(y, t):
+    texte((largeur() - largeur_texte(t)) / 2, y, t)
+
 fonction dessine():
     fond("bleu marine")
     pour i dans intervalle(longueur(briques)):
@@ -211,29 +228,46 @@ fonction dessine():
     texte(10, 20, f"Score : {score}")
     texte(largeur() - 100, 20, f"Vies : {vies}")
     taille_texte(26)
+    milieu = hauteur() // 2
     si état == "attente":
-        texte(215, 380, "Clic ou Espace : lancer la balle")
+        texte_centré(milieu + 80, "Clic ou Espace : lancer la balle")
         si record > 0:
-            texte(270, 430, f"Meilleur score : {record}")
+            texte_centré(milieu + 130, f"Meilleur score : {record}")
     sinonsi état == "perdu":
-        texte(240, 340, f"Perdu ! Score : {score}")
-        texte(255, 390, "Clic ou Espace : rejouer")
+        texte_centré(milieu + 40, f"Perdu ! Score : {score}")
+        texte_centré(milieu + 90, "Clic ou Espace : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            texte_centré(milieu + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            texte_centré(milieu + 140, f"Meilleur score : {record}")
     sinonsi état == "gagné":
         couleur("jaune")
-        texte(195, 340, f"Bravo, tout est cassé ! Score : {score}")
-        texte(255, 390, "Clic ou Espace : rejouer")
+        texte_centré(milieu + 40, f"Bravo, tout est cassé ! Score : {score}")
+        texte_centré(milieu + 90, "Clic ou Espace : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(300, 440, "Nouveau record !")
+            texte_centré(milieu + 140, "Nouveau record !")
         sinon:
-            texte(270, 440, f"Meilleur score : {record}")
+            texte_centré(milieu + 140, f"Meilleur score : {record}")
+
+# On a tourné le téléphone : le canevas a changé de taille.
+# On refait le mur à la nouvelle largeur et on ramène la raquette et la balle dedans.
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
+
+fonction recale():
+    ancienne_largeur =: largeur()
+    ancienne_hauteur =: hauteur()
+    LARGEUR_BRIQUE =: (largeur() - 10) // COLONNES - ÉCART
+    raquette_y =: hauteur() - 40
+    place_raquette(raquette_x + raquette_l / 2)
+    balle_x =: minimum(balle_x, largeur() - rayon)
+    balle_y =: minimum(balle_y, raquette_y - rayon - 1)
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        recale()
     pilote_clavier()
     si état == "jeu":
         avance_balle()

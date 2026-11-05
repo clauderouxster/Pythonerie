@@ -39,6 +39,14 @@ const FichiersProjet = (function () {
         if (base) return Promise.resolve(base);
         return new Promise((résout, rejette) => {
             if (!window.indexedDB) { rejette(new Error('ce navigateur ne permet pas de garder les fichiers du projet')); return; }
+            // Dans certains navigateurs de l'iPhone (Chrome, qui n'est pas Safari), l'ouverture peut ne
+            // jamais répondre : au bout de 6 secondes, on renonce (le démarrage continue sans la base)
+            let fini = false;
+            const délai = setTimeout(() => {
+                if (fini) return;
+                fini = true;
+                rejette(new Error('IndexedDB ne répond pas (recharge la page)'));
+            }, 6000);
             const r = indexedDB.open(NOM_BASE, 2);
             r.onupgradeneeded = () => {
                 const b = r.result;
@@ -49,8 +57,19 @@ const FichiersProjet = (function () {
                 // (version 1 : une sauvegarde temporaire, remplacée par la liste des projets)
                 if (b.objectStoreNames.contains('réserve')) b.deleteObjectStore('réserve');
             };
-            r.onsuccess = () => { base = r.result; résout(base); };
-            r.onerror = () => rejette(r.error || new Error('IndexedDB refuse de s\'ouvrir'));
+            r.onsuccess = () => {
+                clearTimeout(délai);
+                base = r.result;
+                // une autre page (une version plus récente) veut changer la base : on la laisse faire
+                base.onversionchange = () => { base.close(); base = null; };
+                if (!fini) { fini = true; résout(base); }
+            };
+            r.onerror = () => {
+                clearTimeout(délai);
+                if (!fini) { fini = true; rejette(r.error || new Error('IndexedDB refuse de s\'ouvrir')); }
+            };
+            // une autre page de la Pythonerie garde la base ouverte : on attend (dans la limite du délai)
+            r.onblocked = () => { /* le délai s'en charge */ };
         });
     }
 

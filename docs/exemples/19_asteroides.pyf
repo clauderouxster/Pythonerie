@@ -11,6 +11,22 @@
 # Ton meilleur score est gardé dans l'onglet don0 : voir « Le meilleur score » plus bas.
 # Sur une tablette ou un téléphone : le bouton 🔥 Feu tire, et le doigt pilote.
 
+# --- La taille du canevas ---
+# Sur une tablette ou un téléphone, le canevas prend à peu près la forme de l'écran,
+# qu'on le tienne en hauteur (portrait) ou en largeur (paysage) : le petit côté garde
+# 600 points, le grand côté s'allonge comme celui de l'écran. Sur un ordinateur,
+# rien ne change : 800 × 600.
+écran = appareil()
+si écran[0] != "ordinateur":
+    long = entier(600 * minimum(maximum(écran[1], écran[2]) / minimum(écran[1], écran[2]), 1.8))
+    long = maximum(long, 800)
+    portrait(600, long)
+    paysage(long, 600)
+
+# la taille de l'image précédente : si elle change, c'est qu'on a tourné l'écran
+ancienne_largeur = largeur()
+ancienne_hauteur = hauteur()
+
 son_tir = charge_son("médias/sounds/tir.wav")
 son_explosion = charge_son("médias/sounds/explosion.wav")
 son_boum = charge_son("médias/sounds/boum.wav")
@@ -31,8 +47,8 @@ cap_y = -1.0
 flamme = 0            # images pendant lesquelles le réacteur brille
 invincible = 0        # après un choc, le vaisseau clignote et ne craint rien
 
-souris_x = 400.0
-souris_y = 300.0
+souris_x = largeur() / 2
+souris_y = hauteur() / 2
 mode_souris = Faux
 
 astéroïdes = []       # chaque astéroïde : [x, y, vx, vy, taille, angle, rotation, forme]
@@ -183,6 +199,12 @@ si TACTILE:
 fonction bouton_feu(clef, texte):
     feu()
 
+# le bouton 🔥 Feu, en bas à droite du canevas
+fonction place_bouton_feu():
+    si TACTILE:
+        taille_texte(26)
+        bouton("feu", largeur() - 140, hauteur() - 65, "🔥 Feu", bouton_feu)
+
 fonction clic(x, y):
     # sur une tablette, toucher l'écran pilote ; le bouton 🔥 Feu tire (un toucher lance encore la partie)
     si TACTILE et état == "jeu":
@@ -219,6 +241,22 @@ fonction pilote_souris():
         pousse(0.12)
 
 # --- Le mouvement ---
+
+# On a tourné le téléphone : le canevas a changé de taille. On remet chaque chose
+# à la même place, en proportion, pour qu'elle reste dans le nouveau canevas.
+fonction recale():
+    fx = largeur() / ancienne_largeur
+    fy = hauteur() / ancienne_hauteur
+    vaisseau_x =: vaisseau_x * fx
+    vaisseau_y =: vaisseau_y * fy
+    souris_x =: souris_x * fx
+    souris_y =: souris_y * fy
+    astéroïdes =: [[a[0] * fx, a[1] * fy, a[2], a[3], a[4], a[5], a[6], a[7]] pour a dans astéroïdes]
+    tirs =: [[t[0] * fx, t[1] * fy, t[2], t[3], t[4]] pour t dans tirs]
+    particules =: [[p[0] * fx, p[1] * fy, p[2], p[3], p[4]] pour p dans particules]
+    ancienne_largeur =: largeur()
+    ancienne_hauteur =: hauteur()
+    place_bouton_feu()
 
 fonction avance_vaisseau():
     vit_x =: vit_x * 0.99
@@ -326,6 +364,10 @@ fonction dessine_vaisseau():
         couleur("orange")
         triangle(arrière_x + px * 5, arrière_y + py * 5, arrière_x - px * 5, arrière_y - py * 5, arrière_x - cap_x * longueur_flamme, arrière_y - cap_y * longueur_flamme)
 
+# Un texte centré dans la largeur, à la hauteur y
+fonction texte_centré(y, t):
+    texte((largeur() - largeur_texte(t)) / 2, y, t)
+
 fonction dessine():
     fond("noir")
     couleur("gris clair")
@@ -343,32 +385,34 @@ fonction dessine():
     couleur("blanc")
     taille_texte(18)
     texte(10, 10, f"Score : {score}")
-    texte(largeur() / 2 - 35, 10, f"Vague {vague}")
+    texte_centré(10, f"Vague {vague}")
     texte(largeur() - 100, 10, f"Vies : {vies}")
     si état == "attente":
         taille_texte(48)
-        texte(largeur() / 2 - 150, hauteur() / 2 - 80, "ASTÉROÏDES")
+        texte_centré(hauteur() / 2 - 80, "ASTÉROÏDES")
         taille_texte(22)
-        texte(largeur() / 2 - 165, hauteur() / 2, f"{TIRER} : commencer")
+        texte_centré(hauteur() / 2, f"{TIRER} : commencer")
         si record > 0:
-            texte(largeur() / 2 - 110, hauteur() / 2 + 50, f"Meilleur score : {record}")
+            texte_centré(hauteur() / 2 + 50, f"Meilleur score : {record}")
     sinonsi état == "perdu":
         taille_texte(30)
         couleur("rouge clair")
-        texte(largeur() / 2 - 140, hauteur() / 2 - 60, "Vaisseau détruit !")
+        texte_centré(hauteur() / 2 - 60, "Vaisseau détruit !")
         couleur("blanc")
         taille_texte(22)
-        texte(largeur() / 2 - 130, hauteur() / 2, f"Score : {score}, vague {vague}")
-        texte(largeur() / 2 - 140, hauteur() / 2 + 40, f"{TIRER} : rejouer")
+        texte_centré(hauteur() / 2, f"Score : {score}, vague {vague}")
+        texte_centré(hauteur() / 2 + 40, f"{TIRER} : rejouer")
         si nouveau_record:
             couleur("jaune")
-            texte(largeur() / 2 - 95, hauteur() / 2 + 90, "Nouveau record !")
+            texte_centré(hauteur() / 2 + 90, "Nouveau record !")
         sinon:
-            texte(largeur() / 2 - 110, hauteur() / 2 + 90, f"Meilleur score : {record}")
+            texte_centré(hauteur() / 2 + 90, f"Meilleur score : {record}")
 
 # --- La boucle du jeu ---
 
 fonction image():
+    si largeur() != ancienne_largeur ou hauteur() != ancienne_hauteur:
+        recale()
     si état == "jeu":
         si mode_souris:
             pilote_souris()
@@ -396,9 +440,7 @@ nouvelle_vague()
 quand_souris(souris)
 quand_glisse(souris)      # sur une tablette : glisser le doigt
 # sur une tablette ou un téléphone, le bouton qui tire, à la place du clic
-si TACTILE:
-    taille_texte(26)
-    bouton("feu", 660, 535, "🔥 Feu", bouton_feu)
+place_bouton_feu()
 quand_clic(clic)
 quand_touche(clavier)
 animer(image, 16)

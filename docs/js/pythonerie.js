@@ -838,8 +838,20 @@ const Pythonerie = (function () {
         const relève = () => {
             if (!enPleinÉcran()) { clearInterval(relèveFond); relèveFond = null; scène.style.removeProperty('--fond-canevas'); return; }
             try {
-                const [r, v, b, a] = $('canevas').getContext('2d').getImageData(0, 0, 1, 1).data;
-                if (a > 0) scène.style.setProperty('--fond-canevas', 'rgb(' + r + ',' + v + ',' + b + ')');
+                // huit points du bord (coins et milieux) : la couleur la plus fréquente est le fond,
+                // même si un dessin touche l'un d'eux
+                const c = $('canevas'), ctx = c.getContext('2d'), l = c.width - 1, h = c.height - 1;
+                const points = [[0, 0], [l, 0], [0, h], [l, h], [l >> 1, 0], [l >> 1, h], [0, h >> 1], [l, h >> 1]];
+                const compte = new Map();
+                let fond = null, maxi = 0;
+                for (const [x, y] of points) {
+                    const [r, v, b, a] = ctx.getImageData(x, y, 1, 1).data;
+                    const clef = a > 0 ? 'rgb(' + r + ',' + v + ',' + b + ')' : '';
+                    const n = (compte.get(clef) || 0) + 1;
+                    compte.set(clef, n);
+                    if (n > maxi) { maxi = n; fond = clef; }
+                }
+                if (fond) scène.style.setProperty('--fond-canevas', fond);
                 else scène.style.removeProperty('--fond-canevas');      // en 3D : le canevas 2D est transparent
             } catch (e) { /* canevas illisible : le fond sombre reste */ }
         };
@@ -906,6 +918,9 @@ const Pythonerie = (function () {
         const scène = $('scèneCanevas');
         // les touches doivent aller au programme, pas à l'éditeur ou à la console
         if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        // sur un téléphone, la scène sort des écrans qui défilent en largeur (.espace) : sur
+        // l'iPhone, sans vrai plein écran, elle resterait prise dedans au lieu de couvrir l'écran
+        if (surTéléphone) document.body.appendChild(scène);
         scène.classList.add('plein');
         metAJourBoutons();
         try {
@@ -922,6 +937,8 @@ const Pythonerie = (function () {
         Pyt.relâcheTouches();
         if (document.fullscreenElement === scène && document.exitFullscreen) document.exitFullscreen().catch(() => {});
         scène.classList.remove('plein', 'secours');
+        // la scène revient à sa place, sous la barre du canevas
+        if (scène.parentElement !== $('zoneCanevas')) $('coordonnées').before(scène);
     }
 
     // ------------------------------------------------------------------

@@ -627,7 +627,9 @@
    (setq _racine (_scène_3d s "montre_3d"))
    (evaljsc (list "Pyt.montre3D" (json _racine)))
    (_erreur_navigateur)
-   (setq _3d_montrée true)
+   ; setg : la variable du programme (un setq, dans une fonction, ne changerait qu'une
+   ; variable locale, et les objets créés ensuite ne seraient jamais envoyés à la scène)
+   (setg _3d_montrée true)
    nil)
 (defun _change_3d (_genre _o _nom (_a 0) (_b 0) (_c 0))
    (evaljsc (list "Pyt.change3D" _genre (_numéro_objet_3d _o _nom) _a _b _c))

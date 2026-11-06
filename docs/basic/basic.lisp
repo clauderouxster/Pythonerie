@@ -1,4 +1,4 @@
-;Date: 2026/11/03 20:56:37
+;Date: 2026/11/06 11:37:01
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -896,7 +896,7 @@
    )
    true)
 
-;!indexes := %[ ;1 computing [%, computing]* %]
+;!indexes := %[ ;1 ternaire [%, ternaire]* %]
 (defun C_indexes (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -906,7 +906,7 @@
             (compare tokens "[" i1 v1 nil)
             (push error_id 1)
             (if (and
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (S_indexes_0 tokens i1 v1)
                   (compare tokens "]" i1 v1 nil)
                )
@@ -927,7 +927,7 @@
          (setq i2 (clone i1))
          (setq v2 ())
          (compare tokens "," i2 v2 nil)
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
       )
@@ -1244,7 +1244,7 @@
    )
    true)
 
-;!callmethod := %. Word %( ;2 [computing [%, computing]*]? %)
+;!callmethod := %. Word %( ;2 [ternaire [%, ternaire]*]? %)
 (defun C_callmethod (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1276,7 +1276,7 @@
          (setq i3 (clone i2))
          (setq v3 ())
          (compare tokens "," i3 v3 nil)
-         (C_computing tokens i3 v3)
+         (C_ternaire tokens i3 v3)
          (set@ i2 0 (car i3))
          (setq v2 v3)
       )
@@ -1292,7 +1292,7 @@
    (check (and
          (setq i2 (clone i1))
          (setq v2 ())
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (S_callmethod_0 tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
@@ -1341,7 +1341,7 @@
    )
    true)
 
-;!callindexes := %[ ;1 computing [%, computing]* %]
+;!callindexes := %[ ;1 ternaire [%, ternaire]* %]
 (defun C_callindexes (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1351,7 +1351,7 @@
             (compare tokens "[" i1 v1 nil)
             (push error_id 1)
             (if (and
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (S_callindexes_0 tokens i1 v1)
                   (compare tokens "]" i1 v1 nil)
                )
@@ -1372,7 +1372,7 @@
          (setq i2 (clone i1))
          (setq v2 ())
          (compare tokens "," i2 v2 nil)
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
       )
@@ -1539,7 +1539,7 @@
    )
 )
 
-;!assignmenttopself :=  selfvariable operatorop computing
+;!assignmenttopself :=  selfvariable operatorop ternaire
 (defun C_assignmenttopself (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1548,7 +1548,7 @@
             (setq v1 ())
             (C_selfvariable tokens i1 v1)
             (C_operatorop tokens i1 v1)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -1575,7 +1575,7 @@
    )
 )
 
-;!assignmentop :=  variable operatorop computing
+;!assignmentop :=  variable operatorop ternaire
 (defun C_assignmentop (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1584,7 +1584,7 @@
             (setq v1 ())
             (C_variable tokens i1 v1)
             (C_operatorop tokens i1 v1)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -1614,7 +1614,7 @@
    )
 )
 
-;!tupleassign := Word %, variables %= computing [%, computing]*
+;!tupleassign := Word %, variables %= ternaire [%, ternaire]*
 (defun C_tupleassign (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1625,7 +1625,7 @@
             (compare tokens "," i1 v1 nil)
             (C_variables tokens i1 v1)
             (compare tokens "=" i1 v1 nil)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (S_tupleassign_0 tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
@@ -1641,7 +1641,7 @@
          (setq i2 (clone i1))
          (setq v2 ())
          (compare tokens "," i2 v2 nil)
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
       )
@@ -1711,7 +1711,7 @@
    )
 )
 
-;!tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)
+;!tojoin := [variable^astring] %. Pythonjoin ;13 %( ternaire %)
 (defun C_tojoin (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1727,7 +1727,7 @@
             (push error_id 13)
             (if (and
                   (compare tokens "(" i1 v1 nil)
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                )
                (pop error_id)
@@ -1741,7 +1741,7 @@
    )
 )
 
-;!alapython := [astring^anumber] %. Pythonword ;13 %( [computing [%, computing]*]? %)
+;!alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 (defun C_alapython (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1777,7 +1777,7 @@
          (setq i3 (clone i2))
          (setq v3 ())
          (compare tokens "," i3 v3 nil)
-         (C_computing tokens i3 v3)
+         (C_ternaire tokens i3 v3)
          (set@ i2 0 (car i3))
          (setq v2 v3)
       )
@@ -1793,7 +1793,7 @@
    (check (and
          (setq i2 (clone i1))
          (setq v2 ())
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (S_alapython_0 tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)

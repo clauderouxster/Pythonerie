@@ -104,7 +104,7 @@ negation := $non
 # Les différents types de variables :
 interval := %[ computing? %: ;10 computing? %]
 
-!indexes := %[ ;1 computing [%, computing]* %]
+!indexes := %[ ;1 ternaire [%, ternaire]* %]
 
 !valuelist := %[ ;3 [ ternaire [%, ternaire]* ]? %]
 
@@ -125,9 +125,9 @@ argcompute := comparing|ternaire
 
 !arguments := argcompute [%, argcompute]*
 
-!callmethod := %. Word %( ;2 [computing [%, computing]*]? %)
+!callmethod := %. Word %( ;2 [ternaire [%, ternaire]*]? %)
 callinterval := %[ computing? %: ;10 computing? %]
-!callindexes := %[ ;1 computing [%, computing]* %]
+!callindexes := %[ ;1 ternaire [%, ternaire]* %]
 
 call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
 
@@ -136,16 +136,16 @@ method := variable callmethod [callinterval^callindexes^callmethod]*
 catching := [$sauf^$attrape] [%( Word %)]? expressions+
 !amaybe := $essaie ;15  expressions+ catching $finessaie
 
-!assignmenttopself :=  selfvariable operatorop computing
+!assignmenttopself :=  selfvariable operatorop ternaire
 
 !assignmentself :=  selfvariable %= compareorcompute
 
-!assignmentop :=  variable operatorop computing
+!assignmentop :=  variable operatorop ternaire
 
 !assignment := [multiassignment^variable] %= compareorcompute
 
 # a, b = b, a + b
-!tupleassign := Word %, variables %= computing [%, computing]*
+!tupleassign := Word %, variables %= ternaire [%, ternaire]*
 
 !assignmentg := [multiassignment^variable] %= %: compareorcompute
 
@@ -155,8 +155,8 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 !parenthetic := %( ternaire %)
 
 # Style Python : ", ".joindre(liste) ou ", ".join(liste)
-!tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)
-!alapython := [astring^anumber] %. Pythonword ;13 %( [computing [%, computing]*]? %)
+!tojoin := [variable^astring] %. Pythonjoin ;13 %( ternaire %)
+!alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 
 # Le ^ évite de construire une sous-liste (callitem ...) pour chaque élément
 ^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable

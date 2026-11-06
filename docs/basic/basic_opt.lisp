@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (157 fonctions, ;Date: 2026/11/03 20:56:37)
-;Date: 2026/11/03 20:56:37
+;Optimisé par optimise.lisp, d'après basic.lisp (157 fonctions, ;Date: 2026/11/06 11:37:01)
+;Date: 2026/11/06 11:37:01
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1078,7 +1078,7 @@
 
 ; O_interval_1 : identique à O_interval_0 (optimise.lisp)
 
-;!indexes := %[ ;1 computing [%, computing]* %]
+;!indexes := %[ ;1 ternaire [%, ternaire]* %]
 (defun C_indexes (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1088,7 +1088,7 @@
             (compare tokens "[" i1 v1 nil)
             (push error_id 1)
             (if (and
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (S_indexes_0 tokens i1 v1)
                   (compare tokens "]" i1 v1 nil)
                )
@@ -1109,7 +1109,7 @@
          (setq i2 (clone i1))
          (setq v2 ())
          (compare tokens "," i2 v2 nil)
-         (C_computing tokens i2 v2)
+         (C_ternaire tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
       )
@@ -1461,7 +1461,7 @@
    )
    true)
 
-;!callmethod := %. Word %( ;2 [computing [%, computing]*]? %)
+;!callmethod := %. Word %( ;2 [ternaire [%, ternaire]*]? %)
 (defun C_callmethod (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1473,7 +1473,7 @@
             (compare tokens "(" i1 v1 nil)
             (push error_id 2)
             (if (and
-                  (O_callmethod_1 tokens i1 v1)
+                  (O_valuelist_1 tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                )
                (pop error_id)
@@ -1487,36 +1487,10 @@
    )
 )
 
-(defun S_callmethod_0 (tokens i2 vp)
-   (setq v ())
-   (while (and
-         (setq i3 (clone i2))
-         (setq v3 ())
-         (compare tokens "," i3 v3 nil)
-         (C_computing tokens i3 v3)
-         (set@ i2 0 (car i3))
-         (setq v2 v3)
-      )
-      (nconc v v2)
-   )
-   (check v
-      (nconc vp v)
-   )
-   true)
 
-(defun O_callmethod_1 (tokens i1 vp)
-   (setq v1 ())
-   (check (and
-         (setq i2 (clone i1))
-         (setq v2 ())
-         (C_computing tokens i2 v2)
-         (S_callmethod_0 tokens i2 v2)
-         (set@ i1 0 (car i2))
-         (setq v1 v2)
-      )
-      (nconc vp v1)
-   )
-   true)
+; S_callmethod_0 : identique à S_valuelist_0 (optimise.lisp)
+
+; O_callmethod_1 : identique à O_valuelist_1 (optimise.lisp)
 
 ;callinterval := %[ computing? %: ;10 computing? %]
 (defun C_callinterval (tokens i0 v)
@@ -1549,7 +1523,7 @@
 
 ; O_callinterval_1 : identique à O_interval_0 (optimise.lisp)
 
-;!callindexes := %[ ;1 computing [%, computing]* %]
+;!callindexes := %[ ;1 ternaire [%, ternaire]* %]
 (defun C_callindexes (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1559,7 +1533,7 @@
             (compare tokens "[" i1 v1 nil)
             (push error_id 1)
             (if (and
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (S_indexes_0 tokens i1 v1)
                   (compare tokens "]" i1 v1 nil)
                )
@@ -1733,7 +1707,7 @@
 
 ; P_amaybe_0 : identique à P_catching_1 (optimise.lisp)
 
-;!assignmenttopself :=  selfvariable operatorop computing
+;!assignmenttopself :=  selfvariable operatorop ternaire
 (defun C_assignmenttopself (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1742,7 +1716,7 @@
             (setq v1 ())
             (C_selfvariable tokens i1 v1)
             (C_operatorop tokens i1 v1)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -1769,7 +1743,7 @@
    )
 )
 
-;!assignmentop :=  variable operatorop computing
+;!assignmentop :=  variable operatorop ternaire
 (defun C_assignmentop (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1778,7 +1752,7 @@
             (setq v1 ())
             (C_variable tokens i1 v1)
             (C_operatorop tokens i1 v1)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -1808,7 +1782,7 @@
    )
 )
 
-;!tupleassign := Word %, variables %= computing [%, computing]*
+;!tupleassign := Word %, variables %= ternaire [%, ternaire]*
 (defun C_tupleassign (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1819,7 +1793,7 @@
             (compare tokens "," i1 v1 nil)
             (C_variables tokens i1 v1)
             (compare tokens "=" i1 v1 nil)
-            (C_computing tokens i1 v1)
+            (C_ternaire tokens i1 v1)
             (S_indexes_0 tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
@@ -1891,7 +1865,7 @@
    )
 )
 
-;!tojoin := [variable^astring] %. Pythonjoin ;13 %( computing %)
+;!tojoin := [variable^astring] %. Pythonjoin ;13 %( ternaire %)
 (defun C_tojoin (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1907,7 +1881,7 @@
             (push error_id 13)
             (if (and
                   (compare tokens "(" i1 v1 nil)
-                  (C_computing tokens i1 v1)
+                  (C_ternaire tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                )
                (pop error_id)
@@ -1921,7 +1895,7 @@
    )
 )
 
-;!alapython := [astring^anumber] %. Pythonword ;13 %( [computing [%, computing]*]? %)
+;!alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 (defun C_alapython (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1937,7 +1911,7 @@
             (push error_id 13)
             (if (and
                   (compare tokens "(" i1 v1 nil)
-                  (O_callmethod_1 tokens i1 v1)
+                  (O_valuelist_1 tokens i1 v1)
                   (compare tokens ")" i1 v1 nil)
                )
                (pop error_id)
@@ -1952,9 +1926,9 @@
 )
 
 
-; S_alapython_0 : identique à S_callmethod_0 (optimise.lisp)
+; S_alapython_0 : identique à S_valuelist_0 (optimise.lisp)
 
-; O_alapython_1 : identique à O_callmethod_1 (optimise.lisp)
+; O_alapython_1 : identique à O_valuelist_1 (optimise.lisp)
 
 ;^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable
 (defun C_callitem (tokens i0 v)
@@ -2384,7 +2358,7 @@
             (setq v1 ())
             (C_Word tokens i1 v1)
             (C_computing tokens i1 v1)
-            (S_indexes_0 tokens i1 v1)
+            (S_multiop_0 tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
          )
@@ -2393,8 +2367,22 @@
    )
 )
 
-
-; S_multiop_0 : identique à S_indexes_0 (optimise.lisp)
+(defun S_multiop_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_computing tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
 
 ;returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
 (defun C_returning (tokens i0 v)

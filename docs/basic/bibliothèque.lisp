@@ -236,7 +236,88 @@
 (defun cosinus (degrés) (cos (radian degrés)))
 
 ; Listes
-(defun trie (liste) (sort '< (clone liste)))
+; Le tri, à la manière de Python : trie(l), trie(l, key=f), trie(l, key=f, reverse=True) ; le
+; transpileur remet key= et reverse= à leur place : (trie l f true). l.sort(…) trie la liste
+; elle-même (_trie_sur_place) ; max(l, key=f) et min(l, key=f) deviennent _max_clé et _min_clé.
+; Comme en Python : les listes se comparent élément par élément, le tri est stable (à clef égale,
+; l'ordre de départ reste), et un dictionnaire donne ses clefs triées.
+(defun _avant (a b)
+   (if (and (consp a) (consp b))
+      (_avant_listes a b 0)
+      (< a b)))
+
+(defun _avant_listes (a b i)
+   (cond
+      ((>= i (size b)) false)
+      ((>= i (size a)) true)
+      ((_avant (@ a i) (@ b i)) true)
+      ((_avant (@ b i) (@ a i)) false)
+      (true (_avant_listes a b (+ i 1)))))
+
+; les éléments décorés : [clef, rang, élément]
+(defun _avant_décoré (a b)
+   (if (_avant (@ a 0) (@ b 0))
+      true
+      (if (_avant (@ b 0) (@ a 0)) false (< (@ a 1) (@ b 1)))))
+
+(defun _après_décoré (a b)
+   (if (_avant (@ b 0) (@ a 0))
+      true
+      (if (_avant (@ a 0) (@ b 0)) false (< (@ a 1) (@ b 1)))))
+
+(defun trie (liste (clef nil) (inverse false))
+   (setq _c (if (in (string (type liste)) "dictionary") (keys@ liste) (clone liste)))
+   (ife (and (nullp clef) (not inverse) (not (and (> (size _c) 0) (consp (@ _c 0)))))
+      (sort '< _c)
+      (setq _d (list))
+      (setq _i 0)
+      (loop _x _c
+         (push _d (list (if (nullp clef) _x (clef _x)) _i _x))
+         (+= _i 1))
+      (if inverse (sort '_après_décoré _d) (sort '_avant_décoré _d))
+      (maplist (lambda (_e) (@ _e 2)) _d false)))
+
+; sorted : le nom anglais, que les IA écrivent souvent
+(defun sorted (liste (clef nil) (inverse false)) (trie liste clef inverse))
+
+(defun _trie_sur_place (liste (clef nil) (inverse false))
+   (ife (and (nullp clef) (not inverse) (not (and (> (size liste) 0) (consp (@ liste 0)))))
+      (sort '< liste)
+      (setq _r (trie liste clef inverse))
+      (setq _i 0)
+      (loop _x _r
+         (set@ liste _i _x)
+         (+= _i 1)))
+   nil)
+
+(defun _max_clé (liste clef)
+   (setq _m nil)
+   (setq _km nil)
+   (setq _premier true)
+   (loop _x liste
+      (setq _k (if (nullp clef) _x (clef _x)))
+      (check (or _premier (_avant _km _k))
+         (setq _m _x)
+         (setq _km _k)
+         (setq _premier false)))
+   _m)
+
+(defun _min_clé (liste clef)
+   (setq _m nil)
+   (setq _km nil)
+   (setq _premier true)
+   (loop _x liste
+      (setq _k (if (nullp clef) _x (clef _x)))
+      (check (or _premier (_avant _k _km))
+         (setq _m _x)
+         (setq _km _k)
+         (setq _premier false)))
+   _m)
+
+; print(a, b, sep="-", end="")
+(defun _affiche_nommé (valeurs séparateur fin)
+   (evaljsc (list "Pyt.écris" (+ (join (maplist '_texte valeurs false) (_texte séparateur)) (_texte fin))))
+   nil)
 (defun inverse (liste) (reverse liste))
 
 ; Chaînes de caractères

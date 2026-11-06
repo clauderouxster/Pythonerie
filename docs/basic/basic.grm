@@ -123,9 +123,14 @@ variable := dimvariable^Word
 
 argcompute := comparing|ternaire
 
-!arguments := argcompute [%, argcompute]*
+# key=f, reverse=True, end="" : un argument nommé (print, sorted, sort, min, max ; voir range_nommés dans transpiler.lisp)
+!namedarg := Word %= compareorcompute
+^argument := namedarg^argcompute
 
-!callmethod := %. Word %( ;2 [ternaire [%, ternaire]*]? %)
+!arguments := argument [%, argument]*
+
+^methodarg := namedarg^ternaire
+!callmethod := %. Word %( ;2 [methodarg [%, methodarg]*]? %)
 callinterval := %[ computing? %: ;10 computing? %]
 !callindexes := %[ ;1 ternaire [%, ternaire]* %]
 
@@ -153,13 +158,15 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 
 # (x si c sinon y) entre parenthèses, au milieu d'un calcul : a + (c + 1 si c < 10 sinon 20)
 !parenthetic := %( ternaire %)
+# (a, b) : un tuple de Python, qui devient une liste (sorted(l, key=lambda w: (len(w), w)))
+!tuple := %( ternaire %, ternaire [%, ternaire]* %)
 
 # Style Python : ", ".joindre(liste) ou ", ".join(liste)
 !tojoin := [variable^astring] %. Pythonjoin ;13 %( ternaire %)
 !alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 
 # Le ^ évite de construire une sous-liste (callitem ...) pour chaque élément
-^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable
+^callitem := lispe^walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 
 # Le & supprime l'étiquette computing s'il n'y a pas d'opérateur
 &computing := callitem  [operator callitem]*
@@ -197,6 +204,8 @@ pattern := patternlist^patterndictionary^astring^minus^anumber^variable
 !prologrule := $prolog Word %( ;4 patterns %) predicates+ $finprolog
 
 !lambda := %[ [$lambda^$λ] ;17 %( variables? %) body %]
+# la lambda de Python : lambda p: p[1] (en argument : sorted(l, key=lambda p: p[1]))
+!pylambda := [$lambda^$λ] variables? %: compareorcompute
 !comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 
 !elif := $sinonsi ;5 comparison then [elif^else]?

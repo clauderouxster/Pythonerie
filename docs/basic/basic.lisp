@@ -1,4 +1,4 @@
-;Date: 2026/11/06 11:37:01
+;Date: 2026/11/06 17:40:20
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1210,14 +1210,45 @@
    )
 )
 
-;!arguments := argcompute [%, argcompute]*
+;!namedarg := Word %= compareorcompute
+(defun C_namedarg (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (C_Word tokens i1 v1)
+            (compare tokens "=" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'namedarg v0))
+      )
+   )
+)
+
+;^argument := namedarg^argcompute
+(defun C_argument (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (or
+            (C_namedarg tokens i0 v0)
+            (C_argcompute tokens i0 v0)
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+;!arguments := argument [%, argument]*
 (defun C_arguments (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (and
             (setq i1 (clone i0))
             (setq v1 ())
-            (C_argcompute tokens i1 v1)
+            (C_argument tokens i1 v1)
             (S_arguments_0 tokens i1 v1)
             (set@ i0 0 (car i1))
             (setq v0 v1)
@@ -1233,7 +1264,7 @@
          (setq i2 (clone i1))
          (setq v2 ())
          (compare tokens "," i2 v2 nil)
-         (C_argcompute tokens i2 v2)
+         (C_argument tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
       )
@@ -1244,7 +1275,20 @@
    )
    true)
 
-;!callmethod := %. Word %( ;2 [ternaire [%, ternaire]*]? %)
+;^methodarg := namedarg^ternaire
+(defun C_methodarg (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (or
+            (C_namedarg tokens i0 v0)
+            (C_ternaire tokens i0 v0)
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+;!callmethod := %. Word %( ;2 [methodarg [%, methodarg]*]? %)
 (defun C_callmethod (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1276,7 +1320,7 @@
          (setq i3 (clone i2))
          (setq v3 ())
          (compare tokens "," i3 v3 nil)
-         (C_ternaire tokens i3 v3)
+         (C_methodarg tokens i3 v3)
          (set@ i2 0 (car i3))
          (setq v2 v3)
       )
@@ -1292,7 +1336,7 @@
    (check (and
          (setq i2 (clone i1))
          (setq v2 ())
-         (C_ternaire tokens i2 v2)
+         (C_methodarg tokens i2 v2)
          (S_callmethod_0 tokens i2 v2)
          (set@ i1 0 (car i2))
          (setq v1 v2)
@@ -1711,6 +1755,44 @@
    )
 )
 
+;!tuple := %( ternaire %, ternaire [%, ternaire]* %)
+(defun C_tuple (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (C_ternaire tokens i1 v1)
+            (compare tokens "," i1 v1 nil)
+            (C_ternaire tokens i1 v1)
+            (S_tuple_0 tokens i1 v1)
+            (compare tokens ")" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'tuple v0))
+      )
+   )
+)
+
+(defun S_tuple_0 (tokens i1 vp)
+   (setq v ())
+   (while (and
+         (setq i2 (clone i1))
+         (setq v2 ())
+         (compare tokens "," i2 v2 nil)
+         (C_ternaire tokens i2 v2)
+         (set@ i1 0 (car i2))
+         (setq v1 v2)
+      )
+      (nconc v v1)
+   )
+   (check v
+      (nconc vp v)
+   )
+   true)
+
 ;!tojoin := [variable^astring] %. Pythonjoin ;13 %( ternaire %)
 (defun C_tojoin (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
@@ -1802,7 +1884,7 @@
    )
    true)
 
-;^callitem := lispe^walrus^tojoin^alapython^call^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^parenthetic^astring^minus^anumber^returning^variable
+;^callitem := lispe^walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 (defun C_callitem (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -1812,12 +1894,14 @@
             (C_tojoin tokens i0 v0)
             (C_alapython tokens i0 v0)
             (C_call tokens i0 v0)
+            (C_pylambda tokens i0 v0)
             (C_λ tokens i0 v0)
             (C_comprehension tokens i0 v0)
             (C_selfvariable tokens i0 v0)
             (C_method tokens i0 v0)
             (C_valuelist tokens i0 v0)
             (C_valuedictionary tokens i0 v0)
+            (C_tuple tokens i0 v0)
             (C_parenthetic tokens i0 v0)
             (C_astring tokens i0 v0)
             (C_minus tokens i0 v0)
@@ -2667,6 +2751,35 @@
 )
 
 (defun O_λ_0 (tokens i1 vp)
+   (setq v1 ())
+   (check (C_variables tokens i1 v1)
+      (nconc vp v1)
+   )
+   true)
+
+;!pylambda := [$lambda^$λ] variables? %: compareorcompute
+(defun C_pylambda (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (compare tokens "lambda" i1 v1 nil)
+               (compare tokens "λ" i1 v1 nil)
+            )
+            (O_pylambda_0 tokens i1 v1)
+            (compare tokens ":" i1 v1 nil)
+            (C_compareorcompute tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'pylambda v0))
+      )
+   )
+)
+
+(defun O_pylambda_0 (tokens i1 vp)
    (setq v1 ())
    (check (C_variables tokens i1 v1)
       (nconc vp v1)

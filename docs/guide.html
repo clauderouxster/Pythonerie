@@ -589,6 +589,25 @@ J'aime : kiwi</div>
                     on l'appelle une <b>méthode</b>. <code>fruits.ajoute("kiwi")</code> fait la même chose que
                     <code>ajoute(fruits, "kiwi")</code>. Tu peux utiliser ainsi toutes les fonctions du glossaire&nbsp;:
                     <code>mot.majuscules()</code>, <code>notes.somme()</code>…</p>
+                <h3>Trier</h3>
+                <p><code>trie(liste)</code> donne une <b>copie</b> triée&nbsp;; <code>liste.sort()</code> trie la liste <b>elle-même</b>. Les deux prennent, comme en Python, <code>inverse=Vrai</code> (dans l'autre sens)
+                    et <code>clef=</code>&nbsp;: une fonction qui donne ce qu'on compare, souvent une <code>lambda</code> (<code>lambda j: j[1]</code>&nbsp;: le deuxième élément). <code>maximum</code> et <code>minimum</code> prennent aussi <code>clef=</code>.</p>
+                <div class="exemple"><pre data-essai>notes = [12, 7, 18, 9]
+affiche(trie(notes))                    # une copie triée
+affiche(trie(notes, inverse=Vrai))      # du plus grand au plus petit
+joueurs = [["Léa", 30], ["Tom", 12], ["Ana", 21]]
+joueurs.sort(clef=lambda j: j[1])       # trie la liste elle-même, selon le score
+affiche(joueurs)
+affiche(maximum(joueurs, clef=lambda j: j[1]))
+affiche("pas", "de", "retour", sep="-", fin=" ! ")
+affiche("fini")</pre></div>
+                <div class="resultat">[7, 9, 12, 18]
+[18, 12, 9, 7]
+[["Tom", 12], ["Ana", 21], ["Léa", 30]]
+["Léa", 30]
+pas-de-retour ! fini</div>
+                <p>Ces noms suivis de <code>=</code> sont des <b>arguments nommés</b>. La Pythonerie n'a que ceux-là&nbsp;: <code>clef=</code> et <code>inverse=</code> pour trier (ou <code>key=</code> et <code>reverse=</code>, comme en Python), <code>fin=</code> et <code>sep=</code> pour <code>affiche</code>
+                    (<code>fin=""</code>&nbsp;: sans passer à la ligne). Un couple écrit entre parenthèses, <code>(x, y)</code>, est aussi une liste&nbsp;: <code>clef=lambda m: (len(m), m)</code> trie selon la longueur, puis dans l'ordre alphabétique.</p>
                 <h3>Les dictionnaires</h3>
                 <p>Un <b>dictionnaire</b> range des choses avec un nom. On l'écrit entre accolades <code>{ }</code>.</p>
                 <div class="exemple"><pre data-essai>animaux = {"chat": "miaou", "chien": "ouaf"}
@@ -1291,7 +1310,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>lever</code></td><td>déclenche une erreur avec un message</td><td class="ex"><code>lever "trop grand !"</code></td></tr>
                     <tr><td><code>selon (x):</code> … <code>cas</code></td><td>choisit selon la valeur de x&nbsp;: chaque <code>cas</code>, suivi d'un texte ou d'un nombre, ouvre un bloc décalé</td><td class="ex"><code>cas "oui":</code> ou <code>cas 3:</code></td></tr>
                     <tr><td><code>défaut:</code></td><td>dans un <code>selon</code>, après tous les <code>cas</code>&nbsp;: ce qu'on fait quand aucun cas ne correspond</td><td class="ex"><code>défaut:</code></td></tr>
-                    <tr><td><code>lambda</code> (ou <code>λ</code>)</td><td>une petite fonction sans nom (pour les grands)</td><td class="ex"><code>[lambda(x) x * 2]</code></td></tr>
+                    <tr><td><code>lambda</code> (ou <code>λ</code>)</td><td>une petite fonction sans nom (pour les grands)&nbsp;: <code>lambda x: x * 2</code>, comme en Python, ou entre crochets</td><td class="ex"><code>lambda x: x * 2</code><br><code>[lambda(x) x * 2]</code></td></tr>
                     <tr><td><code>f"…{x}…"</code></td><td>un texte qui contient la valeur d'une boîte</td><td class="ex"><code>f"J'ai {âge} ans"</code></td></tr>
                     <tr><td><code>#</code></td><td>commence un commentaire, une note pour toi</td><td class="ex"><code># mon jeu</code></td></tr>
                     <tr><td><code>&gt;&gt;&gt;</code></td><td>la ligne de commande sous la console&nbsp;: tape un nom de boîte ou du code, puis Entrée</td><td class="ex"><code>&gt;&gt;&gt; notes</code></td></tr>
@@ -1302,7 +1321,7 @@ affiche(double(21))       # affiche 42</pre></div>
                 <h3 id="g-ecrire">Écrire et demander</h3>
                 <table class="glossaire">
                     <tr><th>Fonction</th><th>Ce qu'elle fait</th><th>Exemple</th></tr>
-                    <tr><td><code>affiche(a, b, …)</code></td><td>écrit dans la console, puis passe à la ligne</td><td class="ex"><code>affiche("Bonjour")</code></td></tr>
+                    <tr><td><code>affiche(a, b, …)</code></td><td>écrit dans la console, puis passe à la ligne&nbsp;; <code>fin=</code> change la fin de la ligne, <code>sep=</code> ce qui sépare les valeurs</td><td class="ex"><code>affiche("Bonjour")</code><br><code>affiche(a, b, sep="-", fin="")</code></td></tr>
                     <tr><td><code>écris(a, b, …)</code></td><td>écrit dans la console sans passer à la ligne</td><td class="ex"><code>écris("Bon")</code></td></tr>
                     <tr><td><code>efface_console()</code></td><td>vide la console</td><td class="ex"><code>efface_console()</code></td></tr>
                     <tr><td><code>affiche_console()</code></td><td>montre la console, même quand le canevas est en plein écran (elle vient alors dessous)</td><td class="ex"><code>affiche_console()</code></td></tr>
@@ -1341,9 +1360,10 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>liste.append(x)</code></td><td>comme <code>ajoute</code> (le mot de Python)</td><td class="ex"><code>fruits.append("kiwi")</code></td></tr>
                     <tr><td><code>longueur(x)</code> (ou <code>len</code>)</td><td>combien il y a d'éléments (ou de lettres dans un texte)</td><td class="ex"><code>longueur([5, 8])</code> donne 2</td></tr>
                     <tr><td><code>somme(liste)</code></td><td>additionne tous les nombres de la liste</td><td class="ex"><code>somme([1, 2, 3])</code> donne 6</td></tr>
-                    <tr><td><code>maximum(liste)</code></td><td>le plus grand (aussi <code>maximum(a, b)</code>)</td><td class="ex"><code>maximum([4, 9, 2])</code> donne 9</td></tr>
+                    <tr><td><code>maximum(liste)</code></td><td>le plus grand (aussi <code>maximum(a, b)</code>&nbsp;; <code>maximum(liste, clef=f)</code>&nbsp;: celui dont <code>f</code> est le plus grand)</td><td class="ex"><code>maximum([4, 9, 2])</code> donne 9</td></tr>
                     <tr><td><code>minimum(liste)</code></td><td>le plus petit (aussi <code>minimum(a, b)</code>)</td><td class="ex"><code>minimum(4, 9)</code> donne 4</td></tr>
-                    <tr><td><code>trie(liste)</code></td><td>une copie de la liste, rangée dans l'ordre</td><td class="ex"><code>trie([3, 1, 2])</code> donne [1, 2, 3]</td></tr>
+                    <tr><td><code>trie(liste)</code></td><td>une copie de la liste, rangée dans l'ordre&nbsp;; <code>clef=f</code>&nbsp;: ce qu'on compare, <code>inverse=Vrai</code>&nbsp;: dans l'autre sens&nbsp;; un dictionnaire donne ses clefs triées</td><td class="ex"><code>trie([3, 1, 2])</code> donne [1, 2, 3]<br><code>trie(l, clef=len, inverse=Vrai)</code></td></tr>
+                    <tr><td><code>liste.sort()</code></td><td>trie la liste elle-même (mêmes <code>clef=</code> et <code>inverse=</code>)</td><td class="ex"><code>joueurs.sort(clef=lambda j: j[1])</code></td></tr>
                     <tr><td><code>tri_localisé(liste)</code></td><td>une copie des textes dans l'ordre du dictionnaire (« é » avec les « e », les majuscules avec les minuscules)</td><td class="ex"><code>tri_localisé(["Zoé", "ami", "éclair"])</code></td></tr>
                     <tr><td><code>inverse(liste)</code></td><td>la liste à l'envers</td><td class="ex"><code>inverse([1, 2, 3])</code> donne [3, 2, 1]</td></tr>
                     <tr><td><code>choisis(liste)</code></td><td>un élément au hasard</td><td class="ex"><code>choisis(["pile", "face"])</code></td></tr>

@@ -295,6 +295,9 @@
             (nconc v (cdr a))
             (insert a v 1)
             (setq v a))))
+   ; l.sort() (ou l.trie()) trie la liste elle-même, comme en Python ; (sort l) est refusé par LispE
+   (if (and (consp v) (in '(sort trie) (car v)))
+      (set@ v 0 '_trie_sur_place))
    v
 )
 
@@ -436,6 +439,121 @@
    (setq paramètres (parsing parameters))
    (nconcn (list 'defun (atom nm) paramètres) (corps_fonction paramètres code))
 )
+
+;------------------------------------------------------------------------------------------
+; Arguments nommés, tels que les IA les écrivent : sorted(l, key=f, reverse=True), l.sort(key=f),
+; max(l, key=f), print(a, b, end="", sep="-").
+; La grammaire les lit en (namedarg nom valeur) ; parsing en fait un repère (_nommé nom valeur),
+; que range_nommés, appelée sur tout le programme traduit, remet en arguments positionnels :
+; (trie l clef inverse), (_trie_sur_place l clef inverse), (_max_clé l clef), (_min_clé l clef),
+; (_affiche_nommé (list a b) séparateur fin). Une fonction donnée par son nom (key=len) devient
+; (lambda (_x) (size _x)) : une primitive de LispE ne se passe pas comme valeur.
+;------------------------------------------------------------------------------------------
+(defpat parsing (['namedarg nm val])
+   (list '_nommé nm (parsing val)))
+
+; (a, b) : un tuple, une liste en LispE
+(defpat parsing (['tuple $ d])
+   (nconcn '(list) (mapcar 'parsing d)))
+
+; lambda p: p[1]
+(defpat parsing (['pylambda val])
+   (list 'lambda () (parsing val)))
+
+(defpat parsing (['pylambda ['variables $ v] val])
+   (list 'lambda (mapcar 'atom v) (parsing val)))
+
+(setq erreur_nommés "")
+(setq noms_nommés {"key":"key" "reverse":"reverse" "clef":"key" "clé":"key" "inverse":"reverse"})
+(setq noms_affiche {"end":"end" "sep":"sep" "fin":"end"})
+(setq fonctions_triées {"trie":'trie "sorted":'sorted "_trie_sur_place":'_trie_sur_place})
+(setq fonctions_clé {"max":'_max_clé "min":'_min_clé "maximum":'_max_clé "minimum":'_min_clé})
+
+(defun est_nommé (a) (and (consp a) (eq (car a) '_nommé)))
+
+; print(x, end="") : chaque argument de println est enveloppé dans (_texte …)
+(defun sans_texte (a)
+   (if (and (consp a) (eq (car a) '_texte) (est_nommé (@ a 1)))
+      (@ a 1)
+      a))
+
+(defun en_fonction (f)
+   (if (and (atomp f) (not (in '(nil true false) f)))
+      (list 'lambda '(_x) (list f '_x))
+      f))
+
+(defun sans_nommés (l)
+   (setq r (list))
+   (loop a l
+      (if (not (est_nommé a)) (push r a)))
+   r)
+
+(defun range_nommés (forme)
+   (ncheck (and (consp forme) (not (and (eq (car forme) '_texte) (est_nommé (@ forme 1)))))
+      forme
+      ; loop plutôt que maplist : un élément comme return ne doit pas être évalué
+      (setq rangée (list))
+      (setq nommés (list))
+      (setq texte (eq (car forme) 'println))
+      (loop e forme
+         ; seulement les listes : une fonction qui rendrait l'atome return le ferait exécuter
+         (check (consp e)
+            (setq e (range_nommés e))
+            (if texte (setq e (sans_texte e))))
+         (push rangée e)
+         (if (est_nommé e) (push nommés e)))
+      (setq forme rangée)
+      (cond
+         ((and nommés (eq (car forme) 'println))
+            (affiche_nommés forme nommés))
+         (nommés
+            (arguments_nommés forme nommés))
+         (true
+            ; sorted(l, len) : la clef sans son nom
+            (if (and (atomp (car forme)) (in (keys@ fonctions_triées) (string (car forme))) (> (size forme) 2))
+               (set@ forme 2 (en_fonction (@ forme 2))))
+            forme))))
+
+(defun affiche_nommés (forme nommés)
+   (setq séparateur " ")
+   (setq fin "\n")
+   (loop n nommés
+      (setq nom (@ n 1))
+      (check (eq erreur_nommés "")
+         (ncheck (in (keys@ noms_affiche) nom)
+            (setg erreur_nommés (+ "Erreur : \"affiche\" ne connaît pas \"" nom "=\" : écris fin=… ou sep=…"))
+            (ife (eq (@ noms_affiche nom) "end")
+               (setq fin (@ n 2))
+               (setq séparateur (@ n 2))))))
+   (list '_affiche_nommé
+      (cons 'list (sans_nommés (cdr forme)))
+      séparateur fin))
+
+(defun arguments_nommés (forme nommés)
+   (setq f (string (car forme)))
+   (setq positions (sans_nommés (cdr forme)))
+   (setq clef (if (> (size positions) 1) (@ positions 1) nil))
+   (setq inverse (if (> (size positions) 2) (@ positions 2) 'false))
+   (loop n nommés
+      (setq nom (@ n 1))
+      (check (eq erreur_nommés "")
+         (ncheck (or (in (keys@ fonctions_triées) f) (in (keys@ fonctions_clé) f))
+            (setg erreur_nommés (+ "Erreur : argument nommé \"" nom "=\" dans \"" f "(…)\" : seuls affiche (fin=…, sep=…), trie, sort, min et max prennent des arguments nommés (clef=…, inverse=…) ; ailleurs, donne les valeurs dans l'ordre"))
+            (ncheck (in (keys@ noms_nommés) nom)
+               (setg erreur_nommés (+ "Erreur : \"" f "\" ne connaît pas \"" nom "=\" : écris clef=… ou inverse=…"))
+               (ife (eq (@ noms_nommés nom) "key")
+                  (setq clef (@ n 2))
+                  (if (in (keys@ fonctions_clé) f)
+                     (setg erreur_nommés (+ "Erreur : \"" f "\" ne prend pas inverse= : utilise l'autre (min ou max)")))
+                  (setq inverse (@ n 2)))))))
+   (cond
+      ((neq erreur_nommés "") forme)
+      ((in (keys@ fonctions_triées) f)
+         (list (car forme) (@ positions 0) (en_fonction clef) inverse))
+      (true
+         (list (@ fonctions_clé f)
+            (if (eq (size positions) 1) (@ positions 0) (cons 'list positions))
+            (en_fonction clef)))))
 
 ; lambda sans paramètre : [lambda() 7]
 (defpat parsing (['lambda code] )
@@ -1050,6 +1168,11 @@
 (defun compile(code)
    (setg pythonmode false)
    (setq lsp (transpile code))
+   (setg erreur_nommés "")
+   (if (= (@ lsp 0) '__root__)
+      (setq lsp (range_nommés lsp)))
+   (if (neq erreur_nommés "")
+      (return erreur_nommés))
    (ncheck (= (@ lsp 0) '__root__)
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
       (setq r (@@ (trim . prettify (cdr lsp) 100) 1 -1))
@@ -1272,6 +1395,11 @@
    (if erreur_injection
       (return erreur_injection))
    (setq lsp (transpile code))
+   (setg erreur_nommés "")
+   (if (= (@ lsp 0) '__root__)
+      (setq lsp (range_nommés lsp)))
+   (if (neq erreur_nommés "")
+      (return erreur_nommés))
    (ncheck (= (@ lsp 0) '__root__)
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
       (texte_lispe (cdr lsp))))
@@ -1299,6 +1427,11 @@
    (if erreur_injection
       (return erreur_injection))
    (setq lsp (transpile code))
+   (setg erreur_nommés "")
+   (if (= (@ lsp 0) '__root__)
+      (setq lsp (range_nommés lsp)))
+   (if (neq erreur_nommés "")
+      (return erreur_nommés))
    (ncheck (= (@ lsp 0) '__root__)
       (+ (replace (@ lsp 1) "> > >" ":\n>> ") " <<")
       (setq formes (cdr lsp))

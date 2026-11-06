@@ -532,8 +532,49 @@
 (defpat place_image ((dictionary_ _dd) image x y) (push (_dessin _dd "place_image") 23 image x y) nil)
 (defpat place_image ((dictionary_ _dd) image x y l) (push (_dessin _dd "place_image") 24 image x y l) nil)
 (defpat place_image ((dictionary_ _dd) image x y l h) (push (_dessin _dd "place_image") 25 image x y l h) nil)
+; Les vidéos : charge_vidéo(adresse) renvoie un numéro, comme charge_image (un fichier du répertoire
+; vidéos du projet, par son seul nom ; du site, médias/videos/… ; ou une adresse complète https://…).
+; joue_vidéo(vidéo, x, y) ou joue_vidéo(vidéo, x, y, largeur, hauteur) : la vidéo se pose sur le
+; canevas, coin en haut à gauche en (x, y), et joue avec son son (sans largeur : sa largeur ; sans
+; hauteur : ses proportions) ; c'est un lecteur posé sur le canevas, comme un bouton : pas besoin de la
+; redessiner. arrête_vidéo(vidéo) : elle s'arrête et quitte le canevas (joue_vidéo la reprend où elle
+; en était) ; vidéo_finie(vidéo) : Vrai quand elle est allée jusqu'au bout.
+(defun charge_vidéo (adresse) (evaljs_i (list "Pyt.chargeVidéo" (string adresse))))
+(defun arrête_vidéo (v) (evaljsc (list "Pyt.arrêteVidéo" v)) (_erreur_navigateur) nil)
+(defun vidéo_finie (v) (evaljs_b (list "Pyt.vidéoFinie" v)))
+; joue_son(son) ; joue_son(son, f) : f(son) quand le son est fini
+; Une continuation (joue_son(son, f), joue_vidéo(v, x, y, f)…) : f(valeur) quand c'est fini ; le
+; JavaScript appelle (_continuation numéro). Une fonction donnée par son nom vaut une liste
+; (sa définition) : c'est ce qui la distingue d'une largeur ou d'une hauteur.
+(setq _continuations {})
+(defun _est_fonction (a) (in (string (type a)) "list"))
+(defun _attends_fin (f)
+   (+= _numéro_lecture 1)
+   (set@ _continuations (string _numéro_lecture) f)
+   _numéro_lecture)
+(defun _continuation (_numéro)
+   (setq _numéro (string _numéro))
+   (check (in_it _continuations _numéro)
+      (setq _f (@ _continuations _numéro))
+      (pop _continuations _numéro)
+      (_f (@ (json_parse (evaljsc "Pyt.valeurReçue()")) "v")))
+   nil)
+(defpat joue_son (s) (evaljsc (list "Pyt.joueSon" s -1)) nil)
+(defpat joue_son (s f) (evaljsc (list "Pyt.joueSon" s (_attends_fin f))) nil)
+; joue_vidéo(v, x, y[, l[, h]][, f]) : f(v) quand la vidéo est finie
+(defpat joue_vidéo (v x y) (evaljsc (list "Pyt.joueVidéo" v x y nil nil -1)) (_erreur_navigateur) nil)
+(defpat joue_vidéo (v x y a)
+   (if (_est_fonction a)
+      (evaljsc (list "Pyt.joueVidéo" v x y nil nil (_attends_fin a)))
+      (evaljsc (list "Pyt.joueVidéo" v x y a nil -1)))
+   (_erreur_navigateur) nil)
+(defpat joue_vidéo (v x y l a)
+   (if (_est_fonction a)
+      (evaljsc (list "Pyt.joueVidéo" v x y l nil (_attends_fin a)))
+      (evaljsc (list "Pyt.joueVidéo" v x y l a -1)))
+   (_erreur_navigateur) nil)
+(defpat joue_vidéo (v x y l h f) (evaljsc (list "Pyt.joueVidéo" v x y l h (_attends_fin f))) (_erreur_navigateur) nil)
 (defun charge_son (adresse) (evaljs_i (list "Pyt.chargeSon" (string adresse))))
-(defun joue_son (son) (evaljsc (list "Pyt.joueSon" son)) nil)
 ; capture_image(x, y, l, h) : un rectangle du dessin devient une image (son numéro)
 (defun capture_image (x y l h)
    (setq _n (evaljs_i (list "Pyt.captureImage" x y l h)))

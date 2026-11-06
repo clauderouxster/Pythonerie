@@ -2726,13 +2726,15 @@ const Pythonerie = (function () {
 
     const SVG_RÉPERTOIRE_PROJET = '<svg viewBox="0 0 16 16" fill="none"><path d="M1.5 2h4.7l1 1H14.5v10h-13V2z" fill="#5b87b8"/><path d="M1.5 4.5h13V13h-13V4.5z" fill="#8fb4dc"/></svg>';
     const SVG_IMAGE = '<svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="1" stroke="currentColor" stroke-width="1.1"/><circle cx="5.5" cy="6" r="1.3" fill="currentColor"/><path d="M2 12l4-4 3 3 2-2 3 3" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+    const SVG_VIDÉO = '<svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="9.5" height="9" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M11 7l3.5-2v6L11 9z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
     const SVG_SON = '<svg viewBox="0 0 16 16" fill="none"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M11 5.5c1.2 1.4 1.2 3.6 0 5M12.8 4c2 2.3 2 5.7 0 8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
     const SVG_AJOUTER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M7.25 2h1.5v5.25H14v1.5H8.75V14h-1.5V8.75H2v-1.5h5.25z"/></svg>';
     const ICÔNES_FICHIERS = { images: SVG_IMAGE, sons: SVG_SON, données: SVG_DONNÉES };
     const EXPLICATIONS = {
         images: 'Glisse des images ici (png, jpg, gif, svg, webp) : charge_image("chat.png")',
         sons: 'Glisse des sons ici (wav, mp3, ogg) : charge_son("miaou.wav")',
-        données: 'Glisse des données ici (txt, csv, json…) : charge_données("notes.csv")'
+        données: 'Glisse des données ici (txt, csv, json…) : charge_données("notes.csv")',
+        vidéos: 'Glisse des vidéos ici (mp4, webm) : charge_vidéo("film.mp4")'
     };
 
     function afficheRépertoiresProjet(ul) {
@@ -2823,12 +2825,23 @@ const Pythonerie = (function () {
     // ses commandes (▶ : il ne part pas tout seul), l'image se montre ; dessous, la ligne qui le charge dans un programme
     // (son_ding = charge_son("médias/sounds/ding.wav")), que « 📋 Copier » met dans le presse-papiers,
     // pour la coller dans l'éditeur. adresse : ce qu'écrit le programme (un nom, ou médias/…)
+    // genre : true (un son), false (une image) ou 'vidéo'
     function aperçuMédia(nom, url, adresse, estSon) {
         const base = nfc(nom).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'média';
-        const ligne = (estSon ? 'son_' : 'image_') + base + ' = ' + (estSon ? 'charge_son' : 'charge_image') + '("' + adresse + '")';
+        const estVidéo = estSon === 'vidéo';
+        if (estVidéo) estSon = false;
+        const ligne = estVidéo ? 'vidéo_' + base + ' = charge_vidéo("' + adresse + '")'
+            : (estSon ? 'son_' : 'image_') + base + ' = ' + (estSon ? 'charge_son' : 'charge_image') + '("' + adresse + '")';
         const contenu = document.createElement('div');
         let lecteur = null;
-        if (estSon) {
+        if (estVidéo) {
+            lecteur = document.createElement('video');
+            lecteur.controls = true;
+            lecteur.playsInline = true;
+            lecteur.src = url;
+            lecteur.className = 'aperçu-image';
+            contenu.appendChild(lecteur);
+        } else if (estSon) {
             lecteur = document.createElement('audio');
             lecteur.controls = true;
             lecteur.src = url;
@@ -4122,6 +4135,7 @@ const Pythonerie = (function () {
     // répertoires, sounds et images (le piano dans sounds), comme dans l'Atelier ; un clic ouvre
     // l'aperçu du son ou de l'image, avec la ligne qui le charge dans un programme (voir aperçuMédia).
     const SONS_SITE = /\.(wav|mp3|ogg)$/i;
+    const VIDÉOS_SITE = /\.(mp4|webm)$/i;
     async function installeMédiasSite() {
         const bouton = $('btnMédias');
         // la liste est d'habitude déjà lue au démarrage (voir plus haut) ; sinon on la lit ici
@@ -4132,14 +4146,15 @@ const Pythonerie = (function () {
             } catch (e) { /* rien */ }
         }
         const sons = médiasSite.filter(m => SONS_SITE.test(m));
-        const images = médiasSite.filter(m => !SONS_SITE.test(m));
+        const vidéos = médiasSite.filter(m => VIDÉOS_SITE.test(m));
+        const images = médiasSite.filter(m => !SONS_SITE.test(m) && !VIDÉOS_SITE.test(m));
         bouton.disabled = !médiasSite.length;
         bouton.querySelector('.nombre-exemples').textContent = médiasSite.length || '';
         const nom = (m) => m.slice(m.lastIndexOf('/') + 1);
         const élément = (m, son) => ({
             texte: nom(m),
-            icône: son ? SVG_SON : SVG_IMAGE,
-            titre: (son ? 'Écouter' : 'Voir') + ' — dans un programme : ' + (son ? 'charge_son' : 'charge_image') + '("' + m + '")',
+            icône: son === 'vidéo' ? SVG_VIDÉO : son ? SVG_SON : SVG_IMAGE,
+            titre: (son === true ? 'Écouter' : 'Voir') + ' — dans un programme : ' + (son === 'vidéo' ? 'charge_vidéo' : son ? 'charge_son' : 'charge_image') + '("' + m + '")',
             action: () => aperçuMédia(nom(m), m.split('/').map(encodeURIComponent).join('/'), m, son)
         });
         const piano = sons.filter(m => m.startsWith('médias/sounds/piano/'));
@@ -4151,7 +4166,7 @@ const Pythonerie = (function () {
                 { groupe: 'sounds (' + sons.length + ')', éléments: autres.map(m => élément(m, true))
                     .concat(piano.length ? [{ groupe: 'piano (' + piano.length + ')', éléments: piano.map(m => élément(m, true)) }] : []) },
                 { groupe: 'images (' + images.length + ')', éléments: images.map(m => élément(m, false)) }
-            ]));
+            ].concat(vidéos.length ? [{ groupe: 'videos (' + vidéos.length + ')', éléments: vidéos.map(m => élément(m, 'vidéo')) }] : [])));
         };
     }
 

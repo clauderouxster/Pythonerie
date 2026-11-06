@@ -510,6 +510,17 @@ sinonsi note >= 10:
 sinon:
     affiche("Il faut encore travailler")</pre></div>
                 <div class="resultat">Bien !</div>
+                <h3>Choisir une valeur en une ligne</h3>
+                <p>Pour ranger une valeur ou une autre dans une boîte, selon une condition, <code>si</code> et <code>sinon</code>
+                    peuvent aussi s'écrire <b>dans une seule ligne</b>&nbsp;: la valeur, <code>si</code> la condition, <code>sinon</code> l'autre valeur.
+                    Cette écriture marche partout où l'on attend une valeur&nbsp;: après <code>=</code> ou <code>+=</code>, dans une liste, dans les parenthèses d'une fonction.</p>
+                <div class="exemple"><pre data-essai>âge = 15
+statut = "majeur" si âge >= 18 sinon "mineur"
+affiche("Tu es", statut)
+message = "Tu as "
+message += "le droit" si âge >= 16 sinon "encore le temps"
+affiche(message)</pre></div>
+                <div class="resultat">Tu es mineur<br>Tu as encore le temps</div>
                 <h3>Pour comparer</h3>
                 <table class="glossaire">
                     <tr><th>Signe</th><th>Veut dire</th></tr>
@@ -957,6 +968,38 @@ fond("bleu marine")
 place_image(étoile, 100, 100)            # le coin en haut à gauche est en (100, 100)
 place_image(étoile, 300, 100, 200, 200)  # en plus grand : 200 de large, 200 de haut
 joue_son(ding)</pre></div>
+                <p>Pour faire quelque chose <b>quand le son est fini</b>, donne une fonction en plus&nbsp;: <code>joue_son(ding, f)</code>
+                    appelle <code>f(ding)</code> à la fin du son. Le programme continue sans attendre, et la fonction arrive au bon moment.</p>
+                <div class="exemple"><pre data-essai>ding = charge_son("médias/sounds/ding.wav")
+
+fonction fini(son):
+    affiche("Le son est fini")
+
+joue_son(ding, fini)
+affiche("Le son commence")</pre></div>
+                <div class="resultat">Le son commence<br>Le son est fini</div>
+                <h3 id="videos">🎬 Les vidéos</h3>
+                <p>Une vidéo se charge comme une image&nbsp;: <code>charge_vidéo</code> donne un numéro. Mets tes vidéos (mp4 ou webm,
+                    50&nbsp;Mo au plus) dans le répertoire <b>vidéos</b> de ton projet et donne leur nom, <code>charge_vidéo("film.mp4")</code>, ou
+                    prends celle de la Pythonerie, <code>médias/videos/demo.webm</code>, ou une adresse <code>https://</code>.</p>
+                <p><code>joue_vidéo(vidéo, x, y)</code> la pose sur le canevas, son coin en haut à gauche en (x, y), et la fait jouer, avec son son.
+                    Tu peux donner sa largeur, <code>joue_vidéo(vidéo, x, y, 320)</code> (la hauteur suit), ou sa largeur et sa hauteur.
+                    Une fonction en dernier, <code>joue_vidéo(vidéo, x, y, f)</code>, est appelée quand la vidéo est finie, comme pour un son.
+                    <code>arrête_vidéo(vidéo)</code> l'arrête et la retire du canevas (<code>joue_vidéo</code> la reprend là où elle s'était arrêtée),
+                    et <code>vidéo_finie(vidéo)</code> vaut <code>Vrai</code> quand elle est allée jusqu'au bout.</p>
+                <div class="exemple"><pre data-essai>film = charge_vidéo("médias/videos/demo.webm")
+
+fonction fin_du_film(v):
+    affiche("Fin du film !")
+
+fond("bleu marine")
+joue_vidéo(film, 80, 60, 640, fin_du_film)</pre></div>
+                <div class="encadre astuce">
+                    <p class="titre-encadre">💡 Une vidéo n'est pas un dessin</p>
+                    <p>La vidéo est posée <b>sur</b> le canevas, comme un bouton&nbsp;: elle joue toute seule, sans que ton programme la redessine,
+                        et elle suit le canevas en plein écran. Mais <code>efface()</code> ne la retire pas (c'est <code>arrête_vidéo</code>),
+                        et tu ne peux pas dessiner par-dessus.</p>
+                </div>
                 <div class="encadre astuce">
                     <p class="titre-encadre">💡 Bon à savoir</p>
                     <p>Une image met parfois un petit moment à arriver. Si tu la places tout de suite,
@@ -1085,13 +1128,14 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer des fichiers.</li>
                 </ul>
                 <h3>🖼️ Les images, les sons et les données du projet</h3>
-                <p>En haut de la liste, trois répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b> et
-                    <b>données</b>. Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
+                <p>En haut de la liste, quatre répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b>,
+                    <b>données</b> et <b>vidéos</b>. Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
                     Un clic sur une image te la montre, un clic sur un son le joue. Un clic sur un fichier de données l'ouvre dans l'éditeur, à la place du code&nbsp;: tu peux le modifier, il est enregistré tout seul, et <b>✎ Code</b> te ramène au programme.</p>
                 <p>Dans ton programme, tu n'as besoin que du nom du fichier&nbsp;:</p>
                 <div class="exemple"><pre>chat = charge_image("chat.png")        # dans le répertoire images
 miaou = charge_son("miaou.wav")        # dans le répertoire sons
 notes = charge_données("notes.csv")    # dans le répertoire données
+film = charge_vidéo("film.mp4")        # dans le répertoire vidéos
 place_image(chat, 100, 100)
 joue_son(miaou)</pre></div>
                 <h3>🧩 Un programme qui en utilise un autre&nbsp;: <code>importe</code></h3>
@@ -1226,6 +1270,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>si</code> … <code>:</code></td><td>fait quelque chose seulement si c'est vrai</td><td class="ex"><code>si âge > 6:</code></td></tr>
                     <tr><td><code>sinonsi</code> … <code>:</code></td><td>sinon, teste autre chose</td><td class="ex"><code>sinonsi âge > 3:</code></td></tr>
                     <tr><td><code>sinon:</code></td><td>dans tous les autres cas</td><td class="ex"><code>sinon:</code></td></tr>
+                    <tr><td><code>a si c sinon b</code></td><td>une valeur ou l'autre, en une ligne, selon une condition (partout où l'on attend une valeur)</td><td class="ex"><code>x = "oui" si ok sinon "non"</code></td></tr>
                     <tr><td><code>pour</code> … <code>dans</code> … <code>:</code></td><td>répète pour chaque élément</td><td class="ex"><code>pour i dans intervalle(3):</code></td></tr>
                     <tr><td><code>tantque</code> … <code>:</code></td><td>répète tant que c'est vrai</td><td class="ex"><code>tantque n > 0:</code></td></tr>
                     <tr><td><code>sortir</code></td><td>quitte la boucle tout de suite</td><td class="ex"><code>sortir</code></td></tr>
@@ -1460,6 +1505,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>scène.caméra(x, y, z, vx, vy, vz)</code></td><td>où est la caméra, et le point qu'elle regarde</td><td class="ex"><code>scène.caméra(0, 5, 20, 0, 0, 0)</code></td></tr>
                     <tr><td><code>montre_3d(scène)</code></td><td>montre la scène, sous le canevas 2D (un texte en 2D reste au-dessus)</td><td class="ex"><code>montre_3d(scène)</code></td></tr>
                     <tr><td><code>o.tourne(ax, ay, az)</code> · <code>o.déplace(x, y, z)</code></td><td>fait tourner un objet (des degrés de plus) · le met à une autre place</td><td class="ex"><code>orbite.tourne(0, 1, 0)</code></td></tr>
+                    <tr><td><code>o.oriente_3d(ax, ay, az)</code></td><td>donne à l'objet une orientation fixe, en degrés (au lieu d'en ajouter comme <code>tourne</code>)</td><td class="ex"><code>fusée.oriente_3d(0, 90, 0)</code></td></tr>
+                    <tr><td><code>o.cache_objet()</code> · <code>o.montre_objet()</code></td><td>cache l'objet · le montre de nouveau</td><td class="ex"><code>balle.cache_objet()</code></td></tr>
                     <tr><td><code>o.texture(image)</code> · <code>o.colore(c)</code> · <code>o.lumineux()</code></td><td>habille l'objet d'une image · change sa couleur · le fait briller tout seul</td><td class="ex"><code>terre.texture(charge_image("terre.jpg"))</code></td></tr>
                     <tr><td><code>caméra_libre()</code></td><td>la souris fait tourner la caméra, la molette zoome</td><td class="ex"><code>caméra_libre()</code></td></tr>
                     <tr><td><code>quand_clic_objet(f)</code></td><td>un clic sur un objet appelle <code>f(numéro)</code></td><td class="ex"><code>quand_clic_objet(touché)</code></td></tr>
@@ -1474,6 +1521,12 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>capture_image(x, y, largeur, hauteur)</code></td><td>copie un rectangle du dessin en une nouvelle image et donne son numéro&nbsp;: pour dessiner soi-même les aspects d'un <code>bouton_image</code></td><td class="ex"><code>normal = capture_image(0, 0, 80, 80)</code></td></tr>
                     <tr><td><code>charge_son(nom)</code></td><td>charge un son du répertoire sons du projet (ou une adresse) et donne son numéro</td><td class="ex"><code>snd = charge_son("miaou.wav")</code></td></tr>
                     <tr><td><code>joue_son(numéro)</code></td><td>joue le son</td><td class="ex"><code>joue_son(snd)</code></td></tr>
+                    <tr><td><code>joue_son(numéro, f)</code></td><td>joue le son, puis appelle <code>f(numéro)</code> quand il est fini</td><td class="ex"><code>joue_son(snd, suite)</code></td></tr>
+                    <tr><td><code>charge_vidéo(nom)</code></td><td>charge une vidéo (mp4, webm) du répertoire vidéos du projet (ou du site, ou une adresse) et donne son numéro</td><td class="ex"><code>film = charge_vidéo("film.mp4")</code></td></tr>
+                    <tr><td><code>joue_vidéo(numéro, x, y)</code></td><td>pose la vidéo sur le canevas, coin en haut à gauche en (x, y), et la joue avec son son&nbsp;; on peut donner sa largeur, ou sa largeur et sa hauteur</td><td class="ex"><code>joue_vidéo(film, 0, 0, 400)</code></td></tr>
+                    <tr><td><code>joue_vidéo(numéro, x, y, f)</code></td><td>la même chose, puis <code>f(numéro)</code> quand la vidéo est finie (aussi avec la largeur et la hauteur&nbsp;: la fonction vient en dernier)</td><td class="ex"><code>joue_vidéo(film, 0, 0, 400, suite)</code></td></tr>
+                    <tr><td><code>arrête_vidéo(numéro)</code></td><td>arrête la vidéo et la retire du canevas (<code>joue_vidéo</code> la reprend où elle en était)</td><td class="ex"><code>arrête_vidéo(film)</code></td></tr>
+                    <tr><td><code>vidéo_finie(numéro)</code></td><td><code>Vrai</code> quand la vidéo est allée jusqu'au bout</td><td class="ex"><code>si vidéo_finie(film):</code></td></tr>
                     <tr><td><code>liste_sons()</code></td><td>la liste des noms des sons du projet, puis de ceux du site (<code>"médias/sounds/ding.wav"</code>…)&nbsp;: chaque nom se donne tel quel à <code>charge_son</code></td><td class="ex"><code>charge_son(liste_sons()[0])</code></td></tr>
                     <tr><td><code>liste_images()</code></td><td>la liste des noms des images du projet, puis de celles du site (<code>"médias/images/étoile.svg"</code>…)</td><td class="ex"><code>pour nom dans liste_images():</code></td></tr>
                 </table>

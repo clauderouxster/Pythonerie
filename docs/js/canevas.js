@@ -53,6 +53,7 @@ const Pyt = (function () {
     let gestionnaires = { clic: null, souris: null, glisse: null, touche: null, relâche: null, clicObjet: null };
     // Images et sons chargés par le programme : charge_image et charge_son renvoient leur numéro
     let images = [];
+    let vidéos = [];          // { vidéo (l'élément <video>), adresse, erreur } : voir charge_vidéo
     let sons = [];
     // Dessins préparés par le programme (nouveau_dessin, montre_dessin) : leurs commandes, par numéro
     let dessins = new Map();
@@ -286,8 +287,37 @@ const Pyt = (function () {
         valeurReçue = '';
     }
 
+    // Une continuation : joue_son(son, f), joue_vidéo(v, x, y, f)… f(valeur) est appelée quand c'est
+    // fini, par (_continuation numéro) (bibliothèque.lisp y retrouve f ; la valeur arrive en JSON
+    // { "v": … } par Pyt.valeurReçue). L'attente compte dans enCours ; Arrêter et chaque exécution
+    // l'oublient. Rend null sans continuation (numéro < 0), sinon fin(valeur), avec fin.annule().
+    let continuationsEnCours = 0;
+    function attendsFin(id) {
+        const numéro = Math.trunc(nombre(id, -1));
+        if (!(numéro >= 0)) return null;
+        const génération = générationAttentes;
+        continuationsEnCours++;
+        let fait = false;
+        const termine = () => {
+            if (fait) return false;
+            fait = true;
+            if (génération === générationAttentes) continuationsEnCours = Math.max(0, continuationsEnCours - 1);
+            if (window.Pythonerie && window.Pythonerie.signaleAnimation) window.Pythonerie.signaleAnimation();
+            return génération === générationAttentes;
+        };
+        const fin = (valeur) => {
+            if (!termine()) return;
+            valeurReçue = JSON.stringify({ v: valeur });
+            if (rappel) rappel('(_continuation ' + numéro + ')');
+            valeurReçue = '';
+        };
+        fin.annule = termine;
+        return fin;
+    }
+
     function oublieAttentes() {
         générationAttentes++;
+        continuationsEnCours = 0;
         attentes = [];
         if (attenteEnCours && attenteEnCours.genre === 'console' && window.Pythonerie && window.Pythonerie.fermeQuestionConsole)
             window.Pythonerie.fermeQuestionConsole();
@@ -624,7 +654,7 @@ const Pyt = (function () {
         ANCIENNES_NOTES[n] = ['C', 'C_sharp', 'D', 'D_sharp', 'E', 'F', 'F_sharp', 'G', 'G_sharp', 'A', 'A_sharp', 'B'][i];
     });
     function médiaDéplacé(a) {
-        const m = /^(?:exemples\/)?médias\/(?!sounds\/|images\/)(.+)$/.exec(a);
+        const m = /^(?:exemples\/)?médias\/(?!sounds\/|images\/|videos\/)(.+)$/.exec(a);
         if (!m) return a;
         const note = /^piano\/(.+)_([345])\.wav$/.exec(m[1]);
         if (note && ANCIENNES_NOTES[note[1]]) return 'médias/sounds/piano/' + ANCIENNES_NOTES[note[1]] + '_' + note[2] + '.wav';
@@ -1644,6 +1674,9 @@ const Pyt = (function () {
             if (scène3D()) scène3D().réinitialise();
             mode3D = false;
             images = [];
+            // les vidéos s'arrêtent et lâchent leur fichier (retireChamps les a retirées du canevas)
+            vidéos.forEach(e => { try { e.vidéo.pause(); e.vidéo.removeAttribute('src'); e.vidéo.load(); } catch (x) { /* rien */ } });
+            vidéos = [];
             sons = [];
             dessins = new Map();
             état = étatInitial();
@@ -2040,7 +2073,7 @@ const Pyt = (function () {
             if (window.Pythonerie) window.Pythonerie.signaleAnimation(false);
         },
         enCours() {
-            return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0 || échangesEnCours > 0
+            return minuteries.length > 0 || champs.size > 0 || attenteEnCours !== null || attentes.length > 0 || échangesEnCours > 0 || continuationsEnCours > 0
                 || !!(gestionnaires.clic || gestionnaires.souris || gestionnaires.glisse || gestionnaires.touche || gestionnaires.relâche || gestionnaires.clicObjet);
         },
         stoppeTout(gardeSons) {
@@ -2571,6 +2604,90 @@ const Pyt = (function () {
             }
         },
 
+        // ---------- Vidéos ----------
+        // Comme une image : charge_vidéo rend un numéro, et joue_vidéo la pose sur le canevas. Mais
+        // une vidéo n'est pas dessinée dans le dessin : c'est un lecteur <video> posé par-dessus,
+        // comme un bouton (il suit l'échelle et le plein écran du canevas, et les clics le
+        // traversent) ; il joue tout seul, avec le son, sans que le programme le redessine.
+        // charge_vidéo(adresse) : un fichier du répertoire vidéos du projet (son nom seul), du site
+        // (médias/videos/…) ou une adresse complète (https://…) ; renvoie le numéro (0, 1, 2...)
+        chargeVidéo(adresse) {
+            const v = document.createElement('video');
+            v.preload = 'auto';
+            v.playsInline = true;
+            v.className = 'objet-canevas vidéo-canevas';
+            const entrée = { vidéo: v, adresse: String(adresse), erreur: false };
+            vidéos.push(entrée);
+            const source = adresseMédia(adresse, 'vidéos');
+            if (!source) {
+                entrée.erreur = true;
+                signaleErreur('Erreur : la vidéo « ' + entrée.adresse + ' » n\'est pas dans le répertoire vidéos du projet');
+                return vidéos.length - 1;
+            }
+            v.onerror = () => {
+                entrée.erreur = true;
+                signaleErreur('Erreur : impossible de charger la vidéo « ' + entrée.adresse + ' »');
+            };
+            v.src = source;
+            return vidéos.length - 1;
+        },
+        // joue_vidéo(numéro, x, y) ou joue_vidéo(numéro, x, y, largeur, hauteur) : (x, y) est le coin
+        // en haut à gauche ; sans largeur, la largeur de la vidéo ; sans hauteur, ses proportions.
+        // Arrêtée, elle reprend où elle en était ; finie, elle recommence.
+        // id : le numéro de la continuation (joue_vidéo(v, x, y, f) : f(numéro) quand la vidéo est finie),
+        // -1 sans ; une nouvelle continuation remplace la précédente, arrête_vidéo l'abandonne
+        joueVidéo(numéro, x, y, l, h, id) {
+            dernièreErreur = '';
+            const entrée = vidéos[numéro];
+            if (!entrée) { dernièreErreur = 'joue_vidéo : vidéo inconnue : ' + numéro + ' (utilise le numéro renvoyé par charge_vidéo)'; return; }
+            const v = entrée.vidéo;
+            if (entrée.fin) { entrée.fin.annule(); v.removeEventListener('ended', entrée.surFin); entrée.fin = null; }
+            const fin = attendsFin(id);
+            if (fin) {
+                entrée.fin = fin;
+                entrée.surFin = () => { if (entrée.fin === fin) entrée.fin = null; fin(numéro); };
+                v.addEventListener('ended', entrée.surFin, { once: true });
+            }
+            const o = objetDe('\u0000vidéo ' + numéro, 'vidéo', () => v);
+            o.fonction = '';
+            o.x = nombre(x);
+            o.y = nombre(y);
+            o.l = (l === null || l === undefined) ? null : nombre(l);
+            o.h = (h === null || h === undefined) ? null : nombre(h);
+            o.police = état.police;
+            o.taille = état.taille;
+            // sans largeur : celle de la vidéo, en points du canevas, quand on la connaît
+            const àLaTaille = () => { if (o.l === null) o.l = v.videoWidth || 320; placeChamp(o); };
+            if (v.readyState >= 1) àLaTaille();
+            else { placeChamp(o); v.addEventListener('loadedmetadata', àLaTaille, { once: true }); }
+            if (v.ended) v.currentTime = 0;
+            const p = v.play();
+            // sans un geste de l'utilisateur, le navigateur peut refuser le son : la vidéo joue sans
+            if (p && p.catch) p.catch((e) => {
+                if (!e || e.name !== 'NotAllowedError' || v.muted) return;
+                v.muted = true;
+                v.play().catch(() => {});
+                signaleErreur('joue_vidéo : le navigateur refuse le son avant un clic : la vidéo « ' + entrée.adresse + ' » joue sans le son');
+            });
+            if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+        },
+        // arrête_vidéo(numéro) : la vidéo s'arrête et quitte le canevas (joue_vidéo la reprend)
+        arrêteVidéo(numéro) {
+            dernièreErreur = '';
+            const entrée = vidéos[numéro];
+            if (!entrée) { dernièreErreur = 'arrête_vidéo : vidéo inconnue : ' + numéro + ' (utilise le numéro renvoyé par charge_vidéo)'; return; }
+            entrée.vidéo.pause();
+            if (entrée.fin) { entrée.fin.annule(); entrée.vidéo.removeEventListener('ended', entrée.surFin); entrée.fin = null; }
+            const clef = '\u0000vidéo ' + numéro, o = champs.get(clef);
+            if (o) { o.élément.remove(); champs.delete(clef); }
+            if (window.Pythonerie) window.Pythonerie.signaleAnimation(true);
+        },
+        // vidéo_finie(numéro) : 1 quand la vidéo est allée jusqu'au bout
+        vidéoFinie(numéro) {
+            const entrée = vidéos[numéro];
+            return entrée && entrée.vidéo.ended ? 1 : 0;
+        },
+
         // ---------- Sons ----------
         // Les sons passent par l'API Web Audio : chaque son est décodé une fois en mémoire,
         // puis joué sans délai (un lecteur <audio> met plusieurs dizaines de millisecondes
@@ -2629,16 +2746,19 @@ const Pyt = (function () {
             return Promise.race([tous, new Promise(fin => setTimeout(fin, délai))]);
         },
         // joue_son(numéro) : les sons peuvent se superposer (accords, notes répétées)
-        joueSon(numéro) {
+        // joue_son(numéro) ; joue_son(numéro, f) : f(numéro) quand le son est fini (id : le numéro de la
+        // continuation, -1 sans ; voir attendsFin)
+        joueSon(numéro, id) {
             const entrée = sons[numéro];
             if (!entrée) throw new Error('Son inconnu : ' + numéro + ' (utilise le numéro renvoyé par charge_son)');
             const ctx = contexteAudio();
             if (entrée.tampon && ctx) {
                 réveilleAudio();
+                const fin = attendsFin(id);
                 const source = ctx.createBufferSource();
                 source.buffer = entrée.tampon;
                 source.connect(ctx.destination);
-                source.onended = () => { sourcesActives = sourcesActives.filter(s => s !== source); };
+                source.onended = () => { sourcesActives = sourcesActives.filter(s => s !== source); if (fin) fin(numéro); };
                 sourcesActives.push(source);
                 source.start();
             } else if (entrée.élément) {
@@ -2647,15 +2767,17 @@ const Pyt = (function () {
                 if (!son.paused && !son.ended) lecture = son.cloneNode(true);
                 else son.currentTime = 0;
                 enLecture.push(lecture);
-                lecture.onended = () => { enLecture = enLecture.filter(x => x !== lecture); };
+                const fin = attendsFin(id);
+                lecture.onended = () => { enLecture = enLecture.filter(x => x !== lecture); if (fin) fin(numéro); };
                 const promesse = lecture.play();
                 // (un fichier introuvable a déjà été signalé au chargement)
                 if (promesse && promesse.catch) promesse.catch(e => {
+                    if (fin) fin.annule();
                     if (!entrée.introuvable) signaleErreur('Erreur : le son ne peut pas être joué (' + e.message + ')');
                 });
             } else if (entrée.prêt) {
                 // pas encore décodé (on vient juste de le charger) : il joue dès qu'il est prêt
-                entrée.prêt.then(() => this.joueSon(numéro));
+                entrée.prêt.then(() => this.joueSon(numéro, id));
             }
         },
         arrêteSons() {

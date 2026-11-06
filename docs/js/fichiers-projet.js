@@ -14,14 +14,18 @@ const FichiersProjet = (function () {
     const RÉPERTOIRES = {
         images: { extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'], description: 'images (png, jpg, gif, svg, webp)' },
         sons: { extensions: ['wav', 'mp3', 'ogg'], description: 'sons (wav, mp3, ogg)' },
-        données: { extensions: ['txt', 'csv', 'tsv', 'json', 'md'], description: 'données (txt, csv, tsv, json, md)' }
+        données: { extensions: ['txt', 'csv', 'tsv', 'json', 'md'], description: 'données (txt, csv, tsv, json, md)' },
+        vidéos: { extensions: ['mp4', 'webm'], description: 'vidéos (mp4, webm)' }
     };
     const TYPES = {
         png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp',
         wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg',
-        txt: 'text/plain', csv: 'text/csv', tsv: 'text/tab-separated-values', json: 'application/json', md: 'text/markdown'
+        txt: 'text/plain', csv: 'text/csv', tsv: 'text/tab-separated-values', json: 'application/json', md: 'text/markdown',
+        mp4: 'video/mp4', webm: 'video/webm'
     };
     const TAILLE_MAX = 5 * 1024 * 1024;     // 5 Mo par fichier
+    const TAILLE_MAX_VIDÉO = 50 * 1024 * 1024;   // 50 Mo pour une vidéo
+    const tailleMax = (répertoire) => (répertoire === 'vidéos' ? TAILLE_MAX_VIDÉO : TAILLE_MAX);
     const NOM_BASE = 'pythonerie';
     const MAGASIN = 'fichiers';             // chemin -> { chemin, type, blob, modifie }
     // Les projets gardés dans le navigateur, par utilisateur (« Unique », ou le nom de
@@ -152,7 +156,7 @@ const FichiersProjet = (function () {
         if (répertoire && répertoire !== attendu) {
             throw new Error('« ' + nom + ' » ne va pas dans le répertoire ' + répertoire + ' : il accepte seulement des ' + RÉPERTOIRES[répertoire].description);
         }
-        if (fichier.size > TAILLE_MAX) throw new Error('« ' + nom + ' » est trop gros (' + (fichier.size / 1048576).toFixed(1) + ' Mo ; 5 Mo au plus)');
+        if (fichier.size > tailleMax(attendu)) throw new Error('« ' + nom + ' » est trop gros (' + (fichier.size / 1048576).toFixed(1) + ' Mo ; ' + (attendu === 'vidéos' ? '50 Mo au plus pour une vidéo)' : '5 Mo au plus)'));
         const type = TYPES[extensionDe(nom)] || fichier.type || 'application/octet-stream';
         const entrée = { chemin: attendu + '/' + nom, type, blob: new Blob([fichier], { type }), modifie: Date.now() / 1000 };
         await transaction(MAGASIN, 'readwrite', m => m.put(entrée));
@@ -193,9 +197,9 @@ const FichiersProjet = (function () {
         const chemin = nfc(c);
         const i = chemin.indexOf('/');
         const répertoire = chemin.slice(0, i), nom = i < 0 ? null : nomValide(chemin.slice(i + 1));
-        if (!RÉPERTOIRES[répertoire] || !nom) throw new Error('« ' + chemin + ' » n\'est pas un fichier des répertoires images, sons ou données');
+        if (!RÉPERTOIRES[répertoire] || !nom) throw new Error('« ' + chemin + ' » n\'est pas un fichier des répertoires images, sons, données ou vidéos');
         if (répertoireDe(nom) !== répertoire) throw new Error('« ' + chemin + ' » : le répertoire ' + répertoire + ' accepte seulement des ' + RÉPERTOIRES[répertoire].description);
-        if (octets.length > TAILLE_MAX) throw new Error('« ' + chemin + ' » est trop gros (5 Mo au plus)');
+        if (octets.length > tailleMax(répertoire)) throw new Error('« ' + chemin + ' » est trop gros (' + (répertoire === 'vidéos' ? '50 Mo au plus pour une vidéo)' : '5 Mo au plus)'));
         const type = TYPES[extensionDe(nom)] || 'application/octet-stream';
         return { chemin: répertoire + '/' + nom, type, blob: new Blob([octets], { type }), modifie: Date.now() / 1000 };
     }

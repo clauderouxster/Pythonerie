@@ -1072,3 +1072,7 @@ body.téléphone .console { font-size: 12px; padding: 8px 10px; }
     body.téléphone .zone-canevas > .zone-console { grid-column: 2; grid-row: 2; min-height: 0; }
     body.téléphone.console-cachée .zone-canevas > .scène-canevas:not(.plein) { grid-column: 1 / -1; }
 }
+
+/* Une vidéo posée sur le canevas (joue_vidéo) : elle suit l'échelle du canevas, et les clics la
+   traversent jusqu'au canevas, comme sur une image */
+.vidéo-canevas { position: absolute; display: block; pointer-events: none; background: transparent; object-fit: contain; }

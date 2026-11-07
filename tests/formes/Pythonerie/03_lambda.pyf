@@ -1,0 +1,13 @@
+# les lambdas de Python : nommées, en argument, appelées tout de suite
+f = lambda x: x + 1
+affiche(f(3))
+g = lambda: 7
+affiche(g())
+h = lambda a, b: a * b
+affiche(h(4, 5))
+affiche((lambda x: x * 2)(5))
+affiche((λ a, b: a + b)(2, 3) * 10)
+affiche((lambda: 42)())
+affiche(transforme_liste(lambda x: x * x, [1, 2, 3]))
+double = [lambda(x) x * 2]
+affiche(double(21))

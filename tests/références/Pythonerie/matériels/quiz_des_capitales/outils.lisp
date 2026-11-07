@@ -1,0 +1,13 @@
+(defun lit_csv (texte)
+   (setq lignes (list))
+   (loop ligne 
+      (extract (découpe texte "\n") 1)
+      (if (!= (nettoie ligne) "")
+         (push lignes (découpe (nettoie ligne) ","))
+      )
+   )
+   (return lignes)
+)
+(defun même_mot (a b)
+   (return (= (minuscules (nettoie a)) (minuscules (nettoie b))))
+)

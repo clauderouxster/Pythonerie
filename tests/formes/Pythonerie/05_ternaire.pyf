@@ -1,0 +1,7 @@
+# a si condition sinon b
+n = 7
+affiche("impair" si n % 2 == 1 sinon "pair")
+mot = "grand" si n > 5 sinon "petit"
+affiche(mot)
+affiche(f"{n} est {'positif' si n > 0 sinon 'négatif'}")
+affiche(maximum(n, 10 si n > 3 sinon 0))

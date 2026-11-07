@@ -1,0 +1,18 @@
+# les règles que l'optimiseur garde à la main : morse, joindre, méthode sur un littéral,
+# appels, méthodes, tranches
+l = [4, 8, 15, 16, 23, 42]
+si (n := longueur(l)) > 3:
+    affiche("long :", n)
+affiche(", ".joindre(["a", "b", "c"]))
+affiche("-".join([chaîne(x) pour x dans l[:3]]))
+affiche("bonjour".majuscules())
+affiche("a,b,c".découpe(","))
+affiche(l[1:3], l[:2], l[4:], l[-2:])
+d = {"a": 1}
+d["b"] = 2
+affiche(trie(d))
+fonction premier(x):
+    retourne x
+affiche(premier(l)[0], premier("mot")[1:3])
+l.ajoute(99)
+affiche(ramène_élément(l), longueur(l))

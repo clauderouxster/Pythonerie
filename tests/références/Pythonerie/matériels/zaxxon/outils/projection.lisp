@@ -1,0 +1,41 @@
+(setq ÉCHELLE 26)
+(setq ÉCHELLE_H 34)
+(setq ORIGINE_X 90)
+(setq ORIGINE_Y 440)
+(defun écran_x (f l)
+   (return (p+ ORIGINE_X (* (p+ (- f cam_f) l) ÉCHELLE)))
+)
+(defun écran_y (f l h)
+   (return (- (p+ ORIGINE_Y (* (* (- l (- f cam_f)) ÉCHELLE) 0.58)) (* h ÉCHELLE_H)))
+)
+(defun point_écran (f l h)
+   (return (list (écran_x f l) (écran_y f l h)))
+)
+(defun nuance (c k)
+   (return
+      (rgb (minimum 255 (* (at c 0) k)) (minimum 255 (* (at c 1) k)) (minimum 255 (* (at c 2) k)))
+   )
+)
+(defun boîte (f l h lf ll lh c)
+   (setq f2 (p+ f lf))
+   (setq l2 (p+ l ll))
+   (setq h2 (p+ h lh))
+   (couleur (nuance c 0.75))
+   (
+      polygone_plein
+      (list (point_écran f l h) (point_écran f l2 h) (point_écran f l2 h2) (point_écran f l h2))
+   )
+   (couleur (nuance c 0.5))
+   (
+      polygone_plein
+      (list (point_écran f l2 h) (point_écran f2 l2 h) (point_écran f2 l2 h2) (point_écran f l2 h2))
+   )
+   (couleur (nuance c 1.15))
+   (
+      polygone_plein
+      (list (point_écran f l h2) (point_écran f l2 h2) (point_écran f2 l2 h2) (point_écran f2 l h2))
+   )
+)
+(defun ligne_monde (f1 l1 h1 f2 l2 h2)
+   (ligne (écran_x f1 l1) (écran_y f1 l1 h1) (écran_x f2 l2) (écran_y f2 l2 h2))
+)

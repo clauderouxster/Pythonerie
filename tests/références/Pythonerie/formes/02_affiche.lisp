@@ -1,0 +1,5 @@
+(_affiche_nommé (list "a" "b" "c") "-" nil)
+(_affiche_nommé (list "sans" "saut") " " "|")
+(println "suite")
+(_affiche_nommé (list 1 2) "" "\n")
+(println "fini")

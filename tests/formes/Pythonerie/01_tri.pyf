@@ -1,0 +1,23 @@
+# trie (ou sorted), liste.trie (ou sort), clef=, inverse=, maximum/minimum avec une clef
+l = [5, 3, 8, 1]
+affiche(trie(l))
+affiche(trie(l, inverse=Vrai))
+affiche(l)
+l.trie()
+affiche(l)
+l.sort(reverse=Vrai)
+affiche(l)
+joueurs = [["ann", 12], ["bob", 30], ["cid", 12], ["dan", 7]]
+affiche(trie(joueurs, clef=lambda p: p[1]))
+affiche(sorted(joueurs, key=lambda p: p[1], reverse=Vrai))
+joueurs.trie(clé=lambda p: p[0], inverse=Vrai)
+affiche(joueurs)
+mots = ["poire", "if", "pomme", "kiwi", "datte"]
+affiche(trie(mots, clef=longueur))
+affiche(trie(mots, clef=lambda m: (longueur(m), m)))
+affiche(trie([[2, "b"], [1, "z"], [2, "a"]]))
+affiche(maximum(mots, clef=longueur), minimum(mots, clef=longueur))
+affiche(maximum(joueurs, clef=lambda p: p[1]))
+notes = {"zoé": 3, "al": 9, "max": 5}
+affiche(trie(notes))
+affiche(trie(notes, clef=lambda k: notes[k], inverse=Vrai))

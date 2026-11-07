@@ -1,0 +1,6 @@
+(setq n 7)
+(println (_texte (if (= (_% n 2) 1) "impair" "pair")))
+(setq mot (if (> n 5) "grand" "petit"))
+(println (_texte mot))
+(println (+ (_texte n) " est " (_texte (if (> n 0) "positif" "négatif"))))
+(println (_texte (maximum n (if (> n 3) 10 0))))

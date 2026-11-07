@@ -1,0 +1,6 @@
+# affiche avec sep= et fin= (ou end=)
+affiche("a", "b", "c", sep="-")
+affiche("sans", "saut", fin="|")
+affiche("suite")
+affiche(1, 2, sep="", end="\n")
+affiche("fini")

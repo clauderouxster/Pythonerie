@@ -1,0 +1,4 @@
+# un argument nommé ailleurs que dans trie/maximum/minimum/affiche : refusé avec un message clair
+fonction cercle_de(x, y, rayon):
+    retourne rayon
+affiche(cercle_de(1, 2, rayon=5))

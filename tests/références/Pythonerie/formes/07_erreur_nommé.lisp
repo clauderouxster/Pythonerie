@@ -1,0 +1,1 @@
+Erreur : argument nommé "rayon=" dans "cercle_de(…)" : seuls affiche (fin=…, sep=…), trie, sort, min et max prennent des arguments nommés (clef=…, inverse=…) ; ailleurs, donne les valeurs dans l'ordre

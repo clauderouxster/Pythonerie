@@ -520,7 +520,8 @@
 
 (defun affiche_nommés (forme nommés)
    (setq séparateur " ")
-   (setq fin "\n")
+   ; nil : la valeur par défaut, donnée par la bibliothèque (un "\n" ici casserait le texte produit)
+   (setq fin nil)
    (loop n nommés
       (setq nom (@ n 1))
       (check (eq erreur_nommés "")

@@ -1,0 +1,14 @@
+# les tuples entre parenthèses
+fonction milieu_de(a, b):
+    retourne ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+p = (1, 2)
+affiche(p[0], p[1])
+m = milieu_de((0, 0), (4, 6))
+affiche(m[0], m[1])
+points = []
+pour i dans intervalle(3):
+    points.ajoute((i, i * i))
+affiche(longueur(points), points[2][1])
+x, y = (3, 4)
+affiche(x + y)
+affiche((2 + 3) * 4)

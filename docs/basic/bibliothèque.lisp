@@ -316,6 +316,9 @@
 
 ; print(a, b, sep="-", end="")
 (defun _affiche_nommé (valeurs séparateur fin)
+   ; nil (ou None) : les valeurs par défaut de Python
+   (if (nullp séparateur) (setq séparateur " "))
+   (if (nullp fin) (setq fin "\n"))
    (evaljsc (list "Pyt.écris" (+ (join (maplist '_texte valeurs false) (_texte séparateur)) (_texte fin))))
    nil)
 (defun inverse (liste) (reverse liste))

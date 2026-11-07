@@ -1,4 +1,4 @@
-;Date: 2026/11/06 17:40:20
+;Date: 2026/11/07 12:04:01
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1427,14 +1427,18 @@
    )
    true)
 
-;call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
+;call := [lambda^parenlambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
 (defun C_call (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (and
             (setq i1 (clone i0))
             (setq v1 ())
-            (or (C_λ tokens i1 v1) (C_Word tokens i1 v1))
+            (or
+               (C_λ tokens i1 v1)
+               (C_parenlambda tokens i1 v1)
+               (C_Word tokens i1 v1)
+            )
             (compare tokens "(" i1 v1 true)
             (O_call_0 tokens i1 v1)
             (compare tokens ")" i1 v1 true)
@@ -2785,6 +2789,24 @@
       (nconc vp v1)
    )
    true)
+
+;!parenlambda := %( pylambda %)
+(defun C_parenlambda (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (C_pylambda tokens i1 v1)
+            (compare tokens ")" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'parenlambda v0))
+      )
+   )
+)
 
 ;!comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 (defun C_comprehension (tokens i0 v)

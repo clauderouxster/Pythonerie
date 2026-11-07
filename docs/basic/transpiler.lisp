@@ -463,6 +463,10 @@
 (defpat parsing (['pylambda ['variables $ v] val])
    (list 'lambda (mapcar 'atom v) (parsing val)))
 
+; (lambda x: x * 2)(5)
+(defpat parsing (['parenlambda l])
+   (parsing l))
+
 (setq erreur_nommés "")
 (setq noms_nommés {"key":"key" "reverse":"reverse" "clef":"key" "clé":"key" "inverse":"reverse"})
 (setq noms_affiche {"end":"end" "sep":"sep" "fin":"end"})

@@ -134,7 +134,7 @@ argcompute := comparing|ternaire
 callinterval := %[ computing? %: ;10 computing? %]
 !callindexes := %[ ;1 ternaire [%, ternaire]* %]
 
-call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
+call := [lambda^parenlambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
 
 method := variable callmethod [callinterval^callindexes^callmethod]*
 
@@ -206,6 +206,8 @@ pattern := patternlist^patterndictionary^astring^minus^anumber^variable
 !lambda := %[ [$lambda^$λ] ;17 %( variables? %) body %]
 # la lambda de Python : lambda p: p[1] (en argument : sorted(l, key=lambda p: p[1]))
 !pylambda := [$lambda^$λ] variables? %: compareorcompute
+# (lambda x: x * 2)(5) : une lambda de Python appelée tout de suite
+!parenlambda := %( pylambda %)
 !comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 
 !elif := $sinonsi ;5 comparison then [elif^else]?

@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (164 fonctions, ;Date: 2026/11/06 17:40:20)
-;Date: 2026/11/06 17:40:20
+;Optimisé par optimise.lisp, d'après basic.lisp (165 fonctions, ;Date: 2026/11/07 12:04:01)
+;Date: 2026/11/07 12:04:01
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -1621,14 +1621,30 @@
 
 ; S_callindexes_0 : identique à S_indexes_0 (optimise.lisp)
 
-;call := [lambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
+;call := [lambda^parenlambda^Word] %( arguments? %) [callinterval^callindexes^callmethod]*
 (defun C_call (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (and
             (setq i1 (clone i0))
             (setq v1 ())
-            (or (C_λ tokens i1 v1) (C_Word tokens i1 v1))
+            (switch
+               (if (< (car i1) (size tokens))
+                  (at tokens (car i1))
+                  "")
+               (
+                  "["
+                  (or (C_λ tokens i1 v1) (C_Word tokens i1 v1))
+               )
+               (
+                  "("
+                  (or
+                     (C_parenlambda tokens i1 v1)
+                     (C_Word tokens i1 v1)
+                  )
+               )
+               (true (C_Word tokens i1 v1))
+            )
             (compare tokens "(" i1 v1 true)
             (O_call_0 tokens i1 v1)
             (compare tokens ")" i1 v1 true)
@@ -1640,6 +1656,7 @@
       )
    )
 )
+
 
 (defun O_call_0 (tokens i1 vp)
    (setq v1 ())
@@ -3440,6 +3457,24 @@
 
 ; O_pylambda_0 : identique à O_parameters_0 (optimise.lisp)
 
+;!parenlambda := %( pylambda %)
+(defun C_parenlambda (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (compare tokens "(" i1 v1 nil)
+            (C_pylambda tokens i1 v1)
+            (compare tokens ")" i1 v1 nil)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'parenlambda v0))
+      )
+   )
+)
+
 ;!comprehension := %[ ternaire $pour ;12 Word $dans computing [$si comparison]? %]
 (defun C_comprehension (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
@@ -3818,10 +3853,12 @@ f"{[\"] ~%r}*"=34
 (defun G_alapython (tokens p)
    (eq (_suivant tokens p) "."))
 
-; call := [lambda^Word] %( … (lambda commence par [)
+; call := [lambda^parenlambda^Word] %( … (lambda commence par [, parenlambda par "(" lambda)
 (defun G_call (tokens p)
    (and (< p (size tokens))
-      (or (eq (@ tokens p) "[") (eq (_suivant tokens p) "("))))
+      (or (eq (@ tokens p) "[")
+         (eq (_suivant tokens p) "(")
+         (and (eq (@ tokens p) "(") (in '("lambda" "λ") (_suivant tokens p))))))
 
 ; method := variable callmethod … (callmethod commence par un point)
 (defun G_method (tokens p)

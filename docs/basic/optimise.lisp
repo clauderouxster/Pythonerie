@@ -50,10 +50,12 @@
 (defun G_alapython (tokens p)
    (eq (_suivant tokens p) "."))
 
-; call := [lambda^Word] %( … (lambda commence par [)
+; call := [lambda^parenlambda^Word] %( … (lambda commence par [, parenlambda par "(" lambda)
 (defun G_call (tokens p)
    (and (< p (size tokens))
-      (or (eq (@ tokens p) "[") (eq (_suivant tokens p) "("))))
+      (or (eq (@ tokens p) "[")
+         (eq (_suivant tokens p) "(")
+         (and (eq (@ tokens p) "(") (in '("lambda" "λ") (_suivant tokens p))))))
 
 ; method := variable callmethod … (callmethod commence par un point)
 (defun G_method (tokens p)

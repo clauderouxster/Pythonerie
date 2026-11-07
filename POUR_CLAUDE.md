@@ -32,7 +32,7 @@ Les blocs se repèrent au **décalage de 4 espaces**. La ligne qui ouvre un bloc
 | `True / False / None` | `Vrai / Faux / Rien` |
 | `class C: / self` | `classe C:` / `soi` (méthodes avec `def`, constructeur `__init__(soi, …)`) |
 | `match x: case "a":` / `case _:` | `selon (x):`, puis des blocs `cas "a":` ou `cas 3:` (un texte ou un nombre positif : `cas -1:` est refusé) et, en dernier, `défaut:` ; chaque `cas` et `défaut` ouvre un bloc décalé sur les lignes suivantes (pas d'instruction sur la même ligne) |
-| `lambda x: x * 2` | `lambda x: x * 2` comme en Python (`trie(l, clef=lambda p: p[1])`), ou `[lambda(x) x * 2]` (ou `λ`) entre crochets |
+| `lambda x: x * 2` | `lambda x: x * 2` comme en Python (`trie(l, clef=lambda p: p[1])`), ou `[lambda(x) x * 2]` (ou `λ`) entre crochets ; appelée tout de suite : `(lambda x: x * 2)(5)` |
 | `sorted(l, key=f, reverse=True)`, `l.sort(key=f)`, `max(l, key=f)`, `print(a, end="", sep="-")` | `trie(l, clef=f, inverse=Vrai)` (ou `sorted`, `key=`, `reverse=`), `l.sort(clef=f)` (ou `l.trie(…)`), `maximum(l, clef=f)` (ou `max`), `affiche(a, fin="", sep="-")` (ou `end=`) : les seuls arguments nommés |
 | `(1, 2)` (un tuple) | `(1, 2)` devient la liste `[1, 2]` (`retourne (x, y)`, `points.ajoute((x, y))`) ; `t = 1, 2` et `retourne 1, 2`, sans parenthèses, sont refusés |
 | `f"{x}"` | `f"{x}"` (les expressions entre accolades suivent la syntaxe de la Pythonerie) |

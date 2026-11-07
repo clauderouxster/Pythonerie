@@ -5,13 +5,30 @@ description: Enrichir ou corriger le langage de The Atelier of the Apps et de la
 
 # Enrichir ou corriger le langage de l'Atelier et de la Pythonerie
 
-Cette compétence existe en deux copies identiques :
-- `Atelier-of-the-Apps/.claude/skills/enrichir-le-langage/SKILL.md` ;
-- `Pythonerie/.claude/skills/enrichir-le-langage/SKILL.md`.
+Cette compétence existe en deux versions, qui disent la même chose :
+- en anglais, dans l'Atelier : `Atelier-of-the-Apps/.claude/skills/enrich-the-language/SKILL.md` ;
+- en français, dans la Pythonerie : `Pythonerie/.claude/skills/enrichir-le-langage/SKILL.md`.
 
-Quand tu modifies l'une, recopie-la dans l'autre.
+Quand tu modifies l'une, reporte le changement dans l'autre, traduit.
 
 L'auteur des deux projets, Claude Roux, est aussi l'auteur de LispE. Les deux sites traduisent un langage proche de Python en **LispE**, puis l'exécutent dans le navigateur avec LispE compilé en WebAssembly. L'Atelier est la plate-forme en trois langues (français, anglais, coréen). La Pythonerie est sa sœur aînée, en français seulement.
+
+## 0. Maintenir cette compétence en même temps que le code
+
+**Cette compétence fait partie du code. Elle se maintient en parallèle des développements, dans le même commit que le changement qu'elle décrit.**
+
+Mettre la compétence à jour dès qu'un travail change ce qu'elle dit :
+- un nouveau fichier, ou un fichier qui change de rôle ;
+- une étape nouvelle dans les recettes, ou une vérification nouvelle ;
+- un piège de LispE ou du langage découvert, ou un nom réservé rencontré ;
+- une règle ou une décision de l'auteur ;
+- une forme désormais acceptée, ou désormais refusée.
+
+**Si elle se trompe, on la corrige ; si elle a vieilli, on la met à jour.** Une compétence fausse est pire que pas de compétence, parce qu'on lui fait confiance.
+
+Elle est écrite pour quelqu'un qui reprend le projet sans personne à qui demander : une autre équipe, un autre Claude Code, ou toi-même dans un an. Elle doit donc se suffire à elle-même. Elle peut renvoyer aux guides YAML et à la documentation de LispE, mais ne doit pas supposer un savoir qui n'est écrit nulle part.
+
+**Les deux versions doivent rester au même niveau** : l'anglaise dans l'Atelier, la française dans la Pythonerie. Après chaque modification, reporter le changement dans l'autre, traduit, en gardant la même structure (sections numérotées, blocs de code, cases de la check-list). Quand les deux dépôts sont côte à côte, `python3 version.py` compare cette structure et affiche « ATTENTION : la compétence … n'a plus la même structure que sa version … » si elles ont divergé.
 
 **Ordre de lecture recommandé :**
 1. Cette compétence en entier.
@@ -172,7 +189,7 @@ Les bibliothèques existantes : `libworld` (mondes, maisons, personnages), `libs
 
 ### 4.1 Sources, documentation, binaires
 
-- **Les sources** sont dans `/Users/clauderoux/Documents/GitHub/lispe/`. Le C++ est dans `src/` et `include/`, le WASM dans `wasm/` (`mainwasm.cxx`, `evaljs.cxx`). `wasm_update.sh` copie `lispe.wasm`, `lispe.js` et `lispe_functions.js` dans `Pythonerie/docs/lispe/` et `Atelier-of-the-Apps/docs/lispe/`. **C'est l'auteur qui recompile le WASM.**
+- **Les sources** sont dans `/Users/clauderoux/Documents/GitHub/lispe/` (dépôt public `https://github.com/naver/lispe`). Le C++ est dans `src/` et `include/`, le WASM dans `wasm/` (`mainwasm.cxx`, `evaljs.cxx`). `wasm_update.sh` copie `lispe.wasm`, `lispe.js` et `lispe_functions.js` dans `Pythonerie/docs/lispe/` et `Atelier-of-the-Apps/docs/lispe/`. **C'est l'auteur qui recompile le WASM.**
 - **La documentation** est dans `lispe/documents/`, et sur le wiki `https://github.com/naver/lispe/wiki` (index des fonctions, description du langage). Fichiers utiles :
   - `language_help.md` : le formalisme ;
   - `functions.md` : la référence des fonctions ;
@@ -245,6 +262,7 @@ Ce qu'il faut en retenir :
 - Les variables globales s'affectent par `setg`.
 - `print` devient `println`, avec chaque argument passé par `_texte`.
 - Une méthode est un `defpat` sur le type. **Le nom d'une méthode est donc une fonction globale** : `def move(self…)` entre en conflit avec la fonction `move` de la bibliothèque (« Wrong number of arguments in call to move »).
+- Les attributs d'un objet ne se lisent que dans ses méthodes : `b.x` hors de la classe est une erreur de syntaxe.
 - **Un nom réservé** est renommé `nom_var` ou `nom_user`, ou refusé. La liste est dans la section `pièges` / `pitfalls` du YAML, point 13.
 
 **Pour voir ce que produit le transpileur**, utiliser le banc :
@@ -477,4 +495,5 @@ Le banc ne suffit pas pour ce qui touche le canevas, les sons, la 3D, l'interfac
 - [ ] `mode-atelier.js` / `mode-pythonerie.js`, `traductions.lisp`, `GLOSSARY.md`.
 - [ ] `python3 version.py` dans chaque projet touché.
 - [ ] Les bogues de LispE rencontrés, signalés avec leur mini-programme.
+- [ ] **Cette compétence mise à jour** si le travail a changé ce qu'elle décrit, et le changement reporté, traduit, dans la version de l'autre dépôt (aucun « ATTENTION » de `version.py`).
 - [ ] Rien de commité sans demande.

@@ -59,6 +59,33 @@ def état_parseur(basic):
     return ""
 
 
+def structure_compétence(texte):
+    """La charpente de la compétence : les titres (niveau et numéro), les blocs de code et les cases de
+    la check-list. Les deux versions (anglaise, française) disent la même chose : leur charpente est la même."""
+    titres = [ligne.split()[0] + " " + (ligne.split()[1] if len(ligne.split()) > 1 and ligne.split()[1][0].isdigit() else "")
+              for ligne in texte.splitlines() if ligne.startswith("#")]
+    blocs = sum(1 for ligne in texte.splitlines() if ligne.lstrip().startswith("```"))
+    cases = sum(1 for ligne in texte.splitlines() if ligne.lstrip().startswith("- [ ]"))
+    return titres, blocs, cases
+
+
+def état_compétence():
+    """La compétence .claude/skills/…/SKILL.md décrit comment enrichir et corriger le langage : elle se
+    maintient avec le code. Elle existe en deux versions qui disent la même chose : en anglais dans l'Atelier
+    (enrich-the-language), en français dans la Pythonerie (enrichir-le-langage). Quand l'autre dépôt est à
+    côté, on vérifie que leurs charpentes n'ont pas divergé."""
+    ici = DOCS.parent / ".claude" / "skills" / "enrichir-le-langage" / "SKILL.md"
+    autre = DOCS.parent.parent / "Atelier-of-the-Apps" / ".claude" / "skills" / "enrich-the-language" / "SKILL.md"
+    if not ici.exists():
+        return f"la compétence {ici.relative_to(DOCS.parent)} manque"
+    if autre.exists():
+        a = structure_compétence(ici.read_text(encoding="utf-8"))
+        b = structure_compétence(autre.read_text(encoding="utf-8"))
+        if a != b:
+            return (f"la compétence {ici.relative_to(DOCS.parent)} n'a plus la même structure que sa version "
+                    f"dans Atelier-of-the-Apps (titres, blocs de code ou cases de la check-list) : reporter les changements, traduits")
+    return None
+
 def main():
     numéro = datetime.now().strftime("%Y.%m.%d.%H.%M")
     texte = INDEX.read_text(encoding="utf-8")
@@ -72,6 +99,10 @@ def main():
     problème = état_parseur(DOCS / "basic")
     if problème:
         print(f"ATTENTION : {problème} ; relancer : cd docs/basic && lispe optimise.lisp . ../exemples/*.pyf")
+
+    compétence = état_compétence()
+    if compétence:
+        print(f"ATTENTION : {compétence}")
 
 
 if __name__ == "__main__":

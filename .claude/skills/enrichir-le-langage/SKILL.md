@@ -1,0 +1,480 @@
+---
+name: enrichir-le-langage
+description: Enrichir ou corriger le langage de The Atelier of the Apps et de la Pythonerie — nouvelle instruction ou fonction de bibliothèque, nouvelle tournure de la grammaire, correction du transpileur, service JavaScript du canevas, bibliothèque importée (libX) — avec l'architecture des deux sites, les règles de l'auteur, LispE (le langage cible : formes produites, primitives, pièges, WASM), les tests de non-régression (non_regression.py), et la documentation obligatoire (guides YAML/MD de l'IA et mode d'emploi guide.html dans les trois langues). À utiliser pour toute modification du langage ou de la bibliothèque de l'un ou l'autre projet, et pour corriger un bogue de traduction ou d'exécution.
+---
+
+# Enrichir ou corriger le langage de l'Atelier et de la Pythonerie
+
+Cette compétence existe en deux copies identiques :
+- `Atelier-of-the-Apps/.claude/skills/enrichir-le-langage/SKILL.md` ;
+- `Pythonerie/.claude/skills/enrichir-le-langage/SKILL.md`.
+
+Quand tu modifies l'une, recopie-la dans l'autre.
+
+L'auteur des deux projets, Claude Roux, est aussi l'auteur de LispE. Les deux sites traduisent un langage proche de Python en **LispE**, puis l'exécutent dans le navigateur avec LispE compilé en WebAssembly. L'Atelier est la plate-forme en trois langues (français, anglais, coréen). La Pythonerie est sa sœur aînée, en français seulement.
+
+**Ordre de lecture recommandé :**
+1. Cette compétence en entier.
+2. Le guide YAML de l'IA de la langue concernée (section 1) : il décrit le langage tel que l'utilisateur le voit, la bibliothèque entière, les pièges et les messages d'erreur.
+3. Les fichiers du répertoire `basic/` que tu vas toucher.
+
+## 1. Les guides YAML : la description du système
+
+Les guides de l'IA décrivent le langage *tel qu'il est* : syntaxe, toutes les fonctions de la bibliothèque par domaine, projets, pièges vérifiés, et messages d'erreur avec leur cause. **Avant d'ajouter ou de corriger quoi que ce soit, lis la section concernée.** Une fonction voisine existe peut-être déjà, un nom est peut-être déjà pris, ou un piège connu explique peut-être le bogue.
+
+| Rôle | `POUR_CLAUDE.yaml` (fr) | `FOR_CLAUDE.yaml` (en) | `CLAUDE용_안내.yaml` (ko, clefs en anglais) |
+|---|---|---|---|
+| Nature, langue, dépôt | `atelier` | `atelier` | `atelier` |
+| Ce que l'IA doit rendre | `rendre` | `hand_back` | `hand_back` |
+| Syntaxe : blocs, mots-clefs, opérateurs, tuples, arguments nommés, listes, chaînes, variables (`=:`) | `syntaxe` | `syntax` | `syntax` |
+| Bibliothèque, une sous-section par domaine | `bibliothèque:` → `console`, `nombres`, `listes_textes`, `canevas`, `tortue`, `temps_et_événements`, `objets_du_canevas`, `dessins_préparés`, `3d`, `images_sons`, `vidéos`, `données_fichiers`, `ia`, `mcp`, `noeuds`, `libworld`, `libsound`, `librobot` | `library:` → `console`, `numbers`, `lists_strings`, `canvas`, `turtle`, `time_and_events`, `canvas_widgets`, `prepared_drawings`, `3d`, `images_sounds`, `videos`, `data_files`, `ai`, `mcp`, `nodes`, `libworld`, `libsound`, `librobot` | comme l'anglais |
+| Médias du site | `médias_du_site` | `site_media` | `site_media` |
+| Projets, import, programme principal, zip, JSON | `projets` | `projects` | `projects` |
+| Piles de cartes | `piles_de_cartes` | `card_stacks` | `card_stacks` |
+| Outils de l'éditeur | `éditeur_outils_canevas` | `editor_canvas_tools` | `editor_canvas_tools` |
+| **Pièges vérifiés** (noms réservés, None, nombres, `not` sur une liste…) | `pièges` | `pitfalls` | `pitfalls` |
+| **Messages d'erreur exacts → cause → solution** | `bugs_fréquents` (`messages`, `symptômes_sans_message`, `démarche`) | `common_bugs` | `common_bugs` |
+| Modèle de jeu, références, vérifications avant de rendre | `modèle_de_jeu`, `références`, `vérifier_avant_de_rendre` | `game_model`, `references`, `check_before_handing_back` | idem |
+
+**Comment le harnais utilise ces guides.** L'IA de l'éditeur reçoit seulement le *début* du YAML, tout ce qui précède `bibliothèque:` / `library:`. Elle lit le reste section par section avec l'outil `get_info("titre")`. Le découpage suit l'indentation (`IA.découpeGuide` dans `docs/js/ia.js`) :
+- une clef en colonne 0 est une section ;
+- sous `bibliothèque:`, une clef décalée de deux espaces est une section.
+
+Les règles d'écriture en découlent :
+- le début doit rester **court**, parce que les petits modèles mettent des minutes à lire un long prompt ;
+- une nouvelle fonction va dans la sous-section de son domaine ;
+- un nouveau message d'erreur va dans `bugs_fréquents` / `common_bugs`, avec son texte exact.
+
+**Les versions à lire, `POUR_CLAUDE.md`, `FOR_CLAUDE.md` et `CLAUDE용_안내.md`**, disent la même chose en prose et en tableaux, et se tiennent au même niveau que les YAML.
+
+**Où modifier.** Les sources sont **à la racine** de l'Atelier. `python3 version.py` les recopie dans `docs/<Langue>/` et écrase ce qui y a été modifié : ne jamais éditer les copies de `docs/`.
+
+**La Pythonerie** n'a **pas de YAML**. Elle a un seul `POUR_CLAUDE.md`, à la racine, avec les sections « Le langage », « La bibliothèque », « Projets », « Des piles de cartes », « Pièges (vérifiés) », « Modèle de jeu » et « Exemples complets à lire ».
+
+**Le mode d'emploi** des élèves (`guide.html`) contient le glossaire « Tous les mots » : la liste de tout ce qui existe, avec un exemple pour chaque mot.
+
+## 2. Architecture des deux sites
+
+### Vue d'ensemble
+
+| | **The Atelier of the Apps** | **La Pythonerie** |
+|---|---|---|
+| Dépôt | `Atelier-of-the-Apps/` (site dans `docs/`) | `Pythonerie/` (site dans `docs/`, GitHub Pages) |
+| Serveur local | `python3 server.py --port 8123` | `python3 serveur.py --port 8124 --port-admin 8125` |
+| Langues et extensions | French `.pyf`, English `.pye`, Korean `.pyk` (code en anglais, textes en coréen) | français `.pyf` |
+| Langage | `docs/<Langue>/basic/` | `docs/basic/` |
+| Aide et complétion de l'éditeur | `docs/<Langue>/mode-atelier.js` | `docs/js/mode-pythonerie.js` |
+| Application (éditeur, projets, exécution) | `docs/js/atelier.js` | `docs/js/pythonerie.js` |
+| Canevas, services `Pyt.*` | `docs/js/canevas.js`, **noms anglais** (`Pyt.write`, `Pyt.circle`) | `docs/js/canevas.js`, **noms français** (`Pyt.écris`) |
+| Textes de l'interface | `docs/traductions.lisp`, lu par `js/langues.js` ; `T('…')` dans le JS | dans le JS |
+| Exemples | `docs/French/exemples/`, `docs/English/examples/`, `docs/Korean/예제/`, chacun avec `index.json` | `docs/exemples/` + `index.json` |
+| Matériels (projets en zip) | `docs/French/matériels/`, `docs/English/materials/`, `docs/Korean/학습자료/` | `docs/matériels/` |
+| Médias communs | `docs/médias/{sounds,images,videos}/` (`fabrique_sons.py`, `fabrique_images.py`) | `docs/médias/{sounds,images}/` |
+| Bibliothèques importées | `docs/lib/<nom>/` (`importe libX`) | aucune |
+| WASM de LispE | `docs/lispe/` (`lispe.js`, `lispe.wasm`, `lispe_functions.js`) | `docs/lispe/` |
+| Guides de l'IA | 3 YAML et 3 MD à la racine | `POUR_CLAUDE.md` à la racine |
+| Mode d'emploi | `docs/<Langue>/guide.html` | `docs/guide.html` |
+| Version | `python3 version.py` | `python3 version.py` |
+| Non-régression | `python3 non_regression.py` | `python3 non_regression.py` |
+
+### Le répertoire `basic/` (un par langue, et un dans la Pythonerie)
+
+| Fichier | Rôle | Qui le modifie |
+|---|---|---|
+| `basic.grm` | la grammaire | l'auteur, ou avec son accord |
+| `compiler.lisp` | lit `basic.grm` et écrit `basic.lisp` (`cd basic && lispe compiler.lisp`) | l'auteur |
+| `basic.lisp` | l'analyseur généré | jamais à la main |
+| `optimise.lisp` | lit `basic.lisp` et écrit `basic_opt.lisp`. Il fusionne les règles, ajoute un aiguillage sur le premier jeton, des **gardes écrites à la main** et une mémorisation, puis vérifie les arbres sur un corpus. Les quatre copies sont identiques. | ses gardes, avec soin |
+| `basic_opt.lisp` | l'analyseur accéléré (environ 4,5 fois plus rapide) : **celui que les sites chargent** | jamais à la main |
+| `transpiler.lisp` | l'arbre devient du LispE (`compile`, `compilepython`, `compileconsole`) | avec l'accord de l'auteur |
+| `bibliothèque.lisp` | les fonctions du langage, écrites en LispE | librement, en respectant les règles |
+| `français.lisp` / `english.lisp` | `(link "nom" 'instruction)` : d'autres noms pour les instructions LispE. Chargé après `transpiler.lisp`. Le coréen reprend `english.lisp`. | **l'auteur seulement** |
+| `rules.lisp`, `local_test.lisp` | outils de l'auteur | l'auteur |
+
+### Les fichiers JavaScript de l'Atelier (`docs/js/`)
+
+- `atelier.js` : l'application. Programmes, projets, éditeur CodeMirror, compilation (`compile`), exécution, console, mode LispE (`passeEnLispE`), export.
+- `canevas.js` : l'objet `Pyt`, appelé depuis LispE par `evaljsc`. Il gère le dessin, les widgets, le temps et les événements, les sons, les graphiques (`Pyt.chart`) et les attentes (`Pyt.attends`). **Tout nouveau service d'affichage va ici.**
+- `scene3d.js` : la 3D avec three.js (`docs/vendor/three`). `Scène3D.avec(f)` sert aux bibliothèques importées.
+- `arbres3d.js` : les arbres, partagés entre la 3D et libworld. Une copie identique existe dans la Pythonerie.
+- `erreurs.js` : les messages d'erreur de LispE, traduits et simplifiés pour un élève. Il est partagé avec les applications exportées.
+- `paquets.js` : assemble un projet (programmes, imports, onglets de la base) en un LispE prêt à lancer.
+- `libs.js` : `importe libX`. Il détecte les imports, réserve les noms et précharge les bibliothèques.
+- `langues.js` : lit `traductions.lisp`, fournit `T()` et traduit la page.
+- `hangul.js` : les noms hangul, que le lecteur de LispE coupe.
+- `ia.js`, `appels-outils.js`, `reglages-ia.js` : l'IA de l'éditeur (le harnais, les outils `get_info`, `read_data_tab`…).
+- `mcp.js`, `reglages-mcp.js` : les canaux MCP.
+- `fichiers-projet.js` : les répertoires images, sons et données, rangés dans IndexedDB.
+- `apps.js` : l'espace Applications.
+- `zip.js` : lit et écrit les archives des projets.
+- `mode-lispe.js` : la coloration des programmes `.lisp`.
+- `docs/appli/appli.js` : le moteur des **applications Web exportées**, qui joue le rôle d'`atelier.js`. Un service ajouté à `canevas.js` y est disponible, mais une primitive qui passe par `Atelier.*` doit aussi exister dans `appli.js`.
+
+La Pythonerie a moins de fichiers : `pythonerie.js` (l'équivalent d'`atelier.js`), `canevas.js`, `scene3d.js`, `arbres3d.js`, `erreurs.js`, `fichiers-projet.js`, `mode-pythonerie.js` et `zip.js`. Les deux `canevas.js` **n'ont pas de fichier commun**. Un moteur partagé, comme les graphiques ou les arbres, est collé dans les deux, et **doit rester synchrone**.
+
+### Le circuit d'un programme
+
+```
+source (.pyf/.pye/.pyk)
+  │  basic_opt.lisp : analyse → arbre
+  │  transpiler.lisp : arbre → LispE
+  │  atelier.js (compile) : ajoute (setq language "French") en tête
+  ▼
+interpréteur LispE (WASM), auquel on ajoute bibliothèque.lisp de la langue
+  │  le programme appelle les fonctions de bibliothèque.lisp
+  │  qui appellent le navigateur par (evaljsc (list "Pyt.service" arg1 arg2 …))
+  ▼
+canevas.js : Pyt.service(arg1, arg2, …)
+  │  pour une attente (clic, réponse, fichier, réseau) :
+  │  Pyt.attends → plus tard, rappel d'une fonction LispE
+```
+
+**Dans l'Atelier, le JS est neutre.** Les services portent des noms anglais, et l'interface entre LispE et JS ne contient ni français ni coréen. Les valeurs propres à une langue, comme les couleurs (`"rouge"`) et les touches, sont traduites par le JS avec le dictionnaire de la langue du programme (`traductions.lisp`, catégories `color`, `key`, `device`, `ui`). Ainsi, ajouter une langue revient à ajouter un répertoire et des lignes de dictionnaire.
+
+### Les bibliothèques importées (Atelier)
+
+`importe libX`, sans guillemets, charge `docs/lib/libX/`. Avec des guillemets, `importe "outils"` est l'import d'un programme du projet. Une bibliothèque contient :
+- `libX.lisp` : écrit directement en LispE, sans passer par le transpileur ;
+- `libX.js` : ses services `Pyt.*` ;
+- `lib.json` : `lisp`, `js`, `files`, `vendor`, et la `description` en fr, en et ko.
+
+Elle se déclare dans `docs/lib/index.json`. `docs/lib/libtest/` est le modèle minimal.
+
+Pièges :
+- `setq` au premier niveau d'une bibliothèque reste local : utiliser `setg` ;
+- les rappels vers LispE passent par `Pyt.libraryCall`.
+
+Les bibliothèques existantes : `libworld` (mondes, maisons, personnages), `libsound` (son spatialisé), `librobot` (MuJoCo) et `libtest`.
+
+## 3. Les règles de l'auteur
+
+1. **Le cœur du langage d'abord.** `basic.grm`, `transpiler.lisp`, `compiler.lisp` et LispE (C++, WASM) appartiennent au cœur du langage. Avant d'y toucher :
+   - décrire le changement en quelques lignes, avec un exemple d'entrée et de sortie ;
+   - **attendre son accord** ;
+   - faire une modification à la fois, annoncée.
+
+   Il travaille souvent en parallèle sur ces fichiers et corrige parfois lui-même. L'interface (JS, exemples, documentation, bibliothèque) peut se faire directement.
+2. **Un bogue de LispE se signale, il ne se corrige pas** (section 4.8).
+3. **Les exemples existants sont intouchables.** On montre une nouveauté par de nouveaux exemples, numérotés à la suite et déclarés dans l'`index.json` du répertoire, sauf demande explicite de l'auteur.
+4. **La terminologie de la Pythonerie est française, et on n'y touche pas.** On n'ajoute pas `pop`, `startswith` ou `keys` à son `français.lisp`. Elle écrit `ramène_élément`, `retire_élément`, `commence_par`, `clés@`. Dans l'Atelier aussi, les fichiers de `link` sont les choix de l'auteur : on n'en réécrit pas les noms.
+5. **L'orthographe française est complète partout** : noms du langage, identifiants JS, Python et CSS, fichiers, textes, avec les accents (`bibliothèque.lisp`, `étatSauvegarde`, `btnExécuter`, `chaîne`). Pas de tolérance sans accents.
+6. **Dans l'Atelier, le JS est neutre** (section 2). Un texte affiché par le JS passe par `T('… {0} …', x)`, avec ses traductions English et Korean dans `traductions.lisp`.
+7. **Rien n'attend de façon synchrone.** Une fonction qui attend l'utilisateur, un fichier ou le réseau prend une fonction de rappel, `f(valeur)` ou `f(valeur, a)`, et passe par la file des attentes (`Pyt.attends` dans `canevas.js`, `_attend` / `_réponse_lue` dans `bibliothèque.lisp`). Jamais de `window.prompt`, de relance du programme ni de rejeu d'événement.
+8. **Pas de `global`.** Dans une fonction, `x =: v` affecte la variable du programme (le transpileur produit `setg`), et `x += v` modifie la variable du programme si la fonction n'a pas de `x` local.
+9. **Ce qui plante les IA se rend valable** quand c'est raisonnable, plutôt que d'allonger la liste des interdits. Ça a été fait pour le ternaire, `key=`, `reverse=`, `l.sort()`, `lambda x: …`, `(a, b)` et `print(sep=, end=)`. Une forme refusée doit donner un **message clair** dans la langue :
+   - en anglais, il commence par `Error:` ;
+   - en français, par `Erreur` ;
+   - en coréen, par `Error:` : l'Atelier ne reconnaît pas les messages qui commencent par 오류.
+10. **On commite seulement sur demande.**
+11. **`python3 version.py` après chaque modification**, dans chaque projet touché. Il change les `?v=` qui forcent le rechargement des fichiers. Dans l'Atelier, il recopie aussi les guides de l'IA vers `docs/<Langue>/`, et il signale un `basic_opt.lisp` absent ou périmé.
+
+## 4. LispE : ce qu'il faut savoir
+
+### 4.1 Sources, documentation, binaires
+
+- **Les sources** sont dans `/Users/clauderoux/Documents/GitHub/lispe/`. Le C++ est dans `src/` et `include/`, le WASM dans `wasm/` (`mainwasm.cxx`, `evaljs.cxx`). `wasm_update.sh` copie `lispe.wasm`, `lispe.js` et `lispe_functions.js` dans `Pythonerie/docs/lispe/` et `Atelier-of-the-Apps/docs/lispe/`. **C'est l'auteur qui recompile le WASM.**
+- **La documentation** est dans `lispe/documents/`, et sur le wiki `https://github.com/naver/lispe/wiki` (index des fonctions, description du langage). Fichiers utiles :
+  - `language_help.md` : le formalisme ;
+  - `functions.md` : la référence des fonctions ;
+  - `lispe_vs_python.md` ;
+  - `defpat.md` ;
+  - `data.md` ;
+  - `classes.md` (`class@`, `setqi`) ;
+  - `strings.md` ;
+  - `pattern.md`.
+- **Le binaire natif** est `/usr/local/bin/lispe` : `lispe fichier.lisp arg1 arg2…`, avec les arguments dans `_args`, où `(@ _args 0)` est le nom du script. Il sert à tous les essais rapides. La variable `_version` donne la version.
+- **Pour savoir si une primitive existe**, regarder `(atoms)`, chercher dans `functions.md`, ou essayer dans `lispe`. **Cherche toujours une primitive avant d'écrire du LispE maison** : l'auteur a déjà signalé `deaccentuate`, `andvalue`, `mapcar`, `tokenize_full`…
+
+### 4.2 Le LispE produit par le transpileur
+
+Ce programme anglais :
+
+```python
+score = 0
+d = {"x": 1}
+def add(n):
+    score =: score + n
+    return score
+class Ball:
+    def __init__(self, x):
+        self.x = x
+    def step(self, dx):
+        self.x += dx
+b = Ball(3)
+b.step(2)
+for i in range(3):
+    if i == 1:
+        continue
+    else:
+        add(i)
+while score < 10:
+    score += 1
+try:
+    v = int("z")
+except:
+    v = -1
+s = f"score {score}"
+squares = [x * x for x in range(4)]
+print(s, d["x"], squares)
+```
+
+devient, à peu de chose près :
+
+```lisp
+(setq score 0)
+(setq d (dictionary "x" 1))
+(defun add (n) (setg score (p+ score n)) (return score))
+(class@ Ball_ (init)
+   (defun __init__ (x) (setqi x x))
+   (defun step_ (dx) (+= x dx)))
+(defun Ball (x) (Ball_ (__init__ x)))
+(defpat step ([Ball_ r] dx) (r (step_ dx)))      ; une méthode = un defpat sur le type de l'objet
+(setq b (Ball 3))
+(step b 2)                                      ; a.f(x) devient (f a x)
+(loop i (range 3) (if (= i 1) (continue) (add i)))
+(while (< score 10) (+= score 1))
+(maybe (setq v (int "z")) (setq v -1))          ; try/except
+(setq s (+ "score " (_texte score)))
+(setq squares (mapcar (λ (x) (* x x)) (range 4)))
+(println (_texte s) (_texte (at d "x")) (_texte squares))
+```
+
+Ce qu'il faut en retenir :
+- `+` de Python devient `p+` : il concatène les listes et les textes. Le `+` de LispE additionne élément par élément.
+- `l[i]` devient `(at l i)`, et `l[a:b]` devient `(@@ l a b)`.
+- Les variables globales s'affectent par `setg`.
+- `print` devient `println`, avec chaque argument passé par `_texte`.
+- Une méthode est un `defpat` sur le type. **Le nom d'une méthode est donc une fonction globale** : `def move(self…)` entre en conflit avec la fonction `move` de la bibliothèque (« Wrong number of arguments in call to move »).
+- **Un nom réservé** est renommé `nom_var` ou `nom_user`, ou refusé. La liste est dans la section `pièges` / `pitfalls` du YAML, point 13.
+
+**Pour voir ce que produit le transpileur**, utiliser le banc :
+
+```bash
+printf '%s\t%s\n' "$PWD/prog.pye" "$PWD/prog.lisp" > liste.txt
+lispe tests/banc.lisp traduis docs/English/basic/ basic_opt.lisp english.lisp liste.txt && cat prog.lisp
+lispe tests/banc.lisp exécute docs/English/basic/ basic_opt.lisp english.lisp prog.pye   # traduit et exécute
+# Atelier français : docs/French/basic/ … français.lisp ; coréen : docs/Korean/basic/ … english.lisp
+# Pythonerie : lispe tests/banc.lisp exécute docs/basic/ basic_opt.lisp français.lisp prog.pyf
+```
+
+### 4.3 Écrire des fonctions de bibliothèque en LispE
+
+- **Définir** : `(defun nom (a b) …)`.
+  - Paramètre facultatif : `(defun f (a (b 10)) …)`. Avec `(b ())`, la valeur par défaut est la liste vide.
+  - `(defun f (a $ reste))` **ne marche pas**.
+  - Plusieurs arités, ou un choix selon le type : `defpat`, par exemple `(defpat f ((integer_ n)) …)` ou `(defpat f ([Ball_ r] x) …)`. Il faut au moins un argument par clause.
+  - Les macros s'écrivent avec `defmacro`.
+- **LispE refuse de redéfinir une fonction** (« Function 'x' already declared »). Avant de choisir un nom, vérifier qu'il n'est ni une primitive, ni un nom de la bibliothèque, ni un mot-clef. Noms déjà pris, vus en pratique :
+  - `set`, `range`, `push`, `size`, `floor`, `take`, `drop`, `use`, `switch`, `throw`, `check`, `label`, `middle`, `command`, `bodies`, `copie` ;
+  - les mots-clefs français `attrape` et `sauf` ;
+  - en libworld, `camera`, `home` et `where`.
+
+  Un paramètre facultatif qui porte le nom d'une fonction (comme `width`) se préfixe avec `_`.
+- **Une fonction à effet rend `nil`**, comme `None`.
+- **Appeler le navigateur** : `(evaljsc (list "Pyt.service" a b))`. Le code est compilé une fois et gardé en cache, les nombres passent en doubles, et une liste de nombres passe en `Float64Array`. `asyncjsc` sert à l'asynchrone. **Ne pas utiliser `evaljs`**, qui réévalue chaque argument : il faudrait passer les listes imbriquées en JSON. La réponse JSON se lit avec `json_parse`, qui n'accepte qu'une liste ou un dictionnaire : la réponse est donc emballée dans `{"value": …}`.
+- **Les variables** : `setq` est local à la fonction, `setg` est global.
+- **Les objets** se créent avec `class@` et `setqi`, et se lisent comme dans `classes.md`.
+
+### 4.4 Primitives fréquentes
+
+- Listes : `list`, `cons`, `consb`, `push`, `pop`, `popvalue` (rend l'élément), `insert`, `nconc`, `nconcn`.
+- Accès : `@` / `at`, `@@` (tranche ; `(@@ s a)` va jusqu'à la fin), `size`, `reverse`, `sort` (prend un comparateur, par exemple `(sort '< l)`, ou une fonction utilisateur citée, et trie sur place).
+- Parcours : `mapcar` (rend toujours des objets), `maplist` (peut typer : des `nil` deviennent des `0`), `filterlist`, et les fonctions à la Haskell (`map`, `filter`, `take`, `scanl`, `foldl`…), qui se fusionnent en une seule boucle.
+- Contrôle : `loop`, `while`, `if`, `ife` (avec un bloc else), `cond`, `check`, `ncheck`, `block`, `maybe` (récupère une erreur), `catch`, `return`, `break`, `continue`.
+- Dictionnaires : `dictionary`, `{"a":1}`, `keys@`, `values@`, `key@` (rend `nil` si la clé manque), `in`.
+- Textes : `string`, `trim`, `split`, `join`, `left`, `right`, `replace`, `deaccentuate`, `startwith`, `endwith`, `digitp`, `alphap`.
+- Nombres : `integer`, `number` (64 bits), `float` (**32 bits** : éviter), `radian`, `degree`, `atan2`.
+- Lecture de code : `prettify` (réimprime du LispE), `(eval (+ "(quote " texte ")"))`, `tokenize`, `tokenize_full`.
+
+### 4.5 Pièges de LispE
+
+- **Les booléens** : `and`, `or` et `check` rendent un booléen, pas la valeur. Pour obtenir la valeur, utiliser `andvalue` et `orvalue`.
+- **Les listes vides** : `not` appliqué à une liste agit élément par élément, donc on teste une liste vide avec `nullp`.
+- **`(in dico x)` cherche parmi les VALEURS.** Pour les clés : `(in (keys@ d) x)` ou `(key@ d x)`.
+- **`return` est un mot-clef.** Une fonction qui rend l'atome `return` l'exécute (« cannot evaluate this instruction: 'return' »). Pour réécrire un arbre de code, ne parcourir que les sous-listes (`check (consp e)`) et reconstruire avec `loop` et `push`, sans faire passer l'atome seul par une fonction.
+- **Une primitive ne se passe pas comme valeur** (`size`) : l'envelopper, `(lambda (_x) (size _x))`.
+- **`(sort l)` avec un seul argument échoue au chargement.** `<` ne compare pas des listes.
+- **L'affichage** : `print` colle ses arguments, `println` les sépare par des espaces. Un fichier lancé par `lispe` affiche la valeur de sa dernière expression : finir par `(print "")` pour l'éviter.
+- **Les chaînes** :
+  - `fread` rend une chaîne d'octets ;
+  - `eq` compare les identités et `=` les contenus, donc `(eq (@ texte 0) "(")` est faux ;
+  - `(string (fread f))` convertit le texte.
+- **Le tokenizer** :
+  - toujours ajouter `"\n"` à un texte avant de le découper avec `tokenize` ;
+  - `%)` est lu comme un seul jeton, donc il faut écrire `'(7 % )`.
+- **Un vrai saut de ligne** dans une chaîne du LispE *produit* casse la traduction. Passer `nil` et laisser la bibliothèque mettre `"\n"` : c'est ce que fait `_affiche_nommé`.
+- **Les fichiers chargés** : un `load` fait dans une fonction garde les `setq` du fichier dans cette fonction. Charger au premier niveau.
+
+### 4.6 Le WASM n'est pas le natif
+
+- Un `while` s'arrête après **10 millions de tours** (« too many iterations in a while ») ; le natif n'a pas cette limite.
+- Chaque `print` arrive comme une ligne complète.
+- `throw` ou `maybe` pendant la *compilation* peuvent corrompre l'état de l'interpréteur.
+- La pile d'appels est écrite sur la sortie standard.
+- Ce qui touche ces comportements se teste **dans le navigateur** (section 7).
+
+### 4.7 Les noms des instructions (`link`)
+
+`(link "longueur" 'size)` donne un autre nom à une instruction LispE. Les fichiers `français.lisp` et `english.lisp` en contiennent une centaine. Dans l'Atelier français, les noms de Python s'ajoutent après le nom lisible quand l'instruction de LispE se comporte comme en Python (`pop` donne `popvalue`, `startswith` donne `startwith`). Ces fichiers sont **ceux de l'auteur** : proposer, ne pas modifier.
+
+### 4.8 Signaler un bogue de LispE
+
+1. Réduire le problème à un **petit `.lisp` autonome**, sans la bibliothèque de l'Atelier.
+2. Le lancer avec `/usr/local/bin/lispe`, et dans le WASM si le comportement en dépend.
+3. Donner à l'auteur :
+   - le fichier ;
+   - le résultat **attendu** ;
+   - le résultat **obtenu** ;
+   - si possible, la piste dans `lispe/src`.
+4. Contourner au besoin du côté de l'Atelier, **en le disant**, et ne jamais corriger LispE soi-même.
+5. Vérifier dans le code ou la documentation avant d'affirmer que c'est un bogue. `return`, `eq`/`=` et `in` sur un dictionnaire sont des comportements voulus.
+
+## 5. Recettes
+
+### 5.1 Ajouter une fonction de bibliothèque (le cas le plus courant)
+
+1. **Lire** la section du YAML du domaine concerné, dans les trois langues. Choisir les noms :
+   - français ;
+   - anglais, que le coréen reprend aussi ;
+   - pour la Pythonerie si elle est concernée, en français et avec sa terminologie.
+
+   Vérifier qu'aucun n'est déjà pris (section 4.3).
+2. **L'écrire dans chaque `bibliothèque.lisp`** : Atelier French, English, Korean, et la Pythonerie si elle est concernée. En coréen, le nom est anglais et les messages sont en coréen.
+3. **Un service JS** se met dans `canevas.js`, sous un nom anglais dans l'Atelier et français dans la Pythonerie. Un moteur commun s'ajoute aux deux `canevas.js`, et une primitive de l'application aussi dans `appli/appli.js`. Les textes passent par `T()`, avec leurs traductions dans `traductions.lisp`.
+4. **Une attente** (clic, réponse, fichier, réseau) passe par une fonction de rappel et la file `Pyt.attends`.
+5. **Pour l'éditeur**, ajouter dans `mode-atelier.js` de chaque langue (ou `mode-pythonerie.js`) une entrée `'nom': 'nom(args) — description'`.
+6. **Écrire les programmes de test** (section 6), puis la **documentation** (section 8).
+
+### 5.2 Une méthode
+
+`a.f(x)` devient `(f a x)` : une méthode existe dès que la fonction existe. Un cas particulier se règle dans la règle `callmethod` du transpileur, comme `l.sort()` qui devient `_trie_sur_place`. Attention : le nom d'une méthode de classe de l'utilisateur est une fonction globale (section 4.2).
+
+### 5.3 Une tournure de syntaxe : grammaire et transpileur (avec l'accord de l'auteur)
+
+Le travail se fait **sur une copie** du répertoire `basic/` (dans le scratchpad), et on ne recopie que quand tout passe.
+
+**Les quatre grammaires** sont celles de l'Atelier (French, English, Korean) et de la Pythonerie. Elles ont la même structure, avec les mots-clefs de la langue (`si`/`sinon` ou `if`/`else`). Un changement se fait dans les quatre, sauf décision contraire.
+
+**La notation de `basic.grm` :**
+- `!règle :=` : garde l'étiquette et retire la ponctuation (`%(`, `%,`) ;
+- `^règle :=` ou `a^b` : choix ordonné, le premier qui réussit gagne, sans étiquette ;
+- `|` : la plus longue lecture gagne ;
+- `&règle :=` : l'étiquette seulement s'il y a plus d'un élément. Elle garde le LispE identique quand la forme nouvelle est absente, comme pour `!&ternaire`.
+- `$mot` : un mot-clef ;
+- `%x` : une ponctuation ;
+- `[…]?`, `[…]*`, `[…]+` : facultatif, répété ;
+- `;N` : un point de coupure, qui donne le message d'erreur N.
+
+Exemples réels : `!pylambda := [$lambda^$λ] variables? %: compareorcompute`, `!tuple := %( ternaire %, ternaire [%, ternaire]* %)`, `call := [lambda^parenlambda^Word] %( arguments? %) …`.
+
+**Les étapes :**
+1. Modifier `basic.grm`, puis `cd basic && lispe compiler.lisp`. On obtient `basic.lisp`.
+2. Dans `transpiler.lisp`, ajouter `(defpat parsing (['règle a b]) …)` qui rend le LispE. Une passe sur tout l'arbre se met dans les **trois** points d'entrée : `compile`, `compilepython` et `compileconsole`.
+3. **Les gardes de `optimise.lisp`** (`walrus`, `tojoin`, `alapython`, `call`, `method`, `interval`, table `heuristiques` en tête du fichier) sont écrites à la main d'après le premier jeton de chaque règle. Si une règle gardée peut maintenant commencer autrement, il faut **mettre à jour la garde** dans les quatre copies. Sinon, `basic_opt.lisp` refuse ce que `basic.lisp` accepte : c'est arrivé avec `(lambda x: …)(5)`.
+4. Lancer `lispe optimise.lisp <basic>/ <programmes…>` avec, comme corpus, les exemples et les programmes des matériels de la langue, **plus les programmes de test** de la forme nouvelle. Il écrit `basic_opt.lisp` après avoir vérifié que les arbres sont identiques. S'ils diffèrent, il garde une copie de `basic.lisp`, et la version refusée part dans `basic_opt.essai.lisp`. En zsh, passer la liste des programmes par Python ou par un fichier.
+5. Lancer la **non-régression** (section 6) dans les deux projets.
+
+## 6. Les tests de non-régression (obligatoires)
+
+Chaque projet a, à sa racine :
+
+```bash
+python3 non_regression.py                 # toutes les langues
+python3 non_regression.py French          # une langue (Atelier : English, French, Korean)
+python3 non_regression.py --accepte       # enregistre les résultats actuels comme références
+```
+
+**Quand le lancer : après TOUTE modification de**
+- `basic.grm`, `basic.lisp` ou `basic_opt.lisp` ;
+- `transpiler.lisp` ;
+- `bibliothèque.lisp` ;
+- `optimise.lisp` ;
+- un fichier de noms.
+
+Il doit finir sur « OK » dans **l'Atelier ET la Pythonerie** avant d'annoncer que c'est fini. Il dure quelques secondes et sort avec le code 1 en cas de faute.
+
+**Ce qu'il vérifie, chaque fois avec `basic.lisp` ET avec `basic_opt.lisp`** (les deux doivent donner la même chose) :
+1. **Les programmes de test** de `tests/formes/<Langue>/` (`.pye`, `.pyf`, `.pyk`) sont traduits puis **exécutés** dans LispE. Ce qu'ils affichent doit être exactement le fichier `.attendu` du même nom. Un programme refusé affiche son message d'erreur, ce qui permet de tester aussi les refus. Programmes actuels : tri, `print`/`affiche` avec `sep=`/`end=`, lambdas, tuples, ternaire, règles gardées de l'optimiseur, et deux refus (argument nommé ailleurs, tuple sans parenthèses).
+2. **Les traductions** des exemples, des programmes des matériels (lus dans les zip) et des programmes de test sont comparées au LispE de référence de `tests/références/<Langue>/`.
+
+Le banc (`tests/banc.lisp`) remplace `evaljsc` par un simple `print`. **Rien ne passe par le navigateur** : le canevas, les sons et la 3D ne sont pas exécutés, d'où la section 7.
+
+**Méthode pour toute nouveauté ou correction :**
+1. **Écrire d'abord le programme de test** qui montre la forme nouvelle, ou qui reproduit le bogue :
+   - Atelier : `tests/formes/English/NN_nom.pye` ;
+   - la même chose en `.pyk` dans `tests/formes/Korean/` : mêmes programmes, mais `.attendu` différents, car les messages d'erreur sont en coréen ;
+   - `tests/formes/French/NN_nom.pyf` ;
+   - Pythonerie : `tests/formes/Pythonerie/NN_nom.pyf`, **avec sa terminologie française** (`ramène_élément`, pas `pop`).
+
+   On y met les usages ordinaires, les cas limites et au moins un refus attendu. Une forme qui touche une règle gardée de l'optimiseur doit y figurer. Les noms de variables du test ne doivent pas être des noms réservés (`size`, `label`, `middle`…).
+2. Faire la modification.
+3. `python3 non_regression.py --accepte`, puis **RELIRE chaque `.attendu` créé ou remplacé**. Quand le programme est du Python pur (en anglais), comparer avec `python3 fichier.pye` : les écarts admis sont les guillemets (`"` au lieu de `'`) et les tuples, qui s'affichent comme des listes.
+4. Relancer **sans** `--accepte` : il doit dire « OK », dans les deux projets.
+
+**Lire une faute :**
+- « **basic.lisp et basic_opt.lisp ne donnent pas la même…** » : une garde de `optimise.lisp` est à revoir, ou l'optimiseur n'a pas été relancé.
+- « **la traduction a changé** » (avec un extrait de diff) : le LispE d'un exemple a bougé. Ce n'est pas forcément une faute, si le transpileur a changé exprès. On lit le diff, et on n'accepte qu'en sachant pourquoi chaque ligne a changé.
+- « **résultat différent** » : le comportement a changé. On corrige le code, pas le `.attendu`, sauf si l'ancien résultat était faux, et on le dit.
+- « **pas de référence / pas de résultat attendu** » : un nouvel exemple ou un nouveau test. Faire `--accepte`, puis relire.
+
+**Ne jamais faire `--accepte` à l'aveugle** : un `.attendu` accepté sans le relire fige le bogue.
+
+**Pour ajouter une langue** : ajouter l'entrée dans `LANGUES` en tête de `non_regression.py` (répertoire basic, fichier de noms, exemples, matériels, extension), traduire les programmes dans `tests/formes/<Langue>/`, puis appliquer la méthode ci-dessus. La compétence `ajouter-une-langue` le rappelle.
+
+## 7. Essayer dans le navigateur
+
+Le banc ne suffit pas pour ce qui touche le canevas, les sons, la 3D, l'interface, les attentes ou les limites du WASM.
+
+1. Lancer le serveur du projet (section 2).
+2. Lancer Chrome sans tête :
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+       --remote-debugging-port=9333 --user-data-dir=<profil neuf> --no-first-run about:blank
+   ```
+   - Un **profil neuf** évite le cache et le stockage d'un essai précédent.
+   - Pour WebGL : `--use-angle=swiftshader --enable-unsafe-swiftshader`.
+3. Utiliser les scripts de l'Atelier, dans `.claude/skills/ajouter-une-langue/scripts/` :
+   - `cdp.js` charge un programme dans la page et rend la console, les erreurs et le LispE ;
+   - `banc.js` passe tous les exemples avec le vrai `lispe.wasm` et un canevas simulé, et vérifie que chaque service appelé existe dans `canevas.js`.
+4. **Les exemples du mode d'emploi** (`<pre data-essai>`) s'exécutent dans la page : les lancer avant de rendre.
+
+## 8. La documentation (obligatoire)
+
+**Chaque fois qu'une instruction nouvelle est ajoutée, ou que son comportement change, elle doit être décrite dans les guides YAML de l'IA ET dans le mode d'emploi (`guide.html`), dans les trois langues : français, anglais, coréen.** Une instruction absente de la documentation n'existe ni pour les élèves, ni pour les IA.
+
+1. **Les guides de l'IA de l'Atelier**, à la racine (jamais dans `docs/`) :
+   - `POUR_CLAUDE.yaml`, `FOR_CLAUDE.yaml`, `CLAUDE용_안내.yaml` :
+     - mettre l'instruction dans la sous-section de son domaine (section 1) ;
+     - ajouter son message d'erreur exact dans `bugs_fréquents` / `common_bugs` ;
+     - ajouter un piège dans `pièges` / `pitfalls` s'il y en a un ;
+     - garder court le début, qui est toujours envoyé.
+   - `POUR_CLAUDE.md`, `FOR_CLAUDE.md`, `CLAUDE용_안내.md` : la même chose, dans la version à lire.
+   - Vérifier les YAML : `ruby -ryaml -e "YAML.load_file('POUR_CLAUDE.yaml')"`, pour chacun des trois.
+   - Après `python3 version.py`, vérifier par `grep` que `docs/<Langue>/` contient bien le changement.
+2. **Le guide de l'IA de la Pythonerie** : `POUR_CLAUDE.md` à la racine, si elle est concernée. Il n'y a pas de YAML.
+3. **Le mode d'emploi** : `docs/French/guide.html`, `docs/English/guide.html`, `docs/Korean/guide.html`, et `Pythonerie/docs/guide.html` si elle est concernée. Pour chacun :
+   - la section du sujet, et son entrée dans le sommaire (`nav.sommaire`) ;
+   - la ligne du glossaire, « Tous les mots » (`table.glossaire`) ;
+   - au moins un exemple `<pre data-essai>` **exécuté dans le navigateur**, avec son vrai résultat.
+4. **L'éditeur** : `mode-atelier.js` de chaque langue (ou `mode-pythonerie.js`).
+5. **Le reste :**
+   - `docs/English/GLOSSARY.md` (correspondance du français vers l'anglais) ;
+   - les textes d'interface dans `traductions.lisp` ;
+   - un nouvel exemple numéroté à la suite pour une nouveauté importante, sans retoucher les anciens ;
+   - les README (`README.md`, `README.fr.md`) pour une bibliothèque ou un grand ensemble.
+
+## 9. Check-list finale
+
+- [ ] Les sections concernées du YAML lues, et aucun nom en conflit.
+- [ ] L'accord de l'auteur si le cœur du langage a bougé (grammaire, transpileur, LispE, fichiers de `link`).
+- [ ] Les quatre `basic/` traités (Atelier fr, en, ko et Pythonerie), ou la décision de n'en changer qu'une partie, dite à l'auteur.
+- [ ] `basic.lisp` régénéré et `optimise.lisp` relancé (gardes revues) dans chaque `basic/` touché.
+- [ ] Les programmes de test écrits dans `tests/formes/` (English, Korean, French, Pythonerie), et chaque `.attendu` relu.
+- [ ] `python3 non_regression.py` sur « OK » dans **l'Atelier et la Pythonerie**.
+- [ ] Un essai dans le navigateur pour ce qui touche le canevas, les sons, la 3D, l'interface ou le WASM.
+- [ ] Les guides de l'IA : les 3 YAML et les 3 MD à la racine de l'Atelier (YAML valides), le `POUR_CLAUDE.md` de la Pythonerie.
+- [ ] Le mode d'emploi : les 3 `guide.html` (et celui de la Pythonerie), avec section, sommaire, glossaire et exemple exécuté.
+- [ ] `mode-atelier.js` / `mode-pythonerie.js`, `traductions.lisp`, `GLOSSARY.md`.
+- [ ] `python3 version.py` dans chaque projet touché.
+- [ ] Les bogues de LispE rencontrés, signalés avec leur mini-programme.
+- [ ] Rien de commité sans demande.

@@ -189,7 +189,8 @@ Les bibliothèques existantes : `libworld` (mondes, maisons, personnages), `libs
 
 ### 4.1 Sources, documentation, binaires
 
-- **Les sources** sont dans `/Users/clauderoux/Documents/GitHub/lispe/` (dépôt public `https://github.com/naver/lispe`). Le C++ est dans `src/` et `include/`, le WASM dans `wasm/` (`mainwasm.cxx`, `evaljs.cxx`). `wasm_update.sh` copie `lispe.wasm`, `lispe.js` et `lispe_functions.js` dans `Pythonerie/docs/lispe/` et `Atelier-of-the-Apps/docs/lispe/`. **C'est l'auteur qui recompile le WASM.**
+- **Les sources** sont dans `/Users/clauderoux/Documents/GitHub/lispe/` (dépôt public `https://github.com/naver/lispe`). Le C++ est dans `src/` et `include/`, le WASM dans `wasm/` (`mainwasm.cxx`, `evaljs.cxx`). `wasm_update.sh` copie `lispe.wasm`, `lispe.js` et `lispe_functions.js` dans `PREDIBAG/lispe/`, `Pythonerie/docs/lispe/` et `Atelier-of-the-Apps/docs/lispe/`. **L'auteur recompile d'habitude LispE lui-même ; ne changer son C++ que s'il le demande.**
+- **Recompiler LispE** (quand l'auteur demande une correction). `lispe/objs/`, `lispe/wasm/objs/`, `bin/lispe` et `wasm/lispe.wasm` peuvent appartenir à root (compilés avec `sudo`) : on compile alors dans le scratchpad. En natif : copier `objs/*.o`, recompiler le fichier changé avec les options de `Makefile` et `Makefile.in` (`clang++ -fPIC -std=c++17 -w -c -Ofast -DAPPLE -DPOSIXREGEX -x objective-c++ -DUNIX -Iinclude src/x.cxx`), faire l'édition de liens comme la règle `lispe` du `Makefile`, et tester avec ce binaire (`PATH=<rép>:$PATH python3 non_regression.py` le prend). En WASM : la même chose avec `em++` et les options de `wasm/Makefile` (`-std=c++11 -c -w -msimd128 -DAPPLE -DPOSIXREGEX -DUNIX -O3 … -DLISPE_WASM -I../include`), liée en `lispe.html` ; puis copier `lispe.wasm` et `lispe.js` vers les trois destinations de `wasm_update.sh`. Avant de distribuer : les exemples natifs de `lispe/examples` et les deux bancs avec le nouveau binaire, et le `banc.js` de l'Atelier (`.claude/skills/ajouter-une-langue/scripts/`) avec le nouveau WASM. Dire à l'auteur quels fichiers de root gardent l'ancienne version.
 - **La documentation** est dans `lispe/documents/`, et sur le wiki `https://github.com/naver/lispe/wiki` (index des fonctions, description du langage). Fichiers utiles :
   - `language_help.md` : le formalisme ;
   - `functions.md` : la référence des fonctions ;
@@ -284,7 +285,8 @@ lispe tests/banc.lisp exécute docs/English/basic/ basic_opt.lisp english.lisp p
   - Les macros s'écrivent avec `defmacro`.
 - **LispE refuse de redéfinir une fonction** (« Function 'x' already declared »). Avant de choisir un nom, vérifier qu'il n'est ni une primitive, ni un nom de la bibliothèque, ni un mot-clef. Noms déjà pris, vus en pratique :
   - `set`, `range`, `push`, `size`, `floor`, `take`, `drop`, `use`, `switch`, `throw`, `check`, `label`, `middle`, `command`, `bodies`, `copie` ;
-  - les mots-clefs français `attrape` et `sauf` ;
+  - `drop` (un mot-clef de LispE : le transpileur ne le renomme pas, l'erreur vient au chargement) ;
+  - les mots-clefs français `attrape`, `sauf` et `essaie` (try) : une fonction nommée `essaie` donne une erreur de syntaxe qui pointe sur sa ligne `fonction` ;
   - en libworld, `camera`, `home` et `where`.
 
   Un paramètre facultatif qui porte le nom d'une fonction (comme `width`) se préfixe avec `_`.
@@ -320,6 +322,8 @@ lispe tests/banc.lisp exécute docs/English/basic/ basic_opt.lisp english.lisp p
 - **Le tokenizer** :
   - toujours ajouter `"\n"` à un texte avant de le découper avec `tokenize` ;
   - `%)` est lu comme un seul jeton, donc il faut écrire `'(7 % )`.
+- **Le modulo des réels** (corrigé le 2026-11-09, LispE natif et WASM) : `%` garde les décimales (`fmod`), `_%` (le `%` de l'Atelier) suit Python (`-29.5 % 90` vaut `60.5`) ; sur les entiers, rien ne change.
+- **Les chaînes f entre triples guillemets** (`f"""…{x}…"""`) ne sont pas interpolées : construire le texte avec `+` et `chaîne(…)` (un manque du langage, à proposer à l'auteur).
 - **Un vrai saut de ligne** dans une chaîne du LispE *produit* casse la traduction. Passer `nil` et laisser la bibliothèque mettre `"\n"` : c'est ce que fait `_affiche_nommé`.
 - **Les fichiers chargés** : un `load` fait dans une fonction garde les `setq` du fichier dans cette fonction. Charger au premier niveau.
 
@@ -437,6 +441,8 @@ Le banc (`tests/banc.lisp`) remplace `evaljsc` par un simple `print`. **Rien ne 
 
 **Ne jamais faire `--accepte` à l'aveugle** : un `.attendu` accepté sans le relire fige le bogue.
 
+**librobot a ses propres tests** : `node tests/librobot/test_librobot.mjs [nom]`, avec la vraie physique (`physique.js` et MuJoCo en WebAssembly, dans Node). Ils rejouent les exemples de référence (33, 34, 39, 40, 41, 43, 45 à 49) et vérifient ce qu'annonce leur commentaire d'en-tête : des taux de réussite sur 10 tirages à graine fixe (`GRAINE0=100` pour d'autres tirages), la physique comparée à la théorie (plan incliné, chute libre, période du pendule), le lacet de `reach`. Les lancer après toute modification de librobot (`physique.js`, `librobot.js`, `librobot.lisp`, `robots.json`, `fabrique_robots.py`) ou de ces exemples, et mettre le test à jour quand un exemple change : ce sont les mêmes étapes, écrites en JS. `DIAG=1` montre les échecs, `ANCIEN=1` compare avec l'ancien exemple 41, `ANCIEN_FROTTEMENT=1` avec l'ancien cône de frottement de MuJoCo.
+
 **Pour ajouter une langue** : ajouter l'entrée dans `LANGUES` en tête de `non_regression.py` (répertoire basic, fichier de noms, exemples, matériels, extension), traduire les programmes dans `tests/formes/<Langue>/`, puis appliquer la méthode ci-dessus. La compétence `ajouter-une-langue` le rappelle.
 
 ## 7. Essayer dans le navigateur
@@ -449,7 +455,7 @@ Le banc ne suffit pas pour ce qui touche le canevas, les sons, la 3D, l'interfac
    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
        --remote-debugging-port=9333 --user-data-dir=<profil neuf> --no-first-run about:blank
    ```
-   - Un **profil neuf** évite le cache et le stockage d'un essai précédent.
+   - Un **profil neuf** évite le cache et le stockage d'un essai précédent. Le site a un service worker : après avoir changé un fichier, lancer `python3 version.py` et relancer Chrome avec un profil neuf, sinon la page garde l'ancien fichier (un exemple « changé » sur le disque exécute encore son ancien code). Un Chrome qui a servi à beaucoup d'essais peut aussi arrêter sa boucle d'animation (`requestAnimationFrame`) : si une simulation reste au temps 0, le relancer.
    - Pour WebGL : `--use-angle=swiftshader --enable-unsafe-swiftshader`.
 3. Utiliser les scripts de l'Atelier, dans `.claude/skills/ajouter-une-langue/scripts/` :
    - `cdp.js` charge un programme dans la page et rend la console, les erreurs et le LispE ;
@@ -489,6 +495,7 @@ Le banc ne suffit pas pour ce qui touche le canevas, les sons, la 3D, l'interfac
 - [ ] `basic.lisp` régénéré et `optimise.lisp` relancé (gardes revues) dans chaque `basic/` touché.
 - [ ] Les programmes de test écrits dans `tests/formes/` (English, Korean, French, Pythonerie), et chaque `.attendu` relu.
 - [ ] `python3 non_regression.py` sur « OK » dans **l'Atelier et la Pythonerie**.
+- [ ] Si librobot ou ses exemples ont bougé : `node tests/librobot/test_librobot.mjs` passe, et le test suit les exemples.
 - [ ] Un essai dans le navigateur pour ce qui touche le canevas, les sons, la 3D, l'interface ou le WASM.
 - [ ] Les guides de l'IA : les 3 YAML et les 3 MD à la racine de l'Atelier (YAML valides), le `POUR_CLAUDE.md` de la Pythonerie.
 - [ ] Le mode d'emploi : les 3 `guide.html` (et celui de la Pythonerie), avec section, sommaire, glossaire et exemple exécuté.

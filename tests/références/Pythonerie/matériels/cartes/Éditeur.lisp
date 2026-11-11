@@ -209,7 +209,7 @@
          (setg choisi -1)
          (setq éléments (at (carte) "éléments"))
          (loop i 
-            (intervalle (- (longueur éléments) 1) -1 -1)
+            (irange (- (longueur éléments) 1) -1 -1)
             (check (dans_la_boîte (boîte (at éléments i)) cx cy)
                (setg choisi i)
                (break)
@@ -355,7 +355,7 @@
                   (set@
                      pile
                      "cartes"
-                     (mapcar (λ (i) (at pile "cartes" i)) (filtercar (λ (i) (!= i n)) (intervalle total)))
+                     (mapcar (λ (i) (at pile "cartes" i)) (filtercar (λ (i) (!= i n)) (irange 0 total 1)))
                   )
                   (ouvre_carte (minimum n (- total 2)))
                )
@@ -369,7 +369,7 @@
                            (λ (i) 
                               (at c "éléments" i)
                            )
-                           (filtercar (λ (i) (!= i choisi)) (intervalle (longueur (at c "éléments"))))
+                           (filtercar (λ (i) (!= i choisi)) (irange 0 (longueur (at c "éléments")) 1))
                         )
                      )
                      (setg choisi -1)
@@ -442,7 +442,7 @@
 (liste_déroulante "fond" 12 174 COULEURS fond_choisi)
 (liste_déroulante "son_carte" 12 222 sons son_de_carte_choisi)
 (loop i 
-   (intervalle (longueur OUTILS))
+   (irange 0 (longueur OUTILS) 1)
    (setq o (at OUTILS i))
    (
       bouton_radio

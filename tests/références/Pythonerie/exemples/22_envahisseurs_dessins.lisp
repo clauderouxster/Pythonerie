@@ -24,7 +24,7 @@
 (setq son_explosion (charge_son "médias/sounds/explosion.wav"))
 (setq son_boum (charge_son "médias/sounds/boum.wav"))
 (setq pas_de_marche
-   (mapcar (λ (i) (charge_son (+ "médias/sounds/pas_" (_texte i) ".wav"))) (intervalle 1 5))
+   (mapcar (λ (i) (charge_son (+ "médias/sounds/pas_" (_texte i) ".wav"))) (irange 1 5 1))
 )
 (setq vaisseau_x (_/ (largeur) 2))
 (setq VAISSEAU_Y (- (hauteur) 50))
@@ -93,7 +93,7 @@
    (return (longueur (filtercar (λ (v) v) vivants)))
 )
 (defun nouvelle_vague ()
-   (setg vivants (mapcar (λ (i) true) (intervalle (* COLONNES RANGÉES))))
+   (setg vivants (mapcar (λ (i) true) (irange 0 (* COLONNES RANGÉES) 1)))
    (setg flotte_x (_/ (largeur) 8))
    (setg flotte_y (p+ 70 (* (minimum (- vague 1) 4) 15)))
    (setg sens 1)
@@ -169,7 +169,7 @@
    (setq gauche (largeur))
    (setq droite 0)
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (at vivants i)
          (setq gauche (minimum gauche (env_x i)))
          (setq droite (maximum droite (p+ (env_x i) LARGEUR_ENV)))
@@ -205,7 +205,7 @@
       (return ())
    )
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (at vivants i)
          (setq x (env_x i))
          (setq y (env_y i))
@@ -270,7 +270,7 @@
       (return ())
    )
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (andvalue (at vivants i) (> (p+ (env_y i) HAUTEUR_ENV) (- VAISSEAU_Y 20)))
          (setg vies 0)
          (setg état "perdu")
@@ -288,10 +288,10 @@
 (defun pose_boucliers ()
    (setg boucliers (list))
    (loop k 
-      (intervalle 4)
+      (irange 0 4 1)
       (setq blocs (list))
       (loop b 
-         (intervalle 72)
+         (irange 0 72 1)
          (setq ligne_b (_/ b 12))
          (setq colonne (_% b 12))
          (setq arche (andvalue (andvalue (>= ligne_b 4) (>= colonne 4)) (<= colonne 7)))
@@ -308,7 +308,7 @@
       (return false)
    )
    (loop k 
-      (intervalle 4)
+      (irange 0 4 1)
       (check (andvalue (>= x (at BOUCLIER_X k)) (< x (p+ (at BOUCLIER_X k) (* 12 BLOC))))
          (setq colonne (entier (_/ (- x (at BOUCLIER_X k)) BLOC)))
          (setq ligne_b (entier (_/ (- y BOUCLIER_Y) BLOC)))
@@ -340,7 +340,7 @@
                (choisis (list "#ffffff" "#bbdefb" "#fff9c4" "#f8bbd0"))
             )
          )
-         (intervalle 260)
+         (irange 0 260 1)
       )
    )
    (setg nuages
@@ -353,7 +353,7 @@
                (choisis (list "150, 80, 200" "80, 120, 220" "200, 80, 160"))
             )
          )
-         (intervalle 110)
+         (irange 0 110 1)
       )
    )
    (setg immeubles (list))
@@ -366,7 +366,7 @@
             (λ (k) 
                (list (+ (* (aléatoire 0 (- (_/ l_imm 7) 1)) 7) 3) (+ (* (aléatoire 0 (- (_/ h_imm 8) 1)) 8) 3))
             )
-            (intervalle (aléatoire 2 9))
+            (irange 0 (aléatoire 2 9) 1)
          )
       )
       (push immeubles (list x_imm l_imm h_imm fenêtres))
@@ -387,7 +387,7 @@
    (vide_dessin décor)
    (setq bande (/ (hauteur) 60))
    (loop i 
-      (intervalle 60)
+      (irange 0 60 1)
       (couleur décor (rgb (p+ 4 (* i 0.5)) (p+ 4 (* i 0.3)) (p+ 20 (* i 0.9))))
       (rectangle_plein décor 0 (* i bande) (largeur) (+ bande 1))
    )
@@ -465,7 +465,7 @@
 (defun prépare_flotte ()
    (vide_dessin flotte)
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (if (at vivants i)
          (ajoute_envahisseur flotte (env_x i) (env_y i) (at COULEURS (_/ i COLONNES)))
       )
@@ -474,9 +474,9 @@
 (defun prépare_défenses ()
    (vide_dessin défenses)
    (loop k 
-      (intervalle 4)
+      (irange 0 4 1)
       (loop b 
-         (intervalle 72)
+         (irange 0 72 1)
          (check (at boucliers k b)
             (couleur défenses (at VERTS (_% (p+ (_/ b 12) b) 2)))
             (

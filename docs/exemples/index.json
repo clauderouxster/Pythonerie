@@ -130,5 +130,11 @@
     "titre": "25. Le sondage",
     "description": "des boutons qui votent ; un camembert et des colonnes redessinés à chaque vote",
     "programme": "Sondage"
+  },
+  {
+    "fichier": "26_listes_typées.pyf",
+    "titre": "26. Les listes typées",
+    "description": "liste_entiers, liste_nombres, liste_chaînes : des listes qui ne contiennent qu'un genre de valeurs, 4 à 20 fois plus rapides pour dans, somme, les tranches ; le programme chronomètre 100 000 valeurs et dessine le résultat",
+    "programme": "Listes typées"
   }
 ]

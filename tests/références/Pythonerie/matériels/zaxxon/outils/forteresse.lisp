@@ -17,7 +17,7 @@
             (push murs (list f (entier (at morceaux 1)) (entier (at morceaux 2))))
          )
          (loop i 
-            (intervalle (minimum 6 (longueur rangée)))
+            (irange 0 (minimum 6 (longueur rangée)) 1)
             (setq c (majuscules (at rangée i)))
             (if (= c "C")
                (push objets (list "canon" f (p+ i 0.5) 0.75 (aléatoire 30 120)))

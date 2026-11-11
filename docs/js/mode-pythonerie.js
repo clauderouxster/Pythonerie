@@ -53,6 +53,9 @@ const PYTHONERIE_FONCTIONS = {
     // Listes et chaînes
     'ajoute': 'liste.ajoute(x) — ajoute x à la fin de la liste',
     'trie': 'trie(liste) — renvoie une copie triée',
+    'liste_entiers': 'liste_entiers(a, b, …) ou liste_entiers(liste) — liste typée d\'entiers, bien plus rapide (dans, somme, tranches)',
+    'liste_nombres': 'liste_nombres(a, b, …) ou liste_nombres(liste) — liste typée de nombres à virgule',
+    'liste_chaînes': 'liste_chaînes(a, b, …) ou liste_chaînes(liste) — liste typée de textes',
     'inverse': 'inverse(liste) — renvoie la liste à l\'envers',
     'majuscules': 'majuscules(texte)',
     'minuscules': 'minuscules(texte)',

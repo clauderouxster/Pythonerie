@@ -638,21 +638,32 @@
    (setq lmb (list 'lambda (list vari) (parsing (@ d 0))))
    (setq verif (list 'lambda (list vari) vari))
    (ife (= (size d) 3)
-      (nconcn (list 'mapcar lmb (parsing (@ d 2))))
+      (nconcn (list 'mapcar lmb (_vers_irange (parsing (@ d 2)))))
       (if (= lmb verif)
-         (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (parsing (@ d 2)))
+         (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (_vers_irange (parsing (@ d 2))))
          (nconcn 
             (list 'mapcar 
                lmb
-               (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (parsing (@ d 2)))))
+               (list 'filtercar (list 'lambda (list vari) (parsing (@ d 3))) (_vers_irange (parsing (@ d 2))))))
       )
    )
 )
 
+; Une boucle ou une compréhension sur range(…) parcourt un irange : un simple itérateur, sans
+; construire la liste (range s'arrête à 100 000 valeurs, irange n'a pas de limite et prend moins
+; de mémoire). Toujours trois arguments : (irange début fin pas). Un pas nul est une erreur
+; (« increment cannot be 0 »), comme en Python ; ailleurs (l = range(5)), range rend une liste.
+(defun _vers_irange (rg)
+   (cond
+      ((not (and (consp rg) (> (size rg) 1) (< (size rg) 5) (or (eq (car rg) 'intervalle) (eq (car rg) 'range)))) rg)
+      ((= (size rg) 2) (list 'irange 0 (@ rg 1) 1))
+      ((= (size rg) 3) (list 'irange (@ rg 1) (@ rg 2) 1))
+      (true (list 'irange (@ rg 1) (@ rg 2) (@ rg 3)))))
+
 ; forin: For A in range(1,10,1)... EndFor
 (defpat parsing ( ['forin init rg $ code] )
    (setq code (maplist 'parsing code))
-   (nconcn (list 'loop (parsing init) (parsing rg)) code)
+   (nconcn (list 'loop (parsing init) (_vers_irange (parsing rg))) code)
 )
 
 ;for: For A = 0, A < 10 , A = A + 1... EndFor

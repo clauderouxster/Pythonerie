@@ -79,7 +79,7 @@
       )
    )
    (loop i 
-      (intervalle (longueur terrains))
+      (irange 0 (longueur terrains) 1)
       (setq t (at terrains i))
       (cache_objet . at t "variantes" (at t "genre"))
       (set@ t "genre" 0)
@@ -87,7 +87,7 @@
       (montre_objet . at t "variantes" 0)
    )
    (loop i 
-      (intervalle (longueur silos))
+      (irange 0 (longueur silos) 1)
       (set@ silos i "z" (- -20 (* i 27)))
       (set@ silos i "tir" (p+ 2 (* (hasard) 2)))
    )

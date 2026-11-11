@@ -35,7 +35,7 @@
    (joue (son_de_la (at pile "cartes" n)))
    (setq éléments (at pile "cartes" n "éléments"))
    (loop i 
-      (intervalle (longueur éléments))
+      (irange 0 (longueur éléments) 1)
       (setq e (at éléments i))
       (check (= (at e "genre") "bouton")
          (taille_texte (lettres_bouton e))

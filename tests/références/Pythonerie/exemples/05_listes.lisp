@@ -7,7 +7,7 @@
 (println "Moyenne :" (_texte (arrondi (/ (somme notes) (longueur notes)) 2)))
 (println "Meilleure :" (_texte (maximum notes)) " moins bonne :" (_texte (minimum notes)))
 (println "Triées :" (_texte (trie notes)))
-(setq carrés (mapcar (λ (x) (* x x)) (intervalle 10)))
+(setq carrés (mapcar (λ (x) (* x x)) (irange 0 10 1)))
 (setq pairs (filtercar (λ (x) (= (_% x 2) 0)) carrés))
 (println (_texte carrés))
 (println (_texte pairs))

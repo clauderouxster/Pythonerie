@@ -9,20 +9,20 @@
    (return (* n (factorielle (- n 1))))
 )
 (loop i 
-   (intervalle 1 8)
+   (irange 1 8 1)
    (println (_texte i) "! =" (_texte (factorielle i)))
 )
 (defun fibonacci (n)
    (setq a 0)
    (setq b 1)
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (setq (a b) (list b (p+ a b)))
    )
    (return a)
 )
 (println "Les 15 premiers nombres de Fibonacci :")
-(println (_texte (mapcar (λ (i) (fibonacci i)) (intervalle 15))))
+(println (_texte (mapcar (λ (i) (fibonacci i)) (irange 0 15 1))))
 (defun somme (liste)
    (setq total 0)
    (loop x liste

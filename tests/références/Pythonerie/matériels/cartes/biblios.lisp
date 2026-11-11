@@ -42,7 +42,7 @@
 )
 (defun exemple_boucles ()
    (loop i 
-      (intervalle 1 6)
+      (irange 1 6 1)
       (println (_texte i) "fois 7 =" (_texte (* i 7)))
    )
    (setq n 1)

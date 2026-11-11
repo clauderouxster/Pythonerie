@@ -43,7 +43,7 @@
    (setq nombre_étoiles 160)
 )
 (loop i 
-   (intervalle nombre_étoiles)
+   (irange 0 nombre_étoiles 1)
    (setq étoile
       (
          sphère
@@ -89,9 +89,9 @@
 (setq réserves
    (list
       (list)
-      (mapcar (λ (i) (rocher 1)) (intervalle 40))
-      (mapcar (λ (i) (rocher 2)) (intervalle 20))
-      (mapcar (λ (i) (rocher 3)) (intervalle 10))
+      (mapcar (λ (i) (rocher 1)) (irange 0 40 1))
+      (mapcar (λ (i) (rocher 2)) (irange 0 20 1))
+      (mapcar (λ (i) (rocher 3)) (irange 0 10 1))
    )
 )
 (defun prend_rocher (taille)
@@ -108,7 +108,7 @@
 )
 (setq réserve_tirs (list))
 (loop i 
-   (intervalle 4)
+   (irange 0 4 1)
    (setq t (sphère scène 0 -200 0 0.22 "jaune"))
    (lumineux t)
    (cache_objet t)
@@ -116,7 +116,7 @@
 )
 (setq réserve_éclats (list))
 (loop i 
-   (intervalle 24)
+   (irange 0 24 1)
    (setq é (cube scène 0 -200 0 0.3 "orange"))
    (lumineux é)
    (cache_objet é)
@@ -243,7 +243,7 @@
    )
    (setg astéroïdes (list))
    (loop i 
-      (intervalle (minimum (p+ 3 vague) 10))
+      (irange 0 (minimum (p+ 3 vague) 10) 1)
       (if (< (hasard) 0.5)
          (ajoute_astéroïde astéroïdes (aléatoire 0 (largeur)) 0 3)
          (ajoute_astéroïde astéroïdes 0 (aléatoire 0 (hauteur)) 3)
@@ -313,7 +313,7 @@
 )
 (defun éclats (x y n)
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (if (= (longueur réserve_éclats) 0)
          (return ())
       )
@@ -473,7 +473,7 @@
       (setq r (at rayons (at a 4)))
       (setq touché -1)
       (loop j 
-         (intervalle (longueur tirs))
+         (irange 0 (longueur tirs) 1)
          (check (andvalue (< touché 0) (¬ (in_it utilisés j)))
             (setq dx (- (at tirs j 0) (at a 0)))
             (setq dy (- (at tirs j 1) (at a 1)))
@@ -500,7 +500,7 @@
    (setg astéroïdes restants)
    (setq gardés (list))
    (loop j 
-      (intervalle (longueur tirs))
+      (irange 0 (longueur tirs) 1)
       (if (in_it utilisés j)
          (block (cache_objet . at tirs j 5) (push réserve_tirs (at tirs j 5)))
          (push gardés (at tirs j))

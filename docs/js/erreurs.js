@@ -19,6 +19,8 @@ const ErreursLispE = (function () {
         [/Wrong type/i, 'Type de valeur inattendu'],
         [/Expecting a list/i, 'Une liste était attendue'],
         [/No more elements to traverse/i, 'Liste trop courte'],
+        // range de LispE s'arrête à 100 000 valeurs
+        [/Exceeding range/i, 'intervalle() ne peut pas ranger plus de 100 000 valeurs dans une liste.\n   Une boucle « pour i dans intervalle(n) » n\'a pas cette limite : parcours l\'intervalle au lieu de le garder.'],
         // en WebAssembly, LispE arrête un while après 10 millions de tours (sinon la page gèlerait)
         [/too many iterations in a while/i, 'une boucle « tantque » a fait plus de 10 millions de tours : elle ne s\'arrête sans doute jamais.\n   Vérifie que sa condition finit par devenir fausse (ou ajoute un « sortir »).']
     ];

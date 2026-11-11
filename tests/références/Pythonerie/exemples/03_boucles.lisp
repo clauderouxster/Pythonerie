@@ -1,6 +1,6 @@
 (println "Table de 7 :")
 (loop i 
-   (intervalle 1 11)
+   (irange 1 11 1)
    (println (_texte i) "x 7 =" (_texte (* i 7)))
 )
 (setq fruits (list "pomme" "poire" "cerise"))
@@ -11,7 +11,7 @@
 (while (< n 1000) (setq n (* n 2)))
 (println "Première puissance de 2 au-delà de 1000 :" (_texte n))
 (loop i 
-   (intervalle 10)
+   (irange 0 10 1)
    (if (= i 3)
       (continue)
    )

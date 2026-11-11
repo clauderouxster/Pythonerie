@@ -13,7 +13,7 @@
    (colore base teinte)
    (boîte g 0 0.22 0 (p+ l 0.3) 0.44 (p+ p 0.3) "#747b7b")
    (loop étage 
-      (intervalle étages)
+      (irange 0 étages 1)
       (setq y (+ 1.25 (* étage 2.4)))
       (boîte g 0 (- (* (+ étage 1) 2.4) 0.08) 0 (p+ l 0.12) 0.14 (p+ p 0.12) "#b4b5ae")
       (loop xx 
@@ -73,13 +73,13 @@
       )
    )
    (loop z 
-      (intervalle -11 12 4)
+      (irange -11 12 4)
       (boîte ville 0 -0.015 z 0.12 0.02 1.8 "#dfdfcb")
    )
    (loop côté 
       (list -1 1)
       (loop j 
-         (intervalle 4)
+         (irange 0 4 1)
          (boîte ville (* côté 3) -0.01 (+ -1.2 (* j 0.8)) 1.8 0.02 0.35 "#e1e0d0")
       )
    )

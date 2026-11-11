@@ -93,7 +93,7 @@
 (defun nouvel_astéroïde (x y taille)
    (setq direction (aléatoire 0 359))
    (setq v (p+ (* (- 4 taille) 0.6) (* (hasard) 1.2) (* vague 0.1)))
-   (setq forme (mapcar (λ (i) (+ 0.75 (* (hasard) 0.35))) (intervalle 10)))
+   (setq forme (mapcar (λ (i) (+ 0.75 (* (hasard) 0.35))) (irange 0 10 1)))
    (return
       (list
          x
@@ -110,7 +110,7 @@
 (defun nouvelle_vague ()
    (setg astéroïdes (list))
    (loop i 
-      (intervalle (minimum (p+ 3 vague) 10))
+      (irange 0 (minimum (p+ 3 vague) 10) 1)
       (if (< (hasard) 0.5)
          (push astéroïdes (nouvel_astéroïde (aléatoire 0 (largeur)) 0 3))
          (push astéroïdes (nouvel_astéroïde 0 (aléatoire 0 (hauteur)) 3))
@@ -173,7 +173,7 @@
 )
 (defun éclats (x y n)
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (setq d (aléatoire 0 359))
       (setq v (p+ 1 (* (hasard) 3)))
       (push particules (list x y (* (cosinus d) v) (* (sinus d) v) (aléatoire 20 40)))
@@ -317,7 +317,7 @@
       (setq r (at rayons (at a 4)))
       (setq touché -1)
       (loop j 
-         (intervalle (longueur tirs))
+         (irange 0 (longueur tirs) 1)
          (check (andvalue (< touché 0) (¬ (in_it utilisés j)))
             (setq dx (- (at tirs j 0) (at a 0)))
             (setq dy (- (at tirs j 1) (at a 1)))
@@ -346,7 +346,7 @@
          (λ (j) 
             (at tirs j)
          )
-         (filtercar (λ (j) (¬ (in_it utilisés j))) (intervalle (longueur tirs)))
+         (filtercar (λ (j) (¬ (in_it utilisés j))) (irange 0 (longueur tirs) 1))
       )
    )
 )
@@ -388,7 +388,7 @@
    (setq r (at rayons (at a 4)))
    (setq pts (list))
    (loop i 
-      (intervalle 10)
+      (irange 0 10 1)
       (setq angle (p+ (at a 5) (* i 36)))
       (push
          pts

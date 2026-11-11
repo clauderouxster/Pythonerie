@@ -69,7 +69,7 @@
    (setg ORIGINE_X (p+ (/ (- (largeur) (* 800 ZOOM)) 2) (* 90 ZOOM)))
    (setg ORIGINE_Y (p+ HAUT_VUE (* 440 ZOOM)))
    (setg étoiles
-      (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (intervalle 40))
+      (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (irange 0 40 1))
    )
    (setg ancienne_largeur (largeur))
    (setg ancienne_hauteur (hauteur))
@@ -114,7 +114,7 @@
 (defun explose (f l h n c)
    (setq teinte (nuance c 1))
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (push
          éclats
          (list
@@ -223,7 +223,7 @@
          )
       )
       (loop i 
-         (intervalle (longueur objets))
+         (irange 0 (longueur objets) 1)
          (setq o (at objets i))
          (check (andvalue
                (andvalue
@@ -244,7 +244,7 @@
    (check (> (longueur touchés) 0)
       (setq gardés (list))
       (loop i 
-         (intervalle (longueur objets))
+         (irange 0 (longueur objets) 1)
          (setq o (at objets i))
          (if (in_it touchés i)
             (block
@@ -423,7 +423,7 @@
    (couleur (nuance GRIS_SOL 0.8))
    (épaisseur 1)
    (loop l 
-      (intervalle 1 LARGEUR)
+      (irange 1 LARGEUR 1)
       (ligne_monde début l 0 fin l 0)
    )
    (setq f (* (entier (/ début RANGÉE)) RANGÉE))

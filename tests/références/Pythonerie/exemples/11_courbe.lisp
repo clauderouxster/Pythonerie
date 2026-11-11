@@ -12,7 +12,7 @@
 (setq ys (list))
 (setq pas (/ (- fin début) nombre_de_points))
 (loop i 
-   (intervalle (+ nombre_de_points 1))
+   (irange 0 (+ nombre_de_points 1) 1)
    (setq x (p+ début (* i pas)))
    (push xs x)
    (push ys (courbe x))
@@ -93,7 +93,7 @@
 (couleur "bleu")
 (épaisseur 3)
 (loop i 
-   (intervalle nombre_de_points)
+   (irange 0 nombre_de_points 1)
    (
       ligne
       (écran_x (at xs i))

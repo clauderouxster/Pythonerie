@@ -2,7 +2,7 @@
    (setq bas 0)
    (setq haut 90)
    (loop i 
-      (intervalle 12)
+      (irange 0 12 1)
       (setq milieu (/ (p+ bas haut) 2))
       (if (< (* (sinus milieu) (absolu b)) (* (cosinus milieu) (absolu a)))
          (setq bas milieu)

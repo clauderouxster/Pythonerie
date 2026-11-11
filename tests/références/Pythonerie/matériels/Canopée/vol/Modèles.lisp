@@ -12,7 +12,7 @@
    (loop côté 
       (list -1 1)
       (loop j 
-         (intervalle 4)
+         (irange 0 4 1)
          (setq x (* côté (+ 0.5 (* j 0.32))))
          (setq z (+ 0.16 (* j 0.23)))
          (sphère g x -0.12 z (- 0.46 (* j 0.055)) coque)
@@ -26,7 +26,7 @@
       (setq feu (sphère g (* côté 1.05) -0.05 1.68 0.19 accent))
       (lumineux feu)
       (loop j 
-         (intervalle 3)
+         (irange 0 3 1)
          (setq flamme (sphère g (* côté 1.05) -0.05 (+ 1.8 (* j 0.19)) (- 0.15 (* j 0.035)) accent))
          (lumineux flamme)
       )
@@ -59,7 +59,7 @@
    )
    (setq flamme (groupe g 0 -0.9 0))
    (loop j 
-      (intervalle 5)
+      (irange 0 5 1)
       (setq feu (sphère flamme 0 (* (sign j) 0.25) 0 (- 0.21 (* j 0.035)) "#ffb851"))
       (lumineux feu)
    )
@@ -69,7 +69,7 @@
 (defun réserve_menaces (n)
    (setq réserve (list))
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (setq objet (groupe scène 0 0 0))
       (setq bille (sphère objet 0 0 0 0.28 "#ff663d"))
       (lumineux bille)

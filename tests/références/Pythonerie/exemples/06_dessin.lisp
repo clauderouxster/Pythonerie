@@ -17,7 +17,7 @@
 (carré 275 310 50)
 (carré 425 310 50)
 (loop i 
-   (intervalle 15)
+   (irange 0 15 1)
    (setq x (aléatoire 20 780))
    (setq y (aléatoire 480 580))
    (couleur (choisis (list "rouge" "jaune" "violet" "rose" "blanc")))

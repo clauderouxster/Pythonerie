@@ -24,7 +24,7 @@
 (setq son_explosion (charge_son "médias/sounds/explosion.wav"))
 (setq son_boum (charge_son "médias/sounds/boum.wav"))
 (setq pas_de_marche
-   (mapcar (λ (i) (charge_son (+ "médias/sounds/pas_" (_texte i) ".wav"))) (intervalle 1 5))
+   (mapcar (λ (i) (charge_son (+ "médias/sounds/pas_" (_texte i) ".wav"))) (irange 1 5 1))
 )
 (setq vaisseau_x (_/ (largeur) 2))
 (setq VAISSEAU_Y (- (hauteur) 50))
@@ -41,7 +41,7 @@
 (setq tir_y 0)
 (setq bombes (list))
 (setq étoiles
-   (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (intervalle 60))
+   (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (irange 0 60 1))
 )
 (setq explosions (list))
 (setq vies 3)
@@ -96,7 +96,7 @@
    (return (longueur (filtercar (λ (v) v) vivants)))
 )
 (defun nouvelle_vague ()
-   (setg vivants (mapcar (λ (i) true) (intervalle (* COLONNES RANGÉES))))
+   (setg vivants (mapcar (λ (i) true) (irange 0 (* COLONNES RANGÉES) 1)))
    (setg flotte_x (_/ (largeur) 8))
    (setg flotte_y (p+ 70 (* (minimum (- vague 1) 4) 15)))
    (setg sens 1)
@@ -167,7 +167,7 @@
    (setq gauche (largeur))
    (setq droite 0)
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (at vivants i)
          (setq gauche (minimum gauche (env_x i)))
          (setq droite (maximum droite (p+ (env_x i) LARGEUR_ENV)))
@@ -198,7 +198,7 @@
       (return ())
    )
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (at vivants i)
          (setq x (env_x i))
          (setq y (env_y i))
@@ -257,7 +257,7 @@
       (return ())
    )
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (check (andvalue (at vivants i) (> (p+ (env_y i) HAUTEUR_ENV) (- VAISSEAU_Y 20)))
          (setg vies 0)
          (setg état "perdu")
@@ -274,7 +274,7 @@
    (setg VAISSEAU_Y (- (hauteur) 50))
    (place_vaisseau vaisseau_x)
    (setg étoiles
-      (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (intervalle 60))
+      (mapcar (λ (i) (list (aléatoire 0 (largeur)) (aléatoire 0 (hauteur)))) (irange 0 60 1))
    )
    (setg flotte_x (minimum flotte_x (- (- (- (largeur) 12) (* (- COLONNES 1) PAS_X)) LARGEUR_ENV)))
    (setg flotte_y (minimum flotte_y (- (- VAISSEAU_Y 100) (* RANGÉES PAS_Y))))
@@ -318,7 +318,7 @@
       (point (at é 0) (at é 1))
    )
    (loop i 
-      (intervalle (longueur vivants))
+      (irange 0 (longueur vivants) 1)
       (if (at vivants i)
          (dessine_envahisseur (env_x i) (env_y i) (at COULEURS (_/ i COLONNES)))
       )

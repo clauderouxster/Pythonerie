@@ -7,7 +7,7 @@
 (println (_texte (at m 0)) (_texte (at m 1)))
 (setq points (list))
 (loop i 
-   (intervalle 3)
+   (irange 0 3 1)
    (push points (list i (* i i)))
 )
 (println (_texte (longueur points)) (_texte (at points 2 1)))

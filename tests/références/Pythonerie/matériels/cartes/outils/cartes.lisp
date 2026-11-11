@@ -66,7 +66,7 @@
       (return (- total 1))
    )
    (loop i 
-      (intervalle total)
+      (irange 0 total 1)
       (if (= (at pile "cartes" i "nom") action)
          (return i)
       )

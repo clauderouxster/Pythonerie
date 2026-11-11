@@ -119,7 +119,7 @@ Les règles d'écriture en découlent :
 - `libs.js` : `importe libX`. Il détecte les imports, réserve les noms et précharge les bibliothèques.
 - `langues.js` : lit `traductions.lisp`, fournit `T()` et traduit la page.
 - `hangul.js` : les noms hangul, que le lecteur de LispE coupe.
-- `ia.js`, `appels-outils.js`, `reglages-ia.js` : l'IA de l'éditeur (le harnais, les outils `get_info`, `read_data_tab`…).
+- `ia.js`, `appels-outils.js`, `reglages-ia.js` : l'IA de l'éditeur (le harnais, les outils `get_info`, `read_data_tab`…). `ia.js` sert aussi les `appel_ia` des programmes (`IA.discute`) ; avec `outils_ia`, `discuteAvecOutils` envoie les outils du programme par les mêmes adaptateurs que le tchat (`anthropic-messages`, `openai-chat`, `openai-responses`) et rend les appels sans rien exécuter. Les noms des propriétés d'un outil restent sans accents : certains fournisseurs les refusent.
 - `mcp.js`, `reglages-mcp.js` : les canaux MCP.
 - `fichiers-projet.js` : les répertoires images, sons et données, rangés dans IndexedDB.
 - `apps.js` : l'espace Applications.
@@ -323,6 +323,10 @@ lispe tests/banc.lisp exécute docs/English/basic/ basic_opt.lisp english.lisp p
   - toujours ajouter `"\n"` à un texte avant de le découper avec `tokenize` ;
   - `%)` est lu comme un seul jeton, donc il faut écrire `'(7 % )`.
 - **Le modulo des réels** (corrigé le 2026-11-09, LispE natif et WASM) : `%` garde les décimales (`fmod`), `_%` (le `%` de l'Atelier) suit Python (`-29.5 % 90` vaut `60.5`) ; sur les entiers, rien ne change.
+- **`range` donne au plus 100 000 valeurs** (« Exceeding range », natif et WASM). Depuis le 2026-11-11, le transpileur (`_vers_irange`, dans la règle `forin` et dans les compréhensions) traduit `pour i dans intervalle(…)` et `[… pour i dans intervalle(…)]` en `(irange début fin pas)`, un itérateur sans limite qui ne construit pas de liste ; seule une liste gardée (`l = intervalle(n)`, `len(intervalle(n))`) passe encore par `range`. `irange` refuse un pas nul (« increment cannot be 0 »). `erreurs.js` traduit « Exceeding range » en une phrase pour l'élève.
+- **Listes typées** (`integers`, `numbers`, `strings` ; en français `liste_entiers`, `liste_nombres`, `liste_chaînes`) : 4 à 20 fois plus rapides que `list` pour `in`, `sum`, les tranches et `+`, et encore typées après `sort`, une tranche ou `+`. Elles convertissent ce qu'on y range, sans erreur (`2.7` devient `2`, un texte devient `0` dans une `integers`). Le transpileur produit `(list …)` pour tout littéral et `mapcar` rend une `list_` ; `range` et `split` rendent déjà des listes typées.
+- **`sort`** (corrigé le 2026-11-10 dans `lists.cxx`, partition de Hoare avec l'élément du milieu comme pivot) : avant, une liste déjà triée, inversée ou faite de valeurs égales prenait un temps quadratique, et épuisait la pile en WASM dès 20 000 éléments.
+- **`continue`** (corrigé le 2026-11-11 dans `elements.cxx`, `eval.cxx`, `straight_eval.cxx`) : les boucles d'`irange` et de la liste infinie l'ignoraient, et les corps de `block`, `check`, `ncheck`, `ife`, `maybe`, `cond`, `elapse` et `lock` continuaient après lui : un `si c:` ou un `essaie:` contenant un `continue` suivi d'autres instructions ne les sautait pas. `maybe` ne s'arrêtait pas non plus sur `return`. Une nouvelle forme de boucle ou de bloc doit s'arrêter sur `l_return` et sur `l_continue`.
 - **Les chaînes f entre triples guillemets** (`f"""…{x}…"""`) ne sont pas interpolées : construire le texte avec `+` et `chaîne(…)` (un manque du langage, à proposer à l'auteur).
 - **Un vrai saut de ligne** dans une chaîne du LispE *produit* casse la traduction. Passer `nil` et laisser la bibliothèque mettre `"\n"` : c'est ce que fait `_affiche_nommé`.
 - **Les fichiers chargés** : un `load` fait dans une fonction garde les `setq` du fichier dans cette fonction. Charger au premier niveau.
@@ -478,9 +482,11 @@ Le banc ne suffit pas pour ce qui touche le canevas, les sons, la 3D, l'interfac
 2. **Le guide de l'IA de la Pythonerie** : `POUR_CLAUDE.md` à la racine, si elle est concernée. Il n'y a pas de YAML.
 3. **Le mode d'emploi** : `docs/French/guide.html`, `docs/English/guide.html`, `docs/Korean/guide.html`, et `Pythonerie/docs/guide.html` si elle est concernée. Pour chacun :
    - la section du sujet, et son entrée dans le sommaire (`nav.sommaire`) ;
-   - la ligne du glossaire, « Tous les mots » (`table.glossaire`) ;
+   - la ligne du glossaire, « Tous les mots » (`table.glossaire`). Dans l'Atelier, les instructions d'une bibliothèque importée (`libworld`, `libsound`, `librobot`) vont dans le tableau de sa section **et** dans son thème du glossaire (`g-libworld`, `g-libsound`, `g-librobot`), qui reprend ce tableau. Pour trouver ce qui manque au glossaire, comparer les noms de ses `<code>` aux `defun`/`defpat` publics de `bibliothèque.lisp` et de chaque `docs/lib/<nom>/<nom>.lisp` ;
    - au moins un exemple `<pre data-essai>` **exécuté dans le navigateur**, avec son vrai résultat.
-4. **L'éditeur** : `mode-atelier.js` de chaque langue (ou `mode-pythonerie.js`).
+4. **L'éditeur** :
+   - `mode-atelier.js` de chaque langue (ou `mode-pythonerie.js`) ;
+   - la fenêtre ❓ Aide de l'Atelier (`docs/index.html`, l'aide-mémoire de l'éditeur) : une ligne dans sa section, et son sommaire. Ses textes sont en français et se traduisent par `traductions.lisp` (la clé est l'`innerHTML` de chaque cellule, blancs réduits ; le sommaire entier est une seule clé). Vérifier en anglais et en coréen qu'aucun mot français ne reste.
 5. **Le reste :**
    - `docs/English/GLOSSARY.md` (correspondance du français vers l'anglais) ;
    - les textes d'interface dans `traductions.lisp` ;

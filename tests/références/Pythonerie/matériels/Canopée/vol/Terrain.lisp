@@ -7,11 +7,11 @@
    (list "FORÊT D'ÉMERAUDE" "LACS D'AZUR" "CULTURES DORÉES" "VILLAGES" "DÉFILÉ DES FALAISES")
 )
 (loop i 
-   (intervalle 9)
+   (irange 0 9 1)
    (setq racine_sol (groupe scène 0 0 (- 24 (* i 24))))
    (setq sol (boîte racine_sol 0 -0.8 0 320 1 24 "#244c3b"))
    (loop colonne 
-      (intervalle 14)
+      (irange 0 14 1)
       (setq terre (boîte racine_sol (p+ -156 (* colonne 24)) -0.32 0 24 0.08 24 "#42664a"))
       (texture terre texture_minérale)
       (colore terre "#52704c")
@@ -19,7 +19,7 @@
    (loop côté 
       (list -1 1)
       (loop j 
-         (intervalle 16)
+         (irange 0 16 1)
          (setq x_lointain (* côté (aléatoire 34 150)))
          (setq essence_lointaine (choisis (list "sapin" "chêne" "bouleau")))
          (arbre racine_sol x_lointain -0.3 (aléatoire -11 11) essence_lointaine (aléatoire 3 6))
@@ -29,7 +29,7 @@
    (setq variantes (list))
    (setq forêt (groupe racine_sol 0 0 0))
    (loop j 
-      (intervalle 18)
+      (irange 0 18 1)
       (setq x (aléatoire -29 29))
       (setq z (aléatoire -11 11))
       (setq h (/ (aléatoire 20 45) 10))
@@ -71,7 +71,7 @@
 )
 (setq silos (list))
 (loop i 
-   (intervalle 7)
+   (irange 0 7 1)
    (setq g (groupe scène 0 0 0))
    (cylindre g 0 0.3 0 1.5 0.6 "#777f7a")
    (cylindre g 0 0.9 0 0.9 1.2 "#34474b")

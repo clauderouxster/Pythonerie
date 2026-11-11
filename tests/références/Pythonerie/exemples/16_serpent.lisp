@@ -204,9 +204,9 @@
    (fond (rgb 30 95 30))
    (couleur (rgb 40 110 40))
    (loop ligne 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (loop colonne 
-         (intervalle COLONNES)
+         (irange 0 COLONNES 1)
          (if (= (_% (p+ ligne colonne) 2) 0)
             (carré_plein (* colonne CASE) (* ligne CASE) CASE)
          )

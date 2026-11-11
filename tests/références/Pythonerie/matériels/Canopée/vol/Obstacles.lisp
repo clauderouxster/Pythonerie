@@ -15,7 +15,7 @@
    (setq entrée 0)
    (setq sortie 1)
    (loop axe 
-      (intervalle 3)
+      (irange 0 3 1)
       (setq déplacement (- (at arrivée axe) (at départ axe)))
       (ife (< (absolu déplacement) 1e-06)
          (if (orvalue (< (at départ axe) (at bas axe)) (> (at départ axe) (at haut axe)))

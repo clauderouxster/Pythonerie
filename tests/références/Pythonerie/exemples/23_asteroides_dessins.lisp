@@ -93,7 +93,7 @@
 (defun nouvel_astéroïde (x y taille)
    (setq direction (aléatoire 0 359))
    (setq v (p+ (* (- 4 taille) 0.6) (* (hasard) 1.2) (* vague 0.1)))
-   (setq forme (mapcar (λ (i) (+ 0.75 (* (hasard) 0.35))) (intervalle 10)))
+   (setq forme (mapcar (λ (i) (+ 0.75 (* (hasard) 0.35))) (irange 0 10 1)))
    (return
       (list
          x
@@ -110,7 +110,7 @@
 (defun nouvelle_vague ()
    (setg astéroïdes (list))
    (loop i 
-      (intervalle (minimum (p+ 3 vague) 10))
+      (irange 0 (minimum (p+ 3 vague) 10) 1)
       (if (< (hasard) 0.5)
          (push astéroïdes (nouvel_astéroïde (aléatoire 0 (largeur)) 0 3))
          (push astéroïdes (nouvel_astéroïde 0 (aléatoire 0 (hauteur)) 3))
@@ -173,7 +173,7 @@
 )
 (defun éclats (x y n)
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (setq d (aléatoire 0 359))
       (setq v (p+ 1 (* (hasard) 3)))
       (push particules (list x y (* (cosinus d) v) (* (sinus d) v) (aléatoire 20 40)))
@@ -322,7 +322,7 @@
       (setq r (at rayons (at a 4)))
       (setq touché -1)
       (loop j 
-         (intervalle (longueur tirs))
+         (irange 0 (longueur tirs) 1)
          (check (andvalue (< touché 0) (¬ (in_it utilisés j)))
             (setq dx (- (at tirs j 0) (at a 0)))
             (setq dy (- (at tirs j 1) (at a 1)))
@@ -351,7 +351,7 @@
          (λ (j) 
             (at tirs j)
          )
-         (filtercar (λ (j) (¬ (in_it utilisés j))) (intervalle (longueur tirs)))
+         (filtercar (λ (j) (¬ (in_it utilisés j))) (irange 0 (longueur tirs) 1))
       )
    )
 )
@@ -410,13 +410,13 @@
                (choisis (list "#ffffff" "#bbdefb" "#fff9c4" "#ffccbc"))
             )
          )
-         (intervalle 350)
+         (irange 0 350 1)
       )
    )
    (setg nuages (list))
    (loop n NÉBULEUSES
       (loop k 
-         (intervalle 50)
+         (irange 0 50 1)
          (push
             nuages
             (list
@@ -437,7 +437,7 @@
                (p+ 4 (* (hasard) 9))
             )
          )
-         (intervalle 9)
+         (irange 0 9 1)
       )
    )
 )
@@ -452,7 +452,7 @@
    (vide_dessin ciel)
    (setq bande (/ (hauteur) 60))
    (loop i 
-      (intervalle 60)
+      (irange 0 60 1)
       (couleur ciel (rgb 0 (* i 0.3) (p+ 8 (* i 0.6))))
       (rectangle_plein ciel 0 (* i bande) (largeur) bande)
    )
@@ -476,14 +476,14 @@
       (épaisseur ciel (at passe 0))
       (couleur_trait ciel (at passe 1))
       (loop bras 
-         (intervalle 3)
+         (irange 0 3 1)
          (lève_crayon ciel)
          (va_à ciel gx gy)
          (oriente ciel (* bras 120))
          (baisse_crayon ciel)
          (setq pas 0.5)
          (loop k 
-            (intervalle PAS_GALAXIE)
+            (irange 0 PAS_GALAXIE 1)
             (avance ciel pas)
             (droite ciel 5)
             (setq pas (* pas 1.035))
@@ -514,7 +514,7 @@
    (setq r (at rayons (at a 4)))
    (setq pts (list))
    (loop i 
-      (intervalle 10)
+      (irange 0 10 1)
       (setq angle (p+ (at a 5) (* i 36)))
       (push
          pts

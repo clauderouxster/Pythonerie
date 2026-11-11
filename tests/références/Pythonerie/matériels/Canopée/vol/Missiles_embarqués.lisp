@@ -14,7 +14,7 @@
    )
    (setq jet (groupe g 0 -0.82 0))
    (loop j 
-      (intervalle 3)
+      (irange 0 3 1)
       (setq feu (sphère jet 0 (* (sign j) 0.12) 0 (- 0.08 (* j 0.02)) "#ff593c"))
       (lumineux feu)
    )

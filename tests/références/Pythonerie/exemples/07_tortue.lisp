@@ -1,6 +1,6 @@
 (defun polygone_régulier (côtés longueur)
    (loop i 
-      (intervalle côtés)
+      (irange 0 côtés 1)
       (avance longueur)
       (gauche (/ 360 côtés))
    )
@@ -8,7 +8,7 @@
 (épaisseur 2)
 (setq couleurs (list "rouge" "orange" "jaune" "vert" "bleu" "violet"))
 (loop i 
-   (intervalle 36)
+   (irange 0 36 1)
    (couleur (at couleurs (_% i 6)))
    (polygone_régulier 6 60)
    (droite 10)
@@ -19,7 +19,7 @@
 (couleur "or")
 (épaisseur 4)
 (loop i 
-   (intervalle 5)
+   (irange 0 5 1)
    (avance 120)
    (droite 144)
 )
@@ -29,7 +29,7 @@
 (couleur "bleu marine")
 (épaisseur 1)
 (loop i 
-   (intervalle 60)
+   (irange 0 60 1)
    (avance (* i 1.5))
    (gauche 59)
 )

@@ -12,7 +12,7 @@
 )
 (defun lit_les_cases ()
    (loop i 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (setq k (p+ (* page LIGNES) i))
       (setq identifiant (nettoie (valeur_objet (+ "id" (_texte i)))))
       (setq nom (nettoie (valeur_objet (+ "nom" (_texte i)))))
@@ -27,7 +27,7 @@
 )
 (defun montre_les_cases ()
    (loop i 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (setq k (p+ (* page LIGNES) i))
       (ife (< k (longueur élèves))
          (block
@@ -53,7 +53,7 @@
 )
 (defun a_un_chiffre (texte)
    (loop i 
-      (intervalle 10)
+      (irange 0 10 1)
       (if (in_it texte (chaîne i))
          (return true)
       )
@@ -269,7 +269,7 @@
    (texte (+ X_IDENTIFIANT 4) (- HAUT 28) "Identifiant")
    (texte (+ X_NOM 4) (- HAUT 28) "Nom")
    (loop i 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (texte (+ X_TABLEAU 6) (p+ HAUT (* i HAUTEUR_LIGNE) 7) (chaîne (p+ (* page LIGNES) i 1)))
    )
    (couleur "gris foncé")
@@ -299,12 +299,12 @@
 (zone_édition "liste" 20 92 22 case_changée)
 (largeur_saisie 170)
 (loop i 
-   (intervalle LIGNES)
+   (irange 0 LIGNES 1)
    (saisie (+ "id" (_texte i)) X_IDENTIFIANT (p+ HAUT (* i HAUTEUR_LIGNE)) case_changée)
 )
 (largeur_saisie 320)
 (loop i 
-   (intervalle LIGNES)
+   (irange 0 LIGNES 1)
    (saisie (+ "nom" (_texte i)) X_NOM (p+ HAUT (* i HAUTEUR_LIGNE)) case_changée)
 )
 (bouton "ajouter" 20 560 "Ajouter au tableau ▶" commande)

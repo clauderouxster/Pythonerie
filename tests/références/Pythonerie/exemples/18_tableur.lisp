@@ -17,7 +17,7 @@
 (defun position (clef)
    (setq rangée (- (entier (extract clef 1)) 1))
    (loop i 
-      (intervalle (longueur LETTRES))
+      (irange 0 (longueur LETTRES) 1)
       (if (= (at LETTRES i) (at clef 0))
          (return (list i rangée))
       )
@@ -27,7 +27,7 @@
 (defun total (colonne)
    (setq s 0.0)
    (loop rangée 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (setq clef (nom_case colonne rangée))
       (if (in_it valeurs clef)
          (setq s (p+ s (at valeurs clef)))
@@ -43,11 +43,11 @@
    (couleur "noir")
    (taille_texte 18)
    (loop c 
-      (intervalle (longueur LETTRES))
+      (irange 0 (longueur LETTRES) 1)
       (texte (- (p+ (case_x c) (/ LARGEUR_CASE 2)) 6) (- HAUT 27) (at LETTRES c))
    )
    (loop l 
-      (intervalle LIGNES)
+      (irange 0 LIGNES 1)
       (texte (- GAUCHE 36) (+ (case_y l) 8) (chaîne (+ l 1)))
    )
    (setq y (+ (case_y LIGNES) 12))
@@ -57,7 +57,7 @@
    (texte (- GAUCHE 92) y "Total")
    (setq tout 0.0)
    (loop c 
-      (intervalle (longueur LETTRES))
+      (irange 0 (longueur LETTRES) 1)
       (setq t (total c))
       (setq tout (p+ tout t))
       (texte (+ (case_x c) 8) y (chaîne (arrondi t 2)))
@@ -96,9 +96,9 @@
 (taille_texte 18)
 (largeur_saisie (- LARGEUR_CASE 6))
 (loop rangée 
-   (intervalle LIGNES)
+   (irange 0 LIGNES 1)
    (loop colonne 
-      (intervalle (longueur LETTRES))
+      (irange 0 (longueur LETTRES) 1)
       (saisie (nom_case colonne rangée) (+ (case_x colonne) 3) (+ (case_y rangée) 4) case_changée)
    )
 )

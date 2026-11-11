@@ -46,7 +46,7 @@
    (rectangle_plein bord_droit 55 (/ (* 258 santé) 5) 17)
    (couleur "#102b3c")
    (loop repère 
-      (intervalle 1 5)
+      (irange 1 5 1)
       (rectangle_plein (p+ bord_droit (/ (* repère 258) 5)) 55 2 17)
    )
    (couleur "#a0b8c2")

@@ -1,7 +1,7 @@
 (loop rang 
-   (intervalle 2)
+   (irange 0 2 1)
    (loop j 
-      (intervalle 13)
+      (irange 0 13 1)
       (setq x (p+ -240 (* j 40) (* rang 13)))
       (setq h (p+ 22 (aléatoire 0 12)))
       (setq teinte (if (= rang 0) "#8da7aa" "#6d8c8a"))
@@ -25,7 +25,7 @@
 (setq voûte (groupe ciel 0 -81.3 -248.9))
 (oriente_3d voûte -20.56 0 0)
 (loop bande 
-   (intervalle 200)
+   (irange 0 200 1)
    (setq hauteur_bande (p+ -170 (* bande 1.7)))
    (setq nuance (minimum 1 (maximum 0 (/ (- hauteur_bande 25) 110))))
    (setq rouge_ciel (entier (- 203 (* 167 nuance))))
@@ -39,7 +39,7 @@
 (lumineux soleil)
 (setq planètes (list))
 (loop i 
-   (intervalle 3)
+   (irange 0 3 1)
    (setq g (groupe ciel (p+ 24 (* i 19)) (p+ 6 (* i 1.5)) -145))
    (setq globe (sphère g 0 0 0 (p+ 2.0 (* i 0.5)) (choisis (list "#79d5e4" "#e5a183" "#b3a0e4"))))
    (sphère g 0.5 0.8 1.2 1.1 "#dae9d1")
@@ -56,13 +56,13 @@
 )
 (setq nuages (list))
 (loop i 
-   (intervalle 6)
+   (irange 0 6 1)
    (setq x (p+ -95 (* i 36)))
    (setq y (p+ 5 (* (_% i 3) 3)))
    (setq z (- -125 (* (_% i 2) 12)))
    (setq g (groupe ciel x y z))
    (loop j 
-      (intervalle 5)
+      (irange 0 5 1)
       (setq rayon (if (orvalue (= j 0) (= j 4)) 2.2 3.1))
       (setq bosse (sphère g (* (- j 2) 3.1) (* (_% j 2) 1.2) 0 rayon "#ffffff"))
    )

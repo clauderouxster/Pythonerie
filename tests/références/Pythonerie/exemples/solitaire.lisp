@@ -67,11 +67,11 @@
       (rectangle_plein (+ x 5) (+ y 5) 94 132)
       (couleur "#6788c6")
       (loop n 
-         (intervalle 8)
+         (irange 0 8 1)
          (ligne (+ x 8) (p+ (+ y 12) (* n 16)) (+ x 96) (p+ (+ y 12) (* n 16)))
       )
       (loop n 
-         (intervalle 5)
+         (irange 0 5 1)
          (ligne (p+ (+ x 12) (* n 20)) (+ y 8) (p+ (+ x 12) (* n 20)) (+ y 134))
       )
       (couleur "#ffffff")
@@ -116,11 +116,11 @@
    (emplacement 154 113 "")
    (setq début (maximum 0 (- (longueur défausse) 3)))
    (loop j 
-      (intervalle début (longueur défausse))
+      (irange début (longueur défausse) 1)
       (carte_dessin (at défausse j) (p+ 154 (* (- j début) 16)) 113 (choisie "défausse" 0 j))
    )
    (loop i 
-      (intervalle 4)
+      (irange 0 4 1)
       (setq x (abscisse (+ i 3)))
       (emplacement x 113 "A")
       (if (> (longueur (at fondations i)) 0)
@@ -134,12 +134,12 @@
       )
    )
    (loop i 
-      (intervalle 7)
+      (irange 0 7 1)
       (setq x (abscisse i))
       (emplacement x 284 "R")
       (setq pas (pas_colonne i))
       (loop j 
-         (intervalle (longueur (at colonnes i)))
+         (irange 0 (longueur (at colonnes i)) 1)
          (carte_dessin (at colonnes i j) x (p+ 284 (* j pas)) (choisie "colonne" i j))
       )
    )
@@ -289,7 +289,7 @@
 )
 (defun monte ()
    (loop i 
-      (intervalle 4)
+      (irange 0 4 1)
       (if (vers_fondation i)
          (return true)
       )
@@ -319,7 +319,7 @@
    (if (= (longueur pioche) 0)
       (while (> (longueur défausse) 0) (push pioche (popvalue défausse)))
       (loop n 
-         (intervalle (minimum tirage (longueur pioche)))
+         (irange 0 (minimum tirage (longueur pioche)) 1)
          (setq carte (popvalue pioche))
          (set@ carte 2 true)
          (push défausse carte)
@@ -341,7 +341,7 @@
          (return ())
       )
       (loop i 
-         (intervalle 4)
+         (irange 0 4 1)
          (check (andvalue (<= (abscisse (+ i 3)) x) (<= x (+ (abscisse (+ i 3)) 104)))
             (if (vers_fondation i)
                (return ())
@@ -356,7 +356,7 @@
    )
    (if (andvalue (<= 284 y) (< y 715))
       (loop i 
-         (intervalle 7)
+         (irange 0 7 1)
          (check (andvalue (<= (abscisse i) x) (<= x (+ (abscisse i) 104)))
             (setq n (longueur (at colonnes i)))
             (setq bas (p+ 426 (* (maximum 0 (- n 1)) (pas_colonne i))))
@@ -386,14 +386,14 @@
 (defun nouvelle (clef valeur)
    (setq jeu (list))
    (loop famille 
-      (intervalle 4)
+      (irange 0 4 1)
       (loop valeur_carte 
-         (intervalle 1 14)
+         (irange 1 14 1)
          (push jeu (list valeur_carte famille false))
       )
    )
    (loop i 
-      (intervalle 51 0 -1)
+      (irange 51 0 -1)
       (setq j (aléatoire 0 i))
       (setq temporaire (at jeu i))
       (set@ jeu i (at jeu j))
@@ -401,9 +401,9 @@
    )
    (setg colonnes (list (list) (list) (list) (list) (list) (list) (list)))
    (loop i 
-      (intervalle 7)
+      (irange 0 7 1)
       (loop j 
-         (intervalle (+ i 1))
+         (irange 0 (+ i 1) 1)
          (setq carte (popvalue jeu))
          (set@ carte 2 (= j i))
          (push (at colonnes i) carte)

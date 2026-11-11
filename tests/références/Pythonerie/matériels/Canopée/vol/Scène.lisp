@@ -13,7 +13,7 @@
 (déplace joueur 0 altitude_vol 10)
 (setq ennemis (list))
 (loop i 
-   (intervalle 12)
+   (irange 0 12 1)
    (setq objet (modèle_vaisseau true))
    (cache_objet objet)
    (push ennemis (dictionary "objet" objet "actif" false "x" 0 "z" 0 "tir" 0 "phase" 0))
@@ -21,7 +21,7 @@
 (defun réserve_tirs (n teinte rayon)
    (setq réserve (list))
    (loop i 
-      (intervalle n)
+      (irange 0 n 1)
       (setq objet (sphère scène 0 0 0 rayon teinte))
       (lumineux objet)
       (cache_objet objet)
@@ -36,7 +36,7 @@
 (setq menaces (réserve_menaces 55))
 (setq éclats (list))
 (loop i 
-   (intervalle 14)
+   (irange 0 14 1)
    (setq objet (sphère scène 0 0 0 1.0 "#ffbf50"))
    (lumineux objet)
    (cache_objet objet)

@@ -11,7 +11,7 @@
 (setq largeur_noire (* largeur_blanche 0.6))
 (setq sons (list))
 (loop n 
-   (intervalle nombre_de_notes)
+   (irange 0 nombre_de_notes 1)
    (setq octave (+ (_/ n 12) 3))
    (push
       sons
@@ -24,7 +24,7 @@
 (setq touches (list))
 (setq blanches_placées 0)
 (loop n 
-   (intervalle nombre_de_notes)
+   (irange 0 nombre_de_notes 1)
    (if (in_it blanches (_% n 12))
       (block
          (push touches (list n (* blanches_placées largeur_blanche) largeur_blanche false))

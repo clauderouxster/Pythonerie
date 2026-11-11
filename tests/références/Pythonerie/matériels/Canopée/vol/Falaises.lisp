@@ -21,7 +21,7 @@
    (loop côté 
       (list -1 1)
       (loop j 
-         (intervalle 6)
+         (irange 0 6 1)
          (setq z (p+ -10 (* j 4)))
          (setq contour (+ 7.8 (* 1.1 (bruit_relief z (p+ graine (* côté 20))))))
          (setq largeur (p+ 21 (* 2 (bruit_relief (+ z 5) graine))))

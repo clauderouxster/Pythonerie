@@ -27,7 +27,7 @@
 (setq raquette_x (_/ (- (largeur) raquette_l) 2))
 (setq raquette_y (- (hauteur) 40))
 (setq rayon 9)
-(setq briques (mapcar (λ (i) true) (intervalle (* COLONNES RANGÉES))))
+(setq briques (mapcar (λ (i) true) (irange 0 (* COLONNES RANGÉES) 1)))
 (setq restantes (* COLONNES RANGÉES))
 (setq balle_x 400.0)
 (setq balle_y 540.0)
@@ -86,7 +86,7 @@
 )
 (defun recommence ()
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (set@ briques i true)
    )
    (setg restantes (* COLONNES RANGÉES))
@@ -133,7 +133,7 @@
 )
 (defun casse_brique ()
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (check (at briques i)
          (setq x (brique_x i))
          (setq y (brique_y i))
@@ -202,7 +202,7 @@
 (defun dessine ()
    (fond "bleu marine")
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (check (at briques i)
          (couleur (at COULEURS (_/ i COLONNES)))
          (rectangle_plein (brique_x i) (brique_y i) LARGEUR_BRIQUE HAUTEUR_BRIQUE)

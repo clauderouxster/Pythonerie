@@ -18,7 +18,7 @@
 )
 (defun vote (clef nom)
    (loop i 
-      (intervalle (longueur FRUITS))
+      (irange 0 (longueur FRUITS) 1)
       (if (= (at FRUITS i) clef)
          (+= (at votes i) 1)
       )
@@ -27,14 +27,14 @@
 )
 (defun recommence (clef nom)
    (loop i 
-      (intervalle (longueur votes))
+      (irange 0 (longueur votes) 1)
       (set@ votes i 0)
    )
    (dessine)
 )
 (taille_texte 16)
 (loop i 
-   (intervalle (longueur FRUITS))
+   (irange 0 (longueur FRUITS) 1)
    (bouton (at FRUITS i) (p+ 20 (* i 110)) 20 (at FRUITS i) vote)
 )
 (bouton "recommencer" 610 20 "Recommencer" recommence)

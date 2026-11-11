@@ -1366,6 +1366,7 @@ affiche(double(21))       # affiche 42</pre></div>
                     <tr><td><code>liste.sort()</code></td><td>trie la liste elle-même (mêmes <code>clef=</code> et <code>inverse=</code>)</td><td class="ex"><code>joueurs.sort(clef=lambda j: j[1])</code></td></tr>
                     <tr><td><code>tri_localisé(liste)</code></td><td>une copie des textes dans l'ordre du dictionnaire (« é » avec les « e », les majuscules avec les minuscules)</td><td class="ex"><code>tri_localisé(["Zoé", "ami", "éclair"])</code></td></tr>
                     <tr><td><code>inverse(liste)</code></td><td>la liste à l'envers</td><td class="ex"><code>inverse([1, 2, 3])</code> donne [3, 2, 1]</td></tr>
+                    <tr><td><code>liste_entiers(a, b, …)</code><br><code>liste_nombres(a, b, …)</code><br><code>liste_chaînes(a, b, …)</code></td><td>une liste <b>typée</b> : elle ne contient que des entiers, que des nombres à virgule ou que des textes. Elle s'utilise comme une autre liste, mais <code>dans</code>, <code>somme</code>, les tranches et les copies y sont 4 à 20 fois plus rapides : c'est la liste qu'il faut pour des milliers de valeurs. <code>liste_entiers(l)</code> convertit une liste. Attention : elle convertit ce qu'on y range (dans une liste d'entiers, 2.7 devient 2 et un texte devient 0)</td><td class="ex"><code>n = liste_entiers(12, 15, 9)</code> puis <code>n.ajoute(18)</code> : <code>somme(n)</code> donne 54, <code>15 dans n</code> donne Vrai ; <code>liste_entiers([4, 5, 6])</code> donne [4, 5, 6] ; <code>liste_nombres(1, 2.5)</code> donne [1.0, 2.5]</td></tr>
                     <tr><td><code>choisis(liste)</code></td><td>un élément au hasard</td><td class="ex"><code>choisis(["pile", "face"])</code></td></tr>
                     <tr><td><code>contient(x, y)</code></td><td>Vrai si y est dans x</td><td class="ex"><code>contient([1, 2], 2)</code> donne Vrai</td></tr>
                 </table>
@@ -1721,8 +1722,11 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     if (ok) { visibles++; vus++; }
                 });
                 table.classList.toggle('cache', visibles === 0);
-                const titre = table.previousElementSibling;
-                if (titre && titre.tagName === 'H3') titre.classList.toggle('cache', visibles === 0);
+                // le titre du thème, et ce qui le sépare du tableau (un texte, un exemple)
+                for (let e = table.previousElementSibling; e && e.tagName !== 'TABLE'; e = e.previousElementSibling) {
+                    e.classList.toggle('cache', visibles === 0);
+                    if (e.tagName === 'H3') break;
+                }
             });
             if (q) document.getElementById('g-avance').open = true;
             document.getElementById('compte').textContent = q

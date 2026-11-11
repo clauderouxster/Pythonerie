@@ -24,7 +24,7 @@
 (defun dessine_lac (parent graine)
    (setq lac (groupe parent 0 0 0))
    (loop j 
-      (intervalle 7)
+      (irange 0 7 1)
       (setq z (p+ -9 (* j 3)))
       (setq centre (* 6 (bruit_relief z graine)))
       (setq rayon (p+ 7 (* 2 (bruit_relief (+ z 11) graine))))
@@ -39,7 +39,7 @@
       )
    )
    (loop j 
-      (intervalle 4)
+      (irange 0 4 1)
       (setq x (aléatoire -4 4))
       (setq z (aléatoire -8 8))
       (setq rayon (+ 0.8 (* (hasard) 1.1)))
@@ -52,12 +52,12 @@
    (setq champs (groupe parent 0 0 0))
    (setq palette (list "#beaa58" "#98a751" "#cfba72" "#849b49" "#a89555"))
    (loop j 
-      (intervalle 7)
+      (irange 0 7 1)
       (setq x (p+ -25 (* j 8)))
       (setq z (* 3 (bruit_relief (* j 5) graine)))
       (setq teinte (at palette (_% j 5)))
       (loop k 
-         (intervalle 6)
+         (irange 0 6 1)
          (setq zz (p+ -9 (* k 3.5)))
          (setq courbe (* 1.8 (bruit_relief zz (p+ graine (* j 20)))))
          (setq rayon (+ 3.3 (* 0.7 (bruit_relief (p+ zz j) graine))))
@@ -81,7 +81,7 @@
    (loop côté 
       (list -1 1)
       (loop j 
-         (intervalle 3)
+         (irange 0 3 1)
          (setq x (* côté (p+ 35 (* j 15))))
          (setq z (* 5 (bruit_relief (* j 8) graine)))
          (setq rayon (p+ 7 (* (hasard) 4)))

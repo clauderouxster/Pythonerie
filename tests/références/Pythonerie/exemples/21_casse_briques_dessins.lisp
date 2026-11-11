@@ -35,7 +35,7 @@
 (setq raquette_x (_/ (- (largeur) raquette_l) 2))
 (setq raquette_y (- (hauteur) 40))
 (setq rayon 9)
-(setq briques (mapcar (λ (i) true) (intervalle (* COLONNES RANGÉES))))
+(setq briques (mapcar (λ (i) true) (irange 0 (* COLONNES RANGÉES) 1)))
 (setq restantes (* COLONNES RANGÉES))
 (setq balle_x 400.0)
 (setq balle_y 540.0)
@@ -96,7 +96,7 @@
 )
 (defun recommence ()
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (set@ briques i true)
    )
    (setg restantes (* COLONNES RANGÉES))
@@ -147,7 +147,7 @@
 )
 (defun casse_brique ()
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (check (at briques i)
          (setq x (brique_x i))
          (setq y (brique_y i))
@@ -158,7 +158,7 @@
             (-= restantes 1)
             (setg mur_à_refaire true)
             (loop k 
-               (intervalle 10)
+               (irange 0 10 1)
                (push
                   éclats
                   (list
@@ -236,7 +236,7 @@
                (arrondi (+ 0.03 (* (hasard) 0.12)) 2)
             )
          )
-         (intervalle 220)
+         (irange 0 220 1)
       )
    )
 )
@@ -254,7 +254,7 @@
    (setq h (hauteur))
    (setq bande (/ h 75))
    (loop i 
-      (intervalle 75)
+      (irange 0 75 1)
       (couleur décor (rgb (p+ 8 i) (p+ 12 (* i 0.8)) (p+ 50 (* i 1.6))))
       (rectangle_plein décor 0 (* i bande) l (+ bande 1))
    )
@@ -268,7 +268,7 @@
    (rectangle_plein décor (- l 4) 0 4 h)
    (couleur décor "#90a4ae")
    (loop k 
-      (intervalle (_/ l 40))
+      (irange 0 (_/ l 40) 1)
       (disque décor (p+ 20 (* k 40)) 2 1.5)
    )
 )
@@ -288,7 +288,7 @@
 (defun prépare_mur ()
    (vide_dessin mur)
    (loop i 
-      (intervalle (longueur briques))
+      (irange 0 (longueur briques) 1)
       (if (at briques i)
          (ajoute_brique mur i)
       )
@@ -317,7 +317,7 @@
       (setg images_comptées 0)
    )
    (loop k 
-      (intervalle (longueur traînée))
+      (irange 0 (longueur traînée) 1)
       (couleur (+ "rgba(255, 235, 59, " (_texte (arrondi (+ 0.05 (* k 0.05)) 2)) ")"))
       (disque (at traînée k 0) (at traînée k 1) (* rayon (+ 0.4 (* k 0.07))))
    )

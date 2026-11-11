@@ -1,0 +1,69 @@
+# 26. Les listes typées
+# Une liste ordinaire, [1, 2, 3], peut tout contenir : des nombres, des textes, d'autres listes.
+# Une liste typée ne contient qu'un genre de valeurs :
+#     liste_entiers(3, 1, 2)      des entiers
+#     liste_nombres(1.5, 2.0)     des nombres à virgule
+#     liste_chaînes("a", "b")     des textes
+# Elle s'utilise comme une autre liste (ajoute, l[i], tranches, dans, pour, somme, trie, +), mais
+# l'ordinateur la parcourt bien plus vite : il n'a pas à regarder le genre de chaque valeur.
+# liste_entiers(l) convertit une liste ordinaire ; intervalle() et découpe() rendent déjà des
+# listes typées.
+# Ce programme fait les mêmes opérations sur 100 000 valeurs, avec les deux sortes de listes,
+# les chronomètre et dessine le résultat : c'est la liste qu'il faut pour des milliers de valeurs.
+# Attention : une liste typée convertit ce qu'on y range, sans erreur (voir la fin du programme).
+
+def maintenant():
+    h, m, s, ms = heure()
+    retourne ((h * 60 + m) * 60 + s) * 1000 + ms
+
+n = 100000
+ordinaire = [(i * 7919) % 10007 pour i dans intervalle(n)]
+typée = liste_entiers(ordinaire)
+
+# les mêmes opérations, 100 fois chacune : le temps de chacune, en millisecondes
+def chronomètre(liste):
+    temps = []
+    # chercher une valeur absente : toute la liste est parcourue
+    t = maintenant()
+    pour k dans intervalle(100):
+        trouvée = -5 dans liste
+    temps.ajoute(maintenant() - t)
+    # additionner toutes les valeurs
+    t = maintenant()
+    pour k dans intervalle(100):
+        total = somme(liste)
+    temps.ajoute(maintenant() - t)
+    # prendre une tranche
+    t = maintenant()
+    pour k dans intervalle(100):
+        morceau = liste[10:75000]
+    temps.ajoute(maintenant() - t)
+    # coller deux listes
+    t = maintenant()
+    pour k dans intervalle(100):
+        double = liste + liste
+    temps.ajoute(maintenant() - t)
+    retourne temps
+
+opérations = ["dans", "somme", "tranche", "liste + liste"]
+temps_ordinaire = chronomètre(ordinaire)
+temps_typée = chronomètre(typée)
+
+graphique("colonnes", [temps_ordinaire, temps_typée], opérations,
+          {"titre": "100 fois la même opération sur 100 000 valeurs", "séries": ["liste ordinaire", "liste d'entiers"],
+           "axe_y": "millisecondes", "valeurs": Vrai})
+
+affiche("opération : liste ordinaire, liste d'entiers (en millisecondes)")
+pour i dans intervalle(len(opérations)):
+    affiche(f"{opérations[i]} : {temps_ordinaire[i]}, {temps_typée[i]}")
+
+# une liste typée s'utilise comme une autre
+notes = liste_entiers(12, 15, 9)
+notes.ajoute(18)
+affiche(notes, somme(notes), 15 dans notes, trie(notes), notes[1:])
+affiche(liste_nombres(1, 2.5), liste_chaînes("b", "a"))
+
+# attention : elle convertit ce qu'on y range
+notes.ajoute(2.7)
+notes.ajoute("abc")
+affiche("après ajoute(2.7) et ajoute(\"abc\") :", notes)

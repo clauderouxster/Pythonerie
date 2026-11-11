@@ -37,7 +37,7 @@
             )
             (setq points (list))
             (loop i 
-               (intervalle 10)
+               (irange 0 10 1)
                (setq r t)
                (if (= (_% i 2) 1)
                   (setq r (/ t 2))
@@ -72,11 +72,11 @@
       (couleur "gris clair")
       (épaisseur 1)
       (loop gx 
-         (intervalle (+ PANNEAU 20) (largeur) 40)
+         (irange (+ PANNEAU 20) (largeur) 40)
          (ligne gx 0 gx (hauteur))
       )
       (loop gy 
-         (intervalle 0 (hauteur) 40)
+         (irange 0 (hauteur) 40)
          (ligne PANNEAU gy (largeur) gy)
       )
    )
@@ -161,7 +161,7 @@
       (block
          (setq plus_grande (valeur_objet "taille"))
          (loop i 
-            (intervalle 10)
+            (irange 0 10 1)
             (setq x (aléatoire (+ PANNEAU 40) (- (largeur) 40)))
             (setq y (aléatoire 60 (- (hauteur) 100)))
             (push
@@ -214,7 +214,7 @@
          (setq plus_proche -1)
          (setq distance 100000)
          (loop i 
-            (intervalle (longueur dessin))
+            (irange 0 (longueur dessin) 1)
             (setq f (at dessin i))
             (setq d (p+ (* (- (at f 0) x) (- (at f 0) x)) (* (- (at f 1) y) (- (at f 1) y))))
             (check (andvalue (< d distance) (< d (* (at f 4) (at f 4))))
@@ -228,7 +228,7 @@
                   (λ (i) 
                      (at dessin i)
                   )
-                  (filtercar (λ (i) (!= i plus_proche)) (intervalle (longueur dessin)))
+                  (filtercar (λ (i) (!= i plus_proche)) (irange 0 (longueur dessin) 1))
                )
             )
          )
@@ -255,7 +255,7 @@
 (saisie "titre" 12 28 titre_changé)
 (liste_déroulante "forme" 12 84 FORMES forme_choisie)
 (loop i 
-   (intervalle (longueur FORMES))
+   (irange 0 (longueur FORMES) 1)
    (setq f (at FORMES i))
    (
       bouton_image

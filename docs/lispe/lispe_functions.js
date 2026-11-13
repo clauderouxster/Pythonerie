@@ -379,6 +379,54 @@ function callSetqString(lispe_idx, a_variable, value) {
     return true;
 }
 
+// Set a LispE variable to an array of strings.
+// `vals` is an array of JavaScript strings; they are sent as one Int32Array:
+// for each string, its length, then its characters.
+function callSetqStrings(lispe_idx, a_variable, vals) {
+    assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
+    assert(__ATPRERUN__.length == 0, 'cannot call main when preRun functions remain to be called');
+
+    if (!Array.isArray(vals) || vals.some(v => typeof v != "string")) {
+        throw new Error("Expecting an array of strings");
+    }
+
+    const entryFunction = Module['_eval_setq_strings_lispe'];
+    if (!entryFunction) {
+        throw new Error("eval_setq_strings_lispe is missing: lispe.wasm must be rebuilt");
+    }
+
+    let total = 0;
+    for (const v of vals) total += v.length + 1;
+    const flat = new Int32Array(total);
+    let pos = 0;
+    for (const v of vals) {
+        flat[pos++] = v.length;
+        for (let i = 0; i < v.length; i++) flat[pos++] = v.charCodeAt(i);
+    }
+
+    const string_to_array = provideCharactersAsInts(a_variable);
+    const values = provideIntegers(total, flat);
+
+    let ret;
+    try {
+        ret = entryFunction(lispe_idx, string_to_array, a_variable.length, values, vals.length);
+    }
+    catch (e) {
+        Module._free(string_to_array);
+        Module._free(values);
+        return handleException(e);
+    }
+
+    Module._free(values);
+    if (ret < 0) {
+        ret *= -1;
+        const str = decode(string_to_array, ret);
+        throw new Error(str);
+    }
+    Module._free(string_to_array);
+    return true;
+}
+
 //-----------------------------------------------------------------
 // Eval entry points returning scalars / strings
 //-----------------------------------------------------------------

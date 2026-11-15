@@ -231,6 +231,7 @@
       ("==" '=)
       ("dans" 'in)
       ("nondans" 'notin)
+      ("estnon" 'neq)
       ("est" 'eq)
       (true (atom a))
    )
@@ -1282,6 +1283,78 @@
    (push morceaux (@@ code position (size code)))
    (list (join morceaux "") table))
 
+; Les virgules finales : [a, b,], {"x": 1,}, f(a, b,), ou sur plusieurs lignes (la virgule en
+; fin de ligne, le crochet sur une ligne suivante) : la virgule est retirée, hors des chaînes et
+; des commentaires. Les IA l'écrivent souvent. Un tuple d'un seul élément, (a,), garde la sienne
+; (il reste refusé) : seule la virgule d'un appel f(a,) ou d'un groupe qui en a déjà une est retirée.
+; Les retours à la ligne restent en place : les numéros de ligne ne changent pas.
+
+; La position du premier caractère qui n'est ni un blanc ni un commentaire, à partir de i
+(defun après_blancs(code i n)
+   (setq fini false)
+   (while (and (< i n) (not fini))
+      (setq c (@ code i))
+      (cond
+         ((in " \t\n" c) (+= i 1))
+         ((= c "#")
+            (setq j (find code "\n" i))
+            (setq i (if (nullp j) n j)))
+         (true (setq fini true))))
+   i)
+
+(defun retire_virgules_finales(code)
+   (setq n (size code))
+   (setq morceaux ())
+   (setq début 0)
+   (setq i 0)
+   (setq guillemet "")
+   (setq échap false)
+   ; pour chaque parenthèse, crochet ou accolade ouvert : (appel nombre-de-virgules)
+   (setq pile ())
+   ; le dernier caractère significatif (ni blanc, ni commentaire)
+   (setq préc "")
+   (while (< i n)
+      (setq c (@ code i))
+      (cond
+         ((neq guillemet "")
+            (cond
+               (échap (setq échap false))
+               ((= c "\\") (setq échap true))
+               ((= c guillemet)
+                  (setq guillemet "")
+                  (setq préc c))))
+         ((= c "#")
+            (setq j (find code "\n" i))
+            (setq i (if (nullp j) n (- j 1))))
+         ((in "\"'`" c)
+            (setq guillemet (+ "" c)))
+         ((in "([{" c)
+            (push pile (list (and (= c "(") (neq préc "") (or (alphap préc) (digitp préc) (in "_)]" préc) (> (car (ord préc)) 127))) 0))
+            (setq préc c))
+         ((in ")]}" c)
+            (if pile (pop pile))
+            (setq préc c))
+         ((= c ",")
+            (setq j (après_blancs code (+ i 1) n))
+            (setq groupe (if pile (last@ pile) nil))
+            (ife (and (< j n)
+                     (in ")]}" (@ code j))
+                     (or (neq (@ code j) ")")
+                        (and groupe (or (car groupe) (> (cadr groupe) 0)))))
+               (block
+                  (push morceaux (@@ code début i))
+                  (setq début (+ i 1)))
+               (if groupe (set@ groupe 1 (+ (cadr groupe) 1))))
+            (setq préc c))
+         ((not (in " \t\n" c))
+            (setq préc c)))
+      (+= i 1))
+   (ife (= début 0)
+      code
+      (block
+         (push morceaux (@@ code début n))
+         (join morceaux ""))))
+
 (defun injecte_labels(code)
    (setg erreur_injection "")
    (setq dlongstrings {})
@@ -1290,6 +1363,7 @@
       (setq code (car protégé))
       (setq dlongstrings (cadr protégé)))
    (setq code (replace (replace code "\r" "") "\t" "    "))
+   (setq code (retire_virgules_finales code))
    (setq lignes (split code "\n"))
    (setq résultat ())
    ; pile des blocs ouverts : (indentation mot-clef numéro-de-ligne)

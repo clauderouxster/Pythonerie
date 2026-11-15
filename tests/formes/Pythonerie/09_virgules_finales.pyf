@@ -1,0 +1,28 @@
+# les virgules finales, comme en Python : elles sont retirées
+l = [1, 2, 3,]
+affiche(l)
+d = {"a": 1, "b": 2,}
+affiche(d["a"], d["b"])
+fonction somme_trois(a, b, c):
+    retourne a + b + c
+affiche(somme_trois(1, 2, 3,))
+points = [
+    [0, 0],
+    [1, 2],   # le dernier, avec sa virgule
+]
+affiche(points)
+t = (4, 5,)
+affiche(t)
+nouveaux = []
+nouveaux.ajoute([
+    "x",
+    "y",
+])
+affiche(nouveaux)
+réglages = {
+    "vitesse": 3,
+    "nom": "lent",
+}
+affiche(réglages["vitesse"], réglages["nom"])
+# dans les chaînes, rien ne change
+affiche("[a,]", "f(b,)")

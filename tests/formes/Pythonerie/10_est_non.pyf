@@ -1,0 +1,12 @@
+# est non : le contraire de est (is not)
+a = 3
+b = Rien
+affiche(a est non Rien, b est non Rien, a est Rien)
+si a est non Rien:
+    affiche("a a une valeur")
+valeurs = [1, Rien, 2]
+affiche([v pour v dans valeurs si v est non Rien])
+x = non (a est non Rien)
+affiche(x)
+c = "oui" si b est non Rien sinon "non"
+affiche(c)

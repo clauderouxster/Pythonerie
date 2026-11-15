@@ -1,0 +1,1 @@
+Erreur de syntaxe dans " t ERROR>>> = ( 1 , ) affiche ( t ) " <<

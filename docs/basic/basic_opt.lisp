@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (165 fonctions, ;Date: 2026/11/07 12:04:01)
-;Date: 2026/11/07 12:04:01
+;Optimisé par optimise.lisp, d'après basic.lisp (165 fonctions, ;Date: 2026/11/14 13:51:21)
+;Date: 2026/11/14 13:51:21
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -573,7 +573,7 @@
 )
 
 
-;comparator := [$non $dans]^[%< %>]^[%! %=]^[%< %=]^[%= %=]^[%> %=]^%<^%>^$dans^$est
+;comparator := [$non $dans]^[%< %>]^[%! %=]^[%< %=]^[%= %=]^[%> %=]^%<^%>^$dans^[$est $non]^$est
 (defun C_comparator (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -651,7 +651,20 @@
                )
             )
             ("dans" (compare tokens "dans" i0 v0 true))
-            ("est" (compare tokens "est" i0 v0 true))
+            (
+               "est"
+               (or
+                  (and
+                     (setq i1 (clone i0))
+                     (setq v1 ())
+                     (compare tokens "est" i1 v1 true)
+                     (compare tokens "non" i1 v1 true)
+                     (set@ i0 0 (car i1))
+                     (setq v0 v1)
+                  )
+                  (compare tokens "est" i0 v0 true)
+               )
+            )
             (true nil)
          )
          (push v (cons 'comparator v0))

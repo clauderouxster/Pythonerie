@@ -737,6 +737,15 @@
    (if (not (in_it _essences_arbres _n))
       (throw (+ "arbre : il n'y a pas d'arbre « " _e " » ; les essences : chêne, peuplier, saule_pleureur, bouleau, sapin, érable, cerisier, pommier, palmier, cyprès")))
    (_nouveau_3d s "arbre" (dictionary "genre" "arbre" "x" x "y" y "z" z "essence" (@ _essences_arbres _n) "hauteur" _h)))
+; scène.modèle_glb(x, y, z, "dragon.glb"[, hauteur]) : un modèle 3D (glTF binaire) du répertoire GLB
+; du projet (son nom seul) ou des médias du site (médias/glb/dragon.glb), posé sur le sol en (x, y, z),
+; centré ; hauteur en mètres (0 ou absente : celle du fichier). Il rend un numéro d'objet, comme cube.
+(defun modèle_glb (s x y z _fichier (_h 0))
+   (setq _adresse (evaljsc (list "Pyt.adresseGLB" (string _fichier))))
+   (if (= _adresse "")
+      (throw (+ "modèle_glb : le modèle « " (string _fichier) " » n'est pas dans le répertoire GLB du projet (glisse-y le fichier .glb)")))
+   (if (not (numberp _h)) (throw "modèle_glb : la hauteur est un nombre de mètres, comme dans scène.modèle_glb(0, 0, 0, \"dragon.glb\", 2)"))
+   (_nouveau_3d s "modèle_glb" (dictionary "genre" "glb" "x" x "y" y "z" z "fichier" (string _fichier) "adresse" _adresse "hauteur" _h)))
 (defun anneau (s x y z intérieur extérieur (c "blanc"))
    (_nouveau_3d s "anneau" (dictionary "genre" "anneau" "x" x "y" y "z" z "intérieur" intérieur "extérieur" extérieur "couleur" c)))
 (defun lumière (s x y z (intensité 2.5) (c "blanc"))
@@ -767,6 +776,8 @@
 (defun lumineux (o) (_change_3d "lumineux" o "lumineux"))
 (defun cache_objet (o) (_change_3d "cache" o "cache_objet"))
 (defun montre_objet (o) (_change_3d "montre" o "montre_objet"))
+; o.joue_animation(nom) : l'animation d'un modèle GLB qui porte ce nom ("Walk", "Idle"…), en boucle ; "" l'arrête
+(defun joue_animation (o nom) (_change_3d "anime" o "joue_animation" (string nom)))
 (defun regarde (x y z) (evaljsc (list "Pyt.change3D" "regarde" 0 x y z)) nil)
 (defun caméra_libre () (evaljsc "Pyt.caméraLibre()") nil)
 (defmacro quand_clic_objet (fonction) (block (evaljsc (list "Pyt.quandClicObjet" (string (quote fonction)))) nil))

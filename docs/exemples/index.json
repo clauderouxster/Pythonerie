@@ -136,5 +136,11 @@
     "titre": "26. Les listes typées",
     "description": "liste_entiers, liste_nombres, liste_chaînes : des listes qui ne contiennent qu'un genre de valeurs, 4 à 20 fois plus rapides pour dans, somme, les tranches ; le programme chronomètre 100 000 valeurs et dessine le résultat",
     "programme": "Listes typées"
+  },
+  {
+    "fichier": "27_un_dragon_en_3d.pyf",
+    "titre": "27. Un dragon en 3D",
+    "description": "scène.modèle_glb(x, y, z, \"dragon.glb\") : un modèle 3D tout fait, un fichier GLB du répertoire GLB du projet (ici, médias/glb/dragon.glb et fountain.glb) ; dragon.joue_animation(\"Walk\") ; il tourne autour de la fontaine, et bat des ailes quand on clique sur lui",
+    "programme": "Dragon en 3D"
   }
 ]

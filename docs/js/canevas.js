@@ -654,7 +654,7 @@ const Pyt = (function () {
         ANCIENNES_NOTES[n] = ['C', 'C_sharp', 'D', 'D_sharp', 'E', 'F', 'F_sharp', 'G', 'G_sharp', 'A', 'A_sharp', 'B'][i];
     });
     function médiaDéplacé(a) {
-        const m = /^(?:exemples\/)?médias\/(?!sounds\/|images\/|videos\/)(.+)$/.exec(a);
+        const m = /^(?:exemples\/)?médias\/(?!sounds\/|images\/|videos\/|glb\/)(.+)$/.exec(a);
         if (!m) return a;
         const note = /^piano\/(.+)_([345])\.wav$/.exec(m[1]);
         if (note && ANCIENNES_NOTES[note[1]]) return 'médias/sounds/piano/' + ANCIENNES_NOTES[note[1]] + '_' + note[2] + '.wav';
@@ -2054,6 +2054,13 @@ const Pyt = (function () {
         // déplace, tourne, oriente, colore, texture, cache, montre, regarde
         change3D(genre, numéro, a, b, c) { if (scène3D()) scène3D().change(String(genre), Math.trunc(nombre(numéro)), a, b, c); },
         caméraLibre() { if (scène3D()) scène3D().caméraLibre(); },
+        // scène.modèle_glb(x, y, z, "dragon.glb") : l'adresse du modèle, un fichier du répertoire GLB
+        // du projet (son nom seul) ou des médias du site (médias/glb/dragon.glb) ; '' s'il n'y est pas
+        adresseGLB(nom) {
+            const n = String(nom).normalize('NFC').trim();
+            if (!/\.glb$/i.test(n)) return '';
+            return adresseMédia(n, 'GLB') || '';
+        },
         quandSouris(nom) { gestionnaires.souris = nom; },
         quandGlisse(nom) { gestionnaires.glisse = nom; },
         quandTouche(nom) { gestionnaires.touche = nom; },

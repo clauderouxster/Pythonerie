@@ -2729,12 +2729,15 @@ const Pythonerie = (function () {
     const SVG_VIDÉO = '<svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="9.5" height="9" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M11 7l3.5-2v6L11 9z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
     const SVG_SON = '<svg viewBox="0 0 16 16" fill="none"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M11 5.5c1.2 1.4 1.2 3.6 0 5M12.8 4c2 2.3 2 5.7 0 8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
     const SVG_AJOUTER = '<svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M7.25 2h1.5v5.25H14v1.5H8.75V14h-1.5V8.75H2v-1.5h5.25z"/></svg>';
-    const ICÔNES_FICHIERS = { images: SVG_IMAGE, sons: SVG_SON, données: SVG_DONNÉES };
+    // un modèle GLB : un cube en perspective
+    const SVG_GLB = '<svg viewBox="0 0 16 16" fill="none"><path d="M8 1.8l5.6 3v6.4L8 14.2l-5.6-3V4.8z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M2.4 4.8L8 7.8l5.6-3M8 7.8v6.4" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+    const ICÔNES_FICHIERS = { images: SVG_IMAGE, sons: SVG_SON, données: SVG_DONNÉES, vidéos: SVG_VIDÉO, GLB: SVG_GLB };
     const EXPLICATIONS = {
         images: 'Glisse des images ici (png, jpg, gif, svg, webp) : charge_image("chat.png")',
         sons: 'Glisse des sons ici (wav, mp3, ogg) : charge_son("miaou.wav")',
         données: 'Glisse des données ici (txt, csv, json…) : charge_données("notes.csv")',
-        vidéos: 'Glisse des vidéos ici (mp4, webm) : charge_vidéo("film.mp4")'
+        vidéos: 'Glisse des vidéos ici (mp4, webm) : charge_vidéo("film.mp4")',
+        GLB: 'Glisse des modèles 3D ici (glb) : scène.modèle_glb(0, 0, 0, "dragon.glb")'
     };
 
     function afficheRépertoiresProjet(ul) {
@@ -2814,11 +2817,47 @@ const Pythonerie = (function () {
             aperçuMédia(nom, FichiersProjet.url(chemin), nom, chemin.startsWith('sons/'));
             return;
         }
+        if (chemin.startsWith('GLB/')) { aperçuGLB(nom, FichiersProjet.blob(chemin)); return; }
         const texte = FichiersProjet.texte(chemin) || '';
         const contenu = document.createElement('pre');
         contenu.className = 'aperçu-données';
         contenu.textContent = texte.length > 4000 ? texte.slice(0, 4000) + '\n…' : texte;
         dialogue(nom, 'Dans un programme : charge_données("' + nom + '")', [{ texte: 'Fermer', valeur: null, genre: 'principal' }], contenu);
+    }
+
+    // L'aperçu d'un modèle GLB : ce qu'il contient (lu dans son morceau JSON, sans le dessiner) et la
+    // ligne qui le pose dans une scène 3D. adresse : ce qu'écrit le programme (un nom, ou médias/…)
+    async function aperçuGLB(adresse, blob) {
+        let info = null;
+        try {
+            const o = new DataView(await blob.arrayBuffer());
+            if (o.getUint32(0, true) !== 0x46546C67) throw new Error('magic');
+            info = JSON.parse(new TextDecoder().decode(new Uint8Array(o.buffer, 20, o.getUint32(12, true))));
+        } catch (e) { info = null; }
+        const nom = adresse.slice(adresse.lastIndexOf('/') + 1);
+        const contenu = document.createElement('div');
+        const détails = document.createElement('pre');
+        détails.className = 'aperçu-données';
+        if (!info) détails.textContent = 'Ce fichier n\'est pas un modèle GLB (glTF binaire) lisible.';
+        else {
+            const anims = (info.animations || []).map((a, i) => a.name || ('animation ' + i));
+            détails.textContent = [Math.round(blob.size / 1024) + ' Ko',
+                'maillages : ' + (info.meshes || []).length,
+                'squelette : ' + ((info.skins || []).length ? 'oui' : 'non'),
+                'animations : ' + (anims.length ? anims.join(', ') : 'aucune')]
+                .concat(anims.length ? ['o.joue_animation("' + anims[0] + '") en joue une'] : []).join('\n');
+        }
+        contenu.appendChild(détails);
+        const base = nfc(nom).replace(/\.[^.]+$/, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'modèle';
+        const ligne = base + ' = scène.modèle_glb(0, 0, 0, "' + adresse + '")';
+        const code = document.createElement('pre');
+        code.className = 'aperçu-données aperçu-ligne';
+        code.textContent = ligne;
+        contenu.appendChild(code);
+        dialogue(nom, 'Dans un programme (une scène 3D) :', [
+            { texte: '📋 Copier', action: (bouton) => copieTexte(ligne, bouton) },
+            { texte: 'Fermer', valeur: null, genre: 'principal' }
+        ], contenu);
     }
 
     // L'aperçu d'un son ou d'une image (du projet, ou des médias du site) : le son s'écoute avec
@@ -4136,6 +4175,7 @@ const Pythonerie = (function () {
     // l'aperçu du son ou de l'image, avec la ligne qui le charge dans un programme (voir aperçuMédia).
     const SONS_SITE = /\.(wav|mp3|ogg)$/i;
     const VIDÉOS_SITE = /\.(mp4|webm)$/i;
+    const GLB_SITE = /\.glb$/i;
     async function installeMédiasSite() {
         const bouton = $('btnMédias');
         // la liste est d'habitude déjà lue au démarrage (voir plus haut) ; sinon on la lit ici
@@ -4147,7 +4187,13 @@ const Pythonerie = (function () {
         }
         const sons = médiasSite.filter(m => SONS_SITE.test(m));
         const vidéos = médiasSite.filter(m => VIDÉOS_SITE.test(m));
-        const images = médiasSite.filter(m => !SONS_SITE.test(m) && !VIDÉOS_SITE.test(m));
+        const images = médiasSite.filter(m => !SONS_SITE.test(m) && !VIDÉOS_SITE.test(m) && !GLB_SITE.test(m));
+        // les modèles 3D : leur aperçu dit ce qu'ils contiennent (aperçuGLB)
+        const modèles3D = médiasSite.filter(m => GLB_SITE.test(m)).map(m => ({
+            texte: m.slice(m.lastIndexOf('/') + 1), icône: SVG_GLB,
+            titre: 'Voir — dans un programme : scène.modèle_glb(0, 0, 0, "' + m + '")',
+            action: () => fetch(m.split('/').map(encodeURIComponent).join('/')).then(r => r.blob()).then(b => aperçuGLB(m, b))
+        }));
         bouton.disabled = !médiasSite.length;
         bouton.querySelector('.nombre-exemples').textContent = médiasSite.length || '';
         const nom = (m) => m.slice(m.lastIndexOf('/') + 1);
@@ -4166,7 +4212,8 @@ const Pythonerie = (function () {
                 { groupe: 'sounds (' + sons.length + ')', éléments: autres.map(m => élément(m, true))
                     .concat(piano.length ? [{ groupe: 'piano (' + piano.length + ')', éléments: piano.map(m => élément(m, true)) }] : []) },
                 { groupe: 'images (' + images.length + ')', éléments: images.map(m => élément(m, false)) }
-            ].concat(vidéos.length ? [{ groupe: 'videos (' + vidéos.length + ')', éléments: vidéos.map(m => élément(m, 'vidéo')) }] : [])));
+            ].concat(vidéos.length ? [{ groupe: 'videos (' + vidéos.length + ')', éléments: vidéos.map(m => élément(m, 'vidéo')) }] : [])
+             .concat(modèles3D.length ? [{ groupe: 'glb (' + modèles3D.length + ')', éléments: modèles3D }] : [])));
         };
     }
 

@@ -177,6 +177,8 @@ const PYTHONERIE_FONCTIONS = {
     'cône': 'scène.cône(x, y, z, rayon, hauteur, couleur) — un cône dans la scène 3D',
     'anneau': 'scène.anneau(x, y, z, rayon_intérieur, rayon_extérieur, couleur) — un anneau couché à plat (Saturne)',
     'arbre': 'scène.arbre(x, y, z, essence, hauteur) — un arbre : chêne, peuplier, saule_pleureur, bouleau, sapin, érable, cerisier, pommier, palmier, cyprès',
+    'modèle_glb': 'scène.modèle_glb(x, y, z, "dragon.glb", hauteur) — un modèle 3D du répertoire GLB du projet (ou médias/glb/…), posé sur le sol ; rend son numéro',
+    'joue_animation': 'o.joue_animation("Walk") — joue en boucle l\'animation de ce nom d\'un modèle GLB ; "" l\'arrête',
     'groupe': 'scène.groupe(x, y, z) — un nouveau groupe d\'objets 3D qui bougent et tournent ensemble',
     'lumière': 'scène.lumière(x, y, z, intensité) — une lampe dans la scène 3D',
     'caméra': 'scène.caméra(x, y, z, vx, vy, vz) — la position de la caméra, et le point qu\'elle regarde',

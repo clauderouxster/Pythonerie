@@ -1,0 +1,45 @@
+# 27. Un dragon en 3D
+# scène.modèle_glb(x, y, z, "dragon.glb") pose dans la scène un modèle 3D tout fait : un fichier GLB
+# (glTF binaire), fait avec Blender (Fichier > Exporter > glTF 2.0, format .glb) ou pris sur le web.
+# On le glisse dans le répertoire GLB du projet et on donne son nom ; ici, le dragon et la fontaine
+# viennent des médias du site (médias/glb/…) : on donne alors leur chemin. Un cinquième argument
+# donnerait sa hauteur en mètres ; sans lui, il garde la taille de son fichier.
+# Un modèle rend un numéro, comme un cube : déplace, oriente_3d, cache_objet marchent avec lui.
+# dragon.joue_animation("Walk") joue en boucle l'une de ses animations ; un clic sur le fichier,
+# dans le répertoire GLB, dit lesquelles il a (le dragon : Idle, Walk, Sit, Lie, Wave, No, Interact).
+# Le dragon tourne autour de la fontaine ; clique sur lui : il bat des ailes, puis repart.
+scène = nouvelle_scène()
+scène.boîte(0, -0.05, 0, 14, 0.1, 14, "vert clair")
+scène.lumière(0, 10, 5)
+fontaine = scène.modèle_glb(0, 0, 0, "médias/glb/fountain.glb")
+dragon = scène.modèle_glb(4, 0, 0, "médias/glb/dragon.glb")
+scène.caméra(0, 6, 11, 0, 0.5, 0)
+montre_3d(scène)
+fond("bleu clair")
+caméra_libre()
+dragon.joue_animation("Walk")
+
+angle = 0
+pause = 0          # les images qui restent avant qu'il reparte
+
+fonction image():
+    efface()
+    texte(10, 10, "Clique sur le dragon")
+    si pause > 0:
+        pause =: pause - 1
+        si pause == 0:
+            dragon.joue_animation("Walk")
+        retourne
+    # un tour de cercle de 4 m autour de la fontaine ; il regarde là où il va
+    angle =: angle + 0.6
+    a = angle * pi / 180
+    dragon.déplace(4 * cos(a), 0, 4 * sin(a))
+    dragon.oriente_3d(0, -angle, 0)
+
+fonction clic(numéro):
+    si numéro == dragon:
+        dragon.joue_animation("Wave")
+        pause =: 60
+
+quand_clic_objet(clic)
+animer(image, 30)

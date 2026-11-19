@@ -86,7 +86,7 @@ Les règles d'écriture en découlent :
 | Textes de l'interface | `docs/traductions.lisp`, lu par `js/langues.js` ; `T('…')` dans le JS | dans le JS |
 | Exemples | `docs/French/exemples/`, `docs/English/examples/`, `docs/Korean/예제/`, chacun avec `index.json` | `docs/exemples/` + `index.json` |
 | Matériels (projets en zip) | `docs/French/matériels/`, `docs/English/materials/`, `docs/Korean/학습자료/` | `docs/matériels/` |
-| Médias communs | `docs/médias/{sounds,images,videos}/` (`fabrique_sons.py`, `fabrique_images.py`) | `docs/médias/{sounds,images}/` |
+| Médias communs | `docs/médias/{sounds,images,videos,glb}/` (`fabrique_sons.py`, `fabrique_images.py`, `fabrique_glb.py`) | `docs/médias/{sounds,images}/` |
 | Bibliothèques importées | `docs/lib/<nom>/` (`importe libX`) | aucune |
 | WASM de LispE | `docs/lispe/` (`lispe.js`, `lispe.wasm`, `lispe_functions.js`) | `docs/lispe/` |
 | Guides de l'IA | 3 YAML et 3 MD à la racine | `POUR_CLAUDE.md` à la racine |
@@ -121,7 +121,7 @@ Les règles d'écriture en découlent :
 - `hangul.js` : les noms hangul, que le lecteur de LispE coupe.
 - `ia.js`, `appels-outils.js`, `reglages-ia.js` : l'IA de l'éditeur (le harnais, les outils `get_info`, `read_data_tab`…). `ia.js` sert aussi les `appel_ia` des programmes (`IA.discute`) ; avec `outils_ia`, `discuteAvecOutils` envoie les outils du programme par les mêmes adaptateurs que le tchat (`anthropic-messages`, `openai-chat`, `openai-responses`) et rend les appels sans rien exécuter. Les noms des propriétés d'un outil restent sans accents : certains fournisseurs les refusent.
 - `mcp.js`, `reglages-mcp.js` : les canaux MCP.
-- `fichiers-projet.js` : les répertoires images, sons et données, rangés dans IndexedDB.
+- `fichiers-projet.js` : les répertoires du projet (`images`, `sons`, `données`, `vidéos`, `GLB`), rangés dans IndexedDB. Un nouveau répertoire se déclare à quatre endroits : `RÉPERTOIRES` et `TYPES` ici (avec sa taille maximale), `RÉPERTOIRES` et `TYPES` dans `paquets.js` (un projet relu d'un zip), le `FichiersProjet` de secours de `docs/appli/appli.js` (les applications exportées), et son icône et son explication dans `atelier.js` (`ICÔNES_FICHIERS`, `EXPLICATIONS`), plus ses textes dans `traductions.lisp`.
 - `apps.js` : l'espace Applications.
 - `zip.js` : lit et écrit les archives des projets.
 - `worker-lispe.js` : le Web Worker des fonctions `worker` (voir « Les fonctions worker » plus bas) : un interpréteur LispE, avec des threads quand la page est isolée.

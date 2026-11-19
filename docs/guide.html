@@ -1147,14 +1147,15 @@ affiche("Dans Don0, il y a :", fruit)</pre></div>
                     <li>Le bouton <b>☰</b> propose d'autres actions&nbsp;: copier un programme, importer des fichiers.</li>
                 </ul>
                 <h3>🖼️ Les images, les sons et les données du projet</h3>
-                <p>En haut de la liste, quatre répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b>,
-                    <b>données</b> et <b>vidéos</b>. Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
-                    Un clic sur une image te la montre, un clic sur un son le joue. Un clic sur un fichier de données l'ouvre dans l'éditeur, à la place du code&nbsp;: tu peux le modifier, il est enregistré tout seul, et <b>✎ Code</b> te ramène au programme.</p>
+                <p>En haut de la liste, cinq répertoires bleus attendent tes fichiers&nbsp;: <b>images</b>, <b>sons</b>,
+                    <b>données</b>, <b>vidéos</b> et <b>GLB</b> (des modèles 3D). Fais-y glisser des fichiers depuis ton ordinateur, ou clique sur le petit <b>＋</b> du répertoire.
+                    Un clic sur une image te la montre, un clic sur un son le joue, un clic sur un modèle GLB dit ce qu'il contient (ses animations). Un clic sur un fichier de données l'ouvre dans l'éditeur, à la place du code&nbsp;: tu peux le modifier, il est enregistré tout seul, et <b>✎ Code</b> te ramène au programme.</p>
                 <p>Dans ton programme, tu n'as besoin que du nom du fichier&nbsp;:</p>
                 <div class="exemple"><pre>chat = charge_image("chat.png")        # dans le répertoire images
 miaou = charge_son("miaou.wav")        # dans le répertoire sons
 notes = charge_données("notes.csv")    # dans le répertoire données
 film = charge_vidéo("film.mp4")        # dans le répertoire vidéos
+rex = scène.modèle_glb(0, 0, 0, "dragon.glb")   # dans le répertoire GLB (une scène 3D)
 place_image(chat, 100, 100)
 joue_son(miaou)</pre></div>
                 <h3>🧩 Un programme qui en utilise un autre&nbsp;: <code>importe</code></h3>
@@ -1521,6 +1522,8 @@ pose_pixels(120, 0, 100, 100, p)</pre></div>
                     <tr><td><code>nouvelle_scène()</code></td><td>commence une scène en 3D, vide</td><td class="ex"><code>scène = nouvelle_scène()</code></td></tr>
                     <tr><td><code>scène.cube(x, y, z, côté, couleur)</code></td><td>ajoute un cube à la scène et donne son numéro (aussi <code>scène.boîte</code>, <code>scène.sphère</code>, <code>scène.cylindre</code>, <code>scène.cône</code>, <code>scène.anneau</code>)</td><td class="ex"><code>c = scène.cube(0, 0, 0, 2, "rouge")</code></td></tr>
                     <tr><td><code>scène.arbre(x, y, z, essence, hauteur)</code></td><td>ajoute un arbre, le pied en (x, y, z) : chêne, peuplier, saule_pleureur, bouleau, sapin, érable, cerisier, pommier, palmier ou cyprès ; sans hauteur, sa taille réelle en mètres</td><td class="ex"><code>scène.arbre(3, 0, -2, "sapin")</code></td></tr>
+                    <tr><td><code>scène.modèle_glb(x, y, z, "dragon.glb", hauteur)</code></td><td>ajoute un modèle 3D tout fait, un fichier GLB (glTF binaire, exporté de Blender ou pris sur le web) glissé dans le répertoire <b>GLB</b> du projet, ou des médias du site (<code>"médias/glb/dragon.glb"</code>)&nbsp;; posé sur le sol en (x, y, z)&nbsp;; sans hauteur, sa taille dans le fichier&nbsp;; il donne son numéro, comme un cube (exemple 27)</td><td class="ex"><code>dragon = scène.modèle_glb(0, 0, 0, "médias/glb/dragon.glb")</code></td></tr>
+                    <tr><td><code>o.joue_animation(nom)</code></td><td>joue en boucle l'animation de ce nom d'un modèle GLB (un clic sur le fichier, dans le répertoire GLB, dit lesquelles il a)&nbsp;; <code>""</code> l'arrête</td><td class="ex"><code>dragon.joue_animation("Walk")</code></td></tr>
                     <tr><td><code>scène.sphère(x, y, z, rayon, couleur)</code></td><td>ajoute une boule</td><td class="ex"><code>terre = scène.sphère(5, 0, 0, 1, "bleu")</code></td></tr>
                     <tr><td><code>scène.groupe(x, y, z)</code></td><td>un nouveau groupe d'objets qui bougent et tournent ensemble&nbsp;; on y ajoute des objets comme dans la scène</td><td class="ex"><code>orbite = scène.groupe()</code><br><code>lune = orbite.sphère(2, 0, 0, 0.3)</code></td></tr>
                     <tr><td><code>scène.lumière(x, y, z)</code></td><td>une lampe, qui éclaire tout autour d'elle</td><td class="ex"><code>scène.lumière(0, 10, 0)</code></td></tr>

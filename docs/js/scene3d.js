@@ -17,7 +17,7 @@
 // =====================================================================
 
 const Scène3D = (function () {
-    let THREE = null, OrbitControls = null, Arbres = null, chargement = null;
+    let THREE = null, OrbitControls = null, Arbres = null, GLTFLoader = null, SkeletonUtils = null, chargement = null;
     let options = null;           // { cadre, élémentÉvénements, couleurCSS, image(numéro), largeur(), hauteur() }
     let rendu = null, scène = null, caméra = null, contrôles = null, couche = null;
     let cible = null;             // le point que regarde la caméra
@@ -28,6 +28,11 @@ const Scène3D = (function () {
     let boucle = null;
     let génération = 0;           // change à chaque réinitialisation : un chargement tardif ne construit rien
     let erreur = null;            // (message) => signale une erreur dans la console
+    // les modèles GLB : chacun n'est lu qu'une fois (adresse -> Promise<gltf>) ; leurs animations
+    // avancent à chaque image (numéro -> { mixer, clips, action })
+    let modèlesGLB = new Map();
+    let animés = new Map();
+    let horloge = null;
 
     function installe(o) { options = o; erreur = o.erreur || null; }
 
@@ -35,8 +40,9 @@ const Scène3D = (function () {
         if (!chargement) {
             const base = new URL('vendor/three/', document.baseURI).href;
             chargement = Promise.all([import(base + 'three.module.min.js'), import(base + 'OrbitControls.js'),
-                                      import(new URL('js/arbres3d.js', document.baseURI).href)])
-                .then(([t, o, a]) => { THREE = t; OrbitControls = o.OrbitControls; Arbres = a; })
+                                      import(new URL('js/arbres3d.js', document.baseURI).href),
+                                      import(base + 'GLTFLoader.js'), import(base + 'SkeletonUtils.js')])
+                .then(([t, o, a, g, s]) => { THREE = t; OrbitControls = o.OrbitControls; Arbres = a; GLTFLoader = g.GLTFLoader; SkeletonUtils = s; })
                 .catch((e) => { chargement = null; throw e; });
         }
         return chargement;
@@ -100,6 +106,31 @@ const Scène3D = (function () {
                 if (h > 0) o.scale.setScalar(h / Arbres.ARBRES[a].hauteur);
                 break;
             }
+            case 'glb': {
+                // un modèle GLB (scène.modèle_glb) : un groupe tout de suite (on peut déjà le déplacer, le
+                // tourner, le cacher), que le modèle remplit quand il est lu ; posé sur le sol en (x, y, z),
+                // centré ; hauteur : la sienne, sinon celle du fichier (glTF compte en mètres)
+                o = new THREE.Group();
+                const groupe = o, g = génération, numéro = e.numéro;
+                if (!modèlesGLB.has(e.adresse)) modèlesGLB.set(e.adresse, new GLTFLoader().loadAsync(e.adresse));
+                modèlesGLB.get(e.adresse).then(gltf => {
+                    if (g !== génération) return;
+                    const copie = SkeletonUtils.clone(gltf.scene);
+                    const boîte = new THREE.Box3().setFromObject(copie);
+                    const haut = Math.max(0.001, boîte.max.y - boîte.min.y);
+                    const h = nombre(e.hauteur, 0), é = h > 0 ? h / haut : 1;
+                    copie.scale.setScalar(é);
+                    const c = boîte.getCenter(new THREE.Vector3());
+                    copie.position.set(-c.x * é, -boîte.min.y * é, -c.z * é);
+                    groupe.add(copie);
+                    if (gltf.animations.length) {
+                        const a = { mixer: new THREE.AnimationMixer(copie), clips: gltf.animations, action: null };
+                        animés.set(numéro, a);
+                        if (groupe.userData.animation !== undefined) joue(numéro, groupe.userData.animation);
+                    }
+                }).catch(x => { if (erreur) erreur('modèle_glb : le modèle « ' + e.fichier + ' » n\'a pas pu être lu (' + x.message + ')'); });
+                break;
+            }
             case 'anneau': {
                 // couché à plat (dans le plan horizontal), comme l'anneau de Saturne
                 const ri = nombre(e.intérieur, 1), re = nombre(e.extérieur, 2);
@@ -135,6 +166,28 @@ const Scène3D = (function () {
         return o;
     }
 
+    // o.joue_animation(nom) : l'animation du modèle GLB qui porte ce nom (sans tenir compte des
+    // majuscules ni d'un préfixe comme « Armature| »), en boucle ; "" l'arrête. Demandée avant que
+    // le modèle soit lu, elle part quand il arrive.
+    function joue(numéro, nom) {
+        const o = objets.get(numéro);
+        if (o) o.userData.animation = nom;
+        const a = animés.get(numéro);
+        if (!a) return;
+        const simple = (n) => String(n).toLowerCase().replace(/^.*[|:]/, '');
+        const voulu = simple(nom);
+        if (a.action) a.action.fadeOut(0.2);
+        a.action = null;
+        if (!voulu) return;
+        const clip = a.clips.find(c => simple(c.name) === voulu) || a.clips.find(c => simple(c.name).includes(voulu));
+        if (!clip) {
+            if (erreur) erreur('joue_animation : le modèle n\'a pas d\'animation « ' + nom + ' » ; il a : ' + a.clips.map(c => c.name).join(', '));
+            return;
+        }
+        a.action = a.mixer.clipAction(clip);
+        a.action.reset().fadeIn(0.2).play();
+    }
+
     function appliqueTexture(o, numéroImage) {
         if (!o.material) return;
         let t = textures.get(numéroImage);
@@ -168,9 +221,12 @@ const Scène3D = (function () {
         caméra.position.set(0, 6, 18);
         cible = new THREE.Vector3(0, 0, 0);
         caméra.lookAt(cible);
+        horloge = new THREE.Clock();
         const image = () => {
             boucle = requestAnimationFrame(image);
             if (contrôles) contrôles.update();
+            const dt = Math.min(0.1, horloge.getDelta());
+            animés.forEach(a => a.mixer.update(dt));
             rendu.render(scène, caméra);
         };
         boucle = requestAnimationFrame(image);
@@ -206,6 +262,7 @@ const Scène3D = (function () {
     // déplace, tourne, colore, texture, lumineux, cache_objet, montre_objet
     function change(genre, numéro, a, b, c) {
         quand(() => {
+            if (genre === 'anime') { joue(numéro, a); return; }
             if (genre === 'regarde') {
                 // la caméra regarde le point (a, b, c)
                 cible.set(nombre(a), nombre(b), nombre(c));
@@ -297,6 +354,8 @@ const Scène3D = (function () {
         rendu = scène = caméra = couche = cible = null;
         objets = new Map();
         textures = new Map();
+        animés = new Map();
+        modèlesGLB = new Map();
     }
 
     // le canevas de la couche 3D (null s'il n'y en a pas) : preserveDrawingBuffer garde sa dernière image lisible

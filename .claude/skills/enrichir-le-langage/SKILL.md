@@ -300,6 +300,12 @@ lispe tests/banc.lisp exécute docs/English/basic/ basic_opt.lisp english.lisp p
 # Pythonerie : lispe tests/banc.lisp exécute docs/basic/ basic_opt.lisp français.lisp prog.pyf
 ```
 
+**Les instructions interdites, et le LispE qui n'est pas transpilé.** Le transpileur refuse tout programme dont le LispE contient `eval`, `atom`, `atoms`, `use`, `link`, `load`, `loadcode`, `evaljs` et ses variantes, `asyncjs`, `evaljsc` ou `asyncjsc` (`instructions_interdites` et `cherche_interdite` dans `transpiler.lisp`). Avec elles, un programme pourrait exécuter n'importe quel JavaScript dans la page, lire les clés d'IA et de MCP, et les envoyer ailleurs. Le LispE qui ne passe pas par le transpileur est vérifié juste avant d'être exécuté :
+- dans l'Atelier, un programme `.lisp` (case λ), ou tout texte qui commence par `(setq language "…")` : `compile` le rend avec `direct: true`, et `lispeAccepté`, dans `atelier.js`, demande l'accord de l'utilisateur, une fois par texte ;
+- toute application (`appli.js` : espace Applications et applications exportées), dont le LispE peut avoir été fabriqué à la main : `signaleDanger` la retient jusqu'à un clic sur « ⚠ Lancer quand même ».
+
+Les deux appellent `Paquets.instructionsDangereuses(idx, lispe)`, dans `paquets.js`. **Sa liste va avec `instructions_interdites` : les changer ensemble.** Le texte est découpé par LispE lui-même, `(tokenize (tokenizer_main) texte)`, qui applique les règles de son lecteur : les commentaires disparaissent, et une chaîne reste un seul morceau, guillemets compris. Ne pas remplacer ce découpage par une expression régulière. Les commentaires `;; … ;;`, la citation `';;` (un atome, pas un commentaire) et les chaînes `"""…"""` ou `“…”` ont trompé toutes celles qui ont été essayées. Elles ont été comparées à ce que LispE exécute vraiment, sur des milliers de programmes tirés au hasard. La Pythonerie n'a pas de mode LispE, donc pas cette vérification.
+
 ### 4.3 Écrire des fonctions de bibliothèque en LispE
 
 - **Définir** : `(defun nom (a b) …)`.

@@ -39,6 +39,7 @@ Les blocs se repèrent au **décalage de 4 espaces**. La ligne qui ouvre un bloc
 | `[x * x for x in l if x > 0]` | `[x * x pour x dans l si x > 0]` |
 | `a, b = b, a` | `a, b = b, a` (et `x, y = point` pour dépaqueter une liste) |
 | `global x` | **n'existe pas** : voir ci-dessous |
+| (pas d'équivalent) | `règle f(motifs):` : plusieurs clauses du même nom, chacune ouverte par des conditions, une par ligne ; si une condition rend `Faux`, `0`, `""`, une liste vide ou `Rien`, la clause suivante est essayée ; motifs : un texte ou un nombre égal, un nom qui reçoit la valeur, `{"clé": v $ _}` (un dictionnaire qui a cette clé ; `$ _` accepte les autres), `[premier $ reste]` ; toujours une dernière clause sans condition (sinon : « Could not find a match for function ») ; les actions dans des fonctions qui retournent `Vrai` ; une affectation (`y = …`) n'est pas une condition (la clause continue même si elle vaut 0), `+=` et `-=` en sont |
 
 **Après un `:`, on va toujours à la ligne.** Une ligne qui ouvre un bloc (`si`, `sinonsi`, `sinon`, `pour`, `tantque`, `fonction`, `classe`, `selon`, `cas`, `défaut`, `essaie`, `sauf`…) se termine par `:`, et son contenu s'écrit sur les lignes suivantes, décalées de quatre espaces : jamais `si x > 0: affiche(x)` sur une seule ligne. C'est une règle de la Pythonerie, voulue pour éviter les confusions.
 

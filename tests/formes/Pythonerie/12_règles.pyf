@@ -1,0 +1,26 @@
+# règle : des clauses du même nom, des conditions en tête, une clause de repli ;
+# un motif de dictionnaire avec une fin ($ _) accepte les autres clés
+libres = {"Pré": Vrai, "Lac": Faux}
+
+règle agit(j, "prends", {"objet": o $ _}):
+    o dans libres
+    libres[o]
+    retourne f"✓ {j} prend {o}"
+
+règle agit(j, "prends", arguments):
+    retourne "✗ prends : objet inconnu ou déjà pris"
+
+règle agit(j, outil, arguments):
+    retourne f"✗ {outil} : outil inconnu"
+
+affiche(agit("A", "prends", {"objet": "Pré", "raison": "x"}))
+affiche(agit("A", "prends", {"objet": "Lac"}))
+affiche(agit("A", "prends", {"raison": "x"}))
+affiche(agit("A", "vole", {}))
+
+règle tête([premier $ reste]):
+    affiche("premier", premier, "reste", reste)
+règle tête(x):
+    affiche("vide")
+tête([1, 2, 3])
+tête([])

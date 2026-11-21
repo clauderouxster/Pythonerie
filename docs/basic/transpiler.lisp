@@ -159,6 +159,9 @@
    (loop l lst
       (setq idx (parsing l))
       (setq action (get_action l))
+      ; l[:] est une COPIE en Python : (clone l), car (extract l 0) rend la même liste
+      (if (and (eq action 'extract) (= idx '(0)))
+         (block (setq action 'clone) (setq idx ())))
       (ncheck (not r)
          (setq r (nconcn (list action (atom varname)) idx))
          (if (and (= action 'at) (= action (car r)))
@@ -259,8 +262,9 @@
 )
 
 ; Indexes  10, 20, 30
+; f(x)[:] : une copie, comme l[:]
 (defpat parsing( ['callinterval "[" ":" "]"])
-   '(extract 0))
+   '(clone))
 
 (defpat parsing( ['callinterval "[" n ":" "]"])
    (list 'extract (parsing n)))
@@ -581,7 +585,7 @@
    (push args '{)
    (loop a d
       (if (eq (car a) 'tail)
-         (nconc args '$ (parsing (@ a 1)))
+         (nconc args '$ ': (parsing (@ a 1)))
          (push args (parsing (@ a 1)) ': (parsing (@ a 2)))))
    (push args '})
    args

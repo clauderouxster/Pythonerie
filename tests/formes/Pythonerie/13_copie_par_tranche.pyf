@@ -1,0 +1,13 @@
+# l[:] est une copie, comme en Python : changer l'original ne change pas la copie
+l = [1, 2, 3]
+c = l[:]
+l[0] = 99
+affiche(c, l)
+t = [[1, 2], [3]]
+u = t[0][:]
+t[0][0] = 7
+affiche(u, t)
+v = trie([3, 1, 2])[:]
+affiche(v)
+mot = "abc"
+affiche(mot[:])

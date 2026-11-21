@@ -126,7 +126,7 @@ Les règles d'écriture en découlent :
 - `zip.js` : lit et écrit les archives des projets.
 - `worker-lispe.js` : le Web Worker des fonctions `worker` (voir « Les fonctions worker » plus bas) : un interpréteur LispE, avec des threads quand la page est isolée.
 - `mode-lispe.js` : la coloration des programmes `.lisp`.
-- `docs/appli/appli.js` : le moteur des **applications Web exportées**, qui joue le rôle d'`atelier.js`. Un service ajouté à `canevas.js` y est disponible, mais une primitive qui passe par `Atelier.*` doit aussi exister dans `appli.js`.
+- `docs/appli/appli.js` : le moteur des **applications Web exportées**, qui joue le rôle d'`atelier.js`. Un service ajouté à `canevas.js` y est disponible, mais une primitive qui passe par `Atelier.*` doit aussi exister dans `appli.js`. L'IA ne part avec une application exportée que si son programme lui parle (`Paquets.appelleIA`, qui suit les appels de la bibliothèque jusqu'à `Pyt.callAI`, `Pyt.chooseModel` et `Pyt.aiModel`) : `créeApplicationWeb` ajoute alors `js/ia.js`, `js/reglages-ia.js`, `js/appels-outils.js` et `ia/`, et `appli.js` montre le bouton 🔧 (`RéglagesIA.ouvre({ application: true })`), qui s'ouvre aussi de lui-même quand une clé manque. Un nouveau service d'IA s'ajoute à `SERVICES_IA` dans `paquets.js`.
 
 La Pythonerie a moins de fichiers : `pythonerie.js` (l'équivalent d'`atelier.js`), `canevas.js`, `scene3d.js`, `arbres3d.js`, `erreurs.js`, `fichiers-projet.js`, `mode-pythonerie.js` et `zip.js`. Les deux `canevas.js` **n'ont pas de fichier commun**. Un moteur partagé, comme les graphiques ou les arbres, est collé dans les deux, et **doit rester synchrone**.
 

@@ -1,0 +1,13 @@
+# [e] * n, [a, b] * n, "…" * n : la répétition de Python (une liste ou une chaîne écrite en toutes lettres)
+n = 3
+affiche([0] * 5)
+affiche([1, 2] * n)
+affiche("-" * 10)
+affiche([0] * n + [1])
+m = [[0] * 3] * 2
+m[0][0] = 9
+affiche(m)
+affiche([] * 4, [1, 2] * -1, "x" * 0)
+x = 5
+affiche([x] * 2, [x + 1] * (n - 1))
+affiche([v * 2 pour v dans [1, 2]] , 2 ** 3, 4 * 5, n * 2)

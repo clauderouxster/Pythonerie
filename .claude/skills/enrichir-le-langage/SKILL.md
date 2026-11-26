@@ -283,6 +283,7 @@ devient, à peu de chose près :
 
 Ce qu'il faut en retenir :
 - `+` de Python devient `p+` : il concatène les listes et les textes. Le `+` de LispE additionne élément par élément.
+- `*` reste le `*` de LispE, qui multiplie élément par élément. Seule une liste ou une chaîne **écrite en toutes lettres** et suivie de `* n` est répétée, par la règle `repeating` de la grammaire (placée avant `valuelist` dans `callitem`, après `comprehension`, que sa coupure casserait sinon). Le transpileur (`répétition`) donne `(replicate n e)` pour `[e] * n`, `(take (* (max 0 n) k) (cycle (list …)))` pour k éléments, et `(join (replicate n s) "")` pour une chaîne. `n * [e]` n'est pas traité : une règle commençant par le nombre ralentissait l'analyse de 50 %.
 - `l[i]` devient `(at l i)`, et `l[a:b]` devient `(extract l a b)`. `l[:]` devient `(clone l)` (depuis le 2026-11-21, `container_at` et `callinterval` dans `transpiler.lisp`, forme 13 de la Pythonerie, 16 de l'Atelier) : en LispE, `(extract l 0)` rend la MÊME liste, alors que `l[:]` est une copie en Python. Une tranche partielle `l[1:]` partage encore les éléments de `l` (signalé à l'auteur le 2026-11-21).
 - Les variables globales s'affectent par `setg`.
 - `print` devient `println`, avec chaque argument passé par `_texte`.

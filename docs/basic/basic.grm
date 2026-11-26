@@ -166,7 +166,13 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 !alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 
 # Le ^ évite de construire une sous-liste (callitem ...) pour chaque élément
-^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
+# [0] * n, [1, 2] * 3, "-" * 40 : une liste ou une chaîne écrite en toutes lettres, répétée
+# (le nombre est un seul élément : [0] * n + [1] vaut ([0] * n) + [1], comme en Python).
+# Placée après comprehension : la coupure de valuelist ferait d'une compréhension une erreur.
+^repeatcount := call^selfvariable^method^parenthetic^minus^anumber^variable
+!repeating := [valuelist^astring] %* repeatcount
+
+^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^repeating^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 
 # Le & supprime l'étiquette computing s'il n'y a pas d'opérateur
 &computing := callitem  [operator callitem]*

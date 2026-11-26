@@ -133,6 +133,22 @@
    (mapcar 'parsing d)
 )
 
+;[e] * n, [a, b] * n, "…" * n : la répétition de Python (règle repeating de la grammaire)
+;un seul élément : replicate (chaque copie est indépendante, [[0] * 3] * 2 aussi) ;
+;plusieurs : cycle, coupé à n fois la longueur (max 0 n : take boucle sans fin sur un négatif)
+(defun répétition (objet nombre)
+   (setq n (parsing nombre))
+   (if (eq (car objet) 'valuelist)
+      (block
+         (setq éléments (cdr objet))
+         (cond
+            ((nullp éléments) '(list))
+            ((eq (size éléments) 1) (list 'replicate n (parsing (car éléments))))
+            (true (list 'take (list '* (list 'max 0 n) (size éléments)) (list 'cycle (parsing objet))))))
+      (list 'join (list 'replicate n (parsing objet)) "")))
+
+(defpat parsing (['repeating objet nombre]) (répétition objet nombre))
+
 (defpat parsing (['valuelist $ d] )
    (nconcn '(list) (mapcar 'parsing d))
 )

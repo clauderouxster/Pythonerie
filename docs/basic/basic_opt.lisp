@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (164 fonctions, ;Date: 2026/11/26 10:05:50)
-;Date: 2026/11/26 10:05:50
+;Optimisé par optimise.lisp, d'après basic.lisp (166 fonctions, ;Date: 2026/11/26 11:01:56)
+;Date: 2026/11/26 11:01:56
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -2038,7 +2038,106 @@
 
 ; O_alapython_1 : identique à O_valuelist_1 (optimise.lisp)
 
-;^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
+;^repeatcount := call^selfvariable^method^parenthetic^minus^anumber^variable
+(defun C_repeatcount (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (switch
+            (if (< (car i0) (size tokens))
+               (lower (at tokens (car i0)))
+               "")
+            (
+               "soi"
+               (or
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (C_selfvariable tokens i0 v0)
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "("
+               (or
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_parenthetic tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               "-"
+               (or
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_minus tokens i0 v0)
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+            (
+               true
+               (or
+                  (and
+                     (G_call tokens (car i0))
+                     (C_call tokens i0 v0)
+                  )
+                  (and
+                     (G_method tokens (car i0))
+                     (C_method tokens i0 v0)
+                  )
+                  (C_anumber tokens i0 v0)
+                  (C_variable tokens i0 v0)
+               )
+            )
+         )
+         (nconc v v0)
+      )
+   )
+)
+
+
+;!repeating := [valuelist^astring] %* repeatcount
+(defun C_repeating (tokens i0 v)
+   (check (and do_not_stop (< (car i0) (size tokens)))
+      (setq v0 ())
+      (if (and
+            (setq i1 (clone i0))
+            (setq v1 ())
+            (or
+               (C_valuelist tokens i1 v1)
+               (C_astring tokens i1 v1)
+            )
+            (compare tokens "*" i1 v1 nil)
+            (C_repeatcount tokens i1 v1)
+            (set@ i0 0 (car i1))
+            (setq v0 v1)
+         )
+         (push v (cons 'repeating v0))
+      )
+   )
+)
+
+;^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^repeating^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 (defun C_callitem (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2070,6 +2169,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_variable tokens i0 v0)
@@ -2099,6 +2199,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_variable tokens i0 v0)
@@ -2129,6 +2230,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_valuelist tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
@@ -2159,6 +2261,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_variable tokens i0 v0)
@@ -2187,6 +2290,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_valuedictionary tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
@@ -2216,6 +2320,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_tuple tokens i0 v0)
                   (C_parenthetic tokens i0 v0)
                   (C_astring tokens i0 v0)
@@ -2246,6 +2351,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_minus tokens i0 v0)
                   (C_anumber tokens i0 v0)
@@ -2275,6 +2381,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_returning tokens i0 v0)
@@ -2304,6 +2411,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_returning tokens i0 v0)
@@ -2333,6 +2441,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_returning tokens i0 v0)
@@ -2362,6 +2471,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_returning tokens i0 v0)
@@ -2391,6 +2501,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_returning tokens i0 v0)
@@ -2420,6 +2531,7 @@
                      (G_method tokens (car i0))
                      (C_method tokens i0 v0)
                   )
+                  (C_repeating tokens i0 v0)
                   (C_astring tokens i0 v0)
                   (C_anumber tokens i0 v0)
                   (C_variable tokens i0 v0)

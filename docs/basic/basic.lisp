@@ -1,4 +1,4 @@
-;Date: 2026/11/14 13:51:21
+;Date: 2026/11/26 10:05:50
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -67,22 +67,6 @@
          )
          (+= i 1)
          (push v w)
-         (return true)
-      )
-   )
-)
-
-(defun C_lispe(tokens i v)
-   (check (< (car i) (size tokens))
-      (setq m (@ tokens (car i)))
-      (check 
-            (and
-               (>= (size m) 2)
-               (eq (@ m 0) "`")
-               (eq (@ m -1) "`")
-            )
-         (+= i 1)
-         (push v (list 'lispexp (@@ m 1 -1)))
          (return true)
       )
    )
@@ -1896,12 +1880,11 @@
    )
    true)
 
-;^callitem := lispe^walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
+;^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 (defun C_callitem (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
-            (C_lispe tokens i0 v0)
             (C_walrus tokens i0 v0)
             (C_tojoin tokens i0 v0)
             (C_alapython tokens i0 v0)
@@ -2063,12 +2046,11 @@
    )
    true)
 
-;^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+;^expressions := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
 (defun C_expressions (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
-            (C_lispe tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)
@@ -2088,12 +2070,11 @@
    )
 )
 
-;^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^predicates := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 (defun C_predicates (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
-            (C_lispe tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)
@@ -2113,12 +2094,11 @@
    )
 )
 
-;^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^body := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 (defun C_body (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
       (if (or
-            (C_lispe tokens i0 v0)
             (C_tupleassign tokens i0 v0)
             (C_assignmenttopself tokens i0 v0)
             (C_assignmentself tokens i0 v0)

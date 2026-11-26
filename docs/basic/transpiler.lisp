@@ -5,10 +5,6 @@
 
 ; shapes records the dimensions of a given variables
 
-(defpat parsing( ['lispexp lispe_code])
-   (car . to_list lispe_code)
-)
-
 (defpat parsing( ['importing path $ as_value])
    (list 'import (string . parsing path) (parsing as_value))
 )

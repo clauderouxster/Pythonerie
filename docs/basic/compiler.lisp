@@ -262,22 +262,6 @@
    )
 )
 
-(defun C_lispe(tokens i v)
-   (check (< (car i) (size tokens))
-      (setq m (@ tokens (car i)))
-      (check 
-            (and
-               (>= (size m) 2)
-               (eq (@ m 0) "`")
-               (eq (@ m -1) "`")
-            )
-         (+= i 1)
-         (push v (list 'lispexp (@@ m 1 -1)))
-         (return true)
-      )
-   )
-)
-
 (defun C_astring(tokens i v)
    (check (< (car i) (size tokens))
       (setq m (@ tokens (car i)))

@@ -83,8 +83,8 @@
 ; feuilles_en_cache gardent leur réponse pour chaque jeton (elles ne dépendent que de lui). Vide
 ; par défaut : une fois l'aiguillage fait, les feuilles ne sont presque plus essayées pour rien,
 ; et le cache coûte plus qu'il ne rapporte (Canopée : 74 ms sans, 83 ms avec
-; '("C_Word" "C_anumber" "C_astring" "C_lispe")).
-(setq feuilles '("C_any" "C_Pythonjoin" "C_Pythonword" "C_Word" "C_lispe" "C_astring" "C_anumber"))
+; '("C_Word" "C_anumber" "C_astring")).
+(setq feuilles '("C_any" "C_Pythonjoin" "C_Pythonword" "C_Word" "C_astring" "C_anumber"))
 (setq feuilles_en_cache ())
 
 ; Les règles générées dont le résultat est gardé pour chaque jeton (voir « 5. Les règles

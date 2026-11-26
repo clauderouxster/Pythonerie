@@ -1,5 +1,5 @@
-;Optimisé par optimise.lisp, d'après basic.lisp (165 fonctions, ;Date: 2026/11/14 13:51:21)
-;Date: 2026/11/14 13:51:21
+;Optimisé par optimise.lisp, d'après basic.lisp (164 fonctions, ;Date: 2026/11/26 10:05:50)
+;Date: 2026/11/26 10:05:50
 ;Description: Parser for basic description
 ;Generated with compiler.lisp
 
@@ -68,22 +68,6 @@
          )
          (+= i 1)
          (push v w)
-         (return true)
-      )
-   )
-)
-
-(defun C_lispe(tokens i v)
-   (check (< (car i) (size tokens))
-      (setq m (@ tokens (car i)))
-      (check 
-            (and
-               (>= (size m) 2)
-               (eq (@ m 0) "`")
-               (eq (@ m -1) "`")
-            )
-         (+= i 1)
-         (push v (list 'lispexp (@@ m 1 -1)))
          (return true)
       )
    )
@@ -2054,7 +2038,7 @@
 
 ; O_alapython_1 : identique à O_valuelist_1 (optimise.lisp)
 
-;^callitem := lispe^walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
+;^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 (defun C_callitem (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2065,7 +2049,6 @@
             (
                "lambda"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2095,7 +2078,6 @@
             (
                "λ"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2125,7 +2107,6 @@
             (
                "["
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2157,7 +2138,6 @@
             (
                "soi"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2187,7 +2167,6 @@
             (
                "{"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2217,7 +2196,6 @@
             (
                "("
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2248,7 +2226,6 @@
             (
                "-"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2278,7 +2255,6 @@
             (
                "retourne"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2308,7 +2284,6 @@
             (
                "renvoie"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2338,7 +2313,6 @@
             (
                "sortir"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2368,7 +2342,6 @@
             (
                "continuer"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2398,7 +2371,6 @@
             (
                "lever"
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2428,7 +2400,6 @@
             (
                true
                (or
-                  (C_lispe tokens i0 v0)
                   (and
                      (G_walrus tokens (car i0))
                      (C_walrus tokens i0 v0)
@@ -2610,7 +2581,7 @@
    )
    true)
 
-;^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+;^expressions := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
 (defun C_expressions (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2621,7 +2592,6 @@
             (
                "soi"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmenttopself tokens i0 v0)
                   (C_assignmentself tokens i0 v0)
@@ -2634,7 +2604,6 @@
             (
                "selon"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2646,7 +2615,6 @@
             (
                "essaie"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2658,7 +2626,6 @@
             (
                "pour"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2671,7 +2638,6 @@
             (
                "si"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2683,7 +2649,6 @@
             (
                "tantque"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2695,7 +2660,6 @@
             (
                true
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2710,7 +2674,7 @@
 )
 
 
-;^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^predicates := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 (defun C_predicates (tokens i0 v)
    (check (and do_not_stop (< (car i0) (size tokens)))
       (setq v0 ())
@@ -2721,7 +2685,6 @@
             (
                "soi"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmenttopself tokens i0 v0)
                   (C_assignmentself tokens i0 v0)
@@ -2734,7 +2697,6 @@
             (
                "selon"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2746,7 +2708,6 @@
             (
                "essaie"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2758,7 +2719,6 @@
             (
                "pour"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2771,7 +2731,6 @@
             (
                "si"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2783,7 +2742,6 @@
             (
                "tantque"
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2795,7 +2753,6 @@
             (
                true
                (or
-                  (C_lispe tokens i0 v0)
                   (C_tupleassign tokens i0 v0)
                   (C_assignmentop tokens i0 v0)
                   (C_assignmentg tokens i0 v0)
@@ -2810,7 +2767,7 @@
 )
 
 
-;^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+;^body := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 ; C_body : identique à C_predicates (optimise.lisp)
 
 ;!classedef := $classe Word ;16 classfunc+ $finclasse

@@ -166,7 +166,7 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 !alapython := [astring^anumber] %. Pythonword ;13 %( [ternaire [%, ternaire]*]? %)
 
 # Le ^ évite de construire une sous-liste (callitem ...) pour chaque élément
-^callitem := lispe^walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
+^callitem := walrus^tojoin^alapython^call^pylambda^lambda^comprehension^selfvariable^method^valuelist^valuedictionary^tuple^parenthetic^astring^minus^anumber^returning^variable
 
 # Le & supprime l'étiquette computing s'il n'y a pas d'opérateur
 &computing := callitem  [operator callitem]*
@@ -178,9 +178,9 @@ catching := [$sauf^$attrape] [%( Word %)]? expressions+
 
 returning := [$retourne^$renvoie^$sortir^$continuer^$lever] compareorcompute?
 
-^expressions := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
-^predicates := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
-^body := lispe^tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+^expressions := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^computing
+^predicates := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
+^body := tupleassign^assignmenttopself^assignmentself^assignmentop^assignmentg^assignment^switch^amaybe^forin^for^if^while^compareorcompute
 
 !classedef := $classe Word ;16 classfunc+ $finclasse
 !methparams := %( $soi ;4 [%, variables]? %)
